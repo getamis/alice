@@ -173,7 +173,7 @@ func TestScalar3(t *testing.T) {
 	scalar := big.NewInt(55667788)
 	expected := new(big.Int).Mul(message, scalar)
 	expected.Mod(expected, bigPrime)
-	
+
 	cipherMessege := Encrypt(publicKey, message)
 	scalarResult := EvalMulConst(cipherMessege, scalar, publicKey)
 

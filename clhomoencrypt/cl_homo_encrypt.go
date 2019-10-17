@@ -94,7 +94,7 @@ func PubKeygen(messageSpace *big.Int, safeParameter int) (*PublicKey, *PrivateKe
 		return nil, nil, ErrSmallSafeParameter
 	}
 	bitLengthQprime := safeParameter - messageSpace.BitLen()
-	
+
 	discriminantK := generateAbsDiscriminantK(messageSpace, bitLengthQprime)
 
 	// Compute (ΔK/4)^(1/4)
