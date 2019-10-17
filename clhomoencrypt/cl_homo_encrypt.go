@@ -19,7 +19,7 @@ import (
 	"errors"
 	"math/big"
 
-	bqForm "github.maicoin.site/amis/research/binaryQuadraticForm"
+	bqForm "github.com/getamis/alice/binaryquadraticform"
 )
 
 var (
