@@ -20,9 +20,9 @@ import (
 )
 
 var (
-	bigZero = big.NewInt(0)
-	bigOne = big.NewInt(1)
-	bigTwo = big.NewInt(2)
+	bigZero  = big.NewInt(0)
+	bigOne   = big.NewInt(1)
+	bigTwo   = big.NewInt(2)
 	bigThree = big.NewInt(3)
 
 	GMP_LIMB_BITS = 64
@@ -117,9 +117,8 @@ func (bqForm *BQuadraticForm) Reduction() {
 
 	bqForm.euclideanStep()
 	bqForm.reductionMainStep()
-	return
 }
- 
+
 // Note that: D < 0. (a,b,c) is reduced if |b| <= a <= c and if b >= 0 whenever
 // a = |b| or a = c
 func (bqForm *BQuadraticForm) IsReducedForm() bool {
@@ -297,7 +296,7 @@ func (bqForm *BQuadraticForm) Composition(inputForm *BQuadraticForm, Droot4th *b
 	return result
 }
 
-/* The ouput is bqForm ^ power. Ref: Algorithm 3.2, page 30,
+/* The output is bqForm ^ power. Ref: Algorithm 3.2, page 30,
  * Improved Arithmetic in the Ideal Class Group of Imaginary
  * Quadratic Number Fields, Maxwell Sayles.
  */
@@ -343,9 +342,7 @@ func (bqForm *BQuadraticForm) Copy() *BQuadraticForm {
 
 // Reduction of Positive definite forms.
 func (bqForm *BQuadraticForm) reductionMainStep() {
-
-	for bqForm.IsReducedForm() == false {
-
+	for !bqForm.IsReducedForm() {
 		// if a > c, set b = -b and exchange a and c.
 		if bqForm.a.Cmp(bqForm.c) > 0 {
 			bqForm.b.Neg(bqForm.b)
@@ -357,12 +354,10 @@ func (bqForm *BQuadraticForm) reductionMainStep() {
 		}
 		bqForm.euclideanStep()
 	}
-	return
 }
 
 // Euclidean step of Algorithm 5.4.2 : Reduction of Positive definite forms.
 func (bqForm *BQuadraticForm) euclideanStep() {
-
 	// Get b = 2aq + r, where 0 <= r < 2a
 	var q *big.Int
 	r := big.NewInt(0)
@@ -382,7 +377,6 @@ func (bqForm *BQuadraticForm) euclideanStep() {
 
 	bqForm.c.Sub(bqForm.c, halfbPlusrQ)
 	bqForm.b = r
-	return
 }
 
 /* Extend the GCD in golang. We permit the inputs x, y which can be negative numbers.
@@ -430,29 +424,29 @@ func (bqForm *BQuadraticForm) square(Droot4th *big.Int) *BQuadraticForm {
 
 	U := new(big.Int).Mul(v, bqForm.c)
 	U.Neg(U)
-	
+
 	if s.Cmp(bigOne) != 0 {
-		a1.Div(a1,s)
-		c1.Mul(c1,s)
+		a1.Div(a1, s)
+		c1.Mul(c1, s)
 	}
 
 	U.Mod(U, a1)
 
 	if a1.Cmp(Droot4th) < 1 {
 
-		T := new(big.Int).Mul(a1,U)
+		T := new(big.Int).Mul(a1, U)
 
 		a = new(big.Int).Mul(a1, a1)
 
-		b := new(big.Int).Lsh(T,1)
-		b.Add(b1,b)
+		b := new(big.Int).Lsh(T, 1)
+		b.Add(b1, b)
 
-		c := new(big.Int).Add(b1,T)
-		c.Mul(c,U)
-		c.Add(c,c1)
-		c.Div(c,a1)
+		c := new(big.Int).Add(b1, T)
+		c.Mul(c, U)
+		c.Add(c, c1)
+		c.Div(c, a1)
 
-		result:= &BQuadraticForm{
+		result := &BQuadraticForm{
 			a:            a,
 			b:            b,
 			c:            c,
@@ -545,7 +539,7 @@ func (bqForm *BQuadraticForm) cube(Droot4th *big.Int) *BQuadraticForm {
 		K.Mod(K, L)
 
 		c1.Mul(c1, S)
-	} else { 
+	} else {
 		S = big.NewInt(1)
 
 		N = new(big.Int).Set(bqForm.a)
@@ -564,8 +558,8 @@ func (bqForm *BQuadraticForm) cube(Droot4th *big.Int) *BQuadraticForm {
 		K.Mod(K, L)
 	}
 
-	upperBound:=new(big.Int).Set(bqForm.a)
-	upperBound.Sqrt( upperBound )
+	upperBound := new(big.Int).Set(bqForm.a)
+	upperBound.Sqrt(upperBound)
 	upperBound.Mul(upperBound, Droot4th)
 
 	var T *big.Int
@@ -577,12 +571,12 @@ func (bqForm *BQuadraticForm) cube(Droot4th *big.Int) *BQuadraticForm {
 		b = new(big.Int).Lsh(T, 1)
 		b.Add(bqForm.b, b)
 
-		c:= new(big.Int).Add( T,bqForm.b )
-		c.Mul( c, K )
-		c.Add( c, c1)
-		c.Div( c, L)
+		c := new(big.Int).Add(T, bqForm.b)
+		c.Mul(c, K)
+		c.Add(c, c1)
+		c.Div(c, L)
 
-		result:= &BQuadraticForm{
+		result := &BQuadraticForm{
 			a:            a,
 			b:            b,
 			c:            c,
@@ -639,8 +633,8 @@ func (bqForm *BQuadraticForm) cube(Droot4th *big.Int) *BQuadraticForm {
 	return result
 }
 
-// The algortihm can be found in the page 39, Algorithm 3.6, Improved Arithmetic
-// in the Ideal Class Group of Imaginary, Maxwell Sayles. NOTE: The implementment of this function
+// The algorithm can be found in the page 39, Algorithm 3.6, Improved Arithmetic
+// in the Ideal Class Group of Imaginary, Maxwell Sayles. NOTE: The implementation of this function
 // may be a little different from Algorithm 3.6.
 func expansion23StrictChains(input *big.Int, numberNode int) []*expansion23 {
 
@@ -800,7 +794,6 @@ func removedivisorof23(inputValue *big.Int, inputExpansion23 []*expansion23, min
 
 // We assume that bqForm is reduced. Then if bqForm is ambiguous iff b = 0 or a = b.
 func (bqForm *BQuadraticForm) isAmbiguousQForm() bool {
-
 	if bqForm.b.Sign() == 0 || bqForm.a.Cmp(bqForm.b) == 0 {
 		return true
 	}

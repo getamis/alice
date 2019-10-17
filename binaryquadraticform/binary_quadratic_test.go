@@ -19,9 +19,6 @@ import (
 	"testing"
 )
 
-var BIGFIELDORDER = "115792089237316195423570985008687907852837564279074904382605163141518161494337"
-var bigPrime, _ = new(big.Int).SetString(BIGFIELDORDER, 10)
-
 // Compute the reduced form of a given binary quadratic form.
 func TestIsReducedForm(t *testing.T) {
 
