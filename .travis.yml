@@ -3,11 +3,9 @@ dist: xenial
 
 language: go
 
-# Force-enable Go modules. Also force go to use the code in vendor/
-# These will both be unnecessary when Go 1.13 lands.
+# Force-disable Go modules. Also force go to use the code in vendor/
 env:
-  - GO111MODULE=on
-  - GOFLAGS='-mod vendor'
+  - GO111MODULE=off
 
 # You don't need to test on very old versions of the Go compiler. It's the user's
 # responsibility to keep their compiler up to date.
@@ -18,10 +16,6 @@ go:
 git:
   depth: 1
 
-# Skip the install step. Don't `go get` dependencies. Only build with the code
-# in vendor/
-install: true
-
 # Don't email me the results of the test runs.
 notifications:
   email: false
@@ -30,7 +24,7 @@ notifications:
 # build and immediately stop. It's sorta like having set -e enabled in bash.
 # Make sure golangci-lint is vendored.
 before_script:
-  - go install github.com/golangci/golangci-lint/cmd/golangci-lint
+  - go get github.com/golangci/golangci-lint/cmd/golangci-lint
 
 # script always runs to completion (set +e). If we have linter issues AND a
 # failing test, we want to see both. Configure golangci-lint with a
