@@ -81,8 +81,6 @@ The Table below is referenced by [Improved Efficiency of a Linearly Homomorphic 
 ## Reference:
 
 1. [Linearly Homomorphic Encryption from DDH](https://pdfs.semanticscholar.org/fba2/b7806ea103b41e411792a87a18972c2777d2.pdf?_ga=2.188920107.1077232223.1562737567-609154886.1559798768)
-2. [Cohen's book:A Course in Computational Algebraic Number Theory](https://www.amazon.com/Course-Computational-Algebraic-Graduate-Mathematics/dp/3540556400)
-3. [Maxwell Sayles](https://github.com/maxwellsayles/)
 
 ## Other Library:
 

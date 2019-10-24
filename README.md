@@ -4,7 +4,8 @@ Crypto-Library are implemented by AMIS.
 
 
 ## Guildline
-1. [CLHomomorphicEncryption](https://github.com/getamis/alice/tree/master/clhomoencrypt)
+1. [Class group of imaginary quadratic fields](https://github.com/getamis/alice/tree/master/binaryquadraticform)
+2. [CLHomomorphicEncryption](https://github.com/getamis/alice/tree/master/clhomoencrypt)
 
 
 ## License
