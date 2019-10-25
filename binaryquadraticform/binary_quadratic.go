@@ -27,7 +27,7 @@ var (
 
 	GMP_LIMB_BITS = 64
 
-	// Recommend 4. This value should be a power of 2. This value should be smaller than 32.
+	// Recommend 8. This value should be a power of 2. This value should be smaller than 32.
 	NUMBERNODE = 8
 
 	// In this library, we only consider positive definite quadratic forms
@@ -658,8 +658,7 @@ func expansion23StrictChains(input *big.Int, numberNode int) []*expansion23 {
 // Starting from startVale, we will get two nodes. The total number of nodes will be bounded by numberNode.
 // If the number of nodes equals numberNode, then the output is the minimal value of all branches.
 func generatePartialTree(startValue *big.Int, numberNode, exponent2, exponent3 int) ([]*expansion23, *big.Int) {
-
-	maxDeep := numberNode / 2
+	maxDeep := numberNode >> 1
 	nTimes := 0
 	tempStartValueCopy := make([]*big.Int, 1)
 	tempStartValueCopy[0] = startValue
@@ -773,11 +772,11 @@ func removedivisorof23(inputValue *big.Int, inputExpansion23 []*expansion23, min
 		a++
 	}
 
-	tempValue := new(big.Int).Mod(inputCopy, bigThree)
-	for tempValue.Sign() == 0 {
-		inputCopy.Div(inputCopy, bigThree)
+	tempValue := fastMod3(inputCopy)
+	for tempValue == 0 {
+		inputCopy.Quo(inputCopy, bigThree)
 		b++
-		tempValue.Mod(inputCopy, bigThree)
+		tempValue = fastMod3(inputCopy)
 	}
 
 	tempResult := Newexpansion23(a, b, minusValue)
@@ -918,4 +917,38 @@ func partialGCD(R2, R1, C2, C1, bound *big.Int) (*big.Int, *big.Int, *big.Int, *
 	}
 
 	return R2, R1, C2, C1
+}
+
+// This is a algorithm to get number % 3. The velocity of this function is faster than new(bigInt).mod(number, 3).
+func fastMod3(number *big.Int) int {
+
+	numberOne, numberTwo := 0, 0
+	isEven := true
+	for i := 0; i < number.BitLen(); i++ {
+		if number.Bit(i) != 0 {
+			if isEven {
+				numberOne++
+				isEven = false
+			} else {
+				numberTwo++
+				isEven = true
+			}
+			break
+		}
+		if isEven {
+			isEven = false
+		} else {
+			isEven = true
+		}
+	}
+
+	result := 0
+	if numberOne > numberTwo {
+		result = numberOne - numberTwo
+	} else {
+		result = numberTwo - numberOne
+		result = result << 1
+	}
+	result = result % 3
+	return result % 3
 }

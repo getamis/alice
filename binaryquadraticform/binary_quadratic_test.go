@@ -19,6 +19,19 @@ import (
 	"testing"
 )
 
+var FORMCSTRING = "38270086293509404933867071895401019019366095470206334878396235822253000046664893060272814488" +
+	"537637773689901981178801648097082274060247034590097251157726104078788105213920859020152955455" +
+	"625239587118667793715310881328896381140419466618497705721542267109859175999164570663026821483" +
+	"359097065850719591509598145462062654351033736734969435747887449357951781277325201275310759791" +
+	"595382893654663731821371587793820926472466796571719355071267288789719294892126689081990790721" +
+	"631115839756336386618167146591801091079517830057354189504824978512357541217945487761391195650" +
+	"32459702128377126838952995785769100706778680652441494512278"
+var FORMC, _ = new(big.Int).SetString(FORMCSTRING, 10)
+var FORMBENCHMARK, _ = NewBQuadraticForm(big.NewInt(2), big.NewInt(1), new(big.Int).Set(FORMC))
+var ROOT4thFORMCSTRING = "13227791996247150541523377113651784571556733171940919633404931550778824813858122385221589913660937437492658670208850300479957605110112547618905218881586735"
+var ROOT4thFORMC, _ = new(big.Int).SetString(ROOT4thFORMCSTRING, 10)
+var FORMC100EXP = (FORMBENCHMARK.Copy()).Exp(big.NewInt(100), ROOT4thFORMC)
+
 // Compute the reduced form of a given binary quadratic form.
 func TestIsReducedForm(t *testing.T) {
 
@@ -429,29 +442,33 @@ func TestExp7(t *testing.T) {
 	}
 }
 
-// Benchmark of basic operations: Exp, Composition, Reduction
-func BenchmarkExp(b *testing.B) {
-	form1, _ := NewBQuadraticForm(big.NewInt(78), big.NewInt(-52), big.NewInt(6781))
-	root4th := big.NewInt(26)
-	for i := 0; i < b.N; i++ {
-		form1.Exp(big.NewInt(200000), root4th)
-	}
-}
-
+// Benchmark of basic operations: Exp, Composition, Reduction, square and cube
 func BenchmarkComposition(b *testing.B) {
-	form1, _ := NewBQuadraticForm(big.NewInt(142), big.NewInt(130), big.NewInt(3511))
-	form2, _ := NewBQuadraticForm(big.NewInt(41), big.NewInt(0), big.NewInt(12057))
-	root4th := big.NewInt(26)
+	form1 := FORMC100EXP.Copy()
+	form2 := FORMC100EXP.Copy()
 	for i := 0; i < b.N; i++ {
-		form1.Composition(form2, root4th)
+		form1.Composition(form2, ROOT4thFORMC)
 	}
 }
 
 func BenchmarkReduction(b *testing.B) {
-	got, _ := NewBQuadraticForm(big.NewInt(4), big.NewInt(5), big.NewInt(3))
-
+	form1 := FORMC100EXP.Copy()
 	for i := 0; i < b.N; i++ {
-		got.Reduction()
+		form1.Reduction()
+	}
+}
+
+func BenchmarkSquare(b *testing.B) {
+	form1 := FORMC100EXP.Copy()
+	for i := 0; i < b.N; i++ {
+		form1.square(ROOT4thFORMC)
+	}
+}
+
+func BenchmarkCube(b *testing.B) {
+	form1 := FORMC100EXP.Copy()
+	for i := 0; i < b.N; i++ {
+		form1.cube(ROOT4thFORMC)
 	}
 }
 
@@ -468,5 +485,41 @@ func BenchmarkIsDivideBy31(b *testing.B) {
 	var bigPrime, _ = new(big.Int).SetString(BIGFIELDORDER, 10)
 	for i := 0; i < b.N; i++ {
 		expansion23StrictChains(bigPrime, 16)
+	}
+}
+
+func BenchmarkExp100bit(b *testing.B) {
+	var orderString = "1267650600228229401496704464915"
+	var bigorder, _ = new(big.Int).SetString(orderString, 10)
+
+	for i := 0; i < b.N; i++ {
+		FORMBENCHMARK.Exp(bigorder, ROOT4thFORMC)
+	}
+}
+
+func BenchmarkExp200bit(b *testing.B) {
+	var orderString = "1606938044258990275541962094937311031789616808048041001170963"
+	var bigorder, _ = new(big.Int).SetString(orderString, 10)
+
+	for i := 0; i < b.N; i++ {
+		FORMBENCHMARK.Exp(bigorder, ROOT4thFORMC)
+	}
+}
+
+func BenchmarkExp300bit(b *testing.B) {
+	var orderString = "6531513683389606180955725446695124007119189061243576857500117325602044754680002922154438028"
+	var bigorder, _ = new(big.Int).SetString(orderString, 10)
+
+	for i := 0; i < b.N; i++ {
+		FORMBENCHMARK.Exp(bigorder, ROOT4thFORMC)
+	}
+}
+
+func BenchmarkExp400bit(b *testing.B) {
+	var orderString = "2582249878086908589655919172003011874329705792829223512830659356540647622016841194629645353290041351750186214171940493123"
+	var bigorder, _ = new(big.Int).SetString(orderString, 10)
+
+	for i := 0; i < b.N; i++ {
+		FORMBENCHMARK.Exp(bigorder, ROOT4thFORMC)
 	}
 }

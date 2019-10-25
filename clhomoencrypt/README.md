@@ -71,10 +71,10 @@ The Table below is referenced by [Improved Efficiency of a Linearly Homomorphic 
 |  Operation    |  Message space (256 bit)                                                         |
 +---------------+--------------------+-------------------+--------------------+--------------------+
 | Discriminant  |  1348 bit          | 1828 bit          | 3598 bit           | 5972 bit           |
-| Encryption    |  180553607 ns/op   | 289934024 ns/op   | 1023070955 ns/op   | 2942373759 ns/op   |
-| Decryption    |  117321847 ns/op   | 205865198 ns/op   | 1562096359 ns/op   | 4416983586 ns/op   |
-| Add           |  245098188 ns/op   | 575791606 ns/op   | 3016294212 ns/op   |  -                 |
-| EvalMul       |  282251407 ns/op   | 552896219 ns/op   | 2209920746 ns/op   |  -                 |
+| Encryption    |  0.18055360 s/op   | 0.28993402 s/op   | 1.023070955 s/op   | 2.942373759 s/op   |
+| Decryption    |  0.10738896 s/op   | 0.20586519 s/op   | 1.562096359 s/op   | 4.416983586 s/op   |
+| Add           |  0.24509818 s/op   | 0.57579160 s/op   | 3.016294212 s/op   |  -                 |
+| EvalMul       |  0.34500619 s/op   | 0.55289621 s/op   | 2.368093142 s/op   |  -                 |
 +---------------+--------------------+-------------------+--------------------+--------------------+
 ```
 
