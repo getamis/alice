@@ -23,7 +23,7 @@ This Library offers 5 public functions: **PubKeygen, Encrypt, Decrypt, EvalAdd, 
     plaintext2 := big.NewInt(13)
     cipherMessege2 := Encrypt(publicKey, plaintext2)
 
-    // Do a operation of cipherMessege1 and cipherMessege2.
+    // Do an operation of cipherMessege1 and cipherMessege2.
     AddResult := EvalAdd(cipherMessege1, cipherMessege2, publicKey)
 
     // The result should be 3 + 13 = 16
@@ -31,7 +31,7 @@ This Library offers 5 public functions: **PubKeygen, Encrypt, Decrypt, EvalAdd, 
 
     // Do a scalar multiplication for cipherMessege1.
     scalar := big.NewInt(5)
-    scalarResult := EvalMulConst(cipherMessege1  , scalar, publicKey)
+    scalarResult := EvalMulConst(cipherMessege1, scalar, publicKey)
 
     // The result should be 5 * 3 = 15
     decyptscalarResult := Decrypt(scalarResult, privateKey)
