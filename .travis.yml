@@ -25,6 +25,8 @@ notifications:
 # Make sure golangci-lint is vendored.
 before_script:
   - go get github.com/golangci/golangci-lint/cmd/golangci-lint
+  - go get github.com/onsi/gomega
+  - go install github.com/onsi/ginkgo/ginkgo
 
 # script always runs to completion (set +e). If we have linter issues AND a
 # failing test, we want to see both. Configure golangci-lint with a
