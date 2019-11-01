@@ -177,7 +177,10 @@ func getNAndLambda(keySize int) (*big.Int, *big.Int, error) {
 		if err != nil {
 			return nil, nil, err
 		}
-
+		// retry if p == q
+		if p.Cmp(q) == 0 {
+			continue
+		}
 		pMinus1 := new(big.Int).Sub(p, Big1)    // p-1
 		qMinus1 := new(big.Int).Sub(q, Big1)    // q-1
 		n := new(big.Int).Mul(p, q)             // n=p*q
