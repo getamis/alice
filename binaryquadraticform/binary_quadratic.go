@@ -949,6 +949,5 @@ func fastMod3(number *big.Int) int {
 		result = numberTwo - numberOne
 		result = result << 1
 	}
-	result = result % 3
 	return result % 3
 }

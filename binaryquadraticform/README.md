@@ -13,7 +13,7 @@ The main public functions in this Library are: **Reduction, Exp, Composition**.
 
     import (
 	    "math/big"
-    	"testing"
+        "testing"
     )
 
     // Reduction
