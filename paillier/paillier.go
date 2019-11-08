@@ -36,9 +36,19 @@ var (
 type PublicKey struct {
 	// N is the plaintext space
 	n *big.Int
+	g *big.Int
+
 	// NSquare is the encrypted text space
 	nSquare *big.Int
-	g       *big.Int
+}
+
+func NewPublicKey(n *big.Int, g *big.Int) *PublicKey {
+	nSquare := new(big.Int).Mul(n, n) // n^2
+	return &PublicKey{
+		n:       n,
+		nSquare: nSquare,
+		g:       g,
+	}
 }
 
 func (pub *PublicKey) GetN() *big.Int {
@@ -120,13 +130,9 @@ func NewPaillier(keySize int) (*Paillier, error) {
 		return nil, err
 	}
 	return &Paillier{
-		lambda: lambda,
-		mu:     mu,
-		PublicKey: &PublicKey{
-			n:       n,
-			nSquare: nSquare,
-			g:       g,
-		},
+		PublicKey: NewPublicKey(n, g),
+		lambda:    lambda,
+		mu:        mu,
 	}, nil
 }
 
