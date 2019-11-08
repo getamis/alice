@@ -36,7 +36,7 @@ This Library offers 5 public functions: **PubKeygen, Encrypt, Decrypt, EvalAdd, 
     // The result should be 5 * 3 = 15
     decyptscalarResult := Decrypt(scalarResult, privateKey)
 
-    fmt.Println("The decryption of adding cipherMessege1 and cipherMessege1 to be", decyptAddResult)
+    fmt.Println("The decryption of adding cipherMessege1 and cipherMessege2 to be", decyptAddResult)
     fmt.Println("The decryption of cipherMessege1 by multiplying the scalar is", decyptscalarResult)
 
 
@@ -78,10 +78,10 @@ The Table below is referenced by [Improved Efficiency of a Linearly Homomorphic 
 +---------------+--------------------+-------------------+--------------------+--------------------+
 ```
 
-## Reference:
+## Reference
 
 1. [Linearly Homomorphic Encryption from DDH](https://pdfs.semanticscholar.org/fba2/b7806ea103b41e411792a87a18972c2777d2.pdf?_ga=2.188920107.1077232223.1562737567-609154886.1559798768)
 
-## Other Library:
+## Other Library
 
 1. [Class Groups](https://github.com/KZen-networks/class-groups)

@@ -89,12 +89,12 @@ We benchmark the redunction, square, cube, composition for Q^100.
 
 
 
-## Reference:
+## Reference
 
 1. [Cohen's book:A Course in Computational Algebraic Number Theory](https://www.amazon.com/Course-Computational-Algebraic-Graduate-Mathematics/dp/3540556400)
 2. [Maxwell Sayles](https://github.com/maxwellsayles/)
 
-## Other Library:
+## Other Library
 
 1. [Class Groups](https://github.com/KZen-networks/class-groups)
 2. [Cryptographic accumulators in Rust](https://github.com/cambrian/accumulator)
