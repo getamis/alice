@@ -1,0 +1,49 @@
+// Copyright © 2020 AMIS Technologies
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package commitment;
+
+import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
+
+// HashCommitmentMessage and HashDecommitmentMessage are for HashCommitment
+// HashCommitmentMessage contains the blake2b initial vector and data digest for commitment use
+message HashCommitmentMessage {
+  bytes blake2bKey = 1;
+  bytes digest = 2;
+}
+
+// HashDecommitmentMessage contains original data and salt for decommitment use
+message HashDecommitmentMessage {
+    bytes data = 1;
+    bytes salt = 2;
+}
+  
+// PointCommitmentMessage and PointDecommitmentMessage are for PointDecommitment
+// PointCommitmentMessage contains rank and its points for commitment use
+message PointCommitmentMessage {
+  repeated ecpointgrouplaw.EcPointMessage points = 1;
+}
+
+// FeldmanVerifyMessage contains evaluation for verification use
+message FeldmanVerifyMessage {
+  bytes evaluation = 1;
+}
+
+// PedersenVerifyMessage contains evaluation and salt for verification use
+message PedersenVerifyMessage {
+    bytes evaluation = 1;
+    bytes salt = 2;
+}
