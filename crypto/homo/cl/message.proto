@@ -1,0 +1,60 @@
+// Copyright © 2020 AMIS Technologies
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package cl;
+
+import "github.com/getamis/alice/crypto/binaryquadraticform/message.proto";
+import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
+
+message PubKeyMessage {
+    bytes p = 1;
+    bytes a = 2;
+    bytes q = 3;
+	binaryquadraticform.BQForm g = 4;
+	binaryquadraticform.BQForm f = 5;
+    binaryquadraticform.BQForm h = 6;
+    bytes c = 7;
+    uint32 d = 8;
+}
+
+message EncryptedMessage {
+    binaryquadraticform.BQForm m1 = 1;
+    binaryquadraticform.BQForm m2 = 2;
+    ProofMessage proof = 3;
+}
+
+message ProofMessage {
+    bytes blake2bKey = 1;
+    bytes u1 = 2;
+    bytes u2 = 3;
+    binaryquadraticform.BQForm t1 = 4;
+	binaryquadraticform.BQForm t2 = 5;
+}
+
+message VerifyMtaMessage {
+    ecpointgrouplaw.EcPointMessage betaG = 1;
+    ecpointgrouplaw.EcPointMessage bG = 2;
+}
+
+message Hash {
+    binaryquadraticform.BQForm t1 = 1;
+    binaryquadraticform.BQForm t2 = 2;
+    binaryquadraticform.BQForm g = 3;
+	binaryquadraticform.BQForm f = 4;
+    binaryquadraticform.BQForm h = 5;
+    bytes p = 6;
+    bytes q = 7;
+}

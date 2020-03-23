@@ -1,0 +1,100 @@
+// Copyright © 2020 AMIS Technologies
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package signer;
+
+import "github.com/getamis/alice/crypto/commitment/message.proto";
+import "github.com/getamis/alice/crypto/zkproof/message.proto";
+
+enum Type {
+    Pubkey = 0;
+    EncK = 1;
+    Mta = 2;
+    Delta = 3;
+    ProofAi = 4;
+    CommitViAi = 5;
+    DecommitViAi = 6;
+    CommitUiTi = 7;
+    DecommitUiTi = 8;
+    Si = 9;
+}
+
+message Message {
+    Type type = 1;
+    string id = 2;
+    oneof body {
+        BodyPublicKey pubkey = 3;
+        BodyEncK encK = 4;
+        BodyMta mta = 5;
+        BodyDelta delta = 6;
+        BodyProofAi proofAi = 7;
+        BodyCommitViAi commitViAi = 8;
+        BodyDecommitViAi decommitViAi = 9;
+        BodyCommitUiTi commitUiTi = 10;
+        BodyDecommitUiTi decommitUiTi = 11;
+        BodySi si = 12;
+    }
+}
+
+message BodyPublicKey {
+    bytes pubkey = 1;
+    commitment.HashCommitmentMessage agCommitment = 3;
+}
+
+message BodyEncK {
+    bytes enck = 2;
+}
+
+message BodyMta {
+    bytes encAiAlpha = 1;
+    bytes encWiAlpha = 2;
+    bytes wiProof = 3;
+}
+
+message BodyDelta {
+    bytes delta = 1;
+}
+
+message BodyProofAi {
+    commitment.HashDecommitmentMessage agDecommitment = 1;
+    zkproof.SchnorrProofMessage aiProof = 2;
+}
+
+message BodyCommitViAi {
+    commitment.HashCommitmentMessage viCommitment = 1;
+    commitment.HashCommitmentMessage aiCommitment = 2;
+}
+
+message BodyDecommitViAi {
+    commitment.HashDecommitmentMessage viDecommitment = 1;
+    commitment.HashDecommitmentMessage aiDecommitment = 2;
+    zkproof.SchnorrProofMessage rhoIProof = 3;
+    zkproof.SchnorrProofMessage liProof = 4;
+}
+
+message BodyCommitUiTi {
+    commitment.HashCommitmentMessage uiCommitment = 1;
+    commitment.HashCommitmentMessage tiCommitment = 2;
+}
+
+message BodyDecommitUiTi {
+    commitment.HashDecommitmentMessage uiDecommitment = 1;
+    commitment.HashDecommitmentMessage tiDecommitment = 2;
+}
+
+message BodySi {
+    bytes si = 1;
+}
