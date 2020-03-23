@@ -1,5 +1,12 @@
 
 # Hierarchical Threshold Signature Scheme
+[![Apache licensed][1]][2] [![Go Report Card][3]][4]
+
+[1]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
+[2]: LICENSE
+[3]: https://goreportcard.com/badge/github.com/getamis/alice
+[4]: https://goreportcard.com/report/github.com/getamis/alice
+
 ## Introduction:
 
 This is an implementation for multi-party TSS library with Hierarchical shares(abrev. HTSS). We quote one paragraph of  [Tassa's paper](https://www.openu.ac.il/lists/mediaserver_documents/personalsites/tamirtassa/hss_conf.pdf) to explain the difference between traditional threshold signature scheme and HTSS:
