@@ -389,7 +389,7 @@ var _ = Describe("Point", func() {
 	})
 
 	Context("ToEcPointMessage()/ToPoint()", func() {
-		DescribeTable("Successful convertion", func(curveType EcPointMessage_Curve, curve elliptic.Curve) {
+		DescribeTable("Successful conversion", func(curveType EcPointMessage_Curve, curve elliptic.Curve) {
 			x := curve.Params().Gx
 			y := curve.Params().Gy
 			p, err := NewECPoint(curve, x, y)
