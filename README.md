@@ -422,6 +422,7 @@ The Table below is referenced by [Improved Efficiency of a Linearly Homomorphic 
 
 1. [Binary quadratic forms for class groups of imaginary quadratic fields](https://github.com/getamis/alice/tree/master/crypto/binaryquadraticform)
 2. [Castagnos and Laguillaumie homomorphic Scheme](https://github.com/getamis/alice/tree/master/crypto/homo/cl)
+3. [Paillier homomorphic cryptosystem](https://github.com/getamis/alice/tree/master/crypto/homo/paillier)
 
 
 
