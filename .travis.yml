@@ -1,38 +1,22 @@
-# use the latest ubuntu environment (18.04) available on travis
 dist: xenial
-
 language: go
-
-# Force-disable Go modules. Also force go to use the code in vendor/
 env:
-  - GO111MODULE=off
-
-# You don't need to test on very old versions of the Go compiler. It's the user's
-# responsibility to keep their compiler up to date.
+- GO111MODULE=off
 go:
-  - 1.12.x
-
-# Only clone the most recent commit.
+- 1.12.x
 git:
   depth: 1
-
-# Don't email me the results of the test runs.
 notifications:
   email: false
-
-# Anything in before_script that returns a nonzero exit code will flunk the
-# build and immediately stop. It's sorta like having set -e enabled in bash.
-# Make sure golangci-lint is vendored.
+  slack:
+    rooms:
+      secure: QpjsC/i1/WPQr1tgVAnu6lsrlIuvu4DUB3RVephg9aXiCye84wOLhDORDojTrVEJUgU3OXQofIR63eJOHSro+8EIVeX69vZ7zbJGks/iTuZFt1rpk5I+8cELZ7agcxYZowH5/FF8UnYYuMeFdezP62sgDRHtHNwBVPZpXE9rGc/DkzBZ0Uz5NA+sS7HRL2fNokoxYFaXIgzV9236jv+6tB85mvKjbnMfX0+2IxtgxWPXRC9Yem/vbpnSrH/KRWYfm7FHID/n7uVwUg/2VFbADabBNKEC2+kpyUCq4aJpqcX+ZXUeeMMdYZN4MsXsj989g0WGjfmlLMWkkPBhd4P5UyXqFgEGX6qecBPNGaLCht4SVB5Pg9u0mjHqRdAlS7+/f8gsVkN2pWrNVZ2eXS3d+gZPv1TvEzNsWvzQHchk1dFAyNKsHqK5k4smk1saqqdNAN6A3K6wgpxmFeg4XlLqvy7QxpTW7ZK2BeRiM3yxGvnSlBfnKJIrw96CUZlntKpm3x1+5EPduN4ah8aaTf5eON/7WNZpQEdLA7WAps9ad8c6zO7awCp5mHKnDWmrMBufF46bdDGYCzjfXB/1UrGSaBzKaG8LptFD66jC5t62o/wksGawcIq4CSEhQR5L+f4Fgi3QkyCqqvVS7DyfdnXbXc1hPHZHBKQweiIG+ZKAxCI=
+    on_success: always
+    on_failure: always
 before_script:
-  - go get github.com/onsi/gomega
-  - go get github.com/onsi/ginkgo/ginkgo
-
-# script always runs to completion (set +e). If we have linter issues AND a
-# failing test, we want to see both. Configure golangci-lint with a
-# .golangci.yml file at the top level of your repo.
+- go get github.com/onsi/gomega
+- go get github.com/onsi/ginkgo/ginkgo
 script:
-  - make lint       # run a bunch of code checkers/linters in parallel
-  - make unit-test  # Run all the tests with the race detector enabled
-
+- make lint && make unit-test
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+- bash <(curl -s https://codecov.io/bash)
