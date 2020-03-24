@@ -127,7 +127,7 @@ We create an interface named `PeerManager`. It defines three methods to be imple
 3. `MustSend`: Send message to the specific peer.
 
 Before you try to go through a multi-party algorithm, you should create a peer manager instance first. Here is an example for DKG.
-```
+```go
 type dkgPeerManager struct {
 	id       string
 	numPeers uint32
@@ -162,7 +162,7 @@ We create an interface named `StateChangedListener`. It defines one method to be
 
 1. `OnStateChanged`: Handle state changed.
 
-```
+```go
 type listener struct{}
 
 func newListener() *listener {
@@ -185,7 +185,7 @@ To create a new DKG instance, there are some inputs caller must provide in our i
 * **rank**: the rank of this participant
 * **listener**: a function to monitor the state change
 
-```
+```go
 myDKG, err := dkg.NewDKG(curve, dkgPeerManager, threshold, rank, listener)
 if err != nil {
     // handle error
@@ -204,7 +204,7 @@ After DKG, all the participants would get the same public key and all the x-coor
 
 A (t,n)-threshold signature is a digital signature scheme that any t or more signers of a group of n signers could generate a valid signature. Here, we support two encryption algorithms for signing: Paillier, and CL. Caller must specify which encryption to be used. The security level of two homomorphic encryptions can be found in [Appendix](#appendix).
 
-```
+```go
 // 1. Paillier
 homo, err := paillier.NewPaillier(2048)
 if err != nil {
@@ -232,7 +232,7 @@ To start signing, you should provide some inputs for creating a new Signer insta
 
 Note that, `threshold` signers are required to participate in signing. Therefore, the length of `peerBks` must not be less than `threshold-1`.
 
-```
+```go
 mySigner, err = signer.NewSigner(signerPeerManager, publicKey, homo, share, selfBk, peerBks, msg, listener)
 if err != nil {
     // handle error
@@ -261,7 +261,7 @@ Refreshing share (reshare) computes new random shares for the same original secr
 
 Note that, reshare process requires all peers to participate.
 
-```
+```go
 myReshare, err = reshare.NewReshare(resharePeerManager, threshold, publicKey, share, bks, listener)
 if err != nil {
     // handle error
@@ -290,7 +290,7 @@ In DKG stage, all of them should create a peer manager specifying number of peer
 
 <h4 id="DKGLagrangeCase">DKG:</h4>
 
-```
+```go
 // S256 for example
 curve := btcec.S256()
 id := "myID"
@@ -305,7 +305,7 @@ myDKG, _ := dkg.NewDKG(curve, dkgPeerManager, threshold, rank, listener)
 
 <h4 id="SigningLagrangeCase">Signing:</h4>
 
-```
+```go
 msg := []byte{1, 2, 3}
 peerNum := uint32(1)
 homo, _ := paillier.NewPaillier(2048)
@@ -328,7 +328,7 @@ In DKG stage, all of them should create a peer manager specifying number of peer
 
 <h4 id="DKGH">DKG:</h4>
 
-```
+```go
 // S256 for example
 curve := btcec.S256()
 id := "myID"
@@ -347,7 +347,7 @@ directorDKG, _ := dkg.NewDKG(curve, dkgPeerManager, threshold, directorRank, lis
 
 <h4 id="SignerH">Signer:</h4>
 
-```
+```go
 msg := []byte{1, 2, 3}
 peerNum := uint32(3)
 homo, _ := paillier.NewPaillier(2048)
