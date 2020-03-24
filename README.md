@@ -1,6 +1,6 @@
 
 # Hierarchical Threshold Signature Scheme
-[![Apache licensed][1]][2] [![Go Report Card][3]][4] [![Build Status][5]][6]
+[![Apache licensed][1]][2] [![Go Report Card][3]][4] [![Build Status][5]][6] [![codecov][7]][8]
 
 [1]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
 [2]: LICENSE
@@ -8,6 +8,8 @@
 [4]: https://goreportcard.com/report/github.com/getamis/alice
 [5]: https://travis-ci.com/getamis/alice.svg?branch=master
 [6]: https://travis-ci.com/getamis/alice
+[7]: https://codecov.io/gh/getamis/alice/branch/master/graph/badge.svg
+[8]: https://codecov.io/gh/getamis/alice
 
 ## Introduction:
 
