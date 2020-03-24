@@ -53,6 +53,7 @@ This is an implementation for multi-party TSS library with Hierarchical shares(a
 	*	[CCLST](#cclstbenchmark)
 *	[Appendix](#appendix)
 	*	[Security levels of two homomorphic schemes](#securitylevel)
+	*	[Useful Cryptography Libraries](#usefulLibrary)	
 *	[References](#reference)
 *	[Other Libraries](Libraries)
 
@@ -414,6 +415,12 @@ The Table below is referenced by [Improved Efficiency of a Linearly Homomorphic 
 |          256    |         15360            |                         5972      |
 +-----------------+--------------------------+-----------------------------------+
 ```
+
+<h3 id="usefulLibrary">Useful Cryptography Libraries:</h3>
+
+1. [Binary quadratic forms for class groups of imaginary quadratic fields](https://github.com/getamis/alice/tree/master/crypto/binaryquadraticform)
+
+
 
 <h2 id="reference">References:</h2>
 
