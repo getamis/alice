@@ -56,10 +56,11 @@ var (
 var _ = Describe("Mta", func() {
 	var (
 		mockHomo *mocks.Crypto
-		m        *Mta
+		m        *mta
 	)
 	BeforeEach(func() {
 		mockHomo = new(mocks.Crypto)
+		mockHomo.On("Encrypt", mock.Anything).Return([]byte("encK"), nil).Once()
 		var err error
 		m, err = NewMta(fieldOrder, mockHomo)
 		Expect(err).Should(BeNil())
@@ -83,7 +84,7 @@ var _ = Describe("Mta", func() {
 			msg := []byte("message")
 			mockPubkey.On("VerifyEnc", msg).Return(nil).Once()
 			betaRange := big.NewInt(100)
-			mockPubkey.On("GetMessageRange", m.filedOrder).Return(betaRange).Once()
+			mockPubkey.On("GetMessageRange", m.fieldOrder).Return(betaRange).Once()
 			encBeta := []byte("encBeta")
 			var beta []byte
 			mockPubkey.On("Encrypt", mock.Anything).Run(func(args mock.Arguments) {
@@ -102,7 +103,7 @@ var _ = Describe("Mta", func() {
 			msg := []byte("message")
 			mockPubkey.On("VerifyEnc", msg).Return(nil).Once()
 			betaRange := big.NewInt(100)
-			mockPubkey.On("GetMessageRange", m.filedOrder).Return(betaRange).Once()
+			mockPubkey.On("GetMessageRange", m.fieldOrder).Return(betaRange).Once()
 			encBeta := []byte("encBeta")
 			mockPubkey.On("Encrypt", mock.Anything).Return(encBeta, nil).Once()
 			r := []byte("r")
@@ -118,7 +119,7 @@ var _ = Describe("Mta", func() {
 			msg := []byte("message")
 			mockPubkey.On("VerifyEnc", msg).Return(nil).Once()
 			betaRange := big.NewInt(100)
-			mockPubkey.On("GetMessageRange", m.filedOrder).Return(betaRange).Once()
+			mockPubkey.On("GetMessageRange", m.fieldOrder).Return(betaRange).Once()
 			encBeta := []byte("encBeta")
 			mockPubkey.On("Encrypt", mock.Anything).Return(encBeta, nil).Once()
 			mockPubkey.On("MulConst", msg, m.a).Return(nil, unknownErr).Once()
@@ -132,7 +133,7 @@ var _ = Describe("Mta", func() {
 			msg := []byte("message")
 			mockPubkey.On("VerifyEnc", msg).Return(nil).Once()
 			betaRange := big.NewInt(100)
-			mockPubkey.On("GetMessageRange", m.filedOrder).Return(betaRange).Once()
+			mockPubkey.On("GetMessageRange", m.fieldOrder).Return(betaRange).Once()
 			mockPubkey.On("Encrypt", mock.Anything).Return(nil, unknownErr).Once()
 			gotAlpha, gotBeta, err := m.Compute(mockPubkey, msg)
 			Expect(err).Should(Equal(unknownErr))
@@ -181,7 +182,7 @@ var _ = Describe("Mta", func() {
 		})
 
 		It("over field order", func() {
-			got, err := m.OverrideA(m.filedOrder)
+			got, err := m.OverrideA(m.fieldOrder)
 			Expect(err).Should(Equal(utils.ErrNotInRange))
 			Expect(got).Should(BeNil())
 		})
@@ -223,8 +224,7 @@ var _ = Describe("Mta", func() {
 		Expect(err).Should(BeNil())
 		Expect(m2).ShouldNot(BeNil())
 
-		m1EncryptedK, err := m1.GetEncK()
-		Expect(err).Should(BeNil())
+		m1EncryptedK := m1.GetEncK()
 		encMessage, beta, err := m2.Compute(homo1.GetPubKey(), m1EncryptedK)
 		Expect(err).Should(BeNil())
 		alpha, err := m1.Decrypt(encMessage)
@@ -235,7 +235,7 @@ var _ = Describe("Mta", func() {
 		// alpha = k1a2 - beta
 		k1a2 := new(big.Int).Mul(m1.k, m2.a)
 		exp := new(big.Int).Add(k1a2, m1.GetAK())
-		exp = new(big.Int).Mod(exp, m1.filedOrder)
+		exp = new(big.Int).Mod(exp, m1.fieldOrder)
 		Expect(err).Should(BeNil())
 		Expect(r).Should(Equal(exp))
 	},

@@ -15,6 +15,7 @@ package signer
 
 import (
 	"crypto/ecdsa"
+	"crypto/elliptic"
 	"fmt"
 	"math/big"
 	"testing"
@@ -22,9 +23,8 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/homo"
-	"github.com/getamis/alice/crypto/homo/cl"
 	"github.com/getamis/alice/crypto/homo/paillier"
+	"github.com/getamis/alice/crypto/matrix"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
@@ -47,103 +47,67 @@ var _ = Describe("Signer", func() {
 	)
 
 	DescribeTable("NewSigner()", func(ss [][]*big.Int, gScale *big.Int) {
-		homoFuncs := []func() (homo.Crypto, error){
-			func() (homo.Crypto, error) {
-				return paillier.NewPaillier(2048)
-			},
-			func() (homo.Crypto, error) {
-				safeParameter := 1348
-				distributionDistance := uint(40)
-				return cl.NewCL(big.NewInt(1024), 40, curve.N, safeParameter, distributionDistance)
-			},
+		// new peer managers and dkgs
+		expPublic := ecpointgrouplaw.ScalarBaseMult(curve, gScale)
+		threshold := len(ss)
+		signers, listeners := newSigners(curve, expPublic, ss, msg)
+		doneChs := make([]chan struct{}, threshold)
+		i := 0
+
+		for _, s := range signers {
+			r, err := s.GetResult()
+			Expect(r).Should(BeNil())
+			Expect(err).Should(Equal(tss.ErrNotReady))
 		}
 
-		for _, homoFunc := range homoFuncs {
-			// new peer managers and dkgs
-			expPublic := ecpointgrouplaw.ScalarBaseMult(curve, gScale)
-			threshold := len(ss)
-			signers := make(map[string]*Signer, threshold)
-			peerManagers := make([]types.PeerManager, threshold)
-			listener := make([]*mocks.StateChangedListener, threshold)
+		for _, l := range listeners {
+			doneChs[i] = make(chan struct{})
+			doneCh := doneChs[i]
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Run(func(args mock.Arguments) {
+				close(doneCh)
+			}).Once()
+			i++
+		}
 
-			bks := make([]*birkhoffinterpolation.BkParameter, threshold)
-			for i := 0; i < threshold; i++ {
-				bks[i] = birkhoffinterpolation.NewBkParameter(ss[i][0], uint32(ss[i][2].Uint64()))
-			}
-
-			doneChs := make([]chan struct{}, threshold)
-			for i := 0; i < threshold; i++ {
-				id := getID(i)
-				pm := newPeerManager(id, threshold-1)
-				pm.setSigners(signers)
-				peerManagers[i] = pm
-				listener[i] = new(mocks.StateChangedListener)
-				doneChs[i] = make(chan struct{})
-				doneCh := doneChs[i]
-				listener[i].On("OnStateChanged", types.StateInit, types.StateDone).Run(func(args mock.Arguments) {
-					close(doneCh)
-				}).Once()
-
-				var peerBks []*birkhoffinterpolation.BkParameter
-				for j := 0; j < threshold; j++ {
-					if i == j {
-						continue
-					}
-					peerBks = append(peerBks, bks[j])
+		// Send out pubkey message
+		for fromID, fromD := range signers {
+			msg := fromD.GetPubkeyMessage()
+			for toID, toD := range signers {
+				if fromID == toID {
+					continue
 				}
-
-				var err error
-
-				h, err := homoFunc()
-				Expect(err).Should(BeNil())
-				signers[id], err = NewSigner(peerManagers[i], expPublic, h, ss[i][1], bks[i], peerBks, msg, listener[i])
-				Expect(err).Should(BeNil())
-				r, err := signers[id].GetResult()
-				Expect(r).Should(BeNil())
-				Expect(err).Should(Equal(tss.ErrNotReady))
-				signers[id].Start()
+				Expect(toD.AddMessage(msg)).Should(BeNil())
 			}
+		}
 
-			// Send out pubkey message
-			for fromID, fromD := range signers {
-				msg := fromD.GetPubkeyMessage()
-				for toID, toD := range signers {
-					if fromID == toID {
-						continue
-					}
-					Expect(toD.AddMessage(msg)).Should(BeNil())
-				}
-			}
+		for i := 0; i < threshold; i++ {
+			<-doneChs[i]
+		}
 
-			for i := 0; i < threshold; i++ {
-				<-doneChs[i]
+		// Build public key
+		var r, s *big.Int
+		for _, signer := range signers {
+			signer.Stop()
+			result, err := signer.GetResult()
+			Expect(err).Should(BeNil())
+			// All R and S should be the same
+			if r != nil {
+				Expect(r).Should(Equal(result.R))
+				Expect(s).Should(Equal(result.S))
+			} else {
+				r = result.R
+				s = result.S
 			}
+		}
+		ecdsaPublicKey := &ecdsa.PublicKey{
+			Curve: expPublic.GetCurve(),
+			X:     expPublic.GetX(),
+			Y:     expPublic.GetY(),
+		}
+		Expect(ecdsa.Verify(ecdsaPublicKey, msg, r, s)).Should(BeTrue())
 
-			// Build public key
-			var r, s *big.Int
-			for _, signer := range signers {
-				signer.Stop()
-				result, err := signer.GetResult()
-				Expect(err).Should(BeNil())
-				// All R and S should be the same
-				if r != nil {
-					Expect(r).Should(Equal(result.R))
-					Expect(s).Should(Equal(result.S))
-				} else {
-					r = result.R
-					s = result.S
-				}
-			}
-			ecdsaPublicKey := &ecdsa.PublicKey{
-				Curve: expPublic.GetCurve(),
-				X:     expPublic.GetX(),
-				Y:     expPublic.GetY(),
-			}
-			Expect(ecdsa.Verify(ecdsaPublicKey, msg, r, s)).Should(BeTrue())
-
-			for i := 0; i < threshold; i++ {
-				listener[i].AssertExpectations(GinkgoT())
-			}
+		for _, l := range listeners {
+			l.AssertExpectations(GinkgoT())
 		}
 	},
 		Entry("(shareX, shareY, rank):(1,3,0),(10,111,0),(20,421,0)", [][]*big.Int{
@@ -182,6 +146,29 @@ var _ = Describe("Signer", func() {
 			{big.NewInt(64444), big.NewInt(15554), big.NewInt(2)},
 		}, big.NewInt(8274194)),
 	)
+
+	Context("negative cases", func() {
+		It("inconsistent threshold", func() {
+			expPublic := ecpointgrouplaw.ScalarBaseMult(curve, big.NewInt(5987))
+			pm := newPeerManager("fake-id", 2)
+			s, err := NewSigner(pm, expPublic, nil, nil, nil, nil, nil, nil)
+			Expect(s).Should(BeNil())
+			Expect(err).Should(Equal(tss.ErrInconsistentPeerNumAndBks))
+		})
+
+		It("duplicate bks", func() {
+			expPublic := ecpointgrouplaw.ScalarBaseMult(curve, big.NewInt(5987))
+			pm := newPeerManager("fake-id", 2)
+			bks := []*birkhoffinterpolation.BkParameter{
+				birkhoffinterpolation.NewBkParameter(big.NewInt(404), 0),
+				birkhoffinterpolation.NewBkParameter(big.NewInt(404), 0),
+			}
+			selfBk := birkhoffinterpolation.NewBkParameter(big.NewInt(99555), 1)
+			s, err := NewSigner(pm, expPublic, nil, nil, selfBk, bks, nil, nil)
+			Expect(s).Should(BeNil())
+			Expect(err).Should(Equal(matrix.ErrNotInvertableMatrix))
+		})
+	})
 })
 
 func getID(id int) string {
@@ -217,4 +204,41 @@ func (p *peerManager) MustSend(id string, message proto.Message) {
 	d := p.signers[id]
 	msg := message.(types.Message)
 	Expect(d.AddMessage(msg)).Should(BeNil())
+}
+
+func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][]*big.Int, msg []byte) (map[string]*Signer, map[string]*mocks.StateChangedListener) {
+	threshold := len(ss)
+	signers := make(map[string]*Signer, threshold)
+	peerManagers := make([]types.PeerManager, threshold)
+	listeners := make(map[string]*mocks.StateChangedListener, threshold)
+
+	bks := make([]*birkhoffinterpolation.BkParameter, threshold)
+	for i := 0; i < threshold; i++ {
+		bks[i] = birkhoffinterpolation.NewBkParameter(ss[i][0], uint32(ss[i][2].Uint64()))
+	}
+
+	for i := 0; i < threshold; i++ {
+		id := getID(i)
+		pm := newPeerManager(id, threshold-1)
+		pm.setSigners(signers)
+		peerManagers[i] = pm
+		listeners[id] = new(mocks.StateChangedListener)
+		var peerBks []*birkhoffinterpolation.BkParameter
+		for j := 0; j < threshold; j++ {
+			if i == j {
+				continue
+			}
+			peerBks = append(peerBks, bks[j])
+		}
+
+		homo, err := paillier.NewPaillier(1024)
+		Expect(err).Should(BeNil())
+		signers[id], err = NewSigner(peerManagers[i], expPublic, homo, ss[i][1], bks[i], peerBks, msg, listeners[id])
+		Expect(err).Should(BeNil())
+		r, err := signers[id].GetResult()
+		Expect(r).Should(BeNil())
+		Expect(err).Should(Equal(tss.ErrNotReady))
+		signers[id].Start()
+	}
+	return signers, listeners
 }

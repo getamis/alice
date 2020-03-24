@@ -23,12 +23,13 @@ import (
 )
 
 var (
-	ErrInvalidMsg            = errors.New("invalid message")
-	ErrNotReady              = errors.New("not ready")
-	ErrPeerNotFound          = errors.New("peer message not found")
-	ErrNotEnoughBKs          = errors.New("not enough Birkhoff coefficient")
-	ErrSelfBKNotFound        = errors.New("self Birkhoff coefficient not found")
-	ErrInconsistentThreshold = errors.New("inconsistent threshold")
+	ErrInvalidMsg                = errors.New("invalid message")
+	ErrNotReady                  = errors.New("not ready")
+	ErrPeerNotFound              = errors.New("peer message not found")
+	ErrNotEnoughBKs              = errors.New("not enough Birkhoff coefficient")
+	ErrSelfBKNotFound            = errors.New("self Birkhoff coefficient not found")
+	ErrInconsistentThreshold     = errors.New("inconsistent threshold")
+	ErrInconsistentPeerNumAndBks = errors.New("inconsistent peer num and bks")
 )
 
 func NewCommitterByPoint(p *pt.ECPoint, minSaltSize int) (*commitment.HashCommitmenter, error) {

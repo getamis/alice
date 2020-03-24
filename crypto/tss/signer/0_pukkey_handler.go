@@ -45,7 +45,7 @@ type pubkeyHandler struct {
 
 	minSaltSize    int
 	g              *pt.ECPoint
-	aiMta          *mta.Mta
+	aiMta          mta.Mta
 	homo           homo.Crypto
 	agCommitmenter *commitment.HashCommitmenter
 
@@ -120,11 +120,7 @@ func (p *pubkeyHandler) HandleMessage(logger log.Logger, message types.Message) 
 }
 
 func (p *pubkeyHandler) Finalize(logger log.Logger) (types.Handler, error) {
-	msg, err := p.getEnckMessage()
-	if err != nil {
-		logger.Warn("Failed to get enck message", "err", err)
-		return nil, err
-	}
+	msg := p.getEnckMessage()
 	p.broadcast(msg)
 	return newEncKHandler(p)
 }
@@ -142,21 +138,16 @@ func (p *pubkeyHandler) GetPubkeyMessage() *Message {
 	}
 }
 
-func (p *pubkeyHandler) getEnckMessage() (*Message, error) {
-	encK, err := p.aiMta.GetEncK()
-	if err != nil {
-		log.Warn("Failed to get enc k", "err", err)
-		return nil, err
-	}
+func (p *pubkeyHandler) getEnckMessage() *Message {
 	return &Message{
 		Type: Type_EncK,
 		Id:   p.peerManager.SelfID(),
 		Body: &Message_EncK{
 			EncK: &BodyEncK{
-				Enck: encK,
+				Enck: p.aiMta.GetEncK(),
 			},
 		},
-	}, nil
+	}
 }
 
 func (p *pubkeyHandler) getCurve() elliptic.Curve {

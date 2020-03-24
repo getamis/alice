@@ -32,7 +32,7 @@ type Result struct {
 }
 
 type Signer struct {
-	*pubkeyHandler
+	ph *pubkeyHandler
 	*message.MsgMain
 }
 
@@ -40,8 +40,8 @@ func NewSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo h
 	curve := expectedPubkey.GetCurve()
 	numPeers := peerManager.NumPeers()
 	if len(bks) != int(numPeers) {
-		log.Warn("Inconsistent threshold", "bks", len(bks), "numPeers", numPeers)
-		return nil, tss.ErrInconsistentThreshold
+		log.Warn("Inconsistent peer num", "bks", len(bks), "numPeers", numPeers)
+		return nil, tss.ErrInconsistentPeerNumAndBks
 	}
 	var allBks birkhoffinterpolation.BkParameters = append([]*birkhoffinterpolation.BkParameter{selfBk}, bks...)
 	scalars, err := allBks.ComputeBkCoefficient(numPeers+1, curve.Params().N)
@@ -57,7 +57,7 @@ func NewSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo h
 		return nil, err
 	}
 	return &Signer{
-		pubkeyHandler: ph,
+		ph: ph,
 		MsgMain: message.NewMsgMain(peerManager.SelfID(),
 			numPeers,
 			listener,
@@ -74,6 +74,10 @@ func NewSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo h
 			types.MessageType(Type_Si),
 		),
 	}, nil
+}
+
+func (s *Signer) GetPubkeyMessage() *Message {
+	return s.ph.GetPubkeyMessage()
 }
 
 // GetResult returns the final result: public key, share, bks (including self bk)
