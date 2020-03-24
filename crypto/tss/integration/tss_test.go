@@ -195,14 +195,16 @@ func sign(homoFunc func() (homo.Crypto, error), threshold, num int, dkgResult *r
 			listener[i].On("OnStateChanged", types.StateInit, types.StateDone).Run(func(args mock.Arguments) {
 				close(doneCh)
 			}).Once()
-			var peerBks []*birkhoffinterpolation.BkParameter
+			bks := make(map[string]*birkhoffinterpolation.BkParameter)
+			bks[id] = dkgResult.bks[id]
 			for _, j := range c {
 				if i == j {
 					continue
 				}
-				peerBks = append(peerBks, dkgResult.bks[getID(j)])
+				pId := getID(j)
+				bks[pId] = dkgResult.bks[pId]
 			}
-			signers[id], err = signer.NewSigner(pm, dkgResult.publicKey, h, dkgResult.share[id], dkgResult.bks[id], peerBks, msg, listener[i])
+			signers[id], err = signer.NewSigner(pm, dkgResult.publicKey, h, dkgResult.share[id], bks, msg, listener[i])
 			Expect(err).Should(BeNil())
 			signerResult, err := signers[id].GetResult()
 			Expect(signerResult).Should(BeNil())

@@ -14,17 +14,23 @@
 package signer
 
 import (
+	"errors"
 	"math/big"
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo/cl"
+	homoMocks "github.com/getamis/alice/crypto/homo/mocks"
+	"github.com/getamis/alice/crypto/matrix"
+	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/sirius/log"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 )
 
 var _ = Describe("pubkey handler, negative cases", func() {
@@ -40,13 +46,78 @@ var _ = Describe("pubkey handler, negative cases", func() {
 		}
 	})
 
+	Context("newPubkeyHandler", func() {
+		var (
+			mockPeerManager *mocks.PeerManager
+			mockHomo        *homoMocks.Crypto
+
+			curve = btcec.S256()
+			bks   = map[string]*birkhoffinterpolation.BkParameter{
+				"1": birkhoffinterpolation.NewBkParameter(big.NewInt(1), 0),
+				"2": birkhoffinterpolation.NewBkParameter(big.NewInt(10), 0),
+				"3": birkhoffinterpolation.NewBkParameter(big.NewInt(20), 0),
+			}
+			gScale     = big.NewInt(5987)
+			expPublic  = ecpointgrouplaw.ScalarBaseMult(curve, gScale)
+			unknownErr = errors.New("unknown error")
+		)
+		BeforeEach(func() {
+			mockPeerManager = new(mocks.PeerManager)
+			mockHomo = new(homoMocks.Crypto)
+		})
+		AfterEach(func() {
+			mockPeerManager.AssertExpectations(GinkgoT())
+			mockHomo.AssertExpectations(GinkgoT())
+		})
+
+		It("inconsistent peer number and bks", func() {
+			mockPeerManager.On("NumPeers").Return(uint32(3)).Once()
+			got, err := newPubkeyHandler(expPublic, mockPeerManager, mockHomo, nil, bks, nil)
+			Expect(got).Should(BeNil())
+			Expect(err).Should(Equal(tss.ErrInconsistentPeerNumAndBks))
+		})
+
+		It("failed to do homo encryption", func() {
+			mockPeerManager.On("NumPeers").Return(uint32(2)).Once()
+			mockHomo.On("Encrypt", mock.Anything).Return(nil, unknownErr).Once()
+			got, err := newPubkeyHandler(expPublic, mockPeerManager, mockHomo, nil, bks, nil)
+			Expect(got).Should(BeNil())
+			Expect(err).Should(Equal(unknownErr))
+		})
+
+		It("self id not found", func() {
+			mockPeerManager.On("NumPeers").Return(uint32(2)).Once()
+			mockHomo.On("Encrypt", mock.Anything).Return([]byte("enc k"), nil).Once()
+			mockPeerManager.On("SelfID").Return("not found").Once()
+			got, err := newPubkeyHandler(expPublic, mockPeerManager, mockHomo, nil, bks, nil)
+			Expect(got).Should(BeNil())
+			Expect(err).Should(Equal(tss.ErrSelfBKNotFound))
+		})
+
+		It("duplicate bks", func() {
+			dupBks := map[string]*birkhoffinterpolation.BkParameter{
+				"1": birkhoffinterpolation.NewBkParameter(big.NewInt(10), 0),
+				"2": birkhoffinterpolation.NewBkParameter(big.NewInt(10), 0),
+				"3": birkhoffinterpolation.NewBkParameter(big.NewInt(20), 0),
+			}
+			mockPeerManager.On("NumPeers").Return(uint32(2)).Once()
+			mockHomo.On("Encrypt", mock.Anything).Return([]byte("enc k"), nil).Once()
+			mockPeerManager.On("SelfID").Return("1").Once()
+			got, err := newPubkeyHandler(expPublic, mockPeerManager, mockHomo, nil, dupBks, nil)
+			Expect(got).Should(BeNil())
+			Expect(err).Should(Equal(matrix.ErrNotInvertableMatrix))
+		})
+	})
+
 	Context("IsHandled", func() {
 		It("peer not found", func() {
 			Expect(ph.IsHandled(log.Discard(), peerId)).Should(BeFalse())
 		})
 
 		It("message is handled before", func() {
-			ph.peers[peerId] = &peer{}
+			ph.peers[peerId] = &peer{
+				pubkey: &pubkeyData{},
+			}
 			Expect(ph.IsHandled(log.Discard(), peerId)).Should(BeTrue())
 		})
 
@@ -74,6 +145,15 @@ var _ = Describe("pubkey handler, negative cases", func() {
 			time.Sleep(500 * time.Millisecond)
 			for _, l := range listeners {
 				l.AssertExpectations(GinkgoT())
+			}
+		})
+
+		It("peer not found", func() {
+			msg := &Message{
+				Id: "invalid peer",
+			}
+			for _, s := range signers {
+				Expect(s.ph.HandleMessage(log.Discard(), msg)).Should(Equal(tss.ErrPeerNotFound))
 			}
 		})
 

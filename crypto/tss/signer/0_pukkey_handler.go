@@ -19,6 +19,7 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo"
@@ -54,9 +55,16 @@ type pubkeyHandler struct {
 	peers       map[string]*peer
 }
 
-func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo homo.Crypto, wi *big.Int, msg []byte) (*pubkeyHandler, error) {
-	curve := publicKey.GetCurve()
+func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo homo.Crypto, secret *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte) (*pubkeyHandler, error) {
+	numPeers := peerManager.NumPeers()
+	lenBks := len(bks)
+	if lenBks != int(numPeers+1) {
+		log.Warn("Inconsistent peer num", "bks", len(bks), "numPeers", numPeers)
+		return nil, tss.ErrInconsistentPeerNumAndBks
+	}
+
 	// Build mta for ai, g
+	curve := publicKey.GetCurve()
 	aiMta, err := mta.NewMta(curve.Params().N, homo)
 	if err != nil {
 		log.Warn("Failed to new ai mta", "err", err)
@@ -72,6 +80,12 @@ func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo
 		log.Warn("Failed to new an ag hash commiter", "err", err)
 		return nil, err
 	}
+
+	wi, peers, err := buildWiAndPeers(curve.Params().N, bks, peerManager.SelfID(), secret)
+	if err != nil {
+		log.Warn("Failed to build wi and peers", "err", err)
+		return nil, err
+	}
 	return &pubkeyHandler{
 		wi:        wi,
 		msg:       msg,
@@ -84,8 +98,8 @@ func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo
 		homo:           homo,
 
 		peerManager: peerManager,
-		peerNum:     peerManager.NumPeers(),
-		peers:       make(map[string]*peer, peerManager.NumPeers()),
+		peerNum:     numPeers,
+		peers:       peers,
 	}, nil
 }
 
@@ -94,15 +108,24 @@ func (p *pubkeyHandler) MessageType() types.MessageType {
 }
 
 func (p *pubkeyHandler) IsHandled(logger log.Logger, id string) bool {
-	_, ok := p.peers[id]
-	return ok
+	peer, ok := p.peers[id]
+	if !ok {
+		logger.Warn("Peer not found")
+		return false
+	}
+	return peer.pubkey != nil
 }
 
 func (p *pubkeyHandler) HandleMessage(logger log.Logger, message types.Message) error {
 	msg := getMessage(message)
 	id := msg.GetId()
-	body := msg.GetPubkey()
+	peer, ok := p.peers[id]
+	if !ok {
+		logger.Warn("Peer not found")
+		return ErrPeerNotFound
+	}
 
+	body := msg.GetPubkey()
 	// Verify public key
 	publicKey, err := p.homo.NewPubKeyFromBytes(body.Pubkey)
 	if err != nil {
@@ -110,12 +133,10 @@ func (p *pubkeyHandler) HandleMessage(logger log.Logger, message types.Message) 
 		return err
 	}
 
-	peer := newPeer(id)
 	peer.pubkey = &pubkeyData{
 		publicKey: publicKey,
 		aigCommit: body.AgCommitment,
 	}
-	p.peers[id] = peer
 	return peer.AddMessage(msg)
 }
 
@@ -166,4 +187,37 @@ func (p *pubkeyHandler) broadcast(msg proto.Message) {
 
 func getMessage(messsage types.Message) *Message {
 	return messsage.(*Message)
+}
+
+func buildWiAndPeers(curveN *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, selfId string, secret *big.Int) (*big.Int, map[string]*peer, error) {
+	lenBks := len(bks)
+	// Find self bk
+	allBks := make(birkhoffinterpolation.BkParameters, lenBks)
+	selfBk, ok := bks[selfId]
+	if !ok {
+		return nil, nil, tss.ErrSelfBKNotFound
+	}
+	allBks[0] = selfBk
+
+	peers := make(map[string]*peer, lenBks-1)
+	i := 1
+	for id, bk := range bks {
+		// Skip self bk
+		if id == selfId {
+			continue
+		}
+
+		allBks[i] = bk
+		i++
+		peers[id] = newPeer(id)
+	}
+
+	scalars, err := allBks.ComputeBkCoefficient(uint32(lenBks), curveN)
+	if err != nil {
+		log.Warn("Failed to compute bk coefficient", "allBks", allBks, "err", err)
+		return nil, nil, err
+	}
+	wi := new(big.Int).Mul(secret, scalars[0])
+	wi = new(big.Int).Mod(wi, curveN)
+	return wi, peers, nil
 }
