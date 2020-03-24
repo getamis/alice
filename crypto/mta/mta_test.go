@@ -56,10 +56,11 @@ var (
 var _ = Describe("Mta", func() {
 	var (
 		mockHomo *mocks.Crypto
-		m        *Mta
+		m        *mta
 	)
 	BeforeEach(func() {
 		mockHomo = new(mocks.Crypto)
+		mockHomo.On("Encrypt", mock.Anything).Return([]byte("encK"), nil).Once()
 		var err error
 		m, err = NewMta(fieldOrder, mockHomo)
 		Expect(err).Should(BeNil())
@@ -223,8 +224,7 @@ var _ = Describe("Mta", func() {
 		Expect(err).Should(BeNil())
 		Expect(m2).ShouldNot(BeNil())
 
-		m1EncryptedK, err := m1.GetEncK()
-		Expect(err).Should(BeNil())
+		m1EncryptedK := m1.GetEncK()
 		encMessage, beta, err := m2.Compute(homo1.GetPubKey(), m1EncryptedK)
 		Expect(err).Should(BeNil())
 		alpha, err := m1.Decrypt(encMessage)
