@@ -15,17 +15,11 @@
 package reshare
 
 import (
-	"errors"
-
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/sirius/log"
-)
-
-var (
-	ErrInconsistentPubKey = errors.New("inconsistent public key")
 )
 
 type resultData struct {
@@ -110,7 +104,7 @@ func (p *resultHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 	if !p.publicKey.Equal(gotPub) {
 		logger.Warn("Inconsistent public key", "got", gotPub, "expected", p.publicKey)
-		return nil, ErrInconsistentPubKey
+		return nil, tss.ErrInconsistentPubKey
 	}
 	return nil, nil
 }

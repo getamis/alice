@@ -214,7 +214,7 @@ var _ = Describe("result handler, negative cases", func() {
 					}
 				}
 				h, err := rh.Finalize(log.Discard())
-				Expect(err).Should(Equal(ErrInconsistentPubKey))
+				Expect(err).Should(Equal(tss.ErrInconsistentPubKey))
 				Expect(h).Should(BeNil())
 			}
 		})

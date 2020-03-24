@@ -28,7 +28,8 @@ import (
 )
 
 type peerData struct {
-	bk *birkhoffinterpolation.BkParameter
+	bk            *birkhoffinterpolation.BkParameter
+	verifyMessage *Message
 }
 
 type commitData struct{}
@@ -47,54 +48,34 @@ type commitHandler struct {
 	peers       map[string]*peer
 }
 
-func newCommitHandler(peerManager types.PeerManager, threshold uint32, publicKey *ecpointgrouplaw.ECPoint, oldShare *big.Int, bks map[string]*birkhoffinterpolation.BkParameter) (*commitHandler, error) {
+func newCommitHandler(publicKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, oldShare *big.Int, bks map[string]*birkhoffinterpolation.BkParameter) (*commitHandler, error) {
+	numPeers := peerManager.NumPeers()
+	lenBks := len(bks)
+	if lenBks != int(numPeers+1) {
+		log.Warn("Inconsistent peer num", "bks", len(bks), "numPeers", numPeers)
+		return nil, tss.ErrInconsistentPeerNumAndBks
+	}
+	if err := utils.EnsureThreshold(threshold, uint32(lenBks)); err != nil {
+		return nil, err
+	}
+
 	curve := publicKey.GetCurve()
-	params := curve.Params()
-	fieldOrder := params.N
+	fieldOrder := curve.Params().N
 	poly, err := polynomial.RandomPolynomial(fieldOrder, threshold-1)
 	if err != nil {
 		return nil, err
 	}
 	poly.SetConstant(big.NewInt(0))
 
-	if err := utils.EnsureThreshold(threshold, peerManager.NumPeers()+1); err != nil {
-		return nil, err
-	}
-
-	allBKs := make(birkhoffinterpolation.BkParameters, len(bks))
-	peers := make(map[string]*peer, peerManager.NumPeers())
-	var selfBK *birkhoffinterpolation.BkParameter
-	i := 0
-	for id, bk := range bks {
-		allBKs[i] = bk
-		i++
-
-		// Build self bk
-		if id == peerManager.SelfID() {
-			selfBK = bk
-			continue
-		}
-		// Build peer bk
-		peer := newPeer(id)
-		peer.peer = &peerData{
-			bk: bk,
-		}
-		peers[id] = peer
-	}
-	if selfBK == nil {
-		return nil, tss.ErrSelfBKNotFound
-	}
-
-	// Check if the bks are ok
-	_, err = allBKs.ComputeBkCoefficient(threshold, fieldOrder)
-	if err != nil {
-		log.Warn("Failed to compute bkCoefficient", "err", err)
-		return nil, err
-	}
-
 	// Build Feldman commitmenter
 	feldmanCommitmenter, err := commitment.NewFeldmanCommitmenter(curve, poly)
 	if err != nil {
+		return nil, err
+	}
+
+	selfBK, peers, err := buildPeers(fieldOrder, peerManager.SelfID(), threshold, bks, feldmanCommitmenter)
+	if err != nil {
+		log.Warn("Failed to build peers", "err", err)
 		return nil, err
 	}
 
@@ -107,7 +88,7 @@ func newCommitHandler(peerManager types.PeerManager, threshold uint32, publicKey
 		feldmanCommitmenter: feldmanCommitmenter,
 
 		peerManager: peerManager,
-		peerNum:     peerManager.NumPeers(),
+		peerNum:     numPeers,
 		peers:       peers,
 	}, nil
 }
@@ -139,18 +120,7 @@ func (p *commitHandler) HandleMessage(logger log.Logger, message types.Message) 
 
 func (p *commitHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	for id, peer := range p.peers {
-		// Build and send the verify message to the corresponding participant.
-		v := p.feldmanCommitmenter.GetVerifyMessage(peer.peer.bk)
-		msg := &Message{
-			Type: Type_Verify,
-			Id:   p.peerManager.SelfID(),
-			Body: &Message_Verify{
-				Verify: &BodyVerify{
-					Verify: v,
-				},
-			},
-		}
-		p.peerManager.MustSend(id, msg)
+		p.peerManager.MustSend(id, peer.peer.verifyMessage)
 	}
 	return newVerifyHandler(p), nil
 }
@@ -173,4 +143,49 @@ func getMessage(messsage types.Message) *Message {
 
 func getMessageByType(peer *peer, t Type) *Message {
 	return getMessage(peer.GetMessage(types.MessageType(t)))
+}
+
+func buildPeers(fieldOrder *big.Int, selfID string, threshold uint32, bks map[string]*birkhoffinterpolation.BkParameter, commitmenter *commitment.FeldmanCommitmenter) (*birkhoffinterpolation.BkParameter, map[string]*peer, error) {
+	lenBks := len(bks)
+	allBKs := make(birkhoffinterpolation.BkParameters, lenBks)
+	peers := make(map[string]*peer, lenBks-1)
+	var selfBK *birkhoffinterpolation.BkParameter
+	i := 0
+	for id, bk := range bks {
+		allBKs[i] = bk
+		i++
+
+		// Build self bk
+		if id == selfID {
+			selfBK = bk
+			continue
+		}
+		// Build peers
+		peer := newPeer(id)
+		peer.peer = &peerData{
+			bk: bk,
+			verifyMessage: &Message{
+				Type: Type_Verify,
+				Id:   selfID,
+				Body: &Message_Verify{
+					Verify: &BodyVerify{
+						Verify: commitmenter.GetVerifyMessage(bk),
+					},
+				},
+			},
+		}
+		peers[id] = peer
+	}
+	if selfBK == nil {
+		return nil, nil, tss.ErrSelfBKNotFound
+	}
+
+	// Check if the bks are ok
+	_, err := allBKs.ComputeBkCoefficient(threshold, fieldOrder)
+	if err != nil {
+		log.Warn("Failed to compute bkCoefficient", "err", err)
+		return nil, nil, err
+	}
+
+	return selfBK, peers, nil
 }
