@@ -32,7 +32,7 @@ type encKData struct {
 type encKHandler struct {
 	*pubkeyHandler
 
-	wiMta *mta.Mta
+	wiMta mta.Mta
 	wiG   *pt.ECPoint
 }
 

@@ -165,7 +165,7 @@ func (p *proofAiHandler) getDecommitAiViMessage() *Message {
 }
 
 // s’_i=Rx*si+m*k_i
-func buildSi(aiMta *mta.Mta, n *big.Int, rx *big.Int, tmpSi *big.Int, msg *big.Int) *big.Int {
+func buildSi(aiMta mta.Mta, n *big.Int, rx *big.Int, tmpSi *big.Int, msg *big.Int) *big.Int {
 	r1 := new(big.Int).Mul(rx, tmpSi)
 	r2 := aiMta.GetProductWithK(msg)
 	r := new(big.Int).Add(r1, r2)

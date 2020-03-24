@@ -140,7 +140,7 @@ func (p *mtaHandler) ensurePublickey(logger log.Logger) error {
 	return nil
 }
 
-func computeDeltaIAndSi(logger log.Logger, aiMta *mta.Mta, wiMta *mta.Mta, peers map[string]*peer) (*big.Int, *big.Int, error) {
+func computeDeltaIAndSi(logger log.Logger, aiMta mta.Mta, wiMta mta.Mta, peers map[string]*peer) (*big.Int, *big.Int, error) {
 	peerNum := len(peers)
 	var (
 		aiAlpha = make([]*big.Int, peerNum)
