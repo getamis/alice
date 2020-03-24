@@ -87,7 +87,7 @@ var _ = Describe("decommit handler, negative cases", func() {
 			for _, d := range dkgs {
 				_, ok := d.GetHandler().(*decommitHandler)
 				if !ok {
-					time.Sleep(time.Second)
+					time.Sleep(500 * time.Millisecond)
 				}
 			}
 		})
@@ -99,7 +99,7 @@ var _ = Describe("decommit handler, negative cases", func() {
 			for _, d := range dkgs {
 				d.Stop()
 			}
-			time.Sleep(time.Second)
+			time.Sleep(500 * time.Millisecond)
 			for _, l := range listeners {
 				l.AssertExpectations(GinkgoT())
 			}
@@ -136,7 +136,6 @@ var _ = Describe("decommit handler, negative cases", func() {
 				msg = dh.getDecommitMessage()
 			}
 		})
-
 	})
 })
 

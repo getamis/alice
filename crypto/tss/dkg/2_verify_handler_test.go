@@ -93,11 +93,11 @@ var _ = Describe("verify handler, negative cases", func() {
 			for _, d := range dkgs {
 				_, ok := d.GetHandler().(*verifyHandler)
 				if !ok {
-					time.Sleep(time.Second)
+					time.Sleep(500 * time.Millisecond)
 				}
 			}
 			// Wait for the new handler
-			time.Sleep(time.Second)
+			time.Sleep(500 * time.Millisecond)
 		})
 
 		AfterEach(func() {
@@ -107,7 +107,7 @@ var _ = Describe("verify handler, negative cases", func() {
 			for _, d := range dkgs {
 				d.Stop()
 			}
-			time.Sleep(time.Second)
+			time.Sleep(500 * time.Millisecond)
 			for _, l := range listeners {
 				l.AssertExpectations(GinkgoT())
 			}

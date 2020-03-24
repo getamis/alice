@@ -96,7 +96,7 @@ var _ = Describe("result handler, negative cases", func() {
 			for _, d := range dkgs {
 				_, ok := d.GetHandler().(*resultHandler)
 				if !ok {
-					time.Sleep(time.Second)
+					time.Sleep(500 * time.Millisecond)
 				}
 			}
 		})
@@ -108,7 +108,7 @@ var _ = Describe("result handler, negative cases", func() {
 			for _, d := range dkgs {
 				d.Stop()
 			}
-			time.Sleep(time.Second)
+			time.Sleep(500 * time.Millisecond)
 			for _, l := range listeners {
 				l.AssertExpectations(GinkgoT())
 			}
@@ -170,25 +170,6 @@ var _ = Describe("result handler, negative cases", func() {
 				Expect(h).Should(BeNil())
 			}
 		})
-
-		// Should move this test to 1_decommit_habdler_test.go
-		// FIt("duplicate bks", func() {
-		// 	for _, d := range dkgs {
-		// 		rh, ok := d.GetHandler().(*resultHandler)
-		// 		Expect(ok).Should(BeTrue())
-
-		// 		var dupBk *birkhoffinterpolation.BkParameter
-		// 		for _, peer := range rh.peers {
-		// 			dupBk = peer.peer.bk
-		// 			// empty result data
-		// 			peer.result = &resultData{}
-		// 		}
-		// 		rh.bk = dupBk
-		// 		h, err := rh.Finalize(log.Discard())
-		// 		Expect(err).Should(Equal(ecpointgrouplaw.ErrInvalidPoint))
-		// 		Expect(h).Should(BeNil())
-		// 	}
-		// })
 
 		It("0 threshold", func() {
 			for _, d := range dkgs {
