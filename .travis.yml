@@ -33,3 +33,6 @@ before_script:
 script:
   - make lint       # run a bunch of code checkers/linters in parallel
   - make unit-test  # Run all the tests with the race detector enabled
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
