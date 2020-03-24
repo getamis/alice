@@ -30,6 +30,7 @@ var (
 	ErrSelfBKNotFound            = errors.New("self Birkhoff coefficient not found")
 	ErrInconsistentThreshold     = errors.New("inconsistent threshold")
 	ErrInconsistentPeerNumAndBks = errors.New("inconsistent peer num and bks")
+	ErrInconsistentPubKey        = errors.New("inconsistent public key")
 )
 
 func NewCommitterByPoint(p *pt.ECPoint, minSaltSize int) (*commitment.HashCommitmenter, error) {

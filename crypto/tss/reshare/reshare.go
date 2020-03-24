@@ -26,7 +26,7 @@ import (
 )
 
 type Reshare struct {
-	*commitHandler
+	ch *commitHandler
 	*message.MsgMain
 }
 
@@ -39,13 +39,13 @@ func NewReshare(peerManager types.PeerManager, threshold uint32, publicKey *ecpo
 	if len(bks) != int(peerNum+1) {
 		return nil, tss.ErrNotEnoughBKs
 	}
-	ch, err := newCommitHandler(peerManager, threshold, publicKey, oldShare, bks)
+	ch, err := newCommitHandler(publicKey, peerManager, threshold, oldShare, bks)
 	if err != nil {
 		return nil, err
 	}
 	return &Reshare{
-		commitHandler: ch,
-		MsgMain:       message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ch, types.MessageType(Type_Commit), types.MessageType(Type_Verify), types.MessageType(Type_Result)),
+		ch:      ch,
+		MsgMain: message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ch, types.MessageType(Type_Commit), types.MessageType(Type_Verify), types.MessageType(Type_Result)),
 	}, nil
 }
 
@@ -65,4 +65,8 @@ func (d *Reshare) GetResult() (*Result, error) {
 	return &Result{
 		Share: rh.newShare,
 	}, nil
+}
+
+func (d *Reshare) GetCommitMessage() *Message {
+	return d.ch.GetCommitMessage()
 }

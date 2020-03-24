@@ -36,22 +36,9 @@ type Signer struct {
 	*message.MsgMain
 }
 
-func NewSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo homo.Crypto, secret *big.Int, selfBk *birkhoffinterpolation.BkParameter, bks []*birkhoffinterpolation.BkParameter, msg []byte, listener types.StateChangedListener) (*Signer, error) {
-	curve := expectedPubkey.GetCurve()
+func NewSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo homo.Crypto, secret *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, listener types.StateChangedListener) (*Signer, error) {
 	numPeers := peerManager.NumPeers()
-	if len(bks) != int(numPeers) {
-		log.Warn("Inconsistent peer num", "bks", len(bks), "numPeers", numPeers)
-		return nil, tss.ErrInconsistentPeerNumAndBks
-	}
-	var allBks birkhoffinterpolation.BkParameters = append([]*birkhoffinterpolation.BkParameter{selfBk}, bks...)
-	scalars, err := allBks.ComputeBkCoefficient(numPeers+1, curve.Params().N)
-	if err != nil {
-		log.Warn("Failed to compute bk coefficient", "allBks", allBks, "err", err)
-		return nil, err
-	}
-	wi := new(big.Int).Mul(secret, scalars[0])
-	wi = new(big.Int).Mod(wi, curve.Params().N)
-	ph, err := newPubkeyHandler(expectedPubkey, peerManager, homo, wi, msg)
+	ph, err := newPubkeyHandler(expectedPubkey, peerManager, homo, secret, bks, msg)
 	if err != nil {
 		log.Warn("Failed to new a public key handler", "err", err)
 		return nil, err
