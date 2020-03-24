@@ -33,7 +33,7 @@ var (
 )
 
 type mta struct {
-	filedOrder *big.Int
+	fieldOrder *big.Int
 	homoCrypto homo.Crypto
 
 	k    *big.Int
@@ -41,12 +41,12 @@ type mta struct {
 	a    *big.Int
 }
 
-func NewMta(filedOrder *big.Int, homoCrypto homo.Crypto) (*mta, error) {
-	k, err := utils.RandomInt(filedOrder)
+func NewMta(fieldOrder *big.Int, homoCrypto homo.Crypto) (*mta, error) {
+	k, err := utils.RandomInt(fieldOrder)
 	if err != nil {
 		return nil, err
 	}
-	a, err := utils.RandomInt(filedOrder)
+	a, err := utils.RandomInt(fieldOrder)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +55,7 @@ func NewMta(filedOrder *big.Int, homoCrypto homo.Crypto) (*mta, error) {
 		return nil, err
 	}
 	return &mta{
-		filedOrder: filedOrder,
+		fieldOrder: fieldOrder,
 		homoCrypto: homoCrypto,
 
 		k:    k,
@@ -66,12 +66,12 @@ func NewMta(filedOrder *big.Int, homoCrypto homo.Crypto) (*mta, error) {
 
 // OverrideA returns a new mta with new a
 func (m *mta) OverrideA(newA *big.Int) (Mta, error) {
-	err := utils.InRange(newA, big0, m.filedOrder)
+	err := utils.InRange(newA, big0, m.fieldOrder)
 	if err != nil {
 		return nil, err
 	}
 	return &mta{
-		filedOrder: m.filedOrder,
+		fieldOrder: m.fieldOrder,
 		homoCrypto: m.homoCrypto,
 
 		k:    m.k,
@@ -115,7 +115,7 @@ func (m *mta) Decrypt(c *big.Int) (*big.Int, error) {
 }
 
 // Compute gets the encrypted k with a random beta
-// alpha = (E(encMessage) * a) + E(beta), where * is the homomorphic multiply amd + is the homomorphic Addition.
+// alpha = (E(encMessage) * a) + E(beta), where * is the homomorphic multiply and + is the homomorphic Addition.
 func (m *mta) Compute(publicKey homo.Pubkey, encMessage []byte) (*big.Int, *big.Int, error) {
 	// Verify proof
 	err := publicKey.VerifyEnc(encMessage)
@@ -124,7 +124,7 @@ func (m *mta) Compute(publicKey homo.Pubkey, encMessage []byte) (*big.Int, *big.
 	}
 
 	// Generate beta
-	betaRange := publicKey.GetMessageRange(m.filedOrder)
+	betaRange := publicKey.GetMessageRange(m.fieldOrder)
 	beta, err := utils.RandomInt(betaRange)
 	if err != nil {
 		return nil, nil, err
@@ -165,5 +165,5 @@ func (m *mta) GetResult(alphas []*big.Int, betas []*big.Int) (*big.Int, error) {
 		delta = new(big.Int).Add(delta, a)
 		delta = new(big.Int).Add(delta, betas[i])
 	}
-	return new(big.Int).Mod(delta, m.filedOrder), nil
+	return new(big.Int).Mod(delta, m.fieldOrder), nil
 }

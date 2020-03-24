@@ -20,12 +20,11 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/getamis/alice/crypto/matrix"
-
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo/paillier"
+	"github.com/getamis/alice/crypto/matrix"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
@@ -154,7 +153,7 @@ var _ = Describe("Signer", func() {
 			pm := newPeerManager("fake-id", 2)
 			s, err := NewSigner(pm, expPublic, nil, nil, nil, nil, nil, nil)
 			Expect(s).Should(BeNil())
-			Expect(err).Should(Equal(ErrInconsistentPeerNum))
+			Expect(err).Should(Equal(tss.ErrInconsistentPeerNumAndBks))
 		})
 
 		It("duplicate bks", func() {

@@ -15,7 +15,6 @@
 package signer
 
 import (
-	"errors"
 	"math/big"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
@@ -25,10 +24,6 @@ import (
 	"github.com/getamis/alice/crypto/tss/message"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/sirius/log"
-)
-
-var (
-	ErrInconsistentPeerNum = errors.New("inconsistent peer num")
 )
 
 type Result struct {
@@ -46,7 +41,7 @@ func NewSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo h
 	numPeers := peerManager.NumPeers()
 	if len(bks) != int(numPeers) {
 		log.Warn("Inconsistent peer num", "bks", len(bks), "numPeers", numPeers)
-		return nil, ErrInconsistentPeerNum
+		return nil, tss.ErrInconsistentPeerNumAndBks
 	}
 	var allBks birkhoffinterpolation.BkParameters = append([]*birkhoffinterpolation.BkParameter{selfBk}, bks...)
 	scalars, err := allBks.ComputeBkCoefficient(numPeers+1, curve.Params().N)
