@@ -13,18 +13,15 @@
 
 ## Introduction:
 
-This is an implementation for multi-party TSS library with Hierarchical shares(abrev. HTSS). We quote one paragraph of  [Tassa's paper](https://www.openu.ac.il/lists/mediaserver_documents/personalsites/tamirtassa/hss_conf.pdf) to explain the difference between traditional threshold signature scheme and HTSS:
+This is Hierarchical Threshold Signature Scheme (HTSS) worked by [AMIS](https://www.am.is). Comparing to Threshold Signature Scheme (TSS), shares in this scheme are allowed to have different ranks.
 
+The main merit of HTSS is vertical access control such that it has "partial accountability”. Although TSS achieves joint control to disperse risk among the participants, the level of all shares are equal. It is impossible to distinguish which share getting involved in an unexpected signature. TSS is not like the multi-signature scheme as the signature is signed by distinct private keys in multi-signature scheme. It is because Shamir’s secret sharing only supports horizontal access control.
 
- **There are many real-life examples of threshold secret sharing.**
- **Typical examples include sharing a key to the central vault in a bank, the triggering mechanism for nuclear weapons, or key escrow.**
- **We would like to consider here a special kind of generalized secret sharing scenarios that is a natural extension of threshold secret sharing.**
- **In all of the above mentioned examples, it is natural to expect that the participants are not equal in their privileges or authorities.**
- **For example, in the bank scenario, the shares of the vault key may be distributed among bank employees,** 
- **some of whom are tellers and some are department managers.**
- **The bank policy could require the presence of, say, 3 employees in opening the vault,**
- **but at least one of them must be a department manager. Or in key escrow, the dealer might demand that some escrow agents (say, family members) must be involved in any** 
- **emergency access to his private files. Such settings call for special methods of secret sharing.**
+For example, an important contract not only requires enough signatures, but also needs to be signed by a manager. Despite the fact that vertical access control can be realized on the application layer and tracked by an audit log. Once a hack happens, we will have no idea about who to blame for. However, in HTSS framework, through assigning different ranks of each share induces that any valid signature generated includes the share of the manager.
+
+HTSS  has been developed by [Tassa](https://www.openu.ac.il/lists/mediaserver_documents/personalsites/tamirtassa/hss_conf.pdf) and other researchers many years ago. In our implementation, we setup up this theory on TSS(i.e. just replace Lagrange Interpolation to Birkhoff Interpolation).  Meanwhile, our protocol of sign (i.e. GG18 and CCLST20 ) can support two homomorphic encryptions which are Paillier and CL scheme. 
+
+**This code will be audited soon.**
 
 > One of references of HTSS is [A Hierarchical Threshold Signature](https://medium.com/getamis/a-hierarchical-threshold-signature-830683b87873) or See [Example](#Example).
 
