@@ -224,15 +224,14 @@ To start signing, you should provide some inputs for creating a new Signer insta
 * **publicKey**: the public key generated from DKG
 * **homo**: a homomorphic encryption (Paillier of CL)
 * **share**: the private share from DKG
-* **selfBk**: the Birkhoff parameter of this participant
-* **peerBks**: Birkhoff parameters of other participants
+* **bks**: the Birkhoff parameter of all participants
 * **msg**: a message to be signed
 * **listener**: a function to monitor the state change
 
-Note that, `threshold` signers are required to participate in signing. Therefore, the length of `peerBks` must not be less than `threshold-1`.
+Note that, `threshold` signers are required to participate in signing. Therefore, the length of `bks` must not be less than `threshold`.
 
 ```go
-mySigner, err = signer.NewSigner(signerPeerManager, publicKey, homo, share, selfBk, peerBks, msg, listener)
+mySigner, err = signer.NewSigner(signerPeerManager, publicKey, homo, share, bks, msg, listener)
 if err != nil {
     // handle error
 }
