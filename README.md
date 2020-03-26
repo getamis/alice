@@ -109,8 +109,9 @@ Our version is the algorithm of GG18 without doing range proofs in MtA(cf. [Sect
 <h4 id="CCLST">CCLST:</h4>
 
 * Replace Lagrange interpolation with [Birkhoff interpolation](https://en.wikipedia.org/wiki/Birkhoff_interpolation).
-* In the beginning of signer, we generate a key-pair of the homomorphic encryption.
-
+* In the beginning of signer, we generate different parameters for each participant in the homomorphic encryption scheme. In their
+ protocol, all participants use the same parameters but different key-pairs, which are generated in DKG.
+* All zero-knowledge proofs are non-interactive version (i.e. This part will be audited soon). 
 
 <h3 id="Reshare">Reshare:</h3>
 
