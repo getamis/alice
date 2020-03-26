@@ -47,11 +47,12 @@ var (
 
 /*
  * Paper: Linearly Homomorphic Encryption from DDH & Bandwidth-efficient threshold EC-DSA
- * s: an upper bound of 1/π(ln|ΔK|)|ΔK|^(1/2) i.e. In this implementation, we set it to be Ceil(1/π(ln|ΔK|))*([|ΔK|^(1/2)]+1).
- * p: message space (μ bits prime)
- * a: s*2^(distributionDistance)
- * g : an element in ideal class group of quadratic order
+ * s : an upper bound of 1/π(ln|ΔK|)|ΔK|^(1/2) i.e. In this implementation, we set it to be Ceil(1/π(ln|ΔK|))*([|ΔK|^(1/2)]+1).
+ * p : message space (μ bits prime)
+ * a : s*2^(distributionDistance)
+ * o : an element in ideal class group of quadratic order
  * f : a generator of the subgroup of order p of ideal class group of quadratic order
+ * g : o^b for some random b in [1,2^(distributionDistance)*s)
  * h : g^x, where x is the chosen private key, h is the public key
  */
 type PublicKey struct {
@@ -121,8 +122,8 @@ func NewCL(c *big.Int, d uint32, p *big.Int, safeParameter int, distributionDist
 		return nil, err
 	}
 
-	// 6. Compute g by the lifting formula
-	g, err := generateGeneratorInG(rForm, f, p)
+	// 6. Compute o by the lifting formula
+	o, err := generateGeneratorInG(rForm, f, p)
 	if err != nil {
 		return nil, err
 	}
@@ -133,6 +134,17 @@ func NewCL(c *big.Int, d uint32, p *big.Int, safeParameter int, distributionDist
 	// Build a private key
 	// a = 2^(distributionDistance)*s
 	a := new(big.Int).Lsh(s, distributionDistance)
+
+	// Compute g = o^b for some b in [1,a).
+	b, err := utils.RandomInt(a)
+	if err != nil {
+		return nil, err
+	}
+	g, err := o.Exp(b)
+	if err != nil {
+		return nil, err
+	}
+
 	privkey, err := utils.RandomInt(a)
 	if err != nil {
 		return nil, err
