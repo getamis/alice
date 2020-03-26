@@ -123,9 +123,7 @@ func (bks BkParameters) CheckValid(threshold uint32, fieldOrder *big.Int) error 
 
 	// Deep copy and sort the pk slice
 	sortedBks := make(BkParameters, bks.Len())
-	for i, bk := range bks {
-		sortedBks[i] = bk
-	}
+	copy(sortedBks, bks)
 	sort.Sort(sortedBks)
 
 	// Get all combinations of C(threshold, len(ps)).

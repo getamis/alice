@@ -4,7 +4,7 @@ GOLINT ?= $(GOTOOL_GOPATH)/bin/golangci-lint
 
 # lint
 $(GOLINT):
-	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(GOTOOL_GOPATH)/bin v1.15.0
+	curl -sfL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | sh -s -- -b $(GOTOOL_GOPATH)/bin v1.24.0
 
 PHONY += lint
 lint: $(GOLINT)
