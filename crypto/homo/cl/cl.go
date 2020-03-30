@@ -27,6 +27,11 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+const (
+	// maxGenG defines the max retries to generate g
+	maxGenG = 100
+)
+
 var (
 	big1 = big.NewInt(1)
 	big2 = big.NewInt(2)
@@ -43,6 +48,8 @@ var (
 	ErrNoSplittingPrime = errors.New("no splittable primes")
 	//ErrFailedVerify is returned if we verify failed
 	ErrFailedVerify = errors.New("failed verify")
+	//ErrFailedGenerateG is returned if g is the identity element
+	ErrFailedGenerateG = errors.New("failed generate non-identity g")
 )
 
 /*
@@ -136,11 +143,7 @@ func NewCL(c *big.Int, d uint32, p *big.Int, safeParameter int, distributionDist
 	a := new(big.Int).Lsh(s, distributionDistance)
 
 	// Compute g = o^b for some b in [1,a).
-	b, err := utils.RandomInt(a)
-	if err != nil {
-		return nil, err
-	}
-	g, err := o.Exp(b)
+	g, err := getNonIdentityGenerator(o, a)
 	if err != nil {
 		return nil, err
 	}
@@ -533,4 +536,22 @@ func generateAnotherPrimeQ(p *big.Int, bitsQ int) (*big.Int, error) {
 		// The value is used for computing composition and exp of binary quadratic forms.
 		return q, nil
 	}
+}
+
+func getNonIdentityGenerator(generator *bqForm.BQuadraticForm, upperBound *big.Int) (*bqForm.BQuadraticForm, error) {
+	identity := generator.Identity()
+	for i := 0; i < maxGenG; i++ {
+		b, err := utils.RandomPositiveInt(upperBound)
+		if err != nil {
+			return nil, err
+		}
+		g, err := generator.Exp(b)
+		if err != nil {
+			return nil, err
+		}
+		if !g.Equal(identity) {
+			return g, nil
+		}
+	}
+	return nil, ErrFailedGenerateG
 }
