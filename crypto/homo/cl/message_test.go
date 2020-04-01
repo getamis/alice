@@ -197,5 +197,19 @@ var _ = Describe("Message test", func() {
 			Expect(err).Should(Equal(ErrInvalidMessage))
 			Expect(pub).Should(BeNil())
 		})
+
+		It("zero A", func() {
+			msg.A = big0.Bytes()
+			pub, err := msg.ToPubkey()
+			Expect(err).Should(Equal(ErrInvalidMessage))
+			Expect(pub).Should(BeNil())
+		})
+
+		It("zero C", func() {
+			msg.C = big0.Bytes()
+			pub, err := msg.ToPubkey()
+			Expect(err).Should(Equal(ErrInvalidMessage))
+			Expect(pub).Should(BeNil())
+		})
 	})
 })

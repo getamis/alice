@@ -298,6 +298,8 @@ type Hash struct {
 	H                    *binaryquadraticform.BQForm `protobuf:"bytes,5,opt,name=h,proto3" json:"h,omitempty"`
 	P                    []byte                      `protobuf:"bytes,6,opt,name=p,proto3" json:"p,omitempty"`
 	Q                    []byte                      `protobuf:"bytes,7,opt,name=q,proto3" json:"q,omitempty"`
+	A                    []byte                      `protobuf:"bytes,8,opt,name=A,proto3" json:"A,omitempty"`
+	C                    []byte                      `protobuf:"bytes,9,opt,name=C,proto3" json:"C,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                    `json:"-"`
 	XXX_unrecognized     []byte                      `json:"-"`
 	XXX_sizecache        int32                       `json:"-"`

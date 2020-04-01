@@ -46,7 +46,7 @@ var (
 	Step 1: The prover
 	- randomly chooses two integers r1 in [0, 2^{d}Ac] and r2 in [0, p-1].
 	- computes t1=g^{r1} and t2=h^{r1}f^{r2}.
-	- computes k:=H(t1, t2, g, f, h, p, q) mod c. Here H is a cryptography hash function.
+	- computes k:=H(t1, t2, g, f, h, p, q, A, c) mod c. Here H is a cryptography hash function.
 	- computes u1:=r1+kr in Z and u2:=r2+ka. Here Z is the ring of integer. The resulting proof is (u1,  u2, t1, t2, c1, c2).
 	Step 2: The verifier verifies
 	- u1 in [0, (2^{d}+1)Ac].
@@ -89,7 +89,7 @@ func (pubKey *PublicKey) buildProof(plainText *big.Int, r *big.Int) (*ProofMessa
 		return nil, err
 	}
 
-	// k:=H(t1, t2,  g, f, h,  p, q) mod c
+	// k:=H(t1, t2, g, f, h, p, q, A, c) mod c
 	blake2bKey, err := utils.GenRandomBytes(blake2b.Size256)
 	if err != nil {
 		return nil, err
@@ -102,6 +102,8 @@ func (pubKey *PublicKey) buildProof(plainText *big.Int, r *big.Int) (*ProofMessa
 		H:  pubKey.h.ToMessage(),
 		P:  pubKey.p.Bytes(),
 		Q:  pubKey.q.Bytes(),
+		A:  pubKey.a.Bytes(),
+		C:  pubKey.c.Bytes(),
 	})
 	if err != nil {
 		return nil, err
@@ -162,7 +164,7 @@ func (pubKey *PublicKey) VerifyEnc(bs []byte) error {
 		return err
 	}
 	// Check g^{u1}=t1*c1^k
-	// k:=H(t1, t2, g, f, h, p, q) mod c
+	// k:=H(t1, t2, g, f, h, p, q, A, c) mod c
 	k, err := utils.HashProtos(msg.Proof.Blake2BKey, pubKey.c, &Hash{
 		T1: msg.Proof.T1,
 		T2: msg.Proof.T2,
@@ -171,6 +173,8 @@ func (pubKey *PublicKey) VerifyEnc(bs []byte) error {
 		H:  pubKey.h.ToMessage(),
 		P:  pubKey.p.Bytes(),
 		Q:  pubKey.q.Bytes(),
+		A:  pubKey.a.Bytes(),
+		C:  pubKey.c.Bytes(),
 	})
 	if err != nil {
 		return err

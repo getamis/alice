@@ -65,6 +65,12 @@ func (m *PubKeyMessage) ToPubkey() (*PublicKey, error) {
 	a := new(big.Int).SetBytes(m.A)
 	q := new(big.Int).SetBytes(m.Q)
 	c := new(big.Int).SetBytes(m.C)
+	if a.Cmp(big0) < 1 {
+		return nil, ErrInvalidMessage
+	}
+	if c.Cmp(big0) < 1 {
+		return nil, ErrInvalidMessage
+	}
 	if p.Cmp(big0) < 1 {
 		return nil, ErrInvalidMessage
 	}
