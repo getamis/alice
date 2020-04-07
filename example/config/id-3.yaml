@@ -1,0 +1,8 @@
+rank: 0
+threshold:
+  dkg: 3
+  signer: 2
+  reshare: 3
+peers:
+  id-1: /ip4/127.0.0.1/tcp/10001/p2p/QmQ61tPtDAaj4DdAYL4P7exDFG2UGQxUR1oq3bQKHHWxBy
+  id-2: /ip4/127.0.0.1/tcp/10002/p2p/QmaBfzojpsiB8g8Vxq3UyP5hVe62VAasPCZQxWvzWwegTT
