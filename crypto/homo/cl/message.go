@@ -68,7 +68,13 @@ func (m *PubKeyMessage) ToPubkey() (*PublicKey, error) {
 	if p.Cmp(big0) < 1 {
 		return nil, ErrInvalidMessage
 	}
+	if a.Cmp(big0) < 1 {
+		return nil, ErrInvalidMessage
+	}
 	if q.Cmp(big0) < 1 {
+		return nil, ErrInvalidMessage
+	}
+	if c.Cmp(big0) < 1 {
 		return nil, ErrInvalidMessage
 	}
 	g, err := m.G.ToCacheExp()
