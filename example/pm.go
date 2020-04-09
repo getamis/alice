@@ -14,6 +14,7 @@
 package main
 
 import (
+	"context"
 	"sync"
 	"time"
 
@@ -28,11 +29,11 @@ type peerManager struct {
 	peers map[string]string
 }
 
-func newPeerManager(id string, host host.Host, peers map[string]string) *peerManager {
+func newPeerManager(id string, host host.Host) *peerManager {
 	return &peerManager{
 		id:    id,
 		host:  host,
-		peers: peers,
+		peers: make(map[string]string),
 	}
 }
 
@@ -45,8 +46,7 @@ func (p *peerManager) SelfID() string {
 }
 
 func (p *peerManager) MustSend(peerID string, message proto.Message) {
-	peerAddr := p.peers[peerID]
-	send(p.host, peerAddr, message)
+	send(context.Background(), p.host, p.peers[peerID], message)
 }
 
 // EnsureAllConnected connects the host to specified peer and sends the message to it.
@@ -60,13 +60,26 @@ func (p *peerManager) EnsureAllConnected() {
 	wg.Wait()
 }
 
+func (p *peerManager) addPeers(peerPorts []int64) error {
+	for _, peerPort := range peerPorts {
+		peerID := getPeerIDFromPort(peerPort)
+		peerAddr, err := getPeerAddr(peerPort)
+		if err != nil {
+			log.Warn("Cannot get peer address", "peerPort", peerPort, "peerID", peerID, "err", err)
+			return err
+		}
+		p.peers[peerID] = peerAddr
+	}
+	return nil
+}
+
 func connectToPeer(host host.Host, peerAddr string, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	logger := log.New("to", peerAddr)
 	for {
 		// Connect the host to the peer.
-		err := connect(host, peerAddr)
+		err := connect(context.Background(), host, peerAddr)
 		if err != nil {
 			logger.Warn("Failed to connect to peer", "err", err)
 			time.Sleep(3 * time.Second)

@@ -25,12 +25,8 @@ const (
 )
 
 func main() {
-	id := flag.Uint64("id", 0, "id for this node")
 	configPath := flag.String("config", "", "config path")
 	flag.Parse()
-	if *id <= 0 {
-		log.Crit("Please provide id")
-	}
 	if *configPath == "" {
 		log.Crit("empty config path")
 	}
@@ -40,16 +36,20 @@ func main() {
 		log.Crit("Failed to read config file", "configPath", *configPath, err)
 	}
 
-	// For convenience, set port to id + 10000.
-	port := *id + 10000
 	// Make a host that listens on the given multiaddress.
-	host, err := makeBasicHost(port)
+	host, err := makeBasicHost(config.Port)
 	if err != nil {
 		log.Crit("Failed to create a basic host", "err", err)
 	}
 
 	// Create a new peer manager.
-	pm := newPeerManager(getID(*id), host, config.Peers)
+	pm := newPeerManager(getPeerIDFromPort(config.Port), host)
+	err = pm.addPeers(config.Peers)
+	if err != nil {
+		log.Crit("Failed to add peers", "err", err)
+	}
+
+	// Create a new service.
 	service, err := NewService(config, pm)
 	if err != nil {
 		log.Crit("Failed to new service", "err", err)

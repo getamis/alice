@@ -21,9 +21,7 @@ import (
 )
 
 const (
-	typeDKG     int = 0
-	typeSigner  int = 1
-	typeReshare int = 2
+	typeDKG int = 0
 )
 
 func writeDKGResult(id string, result *dkg.Result) error {
@@ -50,25 +48,6 @@ func getFilePath(rType int, id string) string {
 	var resultType string
 	if rType == typeDKG {
 		resultType = "dkg"
-	} else if rType == typeSigner {
-		resultType = "signer"
-	} else if rType == typeReshare {
-		resultType = "reshare"
 	}
 	return fmt.Sprintf("result/%s/%s.yaml", resultType, id)
-}
-
-func getID(id uint64) string {
-	return fmt.Sprintf("id-%d", id)
-}
-
-func getPeerIDs(selfID string) []string {
-	var peerIDs []string
-	for i := uint64(1); i <= uint64(3); i++ {
-		peerID := getID(i)
-		if peerID != selfID {
-			peerIDs = append(peerIDs, peerID)
-		}
-	}
-	return peerIDs
 }

@@ -4,8 +4,7 @@ This example demonstrates a simple p2p application using our TSS library. Let's 
 
 ## Build
 ```sh
-> cd example/
-> go build
+> make tss-example
 ```
 
 ## Usage
@@ -15,15 +14,15 @@ First, we run 3 hosts on different terminals. These 3 nodes will try to connect 
 
 On node A, 
 ```sh
-> ./example -id 1 -config config/id-1.yaml
+> ./example -config config/id-1.yaml
 ```
 
 On node B,
 ```sh
-> ./example -id 2 -config config/id-2.yaml
+> ./example -config config/id-2.yaml
 ```
 
 On node C,
 ```sh
-> ./example -id 3 -config config/id-3.yaml
+> ./example -config config/id-3.yaml
 ```

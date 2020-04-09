@@ -37,10 +37,11 @@ type DKGResult struct {
 }
 
 type Config struct {
-	Rank      uint32            `yaml:"rank"`
-	Threshold Threshold         `yaml:"threshold"`
-	Peers     map[string]string `yaml:"peers"`
-	DKGResult DKGResult         `yaml:"dkgResult"`
+	Port      int64     `yaml:"port"`
+	Rank      uint32    `yaml:"rank"`
+	Threshold Threshold `yaml:"threshold"`
+	Peers     []int64   `yaml:"peers"`
+	DKGResult DKGResult `yaml:"dkgResult"`
 }
 
 func readYamlFile(filaPath string) (*Config, error) {

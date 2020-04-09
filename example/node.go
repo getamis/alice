@@ -30,15 +30,13 @@ import (
 )
 
 // makeBasicHost creates a LibP2P host.
-func makeBasicHost(port uint64) (host.Host, error) {
-	sourceMultiAddr, _ := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", port))
+func makeBasicHost(port int64) (host.Host, error) {
+	sourceMultiAddr, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", port))
+	if err != nil {
+		return nil, err
+	}
 
-	// Use the port number as the randomness source.
-	r := rand.New(rand.NewSource(int64(port)))
-
-	// Generate a key pair for this host. We will use it at least
-	// to obtain a valid host ID.
-	priv, _, err := crypto.GenerateKeyPairWithReader(crypto.ECDSA, 2048, r)
+	priv, err := generateIdentity(port)
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +54,41 @@ func makeBasicHost(port uint64) (host.Host, error) {
 	return basicHost, nil
 }
 
+// getPeerAddr gets peer full address from port.
+func getPeerAddr(port int64) (string, error) {
+	priv, err := generateIdentity(port)
+	if err != nil {
+		return "", err
+	}
+
+	pid, err := peer.IDFromPrivateKey(priv)
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("/ip4/127.0.0.1/tcp/%d/p2p/%s", port, pid), nil
+}
+
+// getPeerIDFromPort gets peer ID from port.
+func getPeerIDFromPort(port int64) string {
+	// For convenience, we set peer ID as "id-" + port
+	return fmt.Sprintf("id-%d", port)
+}
+
+// generateIdentity generates a fixed key pair by using port as random source.
+func generateIdentity(port int64) (crypto.PrivKey, error) {
+	// Use the port as the randomness source in this example.
+	r := rand.New(rand.NewSource(port))
+
+	// Generate a key pair for this host.
+	priv, _, err := crypto.GenerateKeyPairWithReader(crypto.ECDSA, 2048, r)
+	if err != nil {
+		return nil, err
+	}
+	return priv, nil
+}
+
 // send sends the proto message to specified peer.
-func send(host host.Host, target string, data proto.Message) error {
+func send(ctx context.Context, host host.Host, target string, data proto.Message) error {
 	// Turn the destination into a multiaddr.
 	maddr, err := multiaddr.NewMultiaddr(target)
 	if err != nil {
@@ -68,11 +99,11 @@ func send(host host.Host, target string, data proto.Message) error {
 	// Extract the peer ID from the multiaddr.
 	info, err := peer.AddrInfoFromP2pAddr(maddr)
 	if err != nil {
-		log.Error("Cannot parse addr", "addr", maddr, "err", err)
+		log.Warn("Cannot parse addr", "addr", maddr, "err", err)
 		return err
 	}
 
-	s, err := host.NewStream(context.Background(), info.ID, dkgProtocol)
+	s, err := host.NewStream(ctx, info.ID, dkgProtocol)
 	if err != nil {
 		log.Warn("Cannot create a new stream", "from", host.ID(), "to", target, "err", err)
 		return err
@@ -81,13 +112,11 @@ func send(host host.Host, target string, data proto.Message) error {
 	err = writer.WriteMsg(data)
 	if err != nil {
 		log.Warn("Cannot write message to IO", "err", err)
-		s.Reset()
 		return err
 	}
 	err = helpers.FullClose(s)
 	if err != nil {
 		log.Warn("Cannot close the stream", "err", err)
-		s.Reset()
 		return err
 	}
 
@@ -96,7 +125,7 @@ func send(host host.Host, target string, data proto.Message) error {
 }
 
 // connect connects the host to the specified peer.
-func connect(host host.Host, target string) error {
+func connect(ctx context.Context, host host.Host, target string) error {
 	// Turn the destination into a multiaddr.
 	maddr, err := multiaddr.NewMultiaddr(target)
 	if err != nil {
@@ -112,7 +141,7 @@ func connect(host host.Host, target string) error {
 	}
 
 	// Connect the host to the peer.
-	err = host.Connect(context.Background(), *info)
+	err = host.Connect(ctx, *info)
 	if err != nil {
 		log.Warn("Failed to connect to peer", "err", err)
 		return err

@@ -22,3 +22,7 @@ unit-test: coverage.txt
 			exit -1;						\
 		fi								\
 	done;
+
+PHONY += tss-example
+tss-example:
+	cd example && go build

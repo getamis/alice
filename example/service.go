@@ -56,21 +56,24 @@ func (p *service) Handle(s network.Stream) {
 	data := &dkg.Message{}
 	buf, err := ioutil.ReadAll(s)
 	if err != nil {
-		s.Reset()
 		log.Warn("Cannot read data from stream", "err", err)
 		return
 	}
 	s.Close()
 
 	// unmarshal it
-	proto.Unmarshal(buf, data)
+	err = proto.Unmarshal(buf, data)
 	if err != nil {
 		log.Error("Cannot unmarshal data", "err", err)
 		return
 	}
 
 	log.Info("Received request", "from", s.Conn().RemotePeer())
-	p.dkg.AddMessage(data)
+	err = p.dkg.AddMessage(data)
+	if err != nil {
+		log.Warn("Cannot add message to DKG", "err", err)
+		return
+	}
 }
 
 func (p *service) Process() {
@@ -80,9 +83,8 @@ func (p *service) Process() {
 
 	// 2. Connect the host to peers and send the peer message to them.
 	msg := p.dkg.GetPeerMessage()
-	peerIDs := getPeerIDs(p.pm.SelfID())
-	for _, peerID := range peerIDs {
-		p.pm.MustSend(peerID, msg)
+	for _, peerPort := range p.config.Peers {
+		p.pm.MustSend(getPeerIDFromPort(peerPort), msg)
 	}
 
 	// 3. Wait the dkg is done or failed
