@@ -67,6 +67,18 @@ const (
 	StateFailed MainState = 20
 )
 
+func (m MainState) String() string {
+	switch m {
+	case StateInit:
+		return "Init"
+	case StateDone:
+		return "Done"
+	case StateFailed:
+		return "Failed"
+	}
+	return "Unknown"
+}
+
 //go:generate mockery -name=StateChangedListener
 type StateChangedListener interface {
 	OnStateChanged(oldState MainState, newState MainState)
