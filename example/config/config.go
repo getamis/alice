@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+package config
 
 import (
 	"io/ioutil"
@@ -44,7 +44,7 @@ type Config struct {
 	DKGResult DKGResult `yaml:"dkgResult"`
 }
 
-func readYamlFile(filaPath string) (*Config, error) {
+func ReadYamlFile(filaPath string) (*Config, error) {
 	c := &Config{}
 	yamlFile, err := ioutil.ReadFile(filaPath)
 	if err != nil {
@@ -58,11 +58,10 @@ func readYamlFile(filaPath string) (*Config, error) {
 	return c, nil
 }
 
-func writeYamlFile(yamlData interface{}, filaPath string) error {
+func WriteYamlFile(yamlData interface{}, filePath string) error {
 	data, err := yaml.Marshal(yamlData)
 	if err != nil {
 		return err
 	}
-	ioutil.WriteFile(filaPath, data, 0644)
-	return nil
+	return ioutil.WriteFile(filePath, data, 0644)
 }

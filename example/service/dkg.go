@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+package service
 
 import (
 	"io/ioutil"
@@ -19,6 +19,8 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/example/config"
+	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
 	"github.com/gogo/protobuf/proto"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -27,16 +29,16 @@ import (
 // For simplicity, we use S256 curve in this example.
 var curve = btcec.S256()
 
-type service struct {
-	config *Config
+type dkgService struct {
+	config *config.Config
 	pm     types.PeerManager
 
 	dkg  *dkg.DKG
 	done chan struct{}
 }
 
-func NewService(config *Config, pm types.PeerManager) (*service, error) {
-	s := &service{
+func NewDKGService(config *config.Config, pm types.PeerManager) (*dkgService, error) {
+	s := &dkgService{
 		config: config,
 		pm:     pm,
 		done:   make(chan struct{}),
@@ -52,7 +54,7 @@ func NewService(config *Config, pm types.PeerManager) (*service, error) {
 	return s, nil
 }
 
-func (p *service) Handle(s network.Stream) {
+func (p *dkgService) Handle(s network.Stream) {
 	data := &dkg.Message{}
 	buf, err := ioutil.ReadAll(s)
 	if err != nil {
@@ -76,7 +78,7 @@ func (p *service) Handle(s network.Stream) {
 	}
 }
 
-func (p *service) Process() {
+func (p *dkgService) Process() {
 	// 1. Start a DKG process.
 	p.dkg.Start()
 	defer p.dkg.Stop()
@@ -84,14 +86,14 @@ func (p *service) Process() {
 	// 2. Connect the host to peers and send the peer message to them.
 	msg := p.dkg.GetPeerMessage()
 	for _, peerPort := range p.config.Peers {
-		p.pm.MustSend(getPeerIDFromPort(peerPort), msg)
+		p.pm.MustSend(utils.GetPeerIDFromPort(peerPort), msg)
 	}
 
 	// 3. Wait the dkg is done or failed
 	<-p.done
 }
 
-func (p *service) OnStateChanged(oldState types.MainState, newState types.MainState) {
+func (p *dkgService) OnStateChanged(oldState types.MainState, newState types.MainState) {
 	if newState == types.StateFailed {
 		log.Error("Dkg failed", "old", oldState.String(), "new", newState.String())
 		close(p.done)
@@ -100,7 +102,7 @@ func (p *service) OnStateChanged(oldState types.MainState, newState types.MainSt
 		log.Info("Dkg done", "old", oldState.String(), "new", newState.String())
 		result, err := p.dkg.GetResult()
 		if err == nil {
-			writeDKGResult(p.pm.SelfID(), result)
+			utils.WriteDKGResult(p.pm.SelfID(), result)
 		} else {
 			log.Warn("Failed to get result from DKG", "err", err)
 		}

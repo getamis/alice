@@ -14,6 +14,9 @@
 package main
 
 import (
+	"github.com/getamis/alice/example/config"
+	"github.com/getamis/alice/example/service"
+	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/spf13/cobra"
@@ -29,7 +32,7 @@ var dkgCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		initService(cmd)
 
-		config, err := readYamlFile(configFile)
+		config, err := config.ReadYamlFile(configFile)
 		if err != nil {
 			log.Crit("Failed to read config file", "configFile", configFile, "err", err)
 		}
@@ -41,14 +44,14 @@ var dkgCmd = &cobra.Command{
 		}
 
 		// Create a new peer manager.
-		pm := newPeerManager(getPeerIDFromPort(config.Port), host)
+		pm := newPeerManager(utils.GetPeerIDFromPort(config.Port), host)
 		err = pm.addPeers(config.Peers)
 		if err != nil {
 			log.Crit("Failed to add peers", "err", err)
 		}
 
 		// Create a new service.
-		service, err := NewService(config, pm)
+		service, err := service.NewDKGService(config, pm)
 		if err != nil {
 			log.Crit("Failed to new service", "err", err)
 		}

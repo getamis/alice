@@ -68,12 +68,6 @@ func getPeerAddr(port int64) (string, error) {
 	return fmt.Sprintf("/ip4/127.0.0.1/tcp/%d/p2p/%s", port, pid), nil
 }
 
-// getPeerIDFromPort gets peer ID from port.
-func getPeerIDFromPort(port int64) string {
-	// For convenience, we set peer ID as "id-" + port
-	return fmt.Sprintf("id-%d", port)
-}
-
 // generateIdentity generates a fixed key pair by using port as random source.
 func generateIdentity(port int64) (crypto.PrivKey, error) {
 	// Use the port as the randomness source in this example.

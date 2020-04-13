@@ -18,6 +18,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
 	"github.com/golang/protobuf/proto"
 	"github.com/libp2p/go-libp2p-core/host"
@@ -62,7 +63,7 @@ func (p *peerManager) EnsureAllConnected() {
 
 func (p *peerManager) addPeers(peerPorts []int64) error {
 	for _, peerPort := range peerPorts {
-		peerID := getPeerIDFromPort(peerPort)
+		peerID := utils.GetPeerIDFromPort(peerPort)
 		peerAddr, err := getPeerAddr(peerPort)
 		if err != nil {
 			log.Warn("Cannot get peer address", "peerPort", peerPort, "peerID", peerID, "err", err)

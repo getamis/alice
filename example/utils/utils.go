@@ -11,12 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+package utils
 
 import (
 	"fmt"
 
 	"github.com/getamis/alice/crypto/tss/dkg"
+	"github.com/getamis/alice/example/config"
 	"github.com/getamis/sirius/log"
 )
 
@@ -24,10 +25,10 @@ const (
 	typeDKG int = 0
 )
 
-func writeDKGResult(id string, result *dkg.Result) error {
-	dkgResult := &DKGResult{
+func WriteDKGResult(id string, result *dkg.Result) error {
+	dkgResult := &config.DKGResult{
 		Share: result.Share.String(),
-		Pubkey: Pubkey{
+		Pubkey: config.Pubkey{
 			X: result.PublicKey.GetX().String(),
 			Y: result.PublicKey.GetY().String(),
 		},
@@ -36,7 +37,7 @@ func writeDKGResult(id string, result *dkg.Result) error {
 	for peerID, bk := range result.Bks {
 		dkgResult.BKs[peerID] = bk.GetX().String()
 	}
-	err := writeYamlFile(dkgResult, getFilePath(typeDKG, id))
+	err := config.WriteYamlFile(dkgResult, GetFilePath(typeDKG, id))
 	if err != nil {
 		log.Error("Cannot write YAML file", "err", err)
 		return err
@@ -44,10 +45,16 @@ func writeDKGResult(id string, result *dkg.Result) error {
 	return nil
 }
 
-func getFilePath(rType int, id string) string {
+func GetFilePath(rType int, id string) string {
 	var resultType string
 	if rType == typeDKG {
 		resultType = "dkg"
 	}
-	return fmt.Sprintf("result/%s/%s.yaml", resultType, id)
+	return fmt.Sprintf("result_%s_%s.yaml", resultType, id)
+}
+
+// GetPeerIDFromPort gets peer ID from port.
+func GetPeerIDFromPort(port int64) string {
+	// For convenience, we set peer ID as "id-" + port
+	return fmt.Sprintf("id-%d", port)
 }
