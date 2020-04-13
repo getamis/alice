@@ -16,7 +16,6 @@ package service
 import (
 	"io/ioutil"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/example/config"
@@ -25,9 +24,6 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"github.com/libp2p/go-libp2p-core/network"
 )
-
-// For simplicity, we use S256 curve in this example.
-var curve = btcec.S256()
 
 type dkgService struct {
 	config *config.Config
@@ -45,7 +41,7 @@ func NewDKGService(config *config.Config, pm types.PeerManager) (*dkgService, er
 	}
 
 	// Create dkg
-	d, err := dkg.NewDKG(curve, pm, config.Threshold.DKG, config.Rank, s)
+	d, err := dkg.NewDKG(utils.GetCurve(), pm, config.Threshold, config.Rank, s)
 	if err != nil {
 		log.Warn("Cannot create a new DKG", "config", config, "err", err)
 		return nil, err
