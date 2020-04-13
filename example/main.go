@@ -14,54 +14,23 @@
 package main
 
 import (
-	"flag"
-
-	"github.com/getamis/sirius/log"
-	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/spf13/cobra"
 )
 
 const (
 	dkgProtocol = "/dkg/1.0.0"
 )
 
+var Cmd = &cobra.Command{
+	Use:   "tss-example",
+	Short: "TSS example",
+	Long:  `TSS example`,
+}
+
+func init() {
+	Cmd.AddCommand(dkgCmd)
+}
+
 func main() {
-	configPath := flag.String("config", "", "config path")
-	flag.Parse()
-	if *configPath == "" {
-		log.Crit("empty config path")
-	}
-
-	config, err := readYamlFile(*configPath)
-	if err != nil {
-		log.Crit("Failed to read config file", "configPath", *configPath, err)
-	}
-
-	// Make a host that listens on the given multiaddress.
-	host, err := makeBasicHost(config.Port)
-	if err != nil {
-		log.Crit("Failed to create a basic host", "err", err)
-	}
-
-	// Create a new peer manager.
-	pm := newPeerManager(getPeerIDFromPort(config.Port), host)
-	err = pm.addPeers(config.Peers)
-	if err != nil {
-		log.Crit("Failed to add peers", "err", err)
-	}
-
-	// Create a new service.
-	service, err := NewService(config, pm)
-	if err != nil {
-		log.Crit("Failed to new service", "err", err)
-	}
-	// Set a stream handler on the host.
-	host.SetStreamHandler(dkgProtocol, func(s network.Stream) {
-		service.Handle(s)
-	})
-
-	// Ensure all peers are connected before starting DKG process.
-	pm.EnsureAllConnected()
-
-	// Start DKG process.
-	service.Process()
+	Cmd.Execute()
 }
