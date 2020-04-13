@@ -15,22 +15,36 @@ package main
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 const (
 	dkgProtocol = "/dkg/1.0.0"
 )
 
-var Cmd = &cobra.Command{
+var configFile string
+
+var cmd = &cobra.Command{
 	Use:   "tss-example",
 	Short: "TSS example",
 	Long:  `TSS example`,
 }
 
 func init() {
-	Cmd.AddCommand(dkgCmd)
+	cmd.AddCommand(dkgCmd)
+	cmd.AddCommand(signerCmd)
 }
 
 func main() {
-	Cmd.Execute()
+	cmd.Execute()
+}
+
+func initService(cmd *cobra.Command) error {
+	if err := viper.BindPFlags(cmd.Flags()); err != nil {
+		return err
+	}
+
+	configFile = viper.GetString("config")
+
+	return nil
 }

@@ -22,36 +22,36 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var dkgCmd = &cobra.Command{
-	Use:   "dkg",
-	Short: "dkg",
-	Long:  `dkg`,
+var signerCmd = &cobra.Command{
+	Use:   "signer",
+	Short: "signer",
+	Long:  `signer`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		err := initService(cmd)
 		if err != nil {
 			log.Crit("Failed to init", "err", err)
 		}
 
-		config, err := config.ReadConfigFile(configFile)
+		c, err := config.ReadConfigFile(configFile)
 		if err != nil {
 			log.Crit("Failed to read config file", "configFile", configFile, "err", err)
 		}
 
 		// Make a host that listens on the given multiaddress.
-		host, err := makeBasicHost(config.Port)
+		host, err := makeBasicHost(c.Port)
 		if err != nil {
 			log.Crit("Failed to create a basic host", "err", err)
 		}
 
 		// Create a new peer manager.
-		pm := newPeerManager(utils.GetPeerIDFromPort(config.Port), host)
-		err = pm.addPeers(config.Peers)
+		pm := newPeerManager(utils.GetPeerIDFromPort(c.Port), host)
+		err = pm.addPeers(c.Peers)
 		if err != nil {
 			log.Crit("Failed to add peers", "err", err)
 		}
 
 		// Create a new service.
-		service, err := service.NewDKGService(config, pm)
+		service, err := service.NewSignerService(c, pm)
 		if err != nil {
 			log.Crit("Failed to new service", "err", err)
 		}
@@ -71,5 +71,5 @@ var dkgCmd = &cobra.Command{
 }
 
 func init() {
-	dkgCmd.Flags().String("config", "", "dkg config file path")
+	signerCmd.Flags().String("config", "", "signer config file path")
 }
