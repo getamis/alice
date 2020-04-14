@@ -11,31 +11,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+package config
 
 import (
-	"fmt"
-	"os"
+	"io/ioutil"
 
-	"github.com/getamis/alice/example/dkg"
-	"github.com/getamis/alice/example/signer"
-	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
-var cmd = &cobra.Command{
-	Use:   "tss-example",
-	Short: "TSS example",
-	Long:  `This is a tss example`,
+type Pubkey struct {
+	X string `yaml:"x"`
+	Y string `yaml:"y"`
 }
 
-func init() {
-	cmd.AddCommand(dkg.Cmd)
-	cmd.AddCommand(signer.Cmd)
+type BK struct {
+	X    string `yaml:"x"`
+	Rank uint32 `yaml:"rank"`
 }
 
-func main() {
-	if err := cmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(-1)
+func WriteYamlFile(yamlData interface{}, filePath string) error {
+	data, err := yaml.Marshal(yamlData)
+	if err != nil {
+		return err
 	}
+	return ioutil.WriteFile(filePath, data, 0644)
 }
