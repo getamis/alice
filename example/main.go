@@ -14,37 +14,28 @@
 package main
 
 import (
+	"fmt"
+	"os"
+
+	"github.com/getamis/alice/example/dkg"
+	"github.com/getamis/alice/example/signer"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
-
-const (
-	dkgProtocol = "/dkg/1.0.0"
-)
-
-var configFile string
 
 var cmd = &cobra.Command{
 	Use:   "tss-example",
 	Short: "TSS example",
-	Long:  `TSS example`,
+	Long:  `This is a tss example`,
 }
 
 func init() {
-	cmd.AddCommand(dkgCmd)
-	cmd.AddCommand(signerCmd)
+	cmd.AddCommand(dkg.Cmd)
+	cmd.AddCommand(signer.Cmd)
 }
 
 func main() {
-	cmd.Execute()
-}
-
-func initService(cmd *cobra.Command) error {
-	if err := viper.BindPFlags(cmd.Flags()); err != nil {
-		return err
+	if err := cmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(-1)
 	}
-
-	configFile = viper.GetString("config")
-
-	return nil
 }

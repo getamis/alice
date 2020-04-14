@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+package peer
 
 import (
 	"context"
@@ -26,11 +26,12 @@ import (
 	"github.com/libp2p/go-libp2p-core/helpers"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/multiformats/go-multiaddr"
 )
 
-// makeBasicHost creates a LibP2P host.
-func makeBasicHost(port int64) (host.Host, error) {
+// MakeBasicHost creates a LibP2P host.
+func MakeBasicHost(port int64) (host.Host, error) {
 	sourceMultiAddr, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", port))
 	if err != nil {
 		return nil, err
@@ -82,7 +83,7 @@ func generateIdentity(port int64) (crypto.PrivKey, error) {
 }
 
 // send sends the proto message to specified peer.
-func send(ctx context.Context, host host.Host, target string, data proto.Message) error {
+func send(ctx context.Context, host host.Host, target string, data proto.Message, protocol protocol.ID) error {
 	// Turn the destination into a multiaddr.
 	maddr, err := multiaddr.NewMultiaddr(target)
 	if err != nil {
@@ -97,7 +98,7 @@ func send(ctx context.Context, host host.Host, target string, data proto.Message
 		return err
 	}
 
-	s, err := host.NewStream(ctx, info.ID, dkgProtocol)
+	s, err := host.NewStream(ctx, info.ID, protocol)
 	if err != nil {
 		log.Warn("Cannot create a new stream", "from", host.ID(), "to", target, "err", err)
 		return err

@@ -11,47 +11,51 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+package dkg
 
 import (
-	"github.com/getamis/alice/example/config"
-	"github.com/getamis/alice/example/service"
+	"github.com/getamis/alice/example/peer"
 	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-var signerCmd = &cobra.Command{
-	Use:   "signer",
-	Short: "signer",
-	Long:  `signer`,
+const dkgProtocol = "/dkg/1.0.0"
+
+var configFile string
+
+var Cmd = &cobra.Command{
+	Use:   "dkg",
+	Short: "DKG process",
+	Long:  `Distributed key generation for creating secret shares without any dealer.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		err := initService(cmd)
 		if err != nil {
 			log.Crit("Failed to init", "err", err)
 		}
 
-		c, err := config.ReadConfigFile(configFile)
+		config, err := readDKGConfigFile(configFile)
 		if err != nil {
 			log.Crit("Failed to read config file", "configFile", configFile, "err", err)
 		}
 
 		// Make a host that listens on the given multiaddress.
-		host, err := makeBasicHost(c.Port)
+		host, err := peer.MakeBasicHost(config.Port)
 		if err != nil {
 			log.Crit("Failed to create a basic host", "err", err)
 		}
 
 		// Create a new peer manager.
-		pm := newPeerManager(utils.GetPeerIDFromPort(c.Port), host)
-		err = pm.addPeers(c.Peers)
+		pm := peer.NewPeerManager(utils.GetPeerIDFromPort(config.Port), host, dkgProtocol)
+		err = pm.AddPeers(config.Peers)
 		if err != nil {
 			log.Crit("Failed to add peers", "err", err)
 		}
 
 		// Create a new service.
-		service, err := service.NewSignerService(c, pm)
+		service, err := NewService(config, pm)
 		if err != nil {
 			log.Crit("Failed to new service", "err", err)
 		}
@@ -71,5 +75,15 @@ var signerCmd = &cobra.Command{
 }
 
 func init() {
-	signerCmd.Flags().String("config", "", "signer config file path")
+	Cmd.Flags().String("config", "", "dkg config file path")
+}
+
+func initService(cmd *cobra.Command) error {
+	if err := viper.BindPFlags(cmd.Flags()); err != nil {
+		return err
+	}
+
+	configFile = viper.GetString("config")
+
+	return nil
 }

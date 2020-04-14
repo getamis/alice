@@ -29,52 +29,6 @@ type BK struct {
 	Rank uint32 `yaml:"rank"`
 }
 
-type DKGResult struct {
-	Share  string        `yaml:"share"`
-	Pubkey Pubkey        `yaml:"pubkey"`
-	BKs    map[string]BK `yaml:"bks"`
-}
-
-type SignerResult struct {
-	R string `yaml:"r"`
-	S string `yaml:"s"`
-}
-
-type Config struct {
-	Port      int64   `yaml:"port"`
-	Rank      uint32  `yaml:"rank"`
-	Threshold uint32  `yaml:"threshold"`
-	Peers     []int64 `yaml:"peers"`
-}
-
-func ReadConfigFile(filaPath string) (*Config, error) {
-	c := &Config{}
-	yamlFile, err := ioutil.ReadFile(filaPath)
-	if err != nil {
-		return nil, err
-	}
-	err = yaml.Unmarshal(yamlFile, c)
-	if err != nil {
-		return nil, err
-	}
-
-	return c, nil
-}
-
-func ReadDKGResultFile(filaPath string) (*DKGResult, error) {
-	r := &DKGResult{}
-	yamlFile, err := ioutil.ReadFile(filaPath)
-	if err != nil {
-		return nil, err
-	}
-	err = yaml.Unmarshal(yamlFile, r)
-	if err != nil {
-		return nil, err
-	}
-
-	return r, nil
-}
-
 func WriteYamlFile(yamlData interface{}, filePath string) error {
 	data, err := yaml.Marshal(yamlData)
 	if err != nil {
