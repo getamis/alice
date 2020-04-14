@@ -36,8 +36,9 @@ before_script:
 # failing test, we want to see both. Configure golangci-lint with a
 # .golangci.yml file at the top level of your repo.
 script:
-  - make lint       # run a bunch of code checkers/linters in parallel
-  - make unit-test  # Run all the tests with the race detector enabled
+  - make tss-example # Build tss-example to make sure example is executable.
+  - make lint        # Run a bunch of code checkers/linters in parallel.
+  - make unit-test   # Run all the tests with the race detector enabled.
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
