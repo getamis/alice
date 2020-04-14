@@ -18,6 +18,7 @@ import (
 	"os"
 
 	"github.com/getamis/alice/example/dkg"
+	"github.com/getamis/alice/example/reshare"
 	"github.com/getamis/alice/example/signer"
 	"github.com/spf13/cobra"
 )
@@ -31,6 +32,7 @@ var cmd = &cobra.Command{
 func init() {
 	cmd.AddCommand(dkg.Cmd)
 	cmd.AddCommand(signer.Cmd)
+	cmd.AddCommand(reshare.Cmd)
 }
 
 func main() {
