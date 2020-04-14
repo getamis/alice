@@ -14,23 +14,13 @@
 package signer
 
 import (
-	"errors"
+	"fmt"
 	"io/ioutil"
-	"math/big"
 
-	"github.com/getamis/alice/crypto/birkhoffinterpolation"
-	"github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/crypto/tss/signer"
 	"github.com/getamis/alice/example/config"
-	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
 	"gopkg.in/yaml.v2"
-)
-
-var (
-	// ErrConversion for big int convestion error
-	ErrConversion = errors.New("conversion error")
 )
 
 type SignerConfig struct {
@@ -66,7 +56,7 @@ func writeSignerResult(id string, result *signer.Result) error {
 		R: result.R.String(),
 		S: result.S.String(),
 	}
-	err := config.WriteYamlFile(signerResult, utils.GetFilePath(utils.TypeSigner, id))
+	err := config.WriteYamlFile(signerResult, getFilePath(id))
 	if err != nil {
 		log.Error("Cannot write YAML file", "err", err)
 		return err
@@ -74,46 +64,6 @@ func writeSignerResult(id string, result *signer.Result) error {
 	return nil
 }
 
-func convertDKGResult(config *SignerConfig) (*dkg.Result, error) {
-	// Build public key.
-	x, ok := new(big.Int).SetString(config.Pubkey.X, 10)
-	if !ok {
-		log.Error("Cannot convert string to big int", "x", config.Pubkey.X)
-		return nil, ErrConversion
-	}
-	y, ok := new(big.Int).SetString(config.Pubkey.Y, 10)
-	if !ok {
-		log.Error("Cannot convert string to big int", "y", config.Pubkey.Y)
-		return nil, ErrConversion
-	}
-	pubkey, err := ecpointgrouplaw.NewECPoint(utils.GetCurve(), x, y)
-	if err != nil {
-		log.Error("Cannot get public key", "err", err)
-		return nil, err
-	}
-
-	// Build share.
-	share, ok := new(big.Int).SetString(config.Share, 10)
-	if !ok {
-		log.Error("Cannot convert string to big int", "share", config.Share)
-		return nil, ErrConversion
-	}
-
-	dkgResult := &dkg.Result{
-		PublicKey: pubkey,
-		Share:     share,
-		Bks:       make(map[string]*birkhoffinterpolation.BkParameter),
-	}
-
-	// Build bks.
-	for peerID, bk := range config.BKs {
-		x, ok := new(big.Int).SetString(bk.X, 10)
-		if !ok {
-			log.Error("Cannot convert string to big int", "x", bk.X)
-			return nil, ErrConversion
-		}
-		dkgResult.Bks[peerID] = birkhoffinterpolation.NewBkParameter(x, bk.Rank)
-	}
-
-	return dkgResult, nil
+func getFilePath(id string) string {
+	return fmt.Sprintf("signer/%s-output.yaml", id)
 }

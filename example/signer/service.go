@@ -43,9 +43,9 @@ func NewService(config *SignerConfig, pm types.PeerManager) (*service, error) {
 	}
 
 	// Signer needs results from DKG.
-	dkgResult, err := convertDKGResult(config)
+	dkgResult, err := utils.ConvertDKGResult(config.Pubkey, config.Share, config.BKs)
 	if err != nil {
-		log.Warn("Cannot get signer result", "err", err)
+		log.Warn("Cannot get DKG result", "err", err)
 		return nil, err
 	}
 

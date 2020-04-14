@@ -64,10 +64,10 @@ var Cmd = &cobra.Command{
 			service.Handle(s)
 		})
 
-		// Ensure all peers are connected before starting DKG process.
+		// Ensure all peers are connected before starting signer process.
 		pm.EnsureAllConnected()
 
-		// Start DKG process.
+		// Start signer process.
 		service.Process()
 
 		return nil
