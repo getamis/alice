@@ -45,3 +45,22 @@ On node C,
 ```sh
 > ./example signer --config signer/id-10003-input.yaml
 ```
+
+### Reshare
+
+When reshare, all peers associated with DKG should be involved. Again, each node will need to consume their own config file (e.g `reshare/id-10001-input.yaml`). In these reshare config files, they already contain runnable configurations. However, you could also try to copy the results from DKG result files (e.g `dkg/id-10001-output.yaml`) and overwrite the configurations. After being executed, these 3 nodes then will try to connect to each other. Once it connects to a peer, it will send the commit message out. After the commit messages are fully transmitted, each node will try to get the result and write it to the respective result file.
+
+On node A,
+```sh
+> ./example reshare --config reshare/id-10001-input.yaml
+```
+
+On node B,
+```sh
+> ./example reshare --config reshare/id-10002-input.yaml
+```
+
+On node C,
+```sh
+> ./example reshare --config reshare/id-10003-input.yaml
+```

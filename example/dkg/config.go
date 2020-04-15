@@ -14,11 +14,11 @@
 package dkg
 
 import (
+	"fmt"
 	"io/ioutil"
 
 	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/example/config"
-	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
 	"gopkg.in/yaml.v2"
 )
@@ -65,10 +65,14 @@ func writeDKGResult(id string, result *dkg.Result) error {
 			Rank: bk.GetRank(),
 		}
 	}
-	err := config.WriteYamlFile(dkgResult, utils.GetFilePath(utils.TypeDKG, id))
+	err := config.WriteYamlFile(dkgResult, getFilePath(id))
 	if err != nil {
 		log.Error("Cannot write YAML file", "err", err)
 		return err
 	}
 	return nil
+}
+
+func getFilePath(id string) string {
+	return fmt.Sprintf("dkg/%s-output.yaml", id)
 }

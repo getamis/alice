@@ -11,34 +11,33 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package signer
+package reshare
 
 import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/getamis/alice/crypto/tss/signer"
+	"github.com/getamis/alice/crypto/tss/reshare"
 	"github.com/getamis/alice/example/config"
 	"github.com/getamis/sirius/log"
 	"gopkg.in/yaml.v2"
 )
 
-type SignerConfig struct {
-	Port    int64                `yaml:"port"`
-	Share   string               `yaml:"share"`
-	Pubkey  config.Pubkey        `yaml:"pubkey"`
-	BKs     map[string]config.BK `yaml:"bks"`
-	Message string               `yaml:"msg"`
-	Peers   []int64              `yaml:"peers"`
+type ReshareConfig struct {
+	Port      int64                `yaml:"port"`
+	Threshold uint32               `yaml:"threshold"`
+	Share     string               `yaml:"share"`
+	Pubkey    config.Pubkey        `yaml:"pubkey"`
+	BKs       map[string]config.BK `yaml:"bks"`
+	Peers     []int64              `yaml:"peers"`
 }
 
-type SignerResult struct {
-	R string `yaml:"r"`
-	S string `yaml:"s"`
+type ReshareResult struct {
+	Share string `yaml:"share"`
 }
 
-func readSignerConfigFile(filaPath string) (*SignerConfig, error) {
-	c := &SignerConfig{}
+func readReshareConfigFile(filaPath string) (*ReshareConfig, error) {
+	c := &ReshareConfig{}
 	yamlFile, err := ioutil.ReadFile(filaPath)
 	if err != nil {
 		return nil, err
@@ -51,12 +50,11 @@ func readSignerConfigFile(filaPath string) (*SignerConfig, error) {
 	return c, nil
 }
 
-func writeSignerResult(id string, result *signer.Result) error {
-	signerResult := &SignerResult{
-		R: result.R.String(),
-		S: result.S.String(),
+func writeReshareResult(id string, result *reshare.Result) error {
+	reshareResult := &ReshareResult{
+		Share: result.Share.String(),
 	}
-	err := config.WriteYamlFile(signerResult, getFilePath(id))
+	err := config.WriteYamlFile(reshareResult, getFilePath(id))
 	if err != nil {
 		log.Error("Cannot write YAML file", "err", err)
 		return err
@@ -65,5 +63,5 @@ func writeSignerResult(id string, result *signer.Result) error {
 }
 
 func getFilePath(id string) string {
-	return fmt.Sprintf("signer/%s-output.yaml", id)
+	return fmt.Sprintf("reshare/%s-output.yaml", id)
 }

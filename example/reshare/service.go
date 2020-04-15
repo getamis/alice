@@ -11,63 +11,53 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package signer
+package reshare
 
 import (
 	"io/ioutil"
 
-	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/tss/message/types"
-	"github.com/getamis/alice/crypto/tss/signer"
+	"github.com/getamis/alice/crypto/tss/reshare"
 	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
 	"github.com/gogo/protobuf/proto"
 	"github.com/libp2p/go-libp2p-core/network"
 )
 
-var msg = []byte{1, 2, 3}
-
 type service struct {
-	config *SignerConfig
+	config *ReshareConfig
 	pm     types.PeerManager
 
-	signer *signer.Signer
-	done   chan struct{}
+	reshare *reshare.Reshare
+	done    chan struct{}
 }
 
-func NewService(config *SignerConfig, pm types.PeerManager) (*service, error) {
+func NewService(config *ReshareConfig, pm types.PeerManager) (*service, error) {
 	s := &service{
 		config: config,
 		pm:     pm,
 		done:   make(chan struct{}),
 	}
 
-	// Signer needs results from DKG.
+	// Reshare needs results from DKG.
 	dkgResult, err := utils.ConvertDKGResult(config.Pubkey, config.Share, config.BKs)
 	if err != nil {
 		log.Warn("Cannot get DKG result", "err", err)
 		return nil, err
 	}
 
-	// For simplicity, we use Paillier algorithm in signer.
-	paillier, err := paillier.NewPaillier(2048)
+	// Create reshare
+	reshare, err := reshare.NewReshare(pm, config.Threshold, dkgResult.PublicKey, dkgResult.Share, dkgResult.Bks, s)
 	if err != nil {
-		log.Warn("Cannot create a paillier function", "err", err)
+		log.Warn("Cannot create a new reshare", "err", err)
 		return nil, err
 	}
-
-	// Create signer
-	signer, err := signer.NewSigner(pm, dkgResult.PublicKey, paillier, dkgResult.Share, dkgResult.Bks, msg, s)
-	if err != nil {
-		log.Warn("Cannot create a new signer", "err", err)
-		return nil, err
-	}
-	s.signer = signer
+	s.reshare = reshare
 	return s, nil
 }
 
 func (p *service) Handle(s network.Stream) {
-	data := &signer.Message{}
+	data := &reshare.Message{}
 	buf, err := ioutil.ReadAll(s)
 	if err != nil {
 		log.Warn("Cannot read data from stream", "err", err)
@@ -83,40 +73,40 @@ func (p *service) Handle(s network.Stream) {
 	}
 
 	log.Info("Received request", "from", s.Conn().RemotePeer())
-	err = p.signer.AddMessage(data)
+	err = p.reshare.AddMessage(data)
 	if err != nil {
-		log.Warn("Cannot add message to signer", "err", err)
+		log.Warn("Cannot add message to reshare", "err", err)
 		return
 	}
 }
 
 func (p *service) Process() {
-	// 1. Start a signer process.
-	p.signer.Start()
-	defer p.signer.Stop()
+	// 1. Start a reshare process.
+	p.reshare.Start()
+	defer p.reshare.Stop()
 
-	// 2. Connect the host to peers and send the public key message to them.
-	msg := p.signer.GetPubkeyMessage()
+	// 2. Connect the host to peers and send the commit message to them.
+	msg := p.reshare.GetCommitMessage()
 	for _, peerPort := range p.config.Peers {
 		p.pm.MustSend(utils.GetPeerIDFromPort(peerPort), msg)
 	}
 
-	// 3. Wait the signer is done or failed
+	// 3. Wait the reshare is done or failed
 	<-p.done
 }
 
 func (p *service) OnStateChanged(oldState types.MainState, newState types.MainState) {
 	if newState == types.StateFailed {
-		log.Error("Signer failed", "old", oldState.String(), "new", newState.String())
+		log.Error("Reshare failed", "old", oldState.String(), "new", newState.String())
 		close(p.done)
 		return
 	} else if newState == types.StateDone {
-		log.Info("Signer done", "old", oldState.String(), "new", newState.String())
-		result, err := p.signer.GetResult()
+		log.Info("Reshare done", "old", oldState.String(), "new", newState.String())
+		result, err := p.reshare.GetResult()
 		if err == nil {
-			writeSignerResult(p.pm.SelfID(), result)
+			writeReshareResult(p.pm.SelfID(), result)
 		} else {
-			log.Warn("Failed to get result from signer", "err", err)
+			log.Warn("Failed to get result from reshare", "err", err)
 		}
 		close(p.done)
 		return
