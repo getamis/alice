@@ -273,7 +273,7 @@ if err != nil {
     // handle error
 }
 ```
-After resharing, all the participants should get their new shares. For more usage, please check `tss/integration/tee_test.go`.
+After resharing, all the participants should get their new shares.
 
 <h2 id="Example">Examples:</h2>
 
@@ -360,6 +360,8 @@ result, _ := directorDKG.GetResult()
 signerPeerManager := newSignerPeerManager(id, peerNum, signers)
 mySigner, err = signer.NewSigner(signerPeerManager, result.PublicKey, homo, result.Share, result.Bks[id], peerBks, msg, listener)
 ```
+
+> If you want to try an executable example, please check the `/example` folder!
 
 <h2 id="benchmark">Benchmarks:</h2>
 
