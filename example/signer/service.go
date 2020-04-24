@@ -25,8 +25,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/network"
 )
 
-var msg = []byte{1, 2, 3}
-
 type service struct {
 	config *SignerConfig
 	pm     types.PeerManager
@@ -57,7 +55,7 @@ func NewService(config *SignerConfig, pm types.PeerManager) (*service, error) {
 	}
 
 	// Create signer
-	signer, err := signer.NewSigner(pm, dkgResult.PublicKey, paillier, dkgResult.Share, dkgResult.Bks, msg, s)
+	signer, err := signer.NewSigner(pm, dkgResult.PublicKey, paillier, dkgResult.Share, dkgResult.Bks, []byte(config.Message), s)
 	if err != nil {
 		log.Warn("Cannot create a new signer", "err", err)
 		return nil, err

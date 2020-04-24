@@ -51,6 +51,9 @@ Besides the common inputs, signer will need another three inputs.
 1. `share`: The respective share generated from DKG.
 2. `pubkey`: The public key generated from DKG.
 3. `bks`: The Birkhoff parameter of all peers.
+4. `msg`: The message to be signed.
+
+> Note that `msg` for all participants must be the same. If the value of message is different, signing process will fail. Most of the time, this message will be a cryptographic transaction. And the transaction might be created from one party. Therefore, practically, before signing, another information exchange for the raw transaction might be required.
 
 For example, in file `signer/id-10001-input.yaml`, a complete signer configuration is show below.
 
@@ -73,6 +76,7 @@ bks:
   id-10003:
     x: "42617894318064911861435689891609248836936982258022075394462053252726961520252"
     rank: 0
+msg: "hello tss"
 ```
 
 > Note: All signer config files have already contained executable configurations. However, you could also try to copy the results from DKG/reshare result files and overwrite the configurations (e.g from `dkg/id-10001-output.yaml` to `signer/id-10001-input.yaml`).
