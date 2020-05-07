@@ -34,7 +34,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestDKG(t *testing.T) {
+func TestSigner(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Signer Suite")
 }
@@ -199,7 +199,9 @@ func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][
 		pm.setSigners(signers)
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
-		homo, err := paillier.NewPaillier(1024)
+
+		// The function NewPaillierUnSafe is only used in Test.
+		homo, err := paillier.NewPaillierUnSafe(768)
 		Expect(err).Should(BeNil())
 		signers[id], err = NewSigner(peerManagers[i], expPublic, homo, ss[i][1], bks, msg, listeners[id])
 		Expect(err).Should(BeNil())
