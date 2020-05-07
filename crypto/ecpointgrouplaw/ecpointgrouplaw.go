@@ -48,12 +48,9 @@ func ComputeLinearCombinationPoint(scalar []*big.Int, points []*ECPoint) (*ECPoi
 	if len(scalar) != len(points) {
 		return nil, ErrDifferentLength
 	}
+	var err error
 	result := NewIdentity(points[0].curve)
 	for i := 0; i < len(scalar); i++ {
-		if scalar[i].Sign() == 0 {
-			continue
-		}
-		var err error
 		result, err = result.Add(points[i].ScalarMult(scalar[i]))
 		if err != nil {
 			return nil, err
