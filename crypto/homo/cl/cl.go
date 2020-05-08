@@ -192,8 +192,12 @@ func (publicKey *PublicKey) Encrypt(data []byte) ([]byte, error) {
 
 	// Compute c2 = f^m*h^r
 	message := new(big.Int).SetBytes(data)
-	messageMod := new(big.Int).Mod(message, publicKey.p)
-	c2, err := publicKey.f.Exp(messageMod)
+	// Check message in [0,p-1]
+	err = utils.InRange(message, big0, publicKey.p)
+	if err != nil {
+		return nil, err
+	}
+	c2, err := publicKey.f.Exp(message)
 	if err != nil {
 		return nil, err
 	}
