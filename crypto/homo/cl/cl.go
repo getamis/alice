@@ -28,6 +28,9 @@ import (
 )
 
 const (
+	// This value corresponds to the security level 112.
+	minimalSecurityLevel = 1348
+
 	// maxGenG defines the max retries to generate g
 	maxGenG = 100
 )
@@ -50,6 +53,8 @@ var (
 	ErrFailedVerify = errors.New("failed verify")
 	//ErrFailedGenerateG is returned if g is the identity element
 	ErrFailedGenerateG = errors.New("failed generate non-identity g")
+	//ErrNotOddPrime is returned if p is not an odd prime
+	ErrNotOddPrime = errors.New("the message space p is not an odd prime")
 )
 
 /*
@@ -89,6 +94,15 @@ type CL struct {
 // Please refer the following paper Fig. 2 for the key generation flow.
 // https://pdfs.semanticscholar.org/fba2/b7806ea103b41e411792a87a18972c2777d2.pdf?_ga=2.188920107.1077232223.1562737567-609154886.1559798768
 func NewCL(c *big.Int, d uint32, p *big.Int, safeParameter int, distributionDistance uint) (*CL, error) {
+	// 0. Check that p is an odd prime and safeParameter >= 1348 (The permitted security level ).
+	if p.Cmp(big3) < 0 || !p.ProbablyPrime(20) {
+		return nil, ErrNotOddPrime
+	}
+
+	if safeParameter < minimalSecurityLevel {
+		return nil, ErrSmallSafeParameter
+	}
+
 	// 1. Ensure λ ≥ μ + 2
 	lambda := safeParameter / 2
 	mu := p.BitLen()
