@@ -41,6 +41,7 @@ func (m *EncryptedMessage) getBQs(desP *big.Int) (*binaryquadraticform.BQuadrati
 	if err != nil {
 		return nil, nil, err
 	}
+	// Check that m is the correct form:
 	if m1.GetDiscriminant().Cmp(desP) != 0 {
 		return nil, nil, ErrInvalidMessage
 	}

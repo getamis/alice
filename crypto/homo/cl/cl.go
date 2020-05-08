@@ -273,6 +273,7 @@ func (publicKey *PublicKey) Add(m1 []byte, m2 []byte) ([]byte, error) {
 func (publicKey *PublicKey) MulConst(m1 []byte, constant *big.Int) ([]byte, error) {
 	// c1' := c1^constant, c2' := c2^constant
 	constantMod := new(big.Int).Mod(constant, publicKey.p)
+	// We check that the ciphertext is correct form in newBQs. 
 	c1, c2, err := newBQs(publicKey.discriminantOrderP, m1)
 	if err != nil {
 		return nil, err
