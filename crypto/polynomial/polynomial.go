@@ -68,13 +68,6 @@ func RandomPolynomial(fieldOrder *big.Int, degree uint32) (*Polynomial, error) {
 // Ex: f(x)=x^5+2*x^3, diffTime = 1 Then f^(1)(x)= 5*x^4+6*x^2 = 2*x^4.
 func (p *Polynomial) Differentiate(diffTime uint32) *Polynomial {
 	lengthPolyACoeff := uint32(p.Len())
-	if diffTime >= lengthPolyACoeff {
-		return &Polynomial{
-			fieldOrder:   p.fieldOrder,
-			coefficients: []*big.Int{big.NewInt(0)},
-		}
-	}
-
 	reduceDegree := lengthPolyACoeff - diffTime
 	diffCoeffSlice := make([]*big.Int, reduceDegree)
 	for i := diffTime; i < lengthPolyACoeff; i++ {
@@ -86,6 +79,12 @@ func (p *Polynomial) Differentiate(diffTime uint32) *Polynomial {
 		tempCoeff := new(big.Int).Mul(p.coefficients[i], exTra)
 		tempCoeff = new(big.Int).Mod(tempCoeff, p.fieldOrder)
 		diffCoeffSlice[i-diffTime] = tempCoeff
+	}
+	if diffTime >= lengthPolyACoeff {
+		return &Polynomial{
+			fieldOrder:   p.fieldOrder,
+			coefficients: []*big.Int{big.NewInt(0)},
+		}
 	}
 	return &Polynomial{
 		fieldOrder:   p.fieldOrder,
