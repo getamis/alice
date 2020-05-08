@@ -186,6 +186,13 @@ var _ = Describe("CL test", func() {
 			Expect(err).Should(BeNil())
 			Expect(cl.PublicKey.VerifyEnc(bs)).Should(Equal(ErrDifferentBQForms))
 		})
+
+		It("False message which is not in the range [0,p-1] for encryption", func() {
+			// Encrypt the origin message by the public key
+			message := new(big.Int).Add(cl.p, big1)
+			_, err := cl.Encrypt(message.Bytes())
+			Expect(err).Should(Equal(utils.ErrNotInRange))
+		})
 	})
 
 	DescribeTable("Decrypt", func(message *big.Int) {
@@ -221,8 +228,6 @@ var _ = Describe("CL test", func() {
 		got := message.Mod(message, bigPrime).Bytes()
 		Expect(ret).Should(Equal(got))
 	},
-		Entry("0 should be ok", big.NewInt(0)),
-		Entry("2000 should be ok", big.NewInt(2000)),
 		Entry("-1 should be ok", big.NewInt(-1)),
 	)
 
@@ -247,9 +252,7 @@ var _ = Describe("CL test", func() {
 		Expect(err).Should(BeNil())
 		Expect(got).Should(Equal(expected.Bytes()))
 	},
-		Entry("(987,233) should be ok", big.NewInt(987), big.NewInt(233)),
-		Entry("(-100,233) should be ok", big.NewInt(-100), big.NewInt(233)),
-		Entry("(0,0) should be ok", big.NewInt(0), big.NewInt(0)),
+		Entry("(p-987,p-233) should be ok", big.NewInt(-987), big.NewInt(-233)),
 	)
 
 	DescribeTable("MulConst", func(message, scalar *big.Int) {
@@ -270,9 +273,8 @@ var _ = Describe("CL test", func() {
 		Expect(err).Should(BeNil())
 		Expect(expected.Bytes()).Should(Equal(ret))
 	},
-		Entry("(0,12) should be ok", big.NewInt(0), big.NewInt(12)),
+		Entry("(-1,12) should be ok", big.NewInt(-1), big.NewInt(12)),
 		Entry("(-100,233) should be ok", big.NewInt(-100), big.NewInt(233)),
-		Entry("(0,0) should be ok", big.NewInt(0), big.NewInt(0)),
 	)
 })
 
