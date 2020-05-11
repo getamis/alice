@@ -19,9 +19,11 @@ package zkproof;
 import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
 
 message IntegerFactorizationProofMessage {
-  bytes publicKey = 1;
-  bytes challenge = 2;
-  bytes proof = 3;
+  bytes blake2bKey = 1;
+  bytes publicKey = 2;
+  bytes x = 3;
+  bytes y = 4;
+  bytes z = 5;
 }
 
 message SchnorrProofMessage {

@@ -45,6 +45,18 @@ var _ = Describe("Integerfactorization flow", func() {
 		Entry("the bit length of the public key is 2046:", 1536),
 	)
 
+	It("negative case: the size of public key is small", func() {
+		p, err := rand.Prime(rand.Reader, 1000)
+		Expect(err).To(BeNil())
+		q, err := rand.Prime(rand.Reader, 1000)
+		Expect(err).To(BeNil())
+		publicKey := new(big.Int).Mul(p, q)
+		primeFactor := []*big.Int{p, q}
+		msg, err := NewIntegerFactorizationProofMessage(primeFactor, publicKey)
+		Expect(msg).To(BeNil())
+		Expect(err).Should(Equal(ErrSmallPublicKeySize))
+	})
+
 	Context("negative cases", func() {
 
 		var (
@@ -71,23 +83,23 @@ var _ = Describe("Integerfactorization flow", func() {
 			Expect(msg).To(BeNil())
 		})
 
-		It("proof not in range", func() {
-			msg.Proof = new(big.Int).Add(publicKey, big2).Bytes()
+		It("X not in range", func() {
+			msg.X = new(big.Int).Add(publicKey, big2).Bytes()
 			Expect(msg.Verify()).ShouldNot(BeNil())
 		})
 
-		It("challenge is larger than pub key", func() {
-			msg.Challenge = new(big.Int).Add(publicKey, big2).Bytes()
+		It("Y not in range", func() {
+			msg.Y = new(big.Int).Add(publicKey, big2).Bytes()
 			Expect(msg.Verify()).ShouldNot(BeNil())
 		})
 
-		It("challenge is smaller than 2", func() {
-			msg.Challenge = big.NewInt(1).Bytes()
-			Expect(msg.Verify()).ShouldNot(BeNil())
+		It("Z and Public Key are not coprime", func() {
+			msg.Z = new(big.Int).Add(publicKey, big0).Bytes()
+			Expect(msg.Verify()).Should(Equal(ErrNotCoprime))
 		})
 
-		It("wrong challenge", func() {
-			msg.Challenge = new(big.Int).Add(new(big.Int).SetBytes(msg.Challenge), big2).Bytes()
+		It("wrong case", func() {
+			msg.X = new(big.Int).Sub(publicKey, big2).Bytes()
 			Expect(msg.Verify()).Should(Equal(ErrVerifyFailure))
 		})
 	})
