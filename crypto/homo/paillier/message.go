@@ -20,7 +20,7 @@ import (
 	"github.com/getamis/alice/crypto/utils"
 )
 
-func (msg *PubKeyMessage) ToPubkey() (*PublicKey, error) {
+func (msg *PubKeyMessage) ToPubkey() (*publicKey, error) {
 	err := msg.Proof.Verify()
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (msg *PubKeyMessage) ToPubkey() (*PublicKey, error) {
 		return nil, ErrInvalidMessage
 	}
 
-	return &PublicKey{
+	return &publicKey{
 		n:       n,
 		g:       g,
 		msg:     msg,
