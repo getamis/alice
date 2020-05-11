@@ -83,6 +83,14 @@ var _ = Describe("Matrix test", func() {
 			Expect(err).Should(Equal(ErrNilMatrix))
 			Expect(m).Should(BeNil())
 		})
+
+		It("over size of the number of column or row", func() {
+			identity, err := newIdentityMatrix(150, bigFieldOrder)
+			Expect(err).Should(BeNil())
+			m, err := NewMatrix(fieldOrder, identity.GetMatrix())
+			Expect(err).Should(Equal(ErrMaximalSizeOfMatrice))
+			Expect(m).Should(BeNil())
+		})
 	})
 
 	It("Copy()", func() {
