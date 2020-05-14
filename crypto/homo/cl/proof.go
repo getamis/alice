@@ -90,8 +90,8 @@ func (pubKey *PublicKey) buildProof(plainText *big.Int, r *big.Int) (*ProofMessa
 	}
 
 	// k:=H(t1, t2, g, f, h, p, q, a, c) mod c
-	// In our application c = 1024. If we pick the field order is 2^32, we will get the uniform distribution D in [0,2^32-1].
-	// If we consider the distribution E := { x in D| x mod c  } is also the uniform distribution in [0,1023]=[0,c-1].
+	// In our application c = 1024. If the field order is 2^32, we will get the uniform distribution D in [0,2^32-1].
+	// If we consider the distribution E := { x in D| x mod c } is also the uniform distribution in [0,1023]=[0,c-1].
 	k, salt, err := utils.HashProtosRejectSampling(big256bit, &Hash{
 		T1: t1.ToMessage(),
 		T2: t2.ToMessage(),
