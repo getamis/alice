@@ -20,6 +20,7 @@ import (
 	"github.com/getamis/alice/crypto/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"golang.org/x/crypto/blake2b"
 )
 
 func TestCommitment(t *testing.T) {
@@ -28,13 +29,12 @@ func TestCommitment(t *testing.T) {
 }
 
 var _ = Describe("hash", func() {
-	minSaltSize := 99999
 	Context("hash", func() {
 		It("should be ok", func() {
 			By("Compute hashcommitment")
 			data, err := utils.GenRandomBytes(256)
 			Expect(err).To(BeNil())
-			sendCommitment, err := NewHashCommitmenter(data, minSaltSize)
+			sendCommitment, err := NewHashCommitmenter(data)
 			Expect(err).To(BeNil())
 
 			By("Send commitment")
@@ -57,7 +57,7 @@ var _ = Describe("hash", func() {
 		It("different data", func() {
 			data, err := utils.GenRandomBytes(256)
 			Expect(err).To(BeNil())
-			getcommitment, err := NewHashCommitmenter(data, minSaltSize)
+			getcommitment, err := NewHashCommitmenter(data)
 			Expect(err).To(BeNil())
 			decommitmentMsg := getcommitment.GetDecommitmentMessage()
 			otherdata, err := utils.GenRandomBytes(2)
@@ -69,12 +69,12 @@ var _ = Describe("hash", func() {
 		})
 
 		It("different salt", func() {
-			data, err := utils.GenRandomBytes(256)
+			data, err := utils.GenRandomBytes(blake2b.Size256)
 			Expect(err).To(BeNil())
-			getcommitment, err := NewHashCommitmenter(data, minSaltSize)
+			getcommitment, err := NewHashCommitmenter(data)
 			Expect(err).To(BeNil())
 			decommitmentMsg := getcommitment.GetDecommitmentMessage()
-			otherSalt, err := utils.GenRandomBytes(2561)
+			otherSalt, err := utils.GenRandomBytes(blake2b.Size256)
 			Expect(err).To(BeNil())
 
 			decommitmentMsg.Salt = otherSalt
@@ -83,10 +83,10 @@ var _ = Describe("hash", func() {
 		})
 
 		It("long blake2b key", func() {
-			commitMsg := &HashCommitmentMessage{
-				Blake2BKey: bytes.Repeat([]byte{2}, 33),
-			}
-			Expect(commitMsg.Decommit(&HashDecommitmentMessage{})).ShouldNot(BeNil())
+			commitMsg := &HashCommitmentMessage{}
+			Expect(commitMsg.Decommit(&HashDecommitmentMessage{
+				Salt: bytes.Repeat([]byte{2}, 33),
+			})).ShouldNot(BeNil())
 		})
 	})
 
@@ -96,7 +96,7 @@ var _ = Describe("hash", func() {
 				Data: []byte{1, 2, 3},
 				Salt: []byte{4, 5, 6},
 			}
-			c, err := NewProtoHashCommitmenter(exp, 100)
+			c, err := NewProtoHashCommitmenter(exp)
 			Expect(err).Should(BeNil())
 			Expect(c).ShouldNot(BeNil())
 
@@ -108,7 +108,7 @@ var _ = Describe("hash", func() {
 		})
 
 		It("nil message", func() {
-			c, err := NewProtoHashCommitmenter(nil, 100)
+			c, err := NewProtoHashCommitmenter(nil)
 			Expect(err).ShouldNot(BeNil())
 			Expect(c).Should(BeNil())
 		})
@@ -118,7 +118,7 @@ var _ = Describe("hash", func() {
 				Data: []byte{1, 2, 3},
 				Salt: []byte{4, 5, 6},
 			}
-			c, err := NewProtoHashCommitmenter(exp, 100)
+			c, err := NewProtoHashCommitmenter(exp)
 			Expect(err).Should(BeNil())
 			Expect(c).ShouldNot(BeNil())
 
@@ -133,7 +133,7 @@ var _ = Describe("hash", func() {
 				Data: []byte{1, 2, 3},
 				Salt: []byte{4, 5, 6},
 			}
-			c, err := NewProtoHashCommitmenter(exp, 100)
+			c, err := NewProtoHashCommitmenter(exp)
 			Expect(err).Should(BeNil())
 			Expect(c).ShouldNot(BeNil())
 
