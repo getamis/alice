@@ -44,7 +44,6 @@ type pubkeyHandler struct {
 	msg       []byte
 	publicKey *pt.ECPoint
 
-	minSaltSize    int
 	g              *pt.ECPoint
 	aiMta          mta.Mta
 	homo           homo.Crypto
@@ -74,8 +73,7 @@ func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo
 	// Build committer for ag
 	// bit length / 8(to bytes) * 2(x and y point)
 	p := aiMta.GetAG(curve)
-	minSaltSize := curve.Params().BitSize / 4
-	agCommitmenter, err := tss.NewCommitterByPoint(p, minSaltSize)
+	agCommitmenter, err := tss.NewCommitterByPoint(p)
 	if err != nil {
 		log.Warn("Failed to new an ag hash commiter", "err", err)
 		return nil, err
@@ -91,7 +89,6 @@ func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo
 		msg:       msg,
 		publicKey: publicKey,
 
-		minSaltSize:    minSaltSize,
 		g:              pt.NewBase(curve),
 		aiMta:          aiMta,
 		agCommitmenter: agCommitmenter,
