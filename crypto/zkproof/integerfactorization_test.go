@@ -14,81 +14,94 @@
 package zkproof
 
 import (
-	"crypto/rand"
-	"math/big"
-	"testing"
+    "crypto/rand"
+    "math/big"
+    "testing"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
-	. "github.com/onsi/gomega"
+    . "github.com/onsi/ginkgo"
+    . "github.com/onsi/ginkgo/extensions/table"
+    . "github.com/onsi/gomega"
 )
 
 func TestZkProof(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Zk proof Suite")
+    RegisterFailHandler(Fail)
+    RunSpecs(t, "Zk proof Suite")
 }
 
 var _ = Describe("Integerfactorization flow", func() {
-	DescribeTable("should be ok", func(pqSize int) {
-		p, err := rand.Prime(rand.Reader, pqSize)
-		Expect(err).To(BeNil())
-		q, err := rand.Prime(rand.Reader, pqSize)
-		Expect(err).To(BeNil())
-		publicKey := new(big.Int).Mul(p, q)
-		primeFactor := []*big.Int{p, q}
-		msg, err := NewIntegerFactorizationProofMessage(primeFactor, publicKey)
-		Expect(err).To(BeNil())
-		err = msg.Verify()
-		Expect(err).To(BeNil())
-	},
-		Entry("the bit length of the public key is 2048:", 1024),
-		Entry("the bit length of the public key is 2046:", 1536),
-	)
+    DescribeTable("should be ok", func(pqSize int) {
+        p, err := rand.Prime(rand.Reader, pqSize)
+        Expect(err).To(BeNil())
+        q, err := rand.Prime(rand.Reader, pqSize)
+        Expect(err).To(BeNil())
+        publicKey := new(big.Int).Mul(p, q)
+        primeFactor := []*big.Int{p, q}
+        msg, err := NewIntegerFactorizationProofMessage(primeFactor, publicKey)
+        Expect(err).To(BeNil())
+        err = msg.Verify()
+        Expect(err).To(BeNil())
+    },
+        Entry("the bit length of the public key is 2048:", 1024),
+        Entry("the bit length of the public key is 2046:", 1536),
+    )
 
-	Context("negative cases", func() {
+    It("negative case: the size of public key is small", func() {
+        p, err := rand.Prime(rand.Reader, 1000)
+        Expect(err).To(BeNil())
+        q, err := rand.Prime(rand.Reader, 1000)
+        Expect(err).To(BeNil())
+        publicKey := new(big.Int).Mul(p, q)
+        primeFactor := []*big.Int{p, q}
+        msg, err := NewIntegerFactorizationProofMessage(primeFactor, publicKey)
+        Expect(msg).To(BeNil())
+        Expect(err).Should(Equal(ErrSmallPublicKeySize))
+    })
 
-		var (
-			pqSize = 1024
+    Context("negative cases", func() {
 
-			msg       *IntegerFactorizationProofMessage
-			publicKey *big.Int
-		)
+        var (
+            pqSize = 1024
 
-		BeforeEach(func() {
-			p, err := rand.Prime(rand.Reader, pqSize)
-			Expect(err).To(BeNil())
-			q, err := rand.Prime(rand.Reader, pqSize)
-			Expect(err).To(BeNil())
-			publicKey = new(big.Int).Mul(p, q)
-			primeFactor := []*big.Int{p, q}
-			msg, err = NewIntegerFactorizationProofMessage(primeFactor, publicKey)
-			Expect(err).To(BeNil())
-		})
+            msg       *IntegerFactorizationProofMessage
+            publicKey *big.Int
+        )
 
-		It("empty factors", func() {
-			msg, err := NewIntegerFactorizationProofMessage([]*big.Int{}, publicKey)
-			Expect(err).ShouldNot(BeNil())
-			Expect(msg).To(BeNil())
-		})
+        BeforeEach(func() {
+            p, err := rand.Prime(rand.Reader, pqSize)
+            Expect(err).To(BeNil())
+            q, err := rand.Prime(rand.Reader, pqSize)
+            Expect(err).To(BeNil())
+            publicKey = new(big.Int).Mul(p, q)
+            primeFactor := []*big.Int{p, q}
+            msg, err = NewIntegerFactorizationProofMessage(primeFactor, publicKey)
+            Expect(err).To(BeNil())
+        })
 
-		It("proof not in range", func() {
-			msg.Proof = new(big.Int).Add(publicKey, big2).Bytes()
-			Expect(msg.Verify()).ShouldNot(BeNil())
-		})
+        It("empty factors", func() {
+            msg, err := NewIntegerFactorizationProofMessage([]*big.Int{}, publicKey)
+            Expect(err).ShouldNot(BeNil())
+            Expect(msg).To(BeNil())
+        })
 
-		It("challenge is larger than pub key", func() {
-			msg.Challenge = new(big.Int).Add(publicKey, big2).Bytes()
-			Expect(msg.Verify()).ShouldNot(BeNil())
-		})
+        It("X not in range", func() {
+            msg.X = new(big.Int).Add(publicKey, big2).Bytes()
+            Expect(msg.Verify()).ShouldNot(BeNil())
+        })
 
-		It("challenge is smaller than 2", func() {
-			msg.Challenge = big.NewInt(1).Bytes()
-			Expect(msg.Verify()).ShouldNot(BeNil())
-		})
+        It("Y not in range", func() {
+            msg.Y = new(big.Int).Add(publicKey, big2).Bytes()
+            Expect(msg.Verify()).ShouldNot(BeNil())
+        })
 
-		It("wrong challenge", func() {
-			msg.Challenge = new(big.Int).Add(new(big.Int).SetBytes(msg.Challenge), big2).Bytes()
-			Expect(msg.Verify()).Should(Equal(ErrVerifyFailure))
-		})
-	})
+        It("Z and Public Key are not coprime", func() {
+            msg.Z = new(big.Int).Add(publicKey, big0).Bytes()
+            Expect(msg.Verify()).Should(Equal(ErrNotCoprime))
+        })
+
+        It("wrong case", func() {
+            msg.X = new(big.Int).Sub(publicKey, big2).Bytes()
+            Expect(msg.Verify()).Should(Equal(ErrVerifyFailure))
+        })
+    })
 })
+
