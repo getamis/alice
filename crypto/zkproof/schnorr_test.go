@@ -117,7 +117,7 @@ var _ = Describe("Schnorr (Sigma protocol)", func() {
 		})
 
 		It("Failed to verify", func() {
-			msg.Blake2BKey = []byte{1, 2, 3}
+			msg.Salt = []byte{1, 2, 3}
 			Expect(msg.Verify(R)).Should(Equal(ErrVerifyFailure))
 		})
 	})
