@@ -21,7 +21,6 @@ import (
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
-	"golang.org/x/crypto/blake2b"
 )
 
 var (
@@ -109,11 +108,11 @@ func NewSchorrMessage(a1 *big.Int, a2 *big.Int, R *pt.ECPoint) (*SchnorrProofMes
 	}
 
 	// Compute c
-	blake2bKey, err := utils.GenRandomBytes(blake2b.Size256)
+	salt, err := utils.GenRandomBytes(utils.SaltSize)
 	if err != nil {
 		return nil, err
 	}
-	c, err := utils.HashProtos(blake2bKey, fieldOrder, msgG, msgV, msgR, msgAlpha)
+	c, err := utils.HashProtosWithFieldOrder(salt, fieldOrder, msgG, msgV, msgR, msgAlpha)
 	if err != nil {
 		return nil, err
 	}
@@ -130,11 +129,11 @@ func NewSchorrMessage(a1 *big.Int, a2 *big.Int, R *pt.ECPoint) (*SchnorrProofMes
 
 	// Build and verify message again
 	msg := &SchnorrProofMessage{
-		Blake2BKey: blake2bKey,
-		V:          msgV,
-		Alpha:      msgAlpha,
-		U:          u.Bytes(),
-		T:          t.Bytes(),
+		Salt:  salt,
+		V:     msgV,
+		Alpha: msgAlpha,
+		U:     u.Bytes(),
+		T:     t.Bytes(),
 	}
 	err = msg.Verify(R)
 	if err != nil {
@@ -194,7 +193,7 @@ func (s *SchnorrProofMessage) Verify(R *pt.ECPoint) error {
 	}
 
 	// Calculate alpha + c*V
-	c, err := utils.HashProtos(s.Blake2BKey, fieldOrder, msgG, s.V, msgR, s.Alpha)
+	c, err := utils.HashProtosWithFieldOrder(s.Salt, fieldOrder, msgG, s.V, msgR, s.Alpha)
 	if err != nil {
 		return err
 	}

@@ -25,7 +25,7 @@ message IntegerFactorizationProofMessage {
 }
 
 message SchnorrProofMessage {
-  bytes blake2bKey = 1;
+  bytes salt = 1;
   ecpointgrouplaw.EcPointMessage V = 2;
   ecpointgrouplaw.EcPointMessage alpha = 3;
   bytes u = 4;
