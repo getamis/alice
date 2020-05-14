@@ -37,12 +37,8 @@ var _ = Describe("Schnorr (Sigma protocol)", func() {
 		Expect(err).Should(BeNil())
 		Expect(p.Verify(R)).Should(BeNil())
 	},
-		Entry("Curve: P224 #1", pt.ScalarBaseMult(elliptic.P224(), big.NewInt(0))),
-		Entry("Curve: P224 #2", pt.ScalarBaseMult(elliptic.P224(), big.NewInt(1))),
 		Entry("Curve: P256 #1", pt.ScalarBaseMult(elliptic.P256(), big.NewInt(0))),
 		Entry("Curve: P256 #2", pt.ScalarBaseMult(elliptic.P256(), big.NewInt(55))),
-		Entry("Curve: P384 #1", pt.ScalarBaseMult(elliptic.P384(), big.NewInt(0))),
-		Entry("Curve: P384 #2", pt.ScalarBaseMult(elliptic.P384(), big.NewInt(123))),
 		Entry("Curve: S256 #1", pt.ScalarBaseMult(btcec.S256(), big.NewInt(0))),
 		Entry("Curve: S256 #2", pt.ScalarBaseMult(btcec.S256(), big.NewInt(123))),
 	)
@@ -52,9 +48,7 @@ var _ = Describe("Schnorr (Sigma protocol)", func() {
 		Expect(err).Should(BeNil())
 		Expect(p.Verify(pt.NewBase(curve))).Should(BeNil())
 	},
-		Entry("Curve: P224", elliptic.P224()),
 		Entry("Curve: P256", elliptic.P256()),
-		Entry("Curve: P384", elliptic.P384()),
 		Entry("Curve: S256", btcec.S256()),
 	)
 
