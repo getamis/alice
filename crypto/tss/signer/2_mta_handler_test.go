@@ -186,7 +186,7 @@ var _ = Describe("mta handler, negative cases", func() {
 		})
 
 		It("failed to sum up wiG (different curve)", func() {
-			toH.wiG = pt.NewBase(elliptic.P224())
+			toH.wiG = pt.NewBase(elliptic.P256())
 			got, err := toH.Finalize(log.Discard())
 			Expect(got).Should(BeNil())
 			Expect(err).Should(Equal(pt.ErrDifferentCurve))
