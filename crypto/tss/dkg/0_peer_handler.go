@@ -69,8 +69,6 @@ func newPeerHandler(curve elliptic.Curve, peerManager types.PeerManager, thresho
 }
 
 func newPeerHandlerWithPolynomial(curve elliptic.Curve, peerManager types.PeerManager, threshold uint32, x *big.Int, rank uint32, poly *polynomial.Polynomial) (*peerHandler, error) {
-	params := curve.Params()
-	fieldOrder := params.N
 	if err := utils.EnsureThreshold(threshold, peerManager.NumPeers()+1); err != nil {
 		return nil, err
 	}
@@ -87,8 +85,7 @@ func newPeerHandlerWithPolynomial(curve elliptic.Curve, peerManager types.PeerMa
 	// Calculate u0g
 	u0 := poly.Get(0)
 	u0g := ecpointgrouplaw.ScalarBaseMult(curve, u0)
-	minSaltSize := fieldOrder.BitLen() / 4
-	u0gCommiter, err := tss.NewCommitterByPoint(u0g, minSaltSize)
+	u0gCommiter, err := tss.NewCommitterByPoint(u0g)
 	if err != nil {
 		return nil, err
 	}
