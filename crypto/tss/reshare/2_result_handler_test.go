@@ -191,7 +191,7 @@ var _ = Describe("result handler, negative cases", func() {
 
 		It("failed to compute linear combinations", func() {
 			var err error
-			toH.siGProofMsg.V, err = ecpointgrouplaw.NewBase(elliptic.P224()).ToEcPointMessage()
+			toH.siGProofMsg.V, err = ecpointgrouplaw.NewBase(elliptic.P256()).ToEcPointMessage()
 			Expect(err).Should(BeNil())
 			got, err := toH.Finalize(log.Discard())
 			Expect(got).Should(BeNil())
