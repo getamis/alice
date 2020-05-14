@@ -25,6 +25,11 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
+const (
+	// SaltSize is based on blake2b256
+	SaltSize = 32
+)
+
 var (
 	// ErrLessOrEqualBig2 is returned if the field order is less than or equal to 2
 	ErrLessOrEqualBig2 = errors.New("less 2")
@@ -129,6 +134,12 @@ func Gcd(a *big.Int, b *big.Int) *big.Int {
 // Lcm calculates find Least Common Multiple
 // https://rosettacode.org/wiki/Least_common_multiple#Go
 func Lcm(a, b *big.Int) (*big.Int, error) {
+	if a.Cmp(big0) <= 0 {
+		return nil, ErrInvalidInput
+	}
+	if b.Cmp(big0) <= 0 {
+		return nil, ErrInvalidInput
+	}
 	t := Gcd(a, b)
 	// avoid panic in Div function
 	if t.Cmp(big0) <= 0 {
@@ -184,16 +195,22 @@ func GenRandomBytes(size int) ([]byte, error) {
 	return randomByte, nil
 }
 
-// HashProtos hashes a slice of message to a field.
-func HashProtos(blake2bKey []byte, fieldOrder *big.Int, msgs ...proto.Message) (*big.Int, error) {
-	blake2b256, err := blake2b.New256(blake2bKey)
+// HashProtosWithFieldOrder hashes a slice of message to a field.
+func HashProtosWithFieldOrder(salt []byte, fieldOrder *big.Int, msgs ...proto.Message) (*big.Int, error) {
+	bs, err := HashProtos(salt, msgs...)
 	if err != nil {
 		return nil, err
 	}
+	c := new(big.Int).SetBytes(bs)
+	c = new(big.Int).Mod(c, fieldOrder)
+	return c, nil
+}
 
+// HashProtos hashes a slice of message.
+func HashProtos(salt []byte, msgs ...proto.Message) ([]byte, error) {
 	// hash message
 	hMsg := &Hash{
-		Msgs: make([]*any.Any, len(msgs)),
+		Msgs: make([]*any.Any, len(msgs)+1),
 	}
 	for i, m := range msgs {
 		anyMsg, err := ptypes.MarshalAny(m)
@@ -202,11 +219,13 @@ func HashProtos(blake2bKey []byte, fieldOrder *big.Int, msgs ...proto.Message) (
 		}
 		hMsg.Msgs[i] = anyMsg
 	}
+	hMsg.Msgs[len(msgs)] = &any.Any{
+		Value: salt,
+	}
 	inputData, err := proto.Marshal(hMsg)
 	if err != nil {
 		return nil, err
 	}
-	c := new(big.Int).SetBytes(blake2b256.Sum(inputData))
-	c = new(big.Int).Mod(c, fieldOrder)
-	return c, nil
+	bs := blake2b.Sum256(inputData)
+	return bs[:], nil
 }
