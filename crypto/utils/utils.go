@@ -25,6 +25,11 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
+const (
+	// minPermittedThreshold
+	minPermittedThreshold = 2
+)
+
 var (
 	// ErrLessOrEqualBig2 is returned if the field order is less than or equal to 2
 	ErrLessOrEqualBig2 = errors.New("less 2")
@@ -42,6 +47,8 @@ var (
 	ErrLargerFloor = errors.New("larger floor")
 	// ErrEmptySlice is returned if the length of slice is zero.
 	ErrEmptySlice = errors.New("empty slice")
+	// ErrSmallThreshold is returned if the threshold < 2.
+	ErrSmallThreshold = errors.New("threshold < 2")
 
 	// maxGenPrimeInt defines the max retries to generate a prime int
 	maxGenPrimeInt = 100
@@ -72,6 +79,10 @@ func EnsureThreshold(threshold uint32, n uint32) error {
 	if threshold > n {
 		return ErrLargeThreshold
 	}
+	if threshold < minPermittedThreshold {
+		return ErrSmallThreshold
+	}
+
 	return nil
 }
 
