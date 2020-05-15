@@ -28,9 +28,10 @@ import (
 const (
 	// SaltSize is based on blake2b256
 	SaltSize = 32
-
 	// maxGenHashValue defines the max retries to generate hash value by reject sampling
 	maxGenNHashValue = 100
+	// minPermittedThreshold
+	minPermittedThreshold = 2
 )
 
 var (
@@ -50,6 +51,8 @@ var (
 	ErrLargerFloor = errors.New("larger floor")
 	// ErrEmptySlice is returned if the length of slice is zero.
 	ErrEmptySlice = errors.New("empty slice")
+	// ErrSmallThreshold is returned if the threshold < 2.
+	ErrSmallThreshold = errors.New("threshold < 2")
 
 	// maxGenPrimeInt defines the max retries to generate a prime int
 	maxGenPrimeInt = 100
@@ -80,6 +83,10 @@ func EnsureThreshold(threshold uint32, n uint32) error {
 	if threshold > n {
 		return ErrLargeThreshold
 	}
+	if threshold < minPermittedThreshold {
+		return ErrSmallThreshold
+	}
+
 	return nil
 }
 
