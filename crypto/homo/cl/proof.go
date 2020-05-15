@@ -24,7 +24,7 @@ import (
 
 var (
 	big0      = big.NewInt(0)
-	big256bit = new(big.Int).Lsh(big2, 256)
+	big256bit = new(big.Int).Lsh(big1, 256)
 
 	// ErrDifferentBQForms is returned if the two quadratic forms are different
 	ErrDifferentBQForms = errors.New("different binary quadratic Forms")
