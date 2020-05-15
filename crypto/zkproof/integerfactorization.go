@@ -45,7 +45,7 @@ var (
 	big0      = big.NewInt(0)
 	big1      = big.NewInt(1)
 	big2      = big.NewInt(2)
-	big256bit = new(big.Int).Lsh(big2, 256)
+	big256bit = new(big.Int).Lsh(big1, 256)
 
 	// B
 	challengeSize = big.NewInt(1024)
