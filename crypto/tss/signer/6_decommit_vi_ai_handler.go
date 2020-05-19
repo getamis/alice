@@ -100,23 +100,23 @@ func (p *decommitViAiHandler) HandleMessage(logger log.Logger, message types.Mes
 
 func (p *decommitViAiHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	// Build V and its committer
-	v, err := buildV(logger, p.minSaltSize, p.publicKey, p.r.GetX(), p.vi, p.peers, new(big.Int).SetBytes(p.msg))
+	v, err := buildV(logger, p.publicKey, p.r.GetX(), p.vi, p.peers, new(big.Int).SetBytes(p.msg))
 	if err != nil {
 		return nil, err
 	}
 	p.ui = v.ScalarMult(p.rhoI)
-	p.uiCommitter, err = tss.NewCommitterByPoint(p.ui, p.minSaltSize)
+	p.uiCommitter, err = tss.NewCommitterByPoint(p.ui)
 	if err != nil {
 		return nil, err
 	}
 
 	// Build A and its committer
-	a, err := buildA(logger, p.minSaltSize, p.ai, p.peers)
+	a, err := buildA(logger, p.ai, p.peers)
 	if err != nil {
 		return nil, err
 	}
 	p.ti = a.ScalarMult(p.li)
-	p.tiCommitter, err = tss.NewCommitterByPoint(p.ti, p.minSaltSize)
+	p.tiCommitter, err = tss.NewCommitterByPoint(p.ti)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (p *decommitViAiHandler) getCommitUiTiMessage() *Message {
 	}
 }
 
-func buildV(logger log.Logger, minSaltSize int, pubkey *pt.ECPoint, rx *big.Int, selfVi *pt.ECPoint, peers map[string]*peer, m *big.Int) (*pt.ECPoint, error) {
+func buildV(logger log.Logger, pubkey *pt.ECPoint, rx *big.Int, selfVi *pt.ECPoint, peers map[string]*peer, m *big.Int) (*pt.ECPoint, error) {
 	var err error
 	// Calculate the sum of vi
 	sumVi := selfVi
@@ -181,7 +181,7 @@ func buildV(logger log.Logger, minSaltSize int, pubkey *pt.ECPoint, rx *big.Int,
 	return V, nil
 }
 
-func buildA(logger log.Logger, minSaltSize int, selfAi *pt.ECPoint, peers map[string]*peer) (*pt.ECPoint, error) {
+func buildA(logger log.Logger, selfAi *pt.ECPoint, peers map[string]*peer) (*pt.ECPoint, error) {
 	var err error
 	A := selfAi
 	for id, peer := range peers {

@@ -33,14 +33,14 @@ var (
 	ErrInconsistentPubKey        = errors.New("inconsistent public key")
 )
 
-func NewCommitterByPoint(p *pt.ECPoint, minSaltSize int) (*commitment.HashCommitmenter, error) {
+func NewCommitterByPoint(p *pt.ECPoint) (*commitment.HashCommitmenter, error) {
 	msg, err := p.ToEcPointMessage()
 	if err != nil {
 		log.Warn("Failed to convert to an ec point message", "err", err)
 		return nil, err
 	}
 
-	return commitment.NewProtoHashCommitmenter(msg, minSaltSize)
+	return commitment.NewProtoHashCommitmenter(msg)
 }
 
 func GetPointFromHashCommitment(logger log.Logger, commit *commitment.HashCommitmentMessage, decommit *commitment.HashDecommitmentMessage) (*pt.ECPoint, error) {

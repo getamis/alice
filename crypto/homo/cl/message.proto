@@ -37,7 +37,7 @@ message EncryptedMessage {
 }
 
 message ProofMessage {
-    bytes blake2bKey = 1;
+    bytes salt = 1;
     bytes u1 = 2;
     bytes u2 = 3;
     binaryquadraticform.BQForm t1 = 4;

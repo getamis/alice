@@ -55,12 +55,5 @@ var _ = Describe("Message test", func() {
 			Expect(err).Should(Equal(utils.ErrLargerFloor))
 			Expect(pub).Should(BeNil())
 		})
-
-		It("invalid proof", func() {
-			p.PublicKey.msg.Proof.Proof = []byte("invalid proof")
-			pub, err := p.PublicKey.msg.ToPubkey()
-			Expect(err).ShouldNot(BeNil())
-			Expect(pub).Should(BeNil())
-		})
 	})
 })

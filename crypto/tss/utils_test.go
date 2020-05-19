@@ -33,7 +33,7 @@ var _ = Describe("Utils", func() {
 	Context("NewCommitterByPoint/GetPointFromHashCommitment", func() {
 		It("should be ok", func() {
 			p := pt.NewIdentity(btcec.S256())
-			c, err := NewCommitterByPoint(p, 100)
+			c, err := NewCommitterByPoint(p)
 			Expect(err).Should(BeNil())
 			Expect(c).ShouldNot(BeNil())
 
@@ -43,13 +43,13 @@ var _ = Describe("Utils", func() {
 		})
 
 		It("failed to new by empty point", func() {
-			c, err := NewCommitterByPoint(&pt.ECPoint{}, 100)
+			c, err := NewCommitterByPoint(&pt.ECPoint{})
 			Expect(err).ShouldNot(BeNil())
 			Expect(c).Should(BeNil())
 		})
 
 		It("not an ec point", func() {
-			cm, err := commitment.NewHashCommitmenter([]byte{1, 2, 3}, 100)
+			cm, err := commitment.NewHashCommitmenter([]byte{1, 2, 3})
 			Expect(err).Should(BeNil())
 			got, err := GetPointFromHashCommitment(log.Discard(), cm.GetCommitmentMessage(), cm.GetDecommitmentMessage())
 			Expect(err).ShouldNot(BeNil())
