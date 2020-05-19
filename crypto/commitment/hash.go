@@ -20,7 +20,7 @@ import (
 
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/crypto/blake2b"
+	"github.com/golang/protobuf/ptypes/any"
 )
 
 // Note: So far, the family of SHA3(i.e. including black2) can protect against length extension attacks.
@@ -30,50 +30,39 @@ var (
 )
 
 type HashCommitmenter struct {
-	blake2bKey []byte
-	digest     []byte
-	data       []byte
-	salt       []byte
+	digest []byte
+	data   []byte
+	salt   []byte
 }
 
-func NewProtoHashCommitmenter(msg proto.Message, minSaltSize int) (*HashCommitmenter, error) {
+func NewProtoHashCommitmenter(msg proto.Message) (*HashCommitmenter, error) {
 	agMsgBs, err := proto.Marshal(msg)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewHashCommitmenter(agMsgBs, minSaltSize)
+	return NewHashCommitmenter(agMsgBs)
 }
 
-func NewHashCommitmenter(data []byte, minSaltSize int) (*HashCommitmenter, error) {
-	lens := len(data)
-	if lens < minSaltSize {
-		lens = minSaltSize
-	}
-	randomSalt, err := utils.GenRandomBytes(lens)
+func NewHashCommitmenter(data []byte) (*HashCommitmenter, error) {
+	salt, err := utils.GenRandomBytes(utils.SaltSize)
 	if err != nil {
 		return nil, err
 	}
-	blake2bKey, err := utils.GenRandomBytes(blake2b.Size256)
-	if err != nil {
-		return nil, err
-	}
-	digest, err := getDigest(blake2bKey, data, randomSalt)
+	digest, err := getDigest(salt, data)
 	if err != nil {
 		return nil, err
 	}
 	return &HashCommitmenter{
-		blake2bKey: blake2bKey,
-		digest:     digest,
-		data:       data,
-		salt:       randomSalt,
+		digest: digest,
+		data:   data,
+		salt:   salt,
 	}, nil
 }
 
 func (c *HashCommitmenter) GetCommitmentMessage() *HashCommitmentMessage {
 	return &HashCommitmentMessage{
-		Blake2BKey: c.blake2bKey,
-		Digest:     c.digest,
+		Digest: c.digest,
 	}
 }
 
@@ -85,7 +74,7 @@ func (c *HashCommitmenter) GetDecommitmentMessage() *HashDecommitmentMessage {
 }
 
 func (c *HashCommitmentMessage) Decommit(msg *HashDecommitmentMessage) error {
-	digest, err := getDigest(c.Blake2BKey, msg.Data, msg.Salt)
+	digest, err := getDigest(msg.Salt, msg.Data)
 	if err != nil {
 		return err
 	}
@@ -106,12 +95,8 @@ func (c *HashCommitmentMessage) DecommitToProto(msg *HashDecommitmentMessage, pr
 	}
 	return nil
 }
-func getDigest(blake2bKey []byte, originData []byte, salt []byte) ([]byte, error) {
-	blake2b256, err := blake2b.New256(blake2bKey)
-	if err != nil {
-		return nil, err
-	}
-	checkData := append(originData, salt...)
-	digest := blake2b256.Sum(checkData)
-	return digest, nil
+func getDigest(salt []byte, originData []byte) ([]byte, error) {
+	return utils.HashProtos(salt, &any.Any{
+		Value: originData,
+	})
 }

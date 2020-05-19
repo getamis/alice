@@ -167,9 +167,7 @@ var _ = Describe("TSS", func() {
 			listener[i].AssertExpectations(GinkgoT())
 		}
 	},
-		Entry("P224 curve, 3 of (0,0,0)", elliptic.P224(), uint32(3), []uint32{0, 0, 0}),
 		Entry("P256 curve, 3 of (0,0,0)", elliptic.P256(), uint32(3), []uint32{0, 0, 0}),
-		Entry("P384 curve, 3 of (0,0,0)", elliptic.P384(), uint32(3), []uint32{0, 0, 0}),
 		Entry("S256 curve, 3 of (0,0,0,0,0)", btcec.S256(), uint32(3), []uint32{0, 0, 0, 0, 0}),
 		Entry("S256 curve, 3 of (0,0,0,1,1)", btcec.S256(), uint32(3), []uint32{0, 0, 0, 1, 1}),
 		Entry("S256 curve, 3 of (0,0,0)", btcec.S256(), uint32(3), []uint32{0, 0, 0}),

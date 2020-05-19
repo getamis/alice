@@ -25,6 +25,15 @@ import (
 	"golang.org/x/crypto/blake2b"
 )
 
+const (
+	// SaltSize is based on blake2b256
+	SaltSize = 32
+	// maxGenHashValue defines the max retries to generate hash value by reject sampling
+	maxGenNHashValue = 100
+	// minPermittedThreshold
+	minPermittedThreshold = 2
+)
+
 var (
 	// ErrLessOrEqualBig2 is returned if the field order is less than or equal to 2
 	ErrLessOrEqualBig2 = errors.New("less 2")
@@ -42,6 +51,8 @@ var (
 	ErrLargerFloor = errors.New("larger floor")
 	// ErrEmptySlice is returned if the length of slice is zero.
 	ErrEmptySlice = errors.New("empty slice")
+	// ErrSmallThreshold is returned if the threshold < 2.
+	ErrSmallThreshold = errors.New("threshold < 2")
 
 	// maxGenPrimeInt defines the max retries to generate a prime int
 	maxGenPrimeInt = 100
@@ -72,6 +83,10 @@ func EnsureThreshold(threshold uint32, n uint32) error {
 	if threshold > n {
 		return ErrLargeThreshold
 	}
+	if threshold < minPermittedThreshold {
+		return ErrSmallThreshold
+	}
+
 	return nil
 }
 
@@ -129,6 +144,12 @@ func Gcd(a *big.Int, b *big.Int) *big.Int {
 // Lcm calculates find Least Common Multiple
 // https://rosettacode.org/wiki/Least_common_multiple#Go
 func Lcm(a, b *big.Int) (*big.Int, error) {
+	if a.Cmp(big0) <= 0 {
+		return nil, ErrInvalidInput
+	}
+	if b.Cmp(big0) <= 0 {
+		return nil, ErrInvalidInput
+	}
 	t := Gcd(a, b)
 	// avoid panic in Div function
 	if t.Cmp(big0) <= 0 {
@@ -184,16 +205,41 @@ func GenRandomBytes(size int) ([]byte, error) {
 	return randomByte, nil
 }
 
-// HashProtos hashes a slice of message to a field.
-func HashProtos(blake2bKey []byte, fieldOrder *big.Int, msgs ...proto.Message) (*big.Int, error) {
-	blake2b256, err := blake2b.New256(blake2bKey)
+// Waring: The follwing function only work in S256 and P256, because the output of blake2b is 32 byte.
+// HashProtosToInt hashes a slice of message to an integer.
+func HashProtosToInt(salt []byte, msgs ...proto.Message) (*big.Int, error) {
+	bs, err := HashProtos(salt, msgs...)
 	if err != nil {
 		return nil, err
 	}
+	c := new(big.Int).SetBytes(bs)
+	return c, nil
+}
 
+func HashProtosRejectSampling(fieldOrder *big.Int, msgs ...proto.Message) (*big.Int, []byte, error) {
+	for i := 0; i < maxGenNHashValue; i++ {
+		salt, err := GenRandomBytes(SaltSize)
+		if err != nil {
+			return nil, nil, err
+		}
+		c, err := HashProtosToInt(salt, msgs...)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		err = InRange(c, big0, fieldOrder)
+		if err == nil {
+			return c, salt, nil
+		}
+	}
+	return nil, nil, ErrExceedMaxRetry
+}
+
+// HashProtos hashes a slice of message.
+func HashProtos(salt []byte, msgs ...proto.Message) ([]byte, error) {
 	// hash message
 	hMsg := &Hash{
-		Msgs: make([]*any.Any, len(msgs)),
+		Msgs: make([]*any.Any, len(msgs)+1),
 	}
 	for i, m := range msgs {
 		anyMsg, err := ptypes.MarshalAny(m)
@@ -202,11 +248,13 @@ func HashProtos(blake2bKey []byte, fieldOrder *big.Int, msgs ...proto.Message) (
 		}
 		hMsg.Msgs[i] = anyMsg
 	}
+	hMsg.Msgs[len(msgs)] = &any.Any{
+		Value: salt,
+	}
 	inputData, err := proto.Marshal(hMsg)
 	if err != nil {
 		return nil, err
 	}
-	c := new(big.Int).SetBytes(blake2b256.Sum(inputData))
-	c = new(big.Int).Mod(c, fieldOrder)
-	return c, nil
+	bs := blake2b.Sum256(inputData)
+	return bs[:], nil
 }

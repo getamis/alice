@@ -20,11 +20,11 @@ import (
 
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/golang/protobuf/proto"
-	"golang.org/x/crypto/blake2b"
 )
 
 var (
-	big0 = big.NewInt(0)
+	big0      = big.NewInt(0)
+	big256bit = new(big.Int).Lsh(big1, 256)
 
 	// ErrDifferentBQForms is returned if the two quadratic forms are different
 	ErrDifferentBQForms = errors.New("different binary quadratic Forms")
@@ -90,11 +90,9 @@ func (pubKey *PublicKey) buildProof(plainText *big.Int, r *big.Int) (*ProofMessa
 	}
 
 	// k:=H(t1, t2, g, f, h, p, q, a, c) mod c
-	blake2bKey, err := utils.GenRandomBytes(blake2b.Size256)
-	if err != nil {
-		return nil, err
-	}
-	k, err := utils.HashProtos(blake2bKey, pubKey.c, &Hash{
+	// In our application c = 1024. If the field order is 2^32, we will get the uniform distribution D in [0,2^32-1].
+	// If we consider the distribution E := { x in D| x mod c } is also the uniform distribution in [0,1023]=[0,c-1].
+	k, salt, err := utils.HashProtosRejectSampling(big256bit, &Hash{
 		T1: t1.ToMessage(),
 		T2: t2.ToMessage(),
 		G:  pubKey.g.ToMessage(),
@@ -108,6 +106,7 @@ func (pubKey *PublicKey) buildProof(plainText *big.Int, r *big.Int) (*ProofMessa
 	if err != nil {
 		return nil, err
 	}
+	k = k.Mod(k, pubKey.c)
 
 	// Compute u1:=r1+kr in Z and u2:=r2+k*plainText mod p
 	u1 := new(big.Int).Mul(k, r)
@@ -116,11 +115,11 @@ func (pubKey *PublicKey) buildProof(plainText *big.Int, r *big.Int) (*ProofMessa
 	u2 = u2.Add(u2, r2)
 	u2 = u2.Mod(u2, pubKey.p)
 	proof := &ProofMessage{
-		Blake2BKey: blake2bKey,
-		U1:         u1.Bytes(),
-		U2:         u2.Bytes(),
-		T1:         t1.ToMessage(),
-		T2:         t2.ToMessage(),
+		Salt: salt,
+		U1:   u1.Bytes(),
+		U2:   u2.Bytes(),
+		T1:   t1.ToMessage(),
+		T2:   t2.ToMessage(),
 	}
 	return proof, nil
 }
@@ -165,7 +164,7 @@ func (pubKey *PublicKey) VerifyEnc(bs []byte) error {
 	}
 	// Check g^{u1}=t1*c1^k
 	// k:=H(t1, t2, g, f, h, p, q, a, c) mod c
-	k, err := utils.HashProtos(msg.Proof.Blake2BKey, pubKey.c, &Hash{
+	k, err := utils.HashProtosToInt(msg.Proof.Salt, &Hash{
 		T1: msg.Proof.T1,
 		T2: msg.Proof.T2,
 		G:  pubKey.g.ToMessage(),
@@ -179,6 +178,8 @@ func (pubKey *PublicKey) VerifyEnc(bs []byte) error {
 	if err != nil {
 		return err
 	}
+	k = k.Mod(k, pubKey.c)
+
 	t1c1k, err := c1.Exp(k)
 	if err != nil {
 		return err
