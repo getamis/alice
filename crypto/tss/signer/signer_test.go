@@ -34,7 +34,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func TestDKG(t *testing.T) {
+func TestSigner(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Signer Suite")
 }
