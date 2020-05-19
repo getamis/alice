@@ -199,7 +199,7 @@ func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][
 		pm.setSigners(signers)
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
-		homo, err := paillier.NewPaillier(1024)
+		homo, err := paillier.NewPaillier(2048)
 		Expect(err).Should(BeNil())
 		signers[id], err = NewSigner(peerManagers[i], expPublic, homo, ss[i][1], bks, msg, listeners[id])
 		Expect(err).Should(BeNil())
