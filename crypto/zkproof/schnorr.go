@@ -108,15 +108,10 @@ func NewSchorrMessage(a1 *big.Int, a2 *big.Int, R *pt.ECPoint) (*SchnorrProofMes
 	}
 
 	// Compute c
-	salt, err := utils.GenRandomBytes(utils.SaltSize)
+	c, salt, err := utils.HashProtosRejectSampling(fieldOrder, msgG, msgV, msgR, msgAlpha)
 	if err != nil {
 		return nil, err
 	}
-	c, err := utils.HashProtosWithFieldOrder(salt, fieldOrder, msgG, msgV, msgR, msgAlpha)
-	if err != nil {
-		return nil, err
-	}
-
 	// Calculate u := m + c*a1 mod p
 	u := new(big.Int).Mul(a1, c)
 	u = new(big.Int).Add(m, u)
@@ -193,10 +188,15 @@ func (s *SchnorrProofMessage) Verify(R *pt.ECPoint) error {
 	}
 
 	// Calculate alpha + c*V
-	c, err := utils.HashProtosWithFieldOrder(s.Salt, fieldOrder, msgG, s.V, msgR, s.Alpha)
+	c, err := utils.HashProtosToInt(s.Salt, msgG, s.V, msgR, s.Alpha)
 	if err != nil {
 		return err
 	}
+	err = utils.InRange(c, big0, fieldOrder)
+	if err != nil {
+		return err
+	}
+
 	v1 := V.ScalarMult(c)
 	result2, err := v1.Add(alpha)
 	if err != nil {

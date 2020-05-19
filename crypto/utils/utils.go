@@ -28,6 +28,9 @@ import (
 const (
 	// SaltSize is based on blake2b256
 	SaltSize = 32
+
+	// maxGenHashValue defines the max retries to generate hash value by reject sampling
+	maxGenNHashValue = 100
 )
 
 var (
@@ -195,15 +198,34 @@ func GenRandomBytes(size int) ([]byte, error) {
 	return randomByte, nil
 }
 
-// HashProtosWithFieldOrder hashes a slice of message to a field.
-func HashProtosWithFieldOrder(salt []byte, fieldOrder *big.Int, msgs ...proto.Message) (*big.Int, error) {
+// Waring: The follwing function only work in S256 and P256, because the output of blake2b is 32 byte.
+// HashProtosToInt hashes a slice of message to an integer.
+func HashProtosToInt(salt []byte, msgs ...proto.Message) (*big.Int, error) {
 	bs, err := HashProtos(salt, msgs...)
 	if err != nil {
 		return nil, err
 	}
 	c := new(big.Int).SetBytes(bs)
-	c = new(big.Int).Mod(c, fieldOrder)
 	return c, nil
+}
+
+func HashProtosRejectSampling(fieldOrder *big.Int, msgs ...proto.Message) (*big.Int, []byte, error) {
+	for i := 0; i < maxGenNHashValue; i++ {
+		salt, err := GenRandomBytes(SaltSize)
+		if err != nil {
+			return nil, nil, err
+		}
+		c, err := HashProtosToInt(salt, msgs...)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		err = InRange(c, big0, fieldOrder)
+		if err == nil {
+			return c, salt, nil
+		}
+	}
+	return nil, nil, ErrExceedMaxRetry
 }
 
 // HashProtos hashes a slice of message.
