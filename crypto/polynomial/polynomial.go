@@ -32,7 +32,8 @@ type Polynomial struct {
 	coefficients []*big.Int
 }
 
-// NewPolynomial news a polynomial formula
+// NewPolynomial news a polynomial module fieldOrder.
+// Warning: This function may produce modulo bias if applied directly to slices that have not previously undergone rejection sampling.
 func NewPolynomial(fieldOrder *big.Int, coefficients []*big.Int) (*Polynomial, error) {
 	if err := utils.EnsureFieldOrder(fieldOrder); err != nil {
 		return nil, err

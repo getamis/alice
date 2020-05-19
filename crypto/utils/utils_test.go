@@ -63,8 +63,9 @@ var _ = Describe("Utils", func() {
 			Expect(got).Should(Equal(err))
 		}
 	},
-		Entry("should be ok", uint32(0), uint32(2), nil),
+		Entry("should be ok", uint32(2), uint32(2), nil),
 		Entry("large threshold", uint32(3), uint32(2), ErrLargeThreshold),
+		Entry("small threshold", uint32(1), uint32(2), ErrSmallThreshold),
 	)
 
 	It("RandomInt()", func() {
