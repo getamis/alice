@@ -50,9 +50,29 @@ var _ = Describe("CL test", func() {
 	})
 
 	Context("NewCL", func() {
-		It("smaller safe parameter", func() {
+		It("safe parameter < 1348", func() {
 			cl, err := NewCL(big.NewInt(1024), 40, bigPrime, 2, 80)
 			Expect(err).Should(Equal(ErrSmallSafeParameter))
+			Expect(cl).Should(BeNil())
+		})
+
+		It(" λ < μ + 2", func() {
+			p, err := utils.RandomPrime(1348)
+			Expect(err).Should(BeNil())
+			cl, err := NewCL(big.NewInt(1024), 40, p, 1348, 80)
+			Expect(err).Should(Equal(ErrSmallSafeParameter))
+			Expect(cl).Should(BeNil())
+		})
+
+		It(" p is a prime with bit-length(p) < 80", func() {
+			cl, err := NewCL(big.NewInt(1024), 40, big3, 1348, 80)
+			Expect(err).Should(Equal(ErrNotBigPrime))
+			Expect(cl).Should(BeNil())
+		})
+
+		It(" p is not a prime: p = 1000", func() {
+			cl, err := NewCL(big.NewInt(1024), 40, big.NewInt(1000), 1348, 80)
+			Expect(err).Should(Equal(ErrNotBigPrime))
 			Expect(cl).Should(BeNil())
 		})
 	})
