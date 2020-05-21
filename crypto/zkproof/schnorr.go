@@ -41,7 +41,7 @@ var (
 
 	Step 1:
 	- The prover randomly chooses two numbers m, n in [1, p-1] and sends alpha := m*G + n*R to the verifier.
-	- The prover computes c:=H(G,alpha,V,R).
+	- The prover computes c:=H(G,V,R,alpha).
 	- The prover computes  u := m + c*a1 mod p and t := n + c*a2 mod p. The resulting proof is the (u,t, alpha)
 	Step 2: The verifier verifies t*R + u*G = alpha +c*V, and u, t in [0, p-1]. If the result true accept, otherwise reject.
 	Remark: If R is the identity element(i.e. R = (nil,nil)) and t = 0, then the above protocol reduces to the standard Schnorr protocol.
