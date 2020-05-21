@@ -538,7 +538,7 @@ func getUpperBoundClassGroupMaximalOrder(discriminant *big.Int) *big.Int {
 	return upperBound
 }
 
-// generateAbsDiscriminantK returns -ΔK and the root of ΔK
+// generateAnotherPrimeQ returns the a q such that the discriminant is -pq.
 func generateAnotherPrimeQ(p *big.Int, bitsQ int) (*big.Int, error) {
 	// Get a prime q which satisfies
 	// 1. p*q = 3 mod 4

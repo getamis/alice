@@ -178,7 +178,6 @@ func (m *Matrix) get(i, j uint64) *big.Int {
 	return m.matrix[i][j]
 }
 
-// get gets the element at (i, j) without checking the index range and ensure the returned value is in our field
 func (m *Matrix) modInverse(i, j uint64) *big.Int {
 	v := m.get(i, j)
 	return new(big.Int).ModInverse(v, m.fieldOrder)
