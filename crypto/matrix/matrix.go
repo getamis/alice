@@ -19,6 +19,11 @@ import (
 	"math/big"
 )
 
+const (
+	// maxNumberColumnAndRow defines the max permitted number of columns and rows
+	maxNumberColumnAndRow = 100
+)
+
 var (
 	// ErrNonPrimeFieldOrder is returned if the field order is nonprime
 	ErrNonPrimeFieldOrder = errors.New("non prime field order")
@@ -40,6 +45,8 @@ var (
 	ErrNotSquareMatrix = errors.New("not a square matrix")
 	// ErrNotInvertableMatrix is returned if it's not an invertable matrix
 	ErrNotInvertableMatrix = errors.New("not invertable matrix")
+	// ErrMaximalSizeOfMatrice is returned if the number of column or row exceeds the given bound
+	ErrMaximalSizeOfMatrice = errors.New("the number of column or row exceeds the given bound")
 
 	big0 = big.NewInt(0)
 )
@@ -65,6 +72,9 @@ func NewMatrix(fieldOrder *big.Int, matrix [][]*big.Int) (*Matrix, error) {
 	numberColumn := uint64(len(matrix[0]))
 	if numberColumn == 0 {
 		return nil, ErrZeroColumns
+	}
+	if numberRow >= maxNumberColumnAndRow || numberColumn >= maxNumberColumnAndRow {
+		return nil, ErrMaximalSizeOfMatrice
 	}
 	for i := uint64(0); i < numberRow; i++ {
 		if uint64(len(matrix[i])) != numberColumn {

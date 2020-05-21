@@ -195,7 +195,7 @@ var _ = Describe("proof ai handler, negative cases", func() {
 		})
 
 		It("failed to sum up ag (different curve)", func() {
-			toH.publicKey = pt.NewBase(elliptic.P224())
+			toH.publicKey = pt.NewBase(elliptic.P256())
 			got, err := toH.Finalize(log.Discard())
 			Expect(got).Should(BeNil())
 			Expect(err).Should(Equal(pt.ErrDifferentCurve))
