@@ -77,15 +77,15 @@ func (m *PubKeyMessage) ToPubkey() (*PublicKey, error) {
 	if c.Cmp(big0) < 1 {
 		return nil, ErrInvalidMessage
 	}
-	g, err := m.G.ToCacheExp()
+	g, err := m.G.ToBQuadraticForm()
 	if err != nil {
 		return nil, err
 	}
-	f, err := m.F.ToCacheExp()
+	f, err := m.F.ToBQuadraticForm()
 	if err != nil {
 		return nil, err
 	}
-	h, err := m.H.ToCacheExp()
+	h, err := m.H.ToBQuadraticForm()
 	if err != nil {
 		return nil, err
 	}
@@ -95,17 +95,10 @@ func (m *PubKeyMessage) ToPubkey() (*PublicKey, error) {
 	pSquare := new(big.Int).Mul(p, p)
 	discriminantOrderP := new(big.Int).Mul(absDiscriminantK, pSquare)
 	discriminantOrderP = discriminantOrderP.Neg(discriminantOrderP)
-	return &PublicKey{
-		p: p,
-		q: q,
-		a: a,
-		g: g,
-		f: f,
-		h: h,
-		c: c,
-		d: m.D,
 
-		// cache value
-		discriminantOrderP: discriminantOrderP,
-	}, nil
+	publicKey, err := newPubKey(m.GetProof(), m.D, discriminantOrderP, a, c, p, q, g, f, h)
+	if err != nil {
+		return nil, err
+	}
+	return publicKey, nil
 }
