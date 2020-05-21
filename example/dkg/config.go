@@ -11,32 +11,61 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+package dkg
 
 import (
 	"fmt"
+	"io/ioutil"
 
 	"github.com/getamis/alice/crypto/tss/dkg"
+	"github.com/getamis/alice/example/config"
 	"github.com/getamis/sirius/log"
+	"gopkg.in/yaml.v2"
 )
 
-const (
-	typeDKG int = 0
-)
+type DKGConfig struct {
+	Port      int64   `yaml:"port"`
+	Rank      uint32  `yaml:"rank"`
+	Threshold uint32  `yaml:"threshold"`
+	Peers     []int64 `yaml:"peers"`
+}
+
+type DKGResult struct {
+	Share  string               `yaml:"share"`
+	Pubkey config.Pubkey        `yaml:"pubkey"`
+	BKs    map[string]config.BK `yaml:"bks"`
+}
+
+func readDKGConfigFile(filaPath string) (*DKGConfig, error) {
+	c := &DKGConfig{}
+	yamlFile, err := ioutil.ReadFile(filaPath)
+	if err != nil {
+		return nil, err
+	}
+	err = yaml.Unmarshal(yamlFile, c)
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
 
 func writeDKGResult(id string, result *dkg.Result) error {
 	dkgResult := &DKGResult{
 		Share: result.Share.String(),
-		Pubkey: Pubkey{
+		Pubkey: config.Pubkey{
 			X: result.PublicKey.GetX().String(),
 			Y: result.PublicKey.GetY().String(),
 		},
-		BKs: make(map[string]string),
+		BKs: make(map[string]config.BK),
 	}
 	for peerID, bk := range result.Bks {
-		dkgResult.BKs[peerID] = bk.GetX().String()
+		dkgResult.BKs[peerID] = config.BK{
+			X:    bk.GetX().String(),
+			Rank: bk.GetRank(),
+		}
 	}
-	err := writeYamlFile(dkgResult, getFilePath(typeDKG, id))
+	err := config.WriteYamlFile(dkgResult, getFilePath(id))
 	if err != nil {
 		log.Error("Cannot write YAML file", "err", err)
 		return err
@@ -44,10 +73,6 @@ func writeDKGResult(id string, result *dkg.Result) error {
 	return nil
 }
 
-func getFilePath(rType int, id string) string {
-	var resultType string
-	if rType == typeDKG {
-		resultType = "dkg"
-	}
-	return fmt.Sprintf("result/%s/%s.yaml", resultType, id)
+func getFilePath(id string) string {
+	return fmt.Sprintf("dkg/%s-output.yaml", id)
 }

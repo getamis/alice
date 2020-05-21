@@ -11,49 +11,53 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+package reshare
 
 import (
 	"io/ioutil"
 
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/crypto/tss/reshare"
+	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
 	"github.com/gogo/protobuf/proto"
 	"github.com/libp2p/go-libp2p-core/network"
 )
 
-// For simplicity, we use S256 curve in this example.
-var curve = btcec.S256()
-
 type service struct {
-	config *Config
+	config *ReshareConfig
 	pm     types.PeerManager
 
-	dkg  *dkg.DKG
-	done chan struct{}
+	reshare *reshare.Reshare
+	done    chan struct{}
 }
 
-func NewService(config *Config, pm types.PeerManager) (*service, error) {
+func NewService(config *ReshareConfig, pm types.PeerManager) (*service, error) {
 	s := &service{
 		config: config,
 		pm:     pm,
 		done:   make(chan struct{}),
 	}
 
-	// Create dkg
-	d, err := dkg.NewDKG(curve, pm, config.Threshold.DKG, config.Rank, s)
+	// Reshare needs results from DKG.
+	dkgResult, err := utils.ConvertDKGResult(config.Pubkey, config.Share, config.BKs)
 	if err != nil {
-		log.Warn("Cannot create a new DKG", "config", config, "err", err)
+		log.Warn("Cannot get DKG result", "err", err)
 		return nil, err
 	}
-	s.dkg = d
+
+	// Create reshare
+	reshare, err := reshare.NewReshare(pm, config.Threshold, dkgResult.PublicKey, dkgResult.Share, dkgResult.Bks, s)
+	if err != nil {
+		log.Warn("Cannot create a new reshare", "err", err)
+		return nil, err
+	}
+	s.reshare = reshare
 	return s, nil
 }
 
 func (p *service) Handle(s network.Stream) {
-	data := &dkg.Message{}
+	data := &reshare.Message{}
 	buf, err := ioutil.ReadAll(s)
 	if err != nil {
 		log.Warn("Cannot read data from stream", "err", err)
@@ -69,40 +73,40 @@ func (p *service) Handle(s network.Stream) {
 	}
 
 	log.Info("Received request", "from", s.Conn().RemotePeer())
-	err = p.dkg.AddMessage(data)
+	err = p.reshare.AddMessage(data)
 	if err != nil {
-		log.Warn("Cannot add message to DKG", "err", err)
+		log.Warn("Cannot add message to reshare", "err", err)
 		return
 	}
 }
 
 func (p *service) Process() {
-	// 1. Start a DKG process.
-	p.dkg.Start()
-	defer p.dkg.Stop()
+	// 1. Start a reshare process.
+	p.reshare.Start()
+	defer p.reshare.Stop()
 
-	// 2. Connect the host to peers and send the peer message to them.
-	msg := p.dkg.GetPeerMessage()
+	// 2. Connect the host to peers and send the commit message to them.
+	msg := p.reshare.GetCommitMessage()
 	for _, peerPort := range p.config.Peers {
-		p.pm.MustSend(getPeerIDFromPort(peerPort), msg)
+		p.pm.MustSend(utils.GetPeerIDFromPort(peerPort), msg)
 	}
 
-	// 3. Wait the dkg is done or failed
+	// 3. Wait the reshare is done or failed
 	<-p.done
 }
 
 func (p *service) OnStateChanged(oldState types.MainState, newState types.MainState) {
 	if newState == types.StateFailed {
-		log.Error("Dkg failed", "old", oldState.String(), "new", newState.String())
+		log.Error("Reshare failed", "old", oldState.String(), "new", newState.String())
 		close(p.done)
 		return
 	} else if newState == types.StateDone {
-		log.Info("Dkg done", "old", oldState.String(), "new", newState.String())
-		result, err := p.dkg.GetResult()
+		log.Info("Reshare done", "old", oldState.String(), "new", newState.String())
+		result, err := p.reshare.GetResult()
 		if err == nil {
-			writeDKGResult(p.pm.SelfID(), result)
+			writeReshareResult(p.pm.SelfID(), result)
 		} else {
-			log.Warn("Failed to get result from DKG", "err", err)
+			log.Warn("Failed to get result from reshare", "err", err)
 		}
 		close(p.done)
 		return
