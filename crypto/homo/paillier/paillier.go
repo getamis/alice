@@ -63,8 +63,8 @@ type PublicKey struct {
 }
 
 func (pub *PublicKey) GetMessageRange(fieldOrder *big.Int) *big.Int {
-	rangeProofK := computeRangeProof(fieldOrder)
-	return new(big.Int).Sub(pub.n, rangeProofK)
+	rangeK := computeStatisticalClosedRange(fieldOrder)
+	return new(big.Int).Sub(pub.n, rangeK)
 }
 
 func (pub *PublicKey) GetNSquare() *big.Int {
@@ -352,7 +352,7 @@ func (pub *PublicKey) ToPubKeyBytes() []byte {
 	return bs
 }
 
-func computeRangeProof(n *big.Int) *big.Int {
+func computeStatisticalClosedRange(n *big.Int) *big.Int {
 	nMinus := new(big.Int).Sub(n, big1)
 	nMinusSquare := new(big.Int).Exp(nMinus, big2, nil)
 	return nMinusSquare
