@@ -42,7 +42,7 @@ var _ = Describe("Paillier test", func() {
 	})
 
 	It("implement homo.PubKey interface", func() {
-		var _ homo.Pubkey = p.PublicKey
+		var _ homo.Pubkey = p.publicKey
 	})
 
 	It("GetMessageRange()", func() {
@@ -63,7 +63,7 @@ var _ = Describe("Paillier test", func() {
 	})
 
 	It("GetPubKey()", func() {
-		Expect(p.GetPubKey()).Should(Equal(p.PublicKey))
+		Expect(p.GetPubKey()).Should(Equal(p.publicKey))
 	})
 
 	It("NewPubKeyFromBytes(), invalid bytes", func() {
@@ -76,7 +76,7 @@ var _ = Describe("Paillier test", func() {
 	})
 
 	It("should be ok with valid random messages", func() {
-		mInt, err := utils.RandomInt(p.PublicKey.n)
+		mInt, err := utils.RandomInt(p.publicKey.n)
 		m := mInt.Bytes()
 		Expect(err).Should(BeNil())
 		c, err := p.Encrypt(m)
@@ -90,12 +90,12 @@ var _ = Describe("Paillier test", func() {
 		bs := p.ToPubKeyBytes()
 		pubkey, err := p.NewPubKeyFromBytes(bs)
 		Expect(err).Should(BeNil())
-		gotPub, ok := pubkey.(*PublicKey)
+		gotPub, ok := pubkey.(*publicKey)
 		Expect(ok).Should(BeTrue())
-		Expect(proto.Equal(p.PublicKey.msg, gotPub.msg)).Should(BeTrue())
-		Expect(p.PublicKey.g).Should(Equal(gotPub.g))
-		Expect(p.PublicKey.n).Should(Equal(gotPub.n))
-		Expect(p.PublicKey.nSquare).Should(Equal(gotPub.nSquare))
+		Expect(proto.Equal(p.publicKey.msg, gotPub.msg)).Should(BeTrue())
+		Expect(p.publicKey.g).Should(Equal(gotPub.g))
+		Expect(p.publicKey.n).Should(Equal(gotPub.n))
+		Expect(p.publicKey.nSquare).Should(Equal(gotPub.nSquare))
 	})
 
 	It("should be ok with zero messages", func() {
@@ -109,7 +109,7 @@ var _ = Describe("Paillier test", func() {
 	})
 
 	It("should be ok with n-1", func() {
-		m := new(big.Int).Sub(p.PublicKey.n, big1).Bytes()
+		m := new(big.Int).Sub(p.publicKey.n, big1).Bytes()
 		c, err := p.Encrypt(m)
 		Expect(err).Should(BeNil())
 		Expect(c).ShouldNot(Equal(m))
@@ -166,7 +166,7 @@ var _ = Describe("Paillier test", func() {
 
 	Context("Invalid encrypt", func() {
 		It("over range message", func() {
-			c, err := p.Encrypt(p.PublicKey.n.Bytes())
+			c, err := p.Encrypt(p.publicKey.n.Bytes())
 			Expect(err).Should(Equal(ErrInvalidMessage))
 			Expect(c).Should(BeNil())
 		})
@@ -174,7 +174,7 @@ var _ = Describe("Paillier test", func() {
 
 	Context("Invalid decrypt", func() {
 		It("over range message", func() {
-			c, err := p.Decrypt(p.PublicKey.n.Bytes())
+			c, err := p.Decrypt(p.publicKey.n.Bytes())
 			Expect(err).Should(Equal(ErrInvalidMessage))
 			Expect(c).Should(BeNil())
 		})
@@ -210,7 +210,7 @@ var _ = Describe("Paillier test", func() {
 		Expect(err).Should(BeNil())
 		c2, err := p.Encrypt(m2.Bytes())
 		Expect(err).Should(BeNil())
-		sum, err := p.PublicKey.Add(c1, c2)
+		sum, err := p.publicKey.Add(c1, c2)
 		Expect(err).Should(BeNil())
 		decryptSum, err := p.Decrypt(sum)
 		Expect(err).Should(BeNil())
@@ -226,7 +226,7 @@ var _ = Describe("Paillier test", func() {
 	DescribeTable("MulConst", func(m *big.Int, scalar *big.Int) {
 		c, err := p.Encrypt(m.Bytes())
 		Expect(err).Should(BeNil())
-		mulConst, err := p.PublicKey.MulConst(c, scalar)
+		mulConst, err := p.publicKey.MulConst(c, scalar)
 		Expect(err).Should(BeNil())
 		decryptResult, err := p.Decrypt(mulConst)
 		Expect(err).Should(BeNil())
@@ -242,21 +242,21 @@ var _ = Describe("Paillier test", func() {
 
 	Context("MulConst", func() {
 		It("over Range, should be ok", func() {
-			nMinis1 := new(big.Int).Sub(p.PublicKey.n, big.NewInt(1))
+			nMinis1 := new(big.Int).Sub(p.publicKey.n, big.NewInt(1))
 			c, err := p.Encrypt(nMinis1.Bytes())
 			Expect(err).Should(BeNil())
-			scalar := new(big.Int).Sub(p.PublicKey.n, big.NewInt(2))
-			mulConst, err := p.PublicKey.MulConst(c, scalar)
+			scalar := new(big.Int).Sub(p.publicKey.n, big.NewInt(2))
+			mulConst, err := p.publicKey.MulConst(c, scalar)
 			Expect(err).Should(BeNil())
 			decryptResult, err := p.Decrypt(mulConst)
 			Expect(err).Should(BeNil())
 			expected := new(big.Int).Mul(nMinis1, scalar)
-			expected = expected.Mod(expected, p.PublicKey.n)
+			expected = expected.Mod(expected, p.publicKey.n)
 			Expect(decryptResult).Should(Equal(expected.Bytes()))
 		})
 
 		It("zero c", func() {
-			got, err := p.PublicKey.MulConst(big0.Bytes(), big1)
+			got, err := p.publicKey.MulConst(big0.Bytes(), big1)
 			Expect(err).Should(Equal(utils.ErrNotInRange))
 			Expect(got).Should(BeNil())
 		})
@@ -264,29 +264,29 @@ var _ = Describe("Paillier test", func() {
 
 	Context("Add()", func() {
 		It("over Range, should be ok", func() {
-			nMinis1 := new(big.Int).Sub(p.PublicKey.n, big.NewInt(1))
+			nMinis1 := new(big.Int).Sub(p.publicKey.n, big.NewInt(1))
 			c1, err := p.Encrypt(nMinis1.Bytes())
 			Expect(err).Should(BeNil())
-			nMinis2 := new(big.Int).Sub(p.PublicKey.n, big.NewInt(2))
+			nMinis2 := new(big.Int).Sub(p.publicKey.n, big.NewInt(2))
 			c2, err := p.Encrypt(nMinis2.Bytes())
 			Expect(err).Should(BeNil())
-			sum, err := p.PublicKey.Add(c1, c2)
+			sum, err := p.publicKey.Add(c1, c2)
 			Expect(err).Should(BeNil())
 			decryptResult, err := p.Decrypt(sum)
 			Expect(err).Should(BeNil())
 			expected := new(big.Int).Add(nMinis1, nMinis2)
-			expected = expected.Mod(expected, p.PublicKey.n)
+			expected = expected.Mod(expected, p.publicKey.n)
 			Expect(decryptResult).Should(Equal(expected.Bytes()))
 		})
 
 		It("zero c1", func() {
-			got, err := p.PublicKey.Add(big0.Bytes(), big1.Bytes())
+			got, err := p.publicKey.Add(big0.Bytes(), big1.Bytes())
 			Expect(err).Should(Equal(utils.ErrNotInRange))
 			Expect(got).Should(BeNil())
 		})
 
 		It("zero c2", func() {
-			got, err := p.PublicKey.Add(big1.Bytes(), big0.Bytes())
+			got, err := p.publicKey.Add(big1.Bytes(), big0.Bytes())
 			Expect(err).Should(Equal(utils.ErrNotInRange))
 			Expect(got).Should(BeNil())
 		})

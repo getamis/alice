@@ -30,28 +30,28 @@ var _ = Describe("Message test", func() {
 		})
 
 		It("should be ok", func() {
-			pub, err := p.PublicKey.msg.ToPubkey()
+			pub, err := p.publicKey.msg.ToPubkey()
 			Expect(err).Should(BeNil())
-			Expect(pub).Should(Equal(p.PublicKey))
+			Expect(pub).Should(Equal(p.publicKey))
 		})
 
 		It("g and nSqaure are not relative prime", func() {
-			p.PublicKey.msg.G = p.n.Bytes()
-			pub, err := p.PublicKey.msg.ToPubkey()
+			p.publicKey.msg.G = p.n.Bytes()
+			pub, err := p.publicKey.msg.ToPubkey()
 			Expect(err).Should(Equal(ErrInvalidMessage))
 			Expect(pub).Should(BeNil())
 		})
 
 		It("g is not in range", func() {
-			p.PublicKey.msg.G = p.nSquare.Bytes()
-			pub, err := p.PublicKey.msg.ToPubkey()
+			p.publicKey.msg.G = p.nSquare.Bytes()
+			pub, err := p.publicKey.msg.ToPubkey()
 			Expect(err).Should(Equal(utils.ErrNotInRange))
 			Expect(pub).Should(BeNil())
 		})
 
 		It("zero n", func() {
-			p.PublicKey.msg.Proof.PublicKey = big0.Bytes()
-			pub, err := p.PublicKey.msg.ToPubkey()
+			p.publicKey.msg.Proof.PublicKey = big0.Bytes()
+			pub, err := p.publicKey.msg.ToPubkey()
 			Expect(err).Should(Equal(utils.ErrLargerFloor))
 			Expect(pub).Should(BeNil())
 		})

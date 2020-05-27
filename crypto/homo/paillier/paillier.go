@@ -52,8 +52,8 @@ var (
 	big2 = big.NewInt(2)
 )
 
-// PublicKey is (n, g)
-type PublicKey struct {
+// publicKey is (n, g)
+type publicKey struct {
 	n   *big.Int
 	g   *big.Int
 	msg *PubKeyMessage
@@ -62,20 +62,20 @@ type PublicKey struct {
 	nSquare *big.Int
 }
 
-func (pub *PublicKey) GetMessageRange(fieldOrder *big.Int) *big.Int {
+func (pub *publicKey) GetMessageRange(fieldOrder *big.Int) *big.Int {
 	rangeK := computeStatisticalClosedRange(fieldOrder)
 	return new(big.Int).Sub(pub.n, rangeK)
 }
 
-func (pub *PublicKey) GetNSquare() *big.Int {
+func (pub *publicKey) GetNSquare() *big.Int {
 	return new(big.Int).Set(pub.nSquare)
 }
 
-func (pub *PublicKey) GetG() *big.Int {
+func (pub *publicKey) GetG() *big.Int {
 	return new(big.Int).Set(pub.g)
 }
 
-func (pub *PublicKey) Encrypt(mBytes []byte) ([]byte, error) {
+func (pub *publicKey) Encrypt(mBytes []byte) ([]byte, error) {
 	m := new(big.Int).SetBytes(mBytes)
 	// Ensure 0 <= m < n
 	if m.Cmp(pub.n) >= 0 {
@@ -97,12 +97,12 @@ func (pub *PublicKey) Encrypt(mBytes []byte) ([]byte, error) {
 }
 
 // In paillier, we cannot verify enc message. Therefore, we always return nil.
-func (pub *PublicKey) VerifyEnc([]byte) error {
+func (pub *publicKey) VerifyEnc([]byte) error {
 	return nil
 }
 
 func (p *Paillier) GetPubKey() homo.Pubkey {
-	return p.PublicKey
+	return p.publicKey
 }
 
 // Refer: https://en.wikipedia.org/wiki/Paillier_cryptosystem
@@ -113,7 +113,7 @@ type privateKey struct {
 }
 
 type Paillier struct {
-	*PublicKey
+	*publicKey
 	privateKey *privateKey
 }
 
@@ -147,7 +147,7 @@ func NewPaillierUnSafe(keySize int) (*Paillier, error) {
 		return nil, err
 	}
 	return &Paillier{
-		PublicKey: pub,
+		publicKey: pub,
 		privateKey: &privateKey{
 			lambda: lambda,
 			mu:     mu,
@@ -158,7 +158,7 @@ func NewPaillierUnSafe(keySize int) (*Paillier, error) {
 // Decrypt computes the plaintext from the ciphertext
 func (p *Paillier) Decrypt(cBytes []byte) ([]byte, error) {
 	c := new(big.Int).SetBytes(cBytes)
-	pub := p.PublicKey
+	pub := p.publicKey
 	priv := p.privateKey
 
 	err := isCorrectCiphertext(c, pub)
@@ -242,7 +242,7 @@ func getNAndLambda(keySize int) (*big.Int, *big.Int, *big.Int, *big.Int, error) 
 	return nil, nil, nil, nil, ErrExceedMaxRetry
 }
 
-func isCorrectCiphertext(c *big.Int, pubKey *PublicKey) error {
+func isCorrectCiphertext(c *big.Int, pubKey *publicKey) error {
 	// Ensure 0 < c < n^2
 	err := utils.InRange(c, big1, pubKey.nSquare)
 	if err != nil {
@@ -297,7 +297,7 @@ func lFunction(x, n *big.Int) (*big.Int, error) {
 	2. Choose (r, N)=1 with r in [1, N-1] randomly.
 	3. Compute c1*c2*r^N mod N^2.
 */
-func (pub *PublicKey) Add(c1Bytes []byte, c2Bytes []byte) ([]byte, error) {
+func (pub *publicKey) Add(c1Bytes []byte, c2Bytes []byte) ([]byte, error) {
 	c1 := new(big.Int).SetBytes(c1Bytes)
 	c2 := new(big.Int).SetBytes(c2Bytes)
 	err := isCorrectCiphertext(c1, pub)
@@ -328,7 +328,7 @@ func (pub *PublicKey) Add(c1Bytes []byte, c2Bytes []byte) ([]byte, error) {
 	3. Choose (r, N)=1 with r in [1, N-1] randomly.
 	4. Compute c^scalar*r^N mod N^2.
 */
-func (pub *PublicKey) MulConst(cBytes []byte, scalar *big.Int) ([]byte, error) {
+func (pub *publicKey) MulConst(cBytes []byte, scalar *big.Int) ([]byte, error) {
 	c := new(big.Int).SetBytes(cBytes)
 	err := isCorrectCiphertext(c, pub)
 	if err != nil {
@@ -346,7 +346,7 @@ func (pub *PublicKey) MulConst(cBytes []byte, scalar *big.Int) ([]byte, error) {
 	return result.Bytes(), nil
 }
 
-func (pub *PublicKey) ToPubKeyBytes() []byte {
+func (pub *publicKey) ToPubKeyBytes() []byte {
 	// We can ignore this error, because the resulting message is produced by ourself.
 	bs, _ := proto.Marshal(pub.msg)
 	return bs
