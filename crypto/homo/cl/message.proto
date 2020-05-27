@@ -28,6 +28,7 @@ message PubKeyMessage {
     binaryquadraticform.BQForm h = 6;
     bytes c = 7;
     uint32 d = 8;
+    ProofMessage proof = 9;
 }
 
 message EncryptedMessage {

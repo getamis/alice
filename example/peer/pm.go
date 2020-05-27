@@ -11,29 +11,33 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package main
+package peer
 
 import (
 	"context"
 	"sync"
 	"time"
 
+	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
 	"github.com/golang/protobuf/proto"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/protocol"
 )
 
 type peerManager struct {
-	id    string
-	host  host.Host
-	peers map[string]string
+	id       string
+	host     host.Host
+	protocol protocol.ID
+	peers    map[string]string
 }
 
-func newPeerManager(id string, host host.Host) *peerManager {
+func NewPeerManager(id string, host host.Host, protocol protocol.ID) *peerManager {
 	return &peerManager{
-		id:    id,
-		host:  host,
-		peers: make(map[string]string),
+		id:       id,
+		host:     host,
+		protocol: protocol,
+		peers:    make(map[string]string),
 	}
 }
 
@@ -46,7 +50,7 @@ func (p *peerManager) SelfID() string {
 }
 
 func (p *peerManager) MustSend(peerID string, message proto.Message) {
-	send(context.Background(), p.host, p.peers[peerID], message)
+	send(context.Background(), p.host, p.peers[peerID], message, p.protocol)
 }
 
 // EnsureAllConnected connects the host to specified peer and sends the message to it.
@@ -60,9 +64,10 @@ func (p *peerManager) EnsureAllConnected() {
 	wg.Wait()
 }
 
-func (p *peerManager) addPeers(peerPorts []int64) error {
+// AddPeers adds peers to peer list.
+func (p *peerManager) AddPeers(peerPorts []int64) error {
 	for _, peerPort := range peerPorts {
-		peerID := getPeerIDFromPort(peerPort)
+		peerID := utils.GetPeerIDFromPort(peerPort)
 		peerAddr, err := getPeerAddr(peerPort)
 		if err != nil {
 			log.Warn("Cannot get peer address", "peerPort", peerPort, "peerID", peerID, "err", err)

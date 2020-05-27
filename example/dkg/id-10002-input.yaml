@@ -1,9 +1,6 @@
 port: 10002
 rank: 0
-threshold:
-  dkg: 3
-  signer: 2
-  reshare: 3
+threshold: 3
 peers:
   - 10001
   - 10003

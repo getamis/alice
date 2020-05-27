@@ -68,16 +68,18 @@ var (
  * f : a generator of the subgroup of order p of ideal class group of quadratic order
  * g : o^b for some random b in [1,2^(distributionDistance)*s)
  * h : g^x, where x is the chosen private key, h is the public key
- */
+ Note: a = s*2^(40), d = 40, C = 1024.
+*/
 type PublicKey struct {
-	p *big.Int // message space
-	q *big.Int
-	a *big.Int
-	g bqForm.Exper
-	f bqForm.Exper
-	h bqForm.Exper
-	d uint32
-	c *big.Int
+	p     *big.Int // message space
+	q     *big.Int
+	a     *big.Int
+	g     bqForm.Exper
+	f     bqForm.Exper
+	h     bqForm.Exper
+	d     uint32
+	c     *big.Int
+	proof *ProofMessage
 
 	// cache value
 	discriminantOrderP *big.Int
@@ -173,16 +175,15 @@ func NewCL(c *big.Int, d uint32, p *big.Int, safeParameter int, distributionDist
 	if err != nil {
 		return nil, err
 	}
-	publicKey := &PublicKey{
-		p:                  p,
-		q:                  q,
-		a:                  a,
-		g:                  bqForm.NewCacheExp(g),
-		f:                  bqForm.NewCacheExp(f),
-		h:                  bqForm.NewCacheExp(h),
-		c:                  c,
-		d:                  d,
-		discriminantOrderP: discirminantP,
+	// Build public key zk proof
+	proof, err := newPubKeyProof(privkey, a, c, p, q, g, f, h)
+	if err != nil {
+		return nil, err
+	}
+
+	publicKey, err := newPubKey(proof, d, discirminantP, a, c, p, q, g, f, h)
+	if err != nil {
+		return nil, err
 	}
 	privateKey := &privateKey{
 		x: privkey,
@@ -342,14 +343,15 @@ func (publicKey *PublicKey) GetMessageRange(fieldOrder *big.Int) *big.Int {
 
 func (publicKey *PublicKey) ToPubKeyMessage() *PubKeyMessage {
 	return &PubKeyMessage{
-		P: publicKey.p.Bytes(),
-		A: publicKey.a.Bytes(),
-		Q: publicKey.q.Bytes(),
-		G: publicKey.g.ToMessage(),
-		F: publicKey.f.ToMessage(),
-		H: publicKey.h.ToMessage(),
-		C: publicKey.c.Bytes(),
-		D: publicKey.d,
+		P:     publicKey.p.Bytes(),
+		A:     publicKey.a.Bytes(),
+		Q:     publicKey.q.Bytes(),
+		G:     publicKey.g.ToMessage(),
+		F:     publicKey.f.ToMessage(),
+		H:     publicKey.h.ToMessage(),
+		C:     publicKey.c.Bytes(),
+		D:     publicKey.d,
+		Proof: publicKey.proof,
 	}
 }
 
@@ -389,6 +391,10 @@ func (c *CL) Decrypt(data []byte) ([]byte, error) {
 
 func (c *CL) GetPubKey() homo.Pubkey {
 	return c.PublicKey
+}
+
+func (pubKey *PublicKey) GetPubKeyProof() *ProofMessage {
+	return pubKey.proof
 }
 
 func (c *CL) GetMtaProof(curve elliptic.Curve, beta *big.Int, b *big.Int) ([]byte, error) {
@@ -532,7 +538,7 @@ func getUpperBoundClassGroupMaximalOrder(discriminant *big.Int) *big.Int {
 	return upperBound
 }
 
-// generateAbsDiscriminantK returns -ΔK and the root of ΔK
+// generateAnotherPrimeQ returns the a q such that the discriminant is -pq.
 func generateAnotherPrimeQ(p *big.Int, bitsQ int) (*big.Int, error) {
 	// Get a prime q which satisfies
 	// 1. p*q = 3 mod 4

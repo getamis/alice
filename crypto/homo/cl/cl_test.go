@@ -37,7 +37,7 @@ var _ = Describe("CL test", func() {
 		// Generate a private key and the public key associated with discriminant bigPrime * q, where
 		// bigPrime is the message space and q is a probabilistic "prime" with the bitlength is SAFEPARAMETER - bitlength of bigprime.
 		var err error
-		cl, err = NewCL(big.NewInt(1024), 40, bigPrime, safeParameter, 80)
+		cl, err = NewCL(big.NewInt(1024), 40, bigPrime, safeParameter, 40)
 		Expect(err).Should(BeNil())
 	})
 
@@ -88,7 +88,12 @@ var _ = Describe("CL test", func() {
 		bs := cl.PublicKey.ToPubKeyBytes()
 		pub, err := cl.NewPubKeyFromBytes(bs)
 		Expect(err).Should(BeNil())
-		Expect(pub).Should(Equal(cl.PublicKey))
+		got, ok := pub.(*PublicKey)
+		Expect(ok).Should(BeTrue())
+		Expect(proto.Equal(got.proof, cl.PublicKey.proof)).Should(BeTrue())
+		// Overide proof to avoid proto message comparison failed
+		got.proof = cl.PublicKey.proof
+		Expect(got).Should(Equal(cl.PublicKey))
 	})
 
 	It("GetPubKey()", func() {
@@ -212,6 +217,29 @@ var _ = Describe("CL test", func() {
 			message := new(big.Int).Add(cl.p, big1)
 			_, err := cl.Encrypt(message.Bytes())
 			Expect(err).Should(Equal(utils.ErrNotInRange))
+		})
+	})
+
+	Context("Public Key: Verify()", func() {
+		It("invalid bytes", func() {
+			cl.PublicKey.GetPubKeyProof().T1 = nil
+			Expect(cl.PublicKey.Verify()).Should(Equal(ErrInvalidMessage))
+		})
+
+		It("u not in range", func() {
+			value := new(big.Int).SetBytes(cl.PublicKey.GetPubKeyProof().U1)
+			cl.PublicKey.GetPubKeyProof().U1 = new(big.Int).Lsh(value, 100).Bytes()
+			Expect(cl.PublicKey.Verify()).Should(Equal(utils.ErrNotInRange))
+		})
+
+		It("salt is wrong", func() {
+			cl.PublicKey.GetPubKeyProof().Salt = nil
+			Expect(cl.PublicKey.Verify()).ShouldNot(BeNil())
+		})
+
+		It("Not equal", func() {
+			cl.PublicKey.h = cl.PublicKey.g
+			Expect(cl.PublicKey.Verify()).Should(Equal(ErrDifferentBQForms))
 		})
 	})
 

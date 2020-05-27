@@ -70,7 +70,7 @@ func EnsureFieldOrder(fieldOrder *big.Int) error {
 	return nil
 }
 
-// EnsureRank ensures the rank should be smaller than threshold.
+// EnsureRank ensures the rank+1 should be smaller than threshold.
 func EnsureRank(rank uint32, threshold uint32) error {
 	if rank+1 >= threshold {
 		return ErrLargeRank

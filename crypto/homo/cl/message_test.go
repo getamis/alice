@@ -152,7 +152,7 @@ var _ = Describe("Message test", func() {
 		var cl *CL
 		BeforeEach(func() {
 			var err error
-			cl, err = NewCL(big.NewInt(1024), 40, bigPrime, safeParameter, 80)
+			cl, err = NewCL(big.NewInt(1024), 40, bigPrime, safeParameter, 40)
 			Expect(err).Should(BeNil())
 			msg = cl.ToPubKeyMessage()
 		})
