@@ -28,6 +28,9 @@ import (
 )
 
 const (
+	// safePubKeySize is the permitted lowest size of Public Key.
+	safePubKeySize = 2048
+
 	// maxGenN defines the max retries to generate N
 	maxGenN = 100
 	// maxGenG defines the max retries to generate G
@@ -41,6 +44,8 @@ var (
 	ErrInvalidInput = errors.New("invalid input")
 	//ErrInvalidMessage is returned if the message is invalid
 	ErrInvalidMessage = errors.New("invalid message")
+	//ErrSmallPublicKeySize is returned if the size of public key is small
+	ErrSmallPublicKeySize = errors.New("small public key")
 
 	big0 = big.NewInt(0)
 	big1 = big.NewInt(1)
@@ -113,6 +118,14 @@ type Paillier struct {
 }
 
 func NewPaillier(keySize int) (*Paillier, error) {
+	if keySize < safePubKeySize {
+		return nil, ErrSmallPublicKeySize
+	}
+	return NewPaillierUnSafe(keySize)
+}
+
+// Warning: No check the size of public key. This function is only used in Test.
+func NewPaillierUnSafe(keySize int) (*Paillier, error) {
 	p, q, n, lambda, err := getNAndLambda(keySize)
 	if err != nil {
 		return nil, err

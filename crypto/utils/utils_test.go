@@ -63,8 +63,9 @@ var _ = Describe("Utils", func() {
 			Expect(got).Should(Equal(err))
 		}
 	},
-		Entry("should be ok", uint32(0), uint32(2), nil),
+		Entry("should be ok", uint32(2), uint32(2), nil),
 		Entry("large threshold", uint32(3), uint32(2), ErrLargeThreshold),
+		Entry("small threshold", uint32(1), uint32(2), ErrSmallThreshold),
 	)
 
 	It("RandomInt()", func() {
@@ -189,24 +190,14 @@ var _ = Describe("Utils", func() {
 		Entry("empty slices", 0, ErrEmptySlice),
 	)
 
-	Context("HashProtos()", func() {
+	Context("HashProtosToInt()", func() {
 		It("should work", func() {
-			blake2bKey, err := GenRandomBytes(blake2b.Size256)
+			salt, err := GenRandomBytes(blake2b.Size256)
 			Expect(err).Should(Succeed())
 			msg := &ecpointgrouplaw.EcPointMessage{}
-			result, err := HashProtos(blake2bKey, big.NewInt(10), msg)
+			result, err := HashProtosToInt(salt, msg)
 			Expect(err).Should(Succeed())
 			Expect(result).ShouldNot(BeNil())
-		})
-
-		It("failed to create blake2b", func() {
-			// Make the key size too large
-			blake2bKey, err := GenRandomBytes(65)
-			Expect(err).Should(Succeed())
-			msg := &ecpointgrouplaw.EcPointMessage{}
-			result, err := HashProtos(blake2bKey, big.NewInt(10), msg)
-			Expect(err).ShouldNot(BeNil())
-			Expect(result).Should(BeNil())
 		})
 	})
 })

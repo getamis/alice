@@ -28,6 +28,11 @@ import (
 )
 
 const (
+	// This value corresponds to the security level 112.
+	minimalSecurityLevel = 1348
+	// minimal bit-Length of message size (P.13 Linearly Homomorphic Encryption from DDH)
+	minimalBitLengthMessageSpace = 80
+
 	// maxGenG defines the max retries to generate g
 	maxGenG = 100
 )
@@ -50,6 +55,8 @@ var (
 	ErrFailedVerify = errors.New("failed verify")
 	//ErrFailedGenerateG is returned if g is the identity element
 	ErrFailedGenerateG = errors.New("failed generate non-identity g")
+	//ErrNotBigPrime is returned if p is not a big prime
+	ErrNotBigPrime = errors.New("not a big prime")
 )
 
 /*
@@ -89,6 +96,15 @@ type CL struct {
 // Please refer the following paper Fig. 2 for the key generation flow.
 // https://pdfs.semanticscholar.org/fba2/b7806ea103b41e411792a87a18972c2777d2.pdf?_ga=2.188920107.1077232223.1562737567-609154886.1559798768
 func NewCL(c *big.Int, d uint32, p *big.Int, safeParameter int, distributionDistance uint) (*CL, error) {
+	// 0. Check that p is a prime with length(p) > 80  and safeParameter >= 1348 (The permitted security level ).
+	if p.BitLen() < minimalBitLengthMessageSpace || !p.ProbablyPrime(1) {
+		return nil, ErrNotBigPrime
+	}
+
+	if safeParameter < minimalSecurityLevel {
+		return nil, ErrSmallSafeParameter
+	}
+
 	// 1. Ensure λ ≥ μ + 2
 	lambda := safeParameter / 2
 	mu := p.BitLen()
@@ -192,8 +208,12 @@ func (publicKey *PublicKey) Encrypt(data []byte) ([]byte, error) {
 
 	// Compute c2 = f^m*h^r
 	message := new(big.Int).SetBytes(data)
-	messageMod := new(big.Int).Mod(message, publicKey.p)
-	c2, err := publicKey.f.Exp(messageMod)
+	// Check message in [0,p-1]
+	err = utils.InRange(message, big0, publicKey.p)
+	if err != nil {
+		return nil, err
+	}
+	c2, err := publicKey.f.Exp(message)
 	if err != nil {
 		return nil, err
 	}

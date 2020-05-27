@@ -21,8 +21,7 @@ import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
 // HashCommitmentMessage and HashDecommitmentMessage are for HashCommitment
 // HashCommitmentMessage contains the blake2b initial vector and data digest for commitment use
 message HashCommitmentMessage {
-  bytes blake2bKey = 1;
-  bytes digest = 2;
+  bytes digest = 1;
 }
 
 // HashDecommitmentMessage contains original data and salt for decommitment use

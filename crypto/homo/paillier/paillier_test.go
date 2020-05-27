@@ -51,6 +51,12 @@ var _ = Describe("Paillier test", func() {
 		Expect(p.GetMessageRange(n)).Should(Equal(msgRange))
 	})
 
+	It("NewPaillier(): public key should be larger than 2048", func() {
+		// The size key is small return the error.
+		_, err := NewPaillier(2046)
+		Expect(err).Should(Equal(ErrSmallPublicKeySize))
+	})
+
 	It("GetMessageRange()", func() {
 		// always return nil
 		Expect(p.VerifyEnc([]byte("enc"))).Should(BeNil())

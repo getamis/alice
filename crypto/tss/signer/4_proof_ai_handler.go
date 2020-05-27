@@ -120,12 +120,12 @@ func (p *proofAiHandler) Finalize(logger log.Logger) (types.Handler, error) {
 
 	p.si = buildSi(p.aiMta, p.getN(), p.r.GetX(), p.tmpSi, new(big.Int).SetBytes(p.msg))
 
-	p.li, p.vi, p.liProof, p.viCommitmenter, err = buildViCommitter(logger, p.minSaltSize, p.si, p.r)
+	p.li, p.vi, p.liProof, p.viCommitmenter, err = buildViCommitter(logger, p.si, p.r)
 	if err != nil {
 		return nil, err
 	}
 
-	p.rhoI, p.ai, p.rhoIProof, p.aiCommitmenter, err = buildAiCommitter(logger, p.getCurve(), p.minSaltSize)
+	p.rhoI, p.ai, p.rhoIProof, p.aiCommitmenter, err = buildAiCommitter(logger, p.getCurve())
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func buildSi(aiMta mta.Mta, n *big.Int, rx *big.Int, tmpSi *big.Int, msg *big.In
 	return new(big.Int).Mod(r, n)
 }
 
-func buildViCommitter(logger log.Logger, minSaltSize int, si *big.Int, r *pt.ECPoint) (*big.Int, *pt.ECPoint, *zkproof.SchnorrProofMessage, *commitment.HashCommitmenter, error) {
+func buildViCommitter(logger log.Logger, si *big.Int, r *pt.ECPoint) (*big.Int, *pt.ECPoint, *zkproof.SchnorrProofMessage, *commitment.HashCommitmenter, error) {
 	curve := r.GetCurve()
 	n := curve.Params().N
 	li, err := utils.RandomInt(n)
@@ -194,7 +194,7 @@ func buildViCommitter(logger log.Logger, minSaltSize int, si *big.Int, r *pt.ECP
 		logger.Warn("Failed to add siR and liG", "err", err)
 		return nil, nil, nil, nil, err
 	}
-	viCommitmenter, err := tss.NewCommitterByPoint(Vi, minSaltSize)
+	viCommitmenter, err := tss.NewCommitterByPoint(Vi)
 	if err != nil {
 		logger.Warn("Failed to new viCommitmenter", "err", err)
 		return nil, nil, nil, nil, err
@@ -202,7 +202,7 @@ func buildViCommitter(logger log.Logger, minSaltSize int, si *big.Int, r *pt.ECP
 	return li, Vi, proofLi, viCommitmenter, nil
 }
 
-func buildAiCommitter(logger log.Logger, curve elliptic.Curve, minSaltSize int) (*big.Int, *pt.ECPoint, *zkproof.SchnorrProofMessage, *commitment.HashCommitmenter, error) {
+func buildAiCommitter(logger log.Logger, curve elliptic.Curve) (*big.Int, *pt.ECPoint, *zkproof.SchnorrProofMessage, *commitment.HashCommitmenter, error) {
 	n := curve.Params().N
 	rhoI, err := utils.RandomInt(n)
 	if err != nil {
@@ -216,7 +216,7 @@ func buildAiCommitter(logger log.Logger, curve elliptic.Curve, minSaltSize int) 
 	}
 
 	Ai := pt.ScalarBaseMult(curve, rhoI)
-	aiCommitmenter, err := tss.NewCommitterByPoint(Ai, minSaltSize)
+	aiCommitmenter, err := tss.NewCommitterByPoint(Ai)
 	if err != nil {
 		logger.Warn("Failed to new aiCommitmenter", "err", err)
 		return nil, nil, nil, nil, err
