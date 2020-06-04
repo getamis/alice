@@ -21,10 +21,21 @@ For example, an important contract not only requires enough signatures, but also
 
 HTSS  has been developed by [Tassa](https://www.openu.ac.il/lists/mediaserver_documents/personalsites/tamirtassa/hss_conf.pdf) and other researchers many years ago. In our implementation, we setup up this theory on TSS(i.e. just replace Lagrange Interpolation to Birkhoff Interpolation).  Meanwhile, our protocol of sign (i.e. GG18 and CCLST20 ) can support two homomorphic encryptions which are Paillier and CL scheme. 
 
-**This code will be audited soon.**
 
 > One of references of HTSS is [A Hierarchical Threshold Signature](https://medium.com/getamis/a-hierarchical-threshold-signature-830683b87873) or See [Example](#Example).
 
+
+## Audit Report:
+Alice has been audited by [Kudelski Security](https://www.kudelskisecurity.com). The details can be found in [here](REPORT_2020-05-19.pdf).
+
+
+## Warning:
+
+Although Alice has been audited, you should still be careful to use it. 
+1. Using end-to-end encryption to transfer messages between two parties is necessary. 
+2. If any error messages occur during execution Alice, you should stop and restart it. **Never restart in the middle flow.**
+
+If you have more questions, you can connect [us](https://www.am.is/) directly without any hesitation.
 
 
 ## Table of Contents:
@@ -111,7 +122,7 @@ Our version is the algorithm of GG18 without doing range proofs in MtA(cf. [Sect
 * Replace Lagrange interpolation with [Birkhoff interpolation](https://en.wikipedia.org/wiki/Birkhoff_interpolation).
 * In the beginning of signer, we generate different parameters for each participant in the homomorphic encryption scheme. In their
  protocol, all participants use the same parameters but different key-pairs, which are generated in DKG.
-* All zero-knowledge proofs are non-interactive version (i.e. This part will be audited soon). 
+* All zero-knowledge proofs are non-interactive version. 
 
 <h3 id="Reshare">Reshare:</h3>
 
