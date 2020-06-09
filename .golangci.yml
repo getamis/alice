@@ -9,4 +9,5 @@ linters:
     - goconst
     - unconvert
     - gosimple
+    - gosec
   disable-all: true
