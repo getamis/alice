@@ -34,5 +34,5 @@ func WriteYamlFile(yamlData interface{}, filePath string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filePath, data, 0644)
+	return ioutil.WriteFile(filePath, data, 0600)
 }
