@@ -30,12 +30,12 @@ func TestPolynomial(t *testing.T) {
 
 var _ = Describe("Polynomial", func() {
 	var (
-		p *Polynomial
-
+		p            *Polynomial
 		coefficients = []*big.Int{big.NewInt(1), big.NewInt(5), big.NewInt(2), big.NewInt(3)}
 		bigNumber    = "115792089237316195423570985008687907852837564279074904382605163141518161494337"
 		bigPrime, _  = new(big.Int).SetString(bigNumber, 10)
 	)
+
 	BeforeEach(func() {
 		var err error
 		p, err = NewPolynomial(bigPrime, coefficients)
@@ -112,6 +112,27 @@ var _ = Describe("Polynomial", func() {
 		It("should be ok", func() {
 			p.SetConstant(big.NewInt(6))
 			Expect(p.coefficients[0]).Should(Equal(big.NewInt(6)))
+		})
+	})
+
+	Context("Max()", func() {
+		It("should be ok", func() {
+			Expect(Max(48, 28)).Should(Equal(48))
+		})
+	})
+
+	Context("Add()", func() {
+		It("should be ok", func() {
+			p1coe := []*big.Int{big.NewInt(1), big.NewInt(5), big.NewInt(2), big.NewInt(3)}
+			p2coe := []*big.Int{big.NewInt(3), big.NewInt(15), big.NewInt(2), big.NewInt(3)}
+			p1, err := NewPolynomial(bigPrime, p1coe)
+			Expect(err).Should(BeNil())
+			p2, err := NewPolynomial(bigPrime, p2coe)
+			Expect(err).Should(BeNil())
+			result := p1.Add(p2)
+			solutionCoe := []*big.Int{big.NewInt(4), big.NewInt(20), big.NewInt(4), big.NewInt(6)}
+
+			Expect(result.coefficients).Should(Equal(solutionCoe))
 		})
 	})
 })

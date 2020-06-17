@@ -16,6 +16,7 @@ package polynomial
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/getamis/alice/crypto/utils"
@@ -131,4 +132,149 @@ func (p *Polynomial) Degree() uint32 {
 // SetConstant sets the constant term of the polynomial
 func (p *Polynomial) SetConstant(value *big.Int) {
 	p.coefficients[0] = value
+}
+
+// Max compares 2 integers and return the larger one
+func Max(a int, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// need a function to delete the zeros at the end of the slice
+
+// Add adds 2 polynomianls together.
+func (p *Polynomial) Add(P *Polynomial) *Polynomial {
+	// compare the length of 2 poly, and get the longer legnth number
+	var length = Max(p.Len(), P.Len())
+	// initialize a new slice for their addition with a size of the longer length
+	var newP = make([]*big.Int, length)
+	// loop through longer length to perform addtion on each term
+	for i := 0; i < length; i++ {
+		newP[i] = new(big.Int).Add(p.coefficients[i], P.coefficients[i])
+	}
+	// mod slice of coefficient with fieldOrder
+	for i := 0; i < length; i++ {
+		newP[i] = new(big.Int).Mod(newP[i], p.fieldOrder)
+	}
+	// output
+	return &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: newP,
+	}
+}
+
+// Minus returns the difference between 2 polynominal (p-P)
+func (p *Polynomial) Minus(P *Polynomial) *Polynomial {
+	// compare the length of 2 poly, and get the longer legnth number
+	var length = Max(p.Len(), P.Len())
+	// initialize a new slice for their addition with a size of the longer length
+	var newP = make([]*big.Int, length)
+	// loop through longer length to perform subtraction on each term
+	for i := 0; i < length; i++ {
+		newP[i] = new(big.Int).Sub(p.coefficients[i], P.coefficients[i])
+	}
+	// mod slice of coefficient with fieldOrder
+	for i := 0; i < length; i++ {
+		newP[i] = new(big.Int).Mod(newP[i], p.fieldOrder)
+	}
+	// output
+	return &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: newP,
+	}
+}
+
+// Mul multiply 2 polynominals into 1 then output
+func (p *Polynomial) Mul(P *Polynomial) *Polynomial {
+	// new length will be Len(p)+Len(P)-1
+	var length = p.Len() + P.Len() - 1
+	// initialize a new slice for their product with a size of length
+	var newP = make([]*big.Int, length)
+	product := &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: newP,
+	}
+	// And set all coeffcients to zero
+	for i := 0; i < length; i++ {
+		product.coefficients[i] = big.NewInt(0)
+	}
+	// loop through the length to perform multiplication on each term
+	for i := 0; i < p.Len(); i++ {
+		for j := 0; j < P.Len(); j++ {
+			newP[i+j] = new(big.Int).Add(newP[i+j], new(big.Int).Mul(p.coefficients[i], P.coefficients[i]))
+		}
+	}
+	// mod slice of coefficient with fieldOrder
+	for i := 0; i < length; i++ {
+		newP[i] = new(big.Int).Mod(newP[i], p.fieldOrder)
+	}
+	// output
+	return product
+}
+
+// from https://rosettacode.org/wiki/Polynomial_long_division#Go
+// N: dividend
+// D: divisor
+// Q: quotient
+// R: remainder
+// degree ignores the zeros and gets the actul degree of a polynominal.
+func degree(p *Polynomial) int {
+	for d := p.Len() - 1; d >= 0; d-- {
+		if p.Get(d) != big.NewInt(0) {
+			return d
+		}
+	}
+	return -1
+}
+
+// Degree ignores the zeros and gets the actul degree of a []*big.Int.
+func Degree(coeff []*big.Int) int {
+	for d := len(coeff) - 1; d >= 0; d-- {
+		if coeff[d] != big.NewInt(0) {
+			return d
+		}
+	}
+	return -1
+}
+
+// Div divides 1 polynominal by another polynominal then returns quotient and remiander polymonial.
+func Div(nn, dd *Polynomial) (q, r *Polynomial) {
+	// error for negative degree
+	if degree(dd) < 0 || degree(nn) < degree(dd) {
+		fmt.Print("Error")
+		return
+	}
+	r = nn
+	// initiate new slice for quotient's coeffcient
+	var qCoeff = make([]*big.Int, degree(nn)-degree(dd)+1)
+	// initiate new slice for dividend's coeffcient
+	var nCoeff = make([]*big.Int, degree(nn)-degree(dd)+1)
+	// then copy everything over
+	copy(nCoeff[:], nn.coefficients)
+	if degree(nn) >= degree(dd) {
+		// loop till degree of divisor(dd) is larger
+		for degree(nn) >= degree(dd) {
+			// new slice to store shifted divisor
+			dCoeff /*originally d*/ := make([]*big.Int, degree(nn)+1)
+			// dCoeff = D shifted right by (degree(N) - degree(D)), so that N and D are in the same degree
+			copy(dCoeff[degree(nn)-degree(dd):], dd.coefficients)
+			// q(degree(N) - degree(D)) = N(degree(N)) / d(degree(d))
+			q.coefficients[degree(nn)-degree(dd)] = new(big.Int).Div(nn.Get(degree(nn)), dCoeff[Degree(dCoeff)])
+			for i := range dCoeff {
+				dCoeff[i] = new(big.Int).Mul(dCoeff[i], q.Get(degree(nn)-degree(dd)))
+				nCoeff[i] = new(big.Int).Sub(nn.Get(i), dCoeff[i])
+			}
+		}
+
+	}
+	// return q, nn
+	return &Polynomial{ // FIXME put this together within the same scope of its declaration
+			fieldOrder:   q.fieldOrder,
+			coefficients: qCoeff,
+		}, &Polynomial{
+			fieldOrder:   nn.fieldOrder,
+			coefficients: nCoeff,
+		}
 }
