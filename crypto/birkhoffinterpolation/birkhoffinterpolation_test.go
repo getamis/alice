@@ -206,4 +206,56 @@ var _ = Describe("Birkhoff Interpolation", func() {
 			Expect(got).Should(BeNil())
 		})
 	})
+
+	DescribeTable("GetAddShareFractionalValue()", func(newBK *BkParameter, expected string, ownIndex, threshold int) {
+		ps := make(BkParameters, 3)
+		ps[0] = NewBkParameter(big.NewInt(1), 0)
+		ps[1] = NewBkParameter(big.NewInt(2), 1)
+		ps[2] = NewBkParameter(big.NewInt(5), 0)
+
+		got, err := ps.GetAddShareCoefficeint(ps[ownIndex], newBK, bigPrime, 3)
+		Expect(err).Should(BeNil())
+		result, _ := new(big.Int).SetString(expected, 10)
+		Expect(got.Cmp(result) == 0).Should(BeTrue())
+	},
+		Entry("BK : (6,0), ownIndex = 0",
+			NewBkParameter(big.NewInt(6), 0), "101318078082651670995624611882601919371232868744190541334779517748828391307544", 0, 3,
+		),
+		Entry("BK : (6,0), ownIndex = 1",
+			NewBkParameter(big.NewInt(6), 0), "57896044618658097711785492504343953926418782139537452191302581570759080747166", 1, 3,
+		),
+		Entry("BK : (6,0), ownIndex = 2",
+			NewBkParameter(big.NewInt(6), 0), "14474011154664524427946373126085988481604695534884363047825645392689770186794", 2, 3,
+		),
+		Entry("BK : (6,1), ownIndex = 0",
+			NewBkParameter(big.NewInt(6), 1), "115792089237316195423570985008687907852837564279074904382605163141518161494336", 0, 3,
+		),
+		Entry("BK : (6,1), ownIndex = 1",
+			NewBkParameter(big.NewInt(6), 1), "115792089237316195423570985008687907852837564279074904382605163141518161494334", 1, 3,
+		),
+		Entry("BK : (6,1), ownIndex = 2",
+			NewBkParameter(big.NewInt(6), 1), "1", 2, 3,
+		),
+		Entry("BK : (6,2), ownIndex = 0",
+			NewBkParameter(big.NewInt(6), 2), "28948022309329048855892746252171976963209391069768726095651290785379540373584", 0, 3,
+		),
+		Entry("BK : (6,2), ownIndex = 1",
+			NewBkParameter(big.NewInt(6), 2), "115792089237316195423570985008687907852837564279074904382605163141518161494336", 1, 3,
+		),
+		Entry("BK : (6,2), ownIndex = 2",
+			NewBkParameter(big.NewInt(6), 2), "86844066927987146567678238756515930889628173209306178286953872356138621120753", 2, 3,
+		),
+	)
+
+	It("getIndexOfBK(): can not find own Bk", func() {
+		ps := make(BkParameters, 3)
+		ps[0] = NewBkParameter(big.NewInt(1), 0)
+		ps[1] = NewBkParameter(big.NewInt(2), 1)
+		ps[2] = NewBkParameter(big.NewInt(5), 0)
+		find := NewBkParameter(big.NewInt(5), 4)
+
+		got, err := ps.getIndexOfBK(find)
+		Expect(err).Should(Equal(ErrNoExistBk))
+		Expect(got).Should(Equal(0))
+	})
 })
