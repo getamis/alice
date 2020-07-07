@@ -48,6 +48,10 @@ func (p *siHandler) MessageType() types.MessageType {
 	return types.MessageType(Type_Si)
 }
 
+func (p *siHandler) GetRequiredMessageCount() uint32 {
+	return p.peerNum
+}
+
 func (p *siHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {

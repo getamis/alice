@@ -42,6 +42,10 @@ func (p *verifyHandler) MessageType() types.MessageType {
 	return types.MessageType(Type_Verify)
 }
 
+func (p *verifyHandler) GetRequiredMessageCount() uint32 {
+	return p.peerNum
+}
+
 func (p *verifyHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {

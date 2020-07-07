@@ -97,6 +97,10 @@ func (p *commitHandler) MessageType() types.MessageType {
 	return types.MessageType(Type_Commit)
 }
 
+func (p *commitHandler) GetRequiredMessageCount() uint32 {
+	return p.peerNum
+}
+
 func (p *commitHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {

@@ -39,6 +39,10 @@ func (p *commitViAiHandler) MessageType() types.MessageType {
 	return types.MessageType(Type_CommitViAi)
 }
 
+func (p *commitViAiHandler) GetRequiredMessageCount() uint32 {
+	return p.peerNum
+}
+
 func (p *commitViAiHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {

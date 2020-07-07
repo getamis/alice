@@ -40,6 +40,10 @@ func (p *decommitHandler) MessageType() types.MessageType {
 	return types.MessageType(Type_Decommit)
 }
 
+func (p *decommitHandler) GetRequiredMessageCount() uint32 {
+	return p.peerNum
+}
+
 func (p *decommitHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {

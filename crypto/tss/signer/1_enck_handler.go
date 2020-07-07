@@ -58,6 +58,10 @@ func (p *encKHandler) MessageType() types.MessageType {
 	return types.MessageType(Type_EncK)
 }
 
+func (p *encKHandler) GetRequiredMessageCount() uint32 {
+	return p.peerNum
+}
+
 func (p *encKHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {

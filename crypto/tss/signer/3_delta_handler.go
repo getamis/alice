@@ -41,6 +41,10 @@ func (p *deltaHandler) MessageType() types.MessageType {
 	return types.MessageType(Type_Delta)
 }
 
+func (p *deltaHandler) GetRequiredMessageCount() uint32 {
+	return p.peerNum
+}
+
 func (p *deltaHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
