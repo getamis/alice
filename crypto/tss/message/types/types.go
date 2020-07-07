@@ -32,6 +32,8 @@ type PeerManager interface {
 type Handler interface {
 	// MessageType return the message type which the handler want to collect
 	MessageType() MessageType
+	// GetRequiredMessageCount gets required message count in this round
+	GetRequiredMessageCount() uint32
 	// IsHandled checks if the id's message is handled before
 	IsHandled(logger log.Logger, id string) bool
 	// HandleMessage handles the message
