@@ -32,6 +32,8 @@ var (
 	ErrInvalidBks = errors.New("invalid bks")
 	//ErrNoValidBks is returned if there's no valid bk
 	ErrNoValidBks = errors.New("no valid bks")
+	//ErrNoExistBk is returned if there does not exist bk
+	ErrNoExistBk = errors.New("no exist bk")
 )
 
 type BkParameter struct {
@@ -215,4 +217,54 @@ func (bks BkParameters) getLinearEquationCoefficientMatrix(nThreshold uint32, fi
 		result[i] = bks[i].GetLinearEquationCoefficient(fieldOrder, degree)
 	}
 	return matrix.NewMatrix(fieldOrder, result)
+}
+
+// Compute [sum_{k=newRank}^{t-1} k!/(k-newRank)!(x_new)^(k-newRank)*b_{ki}]*s_i, newRank is the rank of newBk, x_new is x-coordinate of newBk, and b_{ki} is
+// the (k,i)-component of the pseudoinverse of Birkhoff matrix associated bks.
+func (bks BkParameters) GetAddShareCoefficeint(ownBk, newBk *BkParameter, fieldOrder *big.Int, threshold uint32) (*big.Int, error) {
+	birkhoffMatrix, err := bks.getLinearEquationCoefficientMatrix(threshold, fieldOrder)
+	if err != nil {
+		return nil, err
+	}
+	birkhoffMatrix, err = birkhoffMatrix.Pseudoinverse()
+	if err != nil {
+		return nil, err
+	}
+	ownIndex, err := bks.getIndexOfBK(ownBk)
+	if err != nil {
+		return nil, err
+	}
+	newrank := uint64(newBk.rank)
+	result := big.NewInt(0)
+	xPower := big.NewInt(1)
+
+	// Get newrank!
+	newRankFactorial := big.NewInt(1)
+	for i := uint64(2); i < newrank+1; i++ {
+		newRankFactorial = newRankFactorial.Mul(newRankFactorial, new(big.Int).SetUint64(i))
+		newRankFactorial = newRankFactorial.Mod(newRankFactorial, fieldOrder)
+	}
+	for i := newrank; i < uint64(threshold); i++ {
+		factorialCoe := new(big.Int).Binomial(int64(i), int64(i-newrank))
+		factorialCoe = factorialCoe.Mul(factorialCoe, newRankFactorial)
+		tempbki := birkhoffMatrix.Get(i, uint64(ownIndex))
+		tempResult := new(big.Int).Mul(factorialCoe, xPower)
+		tempResult = tempResult.Mul(tempResult, tempbki)
+		result = result.Add(tempResult, result)
+		result = result.Mod(result, fieldOrder)
+		xPower = xPower.Mul(xPower, newBk.GetX())
+	}
+	return result, nil
+}
+
+func (bks BkParameters) getIndexOfBK(ownBk *BkParameter) (int, error) {
+	for i := 0; i < len(bks); i++ {
+		if bks[i].GetX().Cmp(ownBk.GetX()) != 0 {
+			continue
+		}
+		if bks[i].GetRank() == ownBk.rank {
+			return i, nil
+		}
+	}
+	return 0, ErrNoExistBk
 }
