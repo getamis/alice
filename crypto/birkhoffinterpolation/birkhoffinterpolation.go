@@ -219,9 +219,9 @@ func (bks BkParameters) getLinearEquationCoefficientMatrix(nThreshold uint32, fi
 	return matrix.NewMatrix(fieldOrder, result)
 }
 
-// Compute [sum_{k=newRank}^{t-1} k!/(k-newRank)!(x_new)^(k-newRank)*b_{ki}]*s_i, newRank is the rank of newBk, x_new is x-coordinate of newBk, and b_{ki} is
+// GetAddShareCoefficient computes [sum_{k=newRank}^{t-1} k!/(k-newRank)!(x_new)^(k-newRank)*b_{ki}]*s_i, newRank is the rank of newBk, x_new is x-coordinate of newBk, and b_{ki} is
 // the (k,i)-component of the pseudoinverse of Birkhoff matrix associated bks.
-func (bks BkParameters) GetAddShareCoefficeint(ownBk, newBk *BkParameter, fieldOrder *big.Int, threshold uint32) (*big.Int, error) {
+func (bks BkParameters) GetAddShareCoefficient(ownBk, newBk *BkParameter, fieldOrder *big.Int, threshold uint32) (*big.Int, error) {
 	birkhoffMatrix, err := bks.getLinearEquationCoefficientMatrix(threshold, fieldOrder)
 	if err != nil {
 		return nil, err

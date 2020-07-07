@@ -213,7 +213,7 @@ var _ = Describe("Birkhoff Interpolation", func() {
 		ps[1] = NewBkParameter(big.NewInt(2), 1)
 		ps[2] = NewBkParameter(big.NewInt(5), 0)
 
-		got, err := ps.GetAddShareCoefficeint(ps[ownIndex], newBK, bigPrime, 3)
+		got, err := ps.GetAddShareCoefficient(ps[ownIndex], newBK, bigPrime, 3)
 		Expect(err).Should(BeNil())
 		result, _ := new(big.Int).SetString(expected, 10)
 		Expect(got.Cmp(result) == 0).Should(BeTrue())
