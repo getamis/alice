@@ -95,19 +95,5 @@ func (p *resultHandler) Finalize(logger log.Logger) (types.Handler, error) {
 		sgs[i] = peer.result.result
 		i++
 	}
-	scalars, err := bks.ComputeBkCoefficient(p.threshold, p.curve.Params().N)
-	if err != nil {
-		logger.Warn("Failed to compute", "err", err)
-		return nil, err
-	}
-	gotPub, err := ecpointgrouplaw.ComputeLinearCombinationPoint(scalars, sgs)
-	if err != nil {
-		logger.Warn("Failed to calculate public key", "err", err)
-		return nil, err
-	}
-	if !p.publicKey.Equal(gotPub) {
-		logger.Warn("Inconsistent public key", "got", gotPub, "expected", p.publicKey)
-		return nil, tss.ErrInconsistentPubKey
-	}
-	return nil, nil
+	return nil, tss.ValidatePublicKey(logger, bks, sgs, p.threshold, p.publicKey)
 }
