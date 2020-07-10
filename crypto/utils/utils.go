@@ -53,7 +53,8 @@ var (
 	ErrEmptySlice = errors.New("empty slice")
 	// ErrSmallThreshold is returned if the threshold < 2.
 	ErrSmallThreshold = errors.New("threshold < 2")
-
+	// ErrDivisionByZero is returned if divided polynomial is zero.
+	ErrDivisionByZero = errors.New("division by zero")
 	// maxGenPrimeInt defines the max retries to generate a prime int
 	maxGenPrimeInt = 100
 

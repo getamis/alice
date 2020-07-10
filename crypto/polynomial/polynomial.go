@@ -16,13 +16,14 @@ package polynomial
 
 import (
 	"errors"
-	"fmt"
+	"math"
 	"math/big"
 
 	"github.com/getamis/alice/crypto/utils"
 )
 
 var (
+	big0 = big.NewInt(0)
 	// ErrEmptyCoefficients is returned if the coefficients is empty
 	ErrEmptyCoefficients = errors.New("empty coefficient")
 )
@@ -134,147 +135,223 @@ func (p *Polynomial) SetConstant(value *big.Int) {
 	p.coefficients[0] = value
 }
 
-// Max compares 2 integers and return the larger one
-func Max(a int, b int) int {
-	if a > b {
-		return a
+// RemoveZeros removes the zeros from the end of the polyminal.
+func (p *Polynomial) RemoveZeros() *Polynomial {
+	endIndex := 0
+	for i := p.Len() - 1; i >= 0; i-- {
+		if p.coefficients[i] != nil {
+			endIndex = i
+			break
+		}
 	}
-	return b
+	for i := endIndex; i >= 0; i-- {
+		if p.coefficients[i].Cmp(big.NewInt(0)) != 0 {
+			endIndex = i
+			break
+		}
+	}
+	newSlice := p.coefficients[:endIndex+1]
+	return &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: newSlice,
+	}
 }
 
-// need a function to delete the zeros at the end of the slice
+// Mod makes sure all the coefficients of a polynominal is within zero to (field order-1).
+func (p *Polynomial) Mod() *Polynomial {
+	for i := 0; i < p.Len(); i++ {
+		p.coefficients[i] = new(big.Int).Mod(p.coefficients[i], p.fieldOrder)
+	}
+	return p
+}
 
 // Add adds 2 polynomianls together.
 func (p *Polynomial) Add(P *Polynomial) *Polynomial {
 	// compare the length of 2 poly, and get the longer legnth number
-	var length = Max(p.Len(), P.Len())
-	// initialize a new slice for their addition with a size of the longer length
-	var newP = make([]*big.Int, length)
-	// loop through longer length to perform addtion on each term
+	length := int(math.Max(float64(p.Len()), float64(P.Len())))
+	newP := make([]*big.Int, length)
 	for i := 0; i < length; i++ {
 		newP[i] = new(big.Int).Add(p.coefficients[i], P.coefficients[i])
 	}
-	// mod slice of coefficient with fieldOrder
-	for i := 0; i < length; i++ {
-		newP[i] = new(big.Int).Mod(newP[i], p.fieldOrder)
-	}
-	// output
-	return &Polynomial{
+	sum := &Polynomial{
 		fieldOrder:   p.fieldOrder,
 		coefficients: newP,
 	}
+	sum = sum.Mod()
+	sum = sum.RemoveZeros()
+	return sum
 }
 
 // Minus returns the difference between 2 polynominal (p-P)
 func (p *Polynomial) Minus(P *Polynomial) *Polynomial {
 	// compare the length of 2 poly, and get the longer legnth number
-	var length = Max(p.Len(), P.Len())
-	// initialize a new slice for their addition with a size of the longer length
-	var newP = make([]*big.Int, length)
-	// loop through longer length to perform subtraction on each term
-	for i := 0; i < length; i++ {
-		newP[i] = new(big.Int).Sub(p.coefficients[i], P.coefficients[i])
+	length := int(math.Max(float64(p.Len()), float64(P.Len())))
+	newPCoeff := make([]*big.Int, length)
+	if p.Len() > P.Len() {
+		for i := 0; i < length; i++ {
+			if i < P.Len() {
+				newPCoeff[i] = new(big.Int).Sub(p.coefficients[i], P.coefficients[i])
+			} else {
+				newPCoeff[i] = p.coefficients[i]
+			}
+		}
+	} else if p.Len() < P.Len() {
+		for i := 0; i < length; i++ {
+			if i < p.Len() {
+				newPCoeff[i] = new(big.Int).Sub(p.coefficients[i], P.coefficients[i])
+			} else {
+				newPCoeff[i] = new(big.Int).Sub(big.NewInt(0), P.coefficients[i])
+			}
+		}
+	} else { // length equal
+		for i := 0; i < length; i++ {
+			newPCoeff[i] = new(big.Int).Sub(p.coefficients[i], P.coefficients[i])
+		}
 	}
-	// mod slice of coefficient with fieldOrder
-	for i := 0; i < length; i++ {
-		newP[i] = new(big.Int).Mod(newP[i], p.fieldOrder)
-	}
-	// output
-	return &Polynomial{
+	newP := &Polynomial{
 		fieldOrder:   p.fieldOrder,
-		coefficients: newP,
+		coefficients: newPCoeff,
 	}
+	newP = newP.Mod()
+	newP = newP.RemoveZeros()
+	return newP
 }
 
 // Mul multiply 2 polynominals into 1 then output
-func (p *Polynomial) Mul(P *Polynomial) *Polynomial {
-	// new length will be Len(p)+Len(P)-1
-	var length = p.Len() + P.Len() - 1
-	// initialize a new slice for their product with a size of length
-	var newP = make([]*big.Int, length)
+func (p *Polynomial) Mul(p2 *Polynomial) *Polynomial {
+	p = p.RemoveZeros()
+	p2 = p2.RemoveZeros()
+	length := p.Len() + p2.Len() - 1
+	newP := make([]*big.Int, length)
 	product := &Polynomial{
 		fieldOrder:   p.fieldOrder,
 		coefficients: newP,
 	}
-	// And set all coeffcients to zero
 	for i := 0; i < length; i++ {
 		product.coefficients[i] = big.NewInt(0)
 	}
-	// loop through the length to perform multiplication on each term
 	for i := 0; i < p.Len(); i++ {
-		for j := 0; j < P.Len(); j++ {
-			newP[i+j] = new(big.Int).Add(newP[i+j], new(big.Int).Mul(p.coefficients[i], P.coefficients[i]))
+		for j := 0; j < p2.Len(); j++ {
+			newP[i+j] = new(big.Int).Add(newP[i+j], new(big.Int).Mul(p.coefficients[i], p2.coefficients[j]))
 		}
 	}
-	// mod slice of coefficient with fieldOrder
-	for i := 0; i < length; i++ {
-		newP[i] = new(big.Int).Mod(newP[i], p.fieldOrder)
-	}
-	// output
+	product = product.Mod()
+	product = product.RemoveZeros()
 	return product
 }
 
-// from https://rosettacode.org/wiki/Polynomial_long_division#Go
-// N: dividend
-// D: divisor
-// Q: quotient
-// R: remainder
-// degree ignores the zeros and gets the actul degree of a polynominal.
-func degree(p *Polynomial) int {
-	for d := p.Len() - 1; d >= 0; d-- {
-		if p.Get(d) != big.NewInt(0) {
-			return d
-		}
+// rem only persves terms with lower degree and keep the rest of the coefiicients within fieldorder // also reduces its cap
+func (p *Polynomial) rem(l int) *Polynomial {
+	newPCoeff := make([]*big.Int, l, l)
+	for i := 0; i < l; i++ {
+		newPCoeff[i] = p.coefficients[i]
 	}
-	return -1
+	remainder := &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: newPCoeff,
+	}
+	remainder = remainder.Mod()
+	remainder = remainder.RemoveZeros()
+	return remainder
 }
 
-// Degree ignores the zeros and gets the actul degree of a []*big.Int.
-func Degree(coeff []*big.Int) int {
-	for d := len(coeff) - 1; d >= 0; d-- {
-		if coeff[d] != big.NewInt(0) {
-			return d
-		}
+// algorithm 9.3
+// invert computes the inversion of an polynomial using Newton iteration
+// l is the degree of the "moded" term. example: l = 4 if we are moding x^4
+func (p *Polynomial) invert(l *big.Int) *Polynomial {
+	r := math.Ceil(math.Log2(float64(l.Int64())))
+	g0Coeff := make([]*big.Int, l.Int64()+2)
+	g0 := &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: g0Coeff,
 	}
-	return -1
+	g0.SetConstant(big.NewInt(1))
+
+	giCoeff := make([]*big.Int, l.Int64()+2)
+	gi := &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: giCoeff,
+	}
+
+	Just2Coeff := make([]*big.Int, l.Int64()+2)
+	Just2 := &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: Just2Coeff,
+	}
+	Just2.SetConstant(big.NewInt(2))
+	Just2 = Just2.RemoveZeros()
+	gi = (Just2.Minus(p)).rem(2)   // initial gi which is g1
+	for i := 1; i <= int(r); i++ { // g0 is g_{i-1} in algorithm 9.3
+		gTemp := gi
+		gi = (Just2.Mul(g0).Minus(p.Mul(g0.Mul(g0)))).rem(int(math.Pow(2, float64(i))))
+		gi = gi.Mod()
+		gi = gi.RemoveZeros()
+		g0 = gTemp
+	}
+	return gi
 }
 
-// Div divides 1 polynominal by another polynominal then returns quotient and remiander polymonial.
-func Div(nn, dd *Polynomial) (q, r *Polynomial) {
-	// error for negative degree
-	if degree(dd) < 0 || degree(nn) < degree(dd) {
-		fmt.Print("Error")
-		return
+// rev computes the reversal of a as rev_{k}(a) = x^{k}*a(1/x), where a is a polynomial.
+func (p *Polynomial) rev(k uint32) *Polynomial {
+	if k < p.Degree() {
+		// will produce polynomial with negative degree terms
+		return nil
 	}
-	r = nn
-	// initiate new slice for quotient's coeffcient
-	var qCoeff = make([]*big.Int, degree(nn)-degree(dd)+1)
-	// initiate new slice for dividend's coeffcient
-	var nCoeff = make([]*big.Int, degree(nn)-degree(dd)+1)
-	// then copy everything over
-	copy(nCoeff[:], nn.coefficients)
-	if degree(nn) >= degree(dd) {
-		// loop till degree of divisor(dd) is larger
-		for degree(nn) >= degree(dd) {
-			// new slice to store shifted divisor
-			dCoeff /*originally d*/ := make([]*big.Int, degree(nn)+1)
-			// dCoeff = D shifted right by (degree(N) - degree(D)), so that N and D are in the same degree
-			copy(dCoeff[degree(nn)-degree(dd):], dd.coefficients)
-			// q(degree(N) - degree(D)) = N(degree(N)) / d(degree(d))
-			q.coefficients[degree(nn)-degree(dd)] = new(big.Int).Div(nn.Get(degree(nn)), dCoeff[Degree(dCoeff)])
-			for i := range dCoeff {
-				dCoeff[i] = new(big.Int).Mul(dCoeff[i], q.Get(degree(nn)-degree(dd)))
-				nCoeff[i] = new(big.Int).Sub(nn.Get(i), dCoeff[i])
-			}
-		}
+	newPCoeff := make([]*big.Int, p.Len())
+	for currentIndex := 0; currentIndex < p.Len(); currentIndex++ {
+		newIndex := currentIndex*(-1) + int(k)
+		newPCoeff[newIndex] = p.coefficients[currentIndex]
+	}
+	rev := &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: newPCoeff,
+	}
+	rev = rev.Mod()
+	rev = rev.RemoveZeros()
+	return rev
+}
 
-	}
-	// return q, nn
-	return &Polynomial{ // FIXME put this together within the same scope of its declaration
-			fieldOrder:   q.fieldOrder,
-			coefficients: qCoeff,
-		}, &Polynomial{
-			fieldOrder:   nn.fieldOrder,
-			coefficients: nCoeff,
+// CheckIfOnlyZero checks if the polynomial has nothing but zero
+func (p *Polynomial) CheckIfOnlyZero() bool {
+	allZero := true
+	for i := p.Len() - 1; i >= 0; i-- {
+		if p.coefficients[i].Cmp(big.NewInt(0)) != 0 {
+			allZero = false
+			break
 		}
+	}
+	return allZero
+}
+
+// FDiv (algorithm 9.5) means fast division with remainder, it performs division between polynomials with smaller complexity than the normal one
+func (p *Polynomial) FDiv(b *Polynomial) (q, r *Polynomial, err error) {
+	b = b.RemoveZeros()
+	err = utils.ErrDivisionByZero
+	if b.CheckIfOnlyZero() {
+		return nil, nil, err
+	}
+	length := p.Len()
+	newPCoeff := make([]*big.Int, length)
+	if p.Degree() < b.Degree() {
+		newP := &Polynomial{
+			fieldOrder:   p.fieldOrder,
+			coefficients: newPCoeff,
+		}
+		newP.SetConstant(big.NewInt(0))
+		newP = newP.RemoveZeros()
+		newP = newP.Mod()
+		return newP, p, nil
+	}
+	for i := 0; i < length; i++ {
+		newPCoeff[i] = big.NewInt(0)
+	}
+	m := p.Degree() - b.Degree()
+	// call invert() (algorithm 9.3) to compute the inverse of rev deg b (b) belongs to D[x] mod x^{m+1}
+	l := big.NewInt(int64(m) + 1)
+	RevB := b.rev(b.Degree())
+	invRevB := RevB.invert(l)
+	qAsterisk := p.rev(p.Degree()).Mul(invRevB).rem(int(m) + 1)
+	q = qAsterisk.rev(m)
+	r = p.Minus(b.Mul(q))
+	return q, r, nil
 }
