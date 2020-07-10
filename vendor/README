@@ -1,0 +1,5 @@
+This is tool libraries folder.
+
+In this project, we use below tools:
+
+github.com/golang/protobuf/protoc-gen-go@v1.3.5

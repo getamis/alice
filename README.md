@@ -71,6 +71,21 @@ If you have more questions, you can connect [us](https://www.am.is/) directly wi
 
 <h2 id="implementation">Implementations:</h2>
 
+After the project is cloned, we need to run below commands to initialize/update the sub-modules:
+
+```sh
+$ make init
+```
+
+If you need to rebuild protobuf, please run below command to install tools and build protobuf.
+```sh
+# Install tools
+$ make tools
+# Build protobuf
+$ make protobuf
+```
+
+
 Like the classical TSS, HTSS also contains three protocols:
 
 1. DKG: Distributed key generation for creating secret shares without any dealer.

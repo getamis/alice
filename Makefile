@@ -2,7 +2,34 @@ GO_TEST_COVER_MODE ?= atomic
 GO_UNIT_TEST_TIMEOUT ?= 60m
 SHELL := /bin/bash
 TOOL_DIR := $(CURDIR)/tools
+TOOL_BIN_DIR := $(TOOL_DIR)/bin
+TOOL_TEMP_DIR := $(TOOL_DIR)/tmp
+DIRS := \
+	$(TOOL_BIN_DIR) \
+	$(TOOL_TEMP_DIR)
+export PATH := $(TOOL_BIN_DIR):$(PATH)
 include $(wildcard $(TOOL_DIR)/*.mk)
+
+PROTOS := \
+	**/*.proto
+
+$(DIRS):
+	mkdir -p $@
+
+PHONY+= init
+init: 
+	git submodule init
+	git submodule update
+
+PHONY+= tools
+tools: $(DIRS) $(PROTOC)
+	@go build -mod=vendor -o $(TOOL_BIN_DIR)/protoc-gen-go $(CURDIR)/vendor/github.com/golang/protobuf/protoc-gen-go
+
+PHONY += protobuf
+protobuf:
+	@for d in $$(find "crypto" -type f -name "*.proto"); do		\
+		protoc -I$(GOPATH)/src --go_out=$(GOPATH)/src $(CURDIR)/$$d; \
+	done; 
 
 PHONY += coverage.txt
 coverage.txt:
@@ -26,3 +53,5 @@ unit-test: coverage.txt
 PHONY += tss-example
 tss-example:
 	cd example && go build
+
+.PHONY: $(PHONY)

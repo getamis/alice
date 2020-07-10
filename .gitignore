@@ -16,3 +16,9 @@
 
 coverage.txt
 profile.out
+
+/tools/*
+!/tools/*.mk
+
+# Exclude example binaries
+example/example
