@@ -98,6 +98,7 @@ var _ = Describe("MsgMain", func() {
 			mockHandler.On("MessageType").Return(msgType).Once()
 			mockHandler.On("IsHandled", mock.Anything, id).Return(false).Once()
 			mockHandler.On("HandleMessage", mock.Anything, mockMsg).Return(nil).Once()
+			mockHandler.On("GetRequiredMessageCount").Return(uint32(1)).Once()
 			mockHandler.On("Finalize", mock.Anything).Return(newMockHandler, nil).Once()
 			newMockHandler.On("MessageType").Return(nextMessageType).Run(func(args mock.Arguments) {
 				cancel()
@@ -114,6 +115,7 @@ var _ = Describe("MsgMain", func() {
 			mockHandler.On("MessageType").Return(msgType).Once()
 			mockHandler.On("IsHandled", mock.Anything, id).Return(false).Once()
 			mockHandler.On("HandleMessage", mock.Anything, mockMsg).Return(nil).Once()
+			mockHandler.On("GetRequiredMessageCount").Return(uint32(1)).Once()
 			mockHandler.On("Finalize", mock.Anything).Return(nil, nil).Once()
 			mockListener.On("OnStateChanged", types.StateInit, types.StateDone).Once()
 			err := msgMain.messageLoop(ctx)
@@ -129,6 +131,7 @@ var _ = Describe("MsgMain", func() {
 				mockHandler.On("MessageType").Return(msgType).Once()
 				mockHandler.On("IsHandled", mock.Anything, id).Return(false).Once()
 				mockHandler.On("HandleMessage", mock.Anything, mockMsg).Return(nil).Once()
+				mockHandler.On("GetRequiredMessageCount").Return(uint32(1)).Once()
 				mockHandler.On("Finalize", mock.Anything).Return(nil, unknownErr).Once()
 				mockListener.On("OnStateChanged", types.StateInit, types.StateFailed).Once()
 				err := msgMain.messageLoop(ctx)

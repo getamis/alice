@@ -52,6 +52,10 @@ func (p *mtaHandler) MessageType() types.MessageType {
 	return types.MessageType(Type_Mta)
 }
 
+func (p *mtaHandler) GetRequiredMessageCount() uint32 {
+	return p.peerNum
+}
+
 func (p *mtaHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {

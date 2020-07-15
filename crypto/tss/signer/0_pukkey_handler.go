@@ -104,6 +104,10 @@ func (p *pubkeyHandler) MessageType() types.MessageType {
 	return types.MessageType(Type_Pubkey)
 }
 
+func (p *pubkeyHandler) GetRequiredMessageCount() uint32 {
+	return p.peerNum
+}
+
 func (p *pubkeyHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {

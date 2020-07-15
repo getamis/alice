@@ -109,6 +109,10 @@ func (p *peerHandler) MessageType() types.MessageType {
 	return types.MessageType(Type_Peer)
 }
 
+func (p *peerHandler) GetRequiredMessageCount() uint32 {
+	return p.peerNum
+}
+
 func (p *peerHandler) IsHandled(logger log.Logger, id string) bool {
 	_, ok := p.peers[id]
 	return ok

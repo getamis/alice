@@ -63,6 +63,10 @@ func (p *proofAiHandler) MessageType() types.MessageType {
 	return types.MessageType(Type_ProofAi)
 }
 
+func (p *proofAiHandler) GetRequiredMessageCount() uint32 {
+	return p.peerNum
+}
+
 func (p *proofAiHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {

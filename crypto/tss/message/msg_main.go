@@ -132,7 +132,7 @@ func (t *MsgMain) messageLoop(ctx context.Context) (err error) {
 		}
 
 		msgCount++
-		if msgCount < t.peerNum {
+		if msgCount < handler.GetRequiredMessageCount() {
 			continue
 		}
 

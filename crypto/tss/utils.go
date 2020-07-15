@@ -17,6 +17,7 @@ package tss
 import (
 	"errors"
 
+	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/sirius/log"
@@ -28,6 +29,7 @@ var (
 	ErrPeerNotFound              = errors.New("peer message not found")
 	ErrNotEnoughBKs              = errors.New("not enough Birkhoff coefficient")
 	ErrSelfBKNotFound            = errors.New("self Birkhoff coefficient not found")
+	ErrInvalidBK                 = errors.New("invalid Birkhoff coefficient")
 	ErrInconsistentThreshold     = errors.New("inconsistent threshold")
 	ErrInconsistentPeerNumAndBks = errors.New("inconsistent peer num and bks")
 	ErrInconsistentPubKey        = errors.New("inconsistent public key")
@@ -56,4 +58,23 @@ func GetPointFromHashCommitment(logger log.Logger, commit *commitment.HashCommit
 		return nil, err
 	}
 	return point, nil
+}
+
+func ValidatePublicKey(logger log.Logger, bks birkhoffinterpolation.BkParameters, sgs []*pt.ECPoint, threshold uint32, pubkey *pt.ECPoint) error {
+	fieldOrder := pubkey.GetCurve().Params().N
+	scalars, err := bks.ComputeBkCoefficient(threshold, fieldOrder)
+	if err != nil {
+		logger.Warn("Failed to compute", "err", err)
+		return err
+	}
+	gotPub, err := pt.ComputeLinearCombinationPoint(scalars, sgs)
+	if err != nil {
+		logger.Warn("Failed to calculate public", "err", err)
+		return err
+	}
+	if !pubkey.Equal(gotPub) {
+		logger.Warn("Inconsistent public key", "got", gotPub, "expected", pubkey)
+		return ErrInconsistentPubKey
+	}
+	return nil
 }

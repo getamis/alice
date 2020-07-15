@@ -48,6 +48,10 @@ func (p *decommitViAiHandler) MessageType() types.MessageType {
 	return types.MessageType(Type_DecommitViAi)
 }
 
+func (p *decommitViAiHandler) GetRequiredMessageCount() uint32 {
+	return p.peerNum
+}
+
 func (p *decommitViAiHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
