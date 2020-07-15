@@ -140,13 +140,7 @@ func (p *Polynomial) SetConstant(value *big.Int) {
 // RemoveZeros removes the zeros from the end of the polyminal.
 func (p *Polynomial) RemoveZeros() *Polynomial {
 	endIndex := 0
-	for i := p.Len() - 1; i >= 0; i-- {
-		if p.coefficients[i] != nil {
-			endIndex = i
-			break
-		}
-	}
-	for i := endIndex; i >= 0; i-- {
+	for i := p.Len() - 1; i > 0; i-- {
 		if p.coefficients[i].Cmp(big.NewInt(0)) != 0 {
 			endIndex = i
 			break
@@ -169,10 +163,9 @@ func (p *Polynomial) Mod() *Polynomial {
 
 // CheckIfValid checks if the polynomial has a non-zero coefficient for the highest degree term while constant term can be zero
 func (p *Polynomial) CheckIfValid() bool {
-	if p.Len() == 1 {
-		return true
-	}
-	if p.coefficients[p.Len()-1].Cmp(big.NewInt(0)) == 0 {
+	if p.coefficients[p.Len()-1] == nil {
+		return false
+	} else if p.coefficients[p.Len()-1].Cmp(big.NewInt(0)) == 0 && p.Len() != 1 {
 		return false
 	}
 	return true
@@ -234,8 +227,7 @@ func (p *Polynomial) Minus(P *Polynomial) (*Polynomial, error) {
 // minus returns the difference between 2 polynominal (p-P)
 func (p *Polynomial) minus(P *Polynomial) *Polynomial {
 	// compare the length of 2 poly, and get the longer legnth number
-	length := int(math.Max(float64(p.Len()), float64(P.Len())))
-	newPCoeff := make([]*big.Int, length)
+	newPCoeff := make([]*big.Int, P.Len())
 	for i := 0; i < P.Len(); i++ {
 		newPCoeff[i] = new(big.Int).Neg(P.coefficients[i])
 	}
@@ -243,6 +235,7 @@ func (p *Polynomial) minus(P *Polynomial) *Polynomial {
 		fieldOrder:   p.fieldOrder,
 		coefficients: newPCoeff,
 	}
+	// negP = negP.RemoveZeros()
 	newP := p.add(negP)
 	newP = newP.Mod()
 	newP = newP.RemoveZeros()
@@ -300,7 +293,7 @@ func (p *Polynomial) rem(l int) *Polynomial {
 // l is the degree of the "moded" term. example: l = 4 if we are moding x^4
 func (p *Polynomial) invert(l *big.Int) *Polynomial {
 	r := math.Ceil(math.Log2(float64(l.Int64())))
-	g0Coeff := make([]*big.Int, l.Int64()+2)
+	g0Coeff := make([]*big.Int, 1)
 	g0 := &Polynomial{
 		fieldOrder:   p.fieldOrder,
 		coefficients: g0Coeff,
@@ -313,17 +306,20 @@ func (p *Polynomial) invert(l *big.Int) *Polynomial {
 		coefficients: giCoeff,
 	}
 
-	Just2Coeff := make([]*big.Int, l.Int64()+2)
+	Just2Coeff := make([]*big.Int, 1)
 	Just2 := &Polynomial{
 		fieldOrder:   p.fieldOrder,
 		coefficients: Just2Coeff,
 	}
 	Just2.SetConstant(big.NewInt(2))
-	Just2 = Just2.RemoveZeros()
+	// Just2 = Just2.RemoveZeros()
 	gi = (Just2.minus(p)).rem(2)   // initial gi which is g1
 	for i := 1; i <= int(r); i++ { // g0 is g_{i-1} in algorithm 9.3
 		gTemp := gi
-		gi = (Just2.mul(g0).minus(p.mul(g0.mul(g0)))).rem(int(math.Pow(2, float64(i))))
+		pgg := p.mul(g0.mul(g0))
+		Jm := Just2.mul(g0)
+		Jmm := Jm.minus(pgg)
+		gi = (Jmm).rem(int(math.Pow(2, float64(i))))
 		gi = gi.Mod()
 		gi = gi.RemoveZeros()
 		g0 = gTemp
@@ -376,20 +372,14 @@ func (p *Polynomial) FDiv(b *Polynomial) (q, r *Polynomial, err error) {
 // FDiv (algorithm 9.5) means fast division with remainder, it performs division between polynomials with smaller complexity than the normal one
 func (p *Polynomial) fDiv(b *Polynomial) (q, r *Polynomial) {
 	b = b.RemoveZeros()
-	length := p.Len()
-	newPCoeff := make([]*big.Int, length)
+	newPCoeff := make([]*big.Int, 1)
 	if p.Degree() < b.Degree() {
 		newP := &Polynomial{
 			fieldOrder:   p.fieldOrder,
 			coefficients: newPCoeff,
 		}
 		newP.SetConstant(big.NewInt(0))
-		newP = newP.RemoveZeros()
-		newP = newP.Mod()
 		return newP, p
-	}
-	for i := 0; i < length; i++ {
-		newPCoeff[i] = big.NewInt(0)
 	}
 	m := p.Degree() - b.Degree()
 	// call invert() (algorithm 9.3) to compute the inverse of rev deg b (b) belongs to D[x] mod x^{m+1}

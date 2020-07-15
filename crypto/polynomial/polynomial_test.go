@@ -132,9 +132,9 @@ var _ = Describe("Polynomial", func() {
 			pSolution := []*big.Int{big.NewInt(1), big.NewInt(5), big.NewInt(2), big.NewInt(3)}
 			Expect(pRemoved.coefficients).Should(Equal(pSolution))
 		})
-		It("when ends with nils", func() {
+		It("when ends with zero", func() {
 			fieldOrder := big.NewInt(7)
-			pcoe := []*big.Int{big.NewInt(1), nil, nil, nil, nil, nil}
+			pcoe := []*big.Int{big.NewInt(1), big0}
 			p := &Polynomial{
 				fieldOrder:   fieldOrder,
 				coefficients: pcoe,
@@ -145,7 +145,7 @@ var _ = Describe("Polynomial", func() {
 		})
 		It("should remain 0 for constant term when all coeffcients are 0", func() {
 			fieldOrder := big.NewInt(7)
-			pcoe := []*big.Int{big.NewInt(0), nil, nil, nil}
+			pcoe := []*big.Int{big.NewInt(0), big0}
 			p := &Polynomial{
 				fieldOrder:   fieldOrder,
 				coefficients: pcoe,
@@ -191,6 +191,15 @@ var _ = Describe("Polynomial", func() {
 		It("should not be ok", func() {
 			fieldOrder := big.NewInt(6)
 			pcoe := []*big.Int{big.NewInt(15), big.NewInt(51), big.NewInt(2), big.NewInt(6), big.NewInt(0), big.NewInt(7), big.NewInt(0)}
+			p := &Polynomial{
+				fieldOrder:   fieldOrder,
+				coefficients: pcoe,
+			}
+			Expect(p.CheckIfValid()).Should(BeFalse())
+		})
+		It("ends with nil", func() {
+			fieldOrder := big.NewInt(6)
+			pcoe := []*big.Int{big.NewInt(15), nil, nil, nil}
 			p := &Polynomial{
 				fieldOrder:   fieldOrder,
 				coefficients: pcoe,
@@ -313,7 +322,8 @@ var _ = Describe("Polynomial", func() {
 			Expect(err).Should(BeNil())
 			p2, err := NewPolynomial(fieldOrder, p2coe)
 			Expect(err).Should(BeNil())
-			difference := p1.minus(p2)
+			difference, err := p1.Minus(p2)
+			Expect(err).Should(BeNil())
 			solutionCoe := []*big.Int{big.NewInt(6), big.NewInt(2), big.NewInt(3)}
 			Expect(difference.coefficients).Should(Equal(solutionCoe))
 		})
@@ -345,6 +355,22 @@ var _ = Describe("Polynomial", func() {
 			Expect(err).Should(Equal(ErrInvalidPolynomial))
 			Expect(product).Should(BeNil())
 		})
+		It("when ends with nils", func() {
+			fieldOrder := big.NewInt(7)
+			p1coe := []*big.Int{big.NewInt(1), nil, nil, nil, nil, nil}
+			p2coe := []*big.Int{big.NewInt(2), nil, nil, nil, nil, nil}
+			p1 := &Polynomial{
+				fieldOrder:   fieldOrder,
+				coefficients: p1coe,
+			}
+			p2 := &Polynomial{
+				fieldOrder:   fieldOrder,
+				coefficients: p2coe,
+			}
+			product, err := p1.Mul(p2)
+			Expect(err).Should(Equal(ErrInvalidPolynomial))
+			Expect(product).Should(BeNil())
+		})
 	})
 
 	Context("mul()", func() {
@@ -358,24 +384,6 @@ var _ = Describe("Polynomial", func() {
 			Expect(err).Should(BeNil())
 			product := p1.mul(p2)
 			solutionCoe := []*big.Int{big.NewInt(3), big.NewInt(8), big.NewInt(5), big.NewInt(6), big.NewInt(8)}
-			Expect(product.coefficients).Should(Equal(solutionCoe))
-		})
-		It("when ends with nils", func() {
-			fieldOrder := big.NewInt(7)
-			p1coe := []*big.Int{big.NewInt(1), nil, nil, nil, nil, nil}
-			p2coe := []*big.Int{big.NewInt(2), nil, nil, nil, nil, nil}
-			p1 := &Polynomial{
-				fieldOrder:   fieldOrder,
-				coefficients: p1coe,
-			}
-			p1 = p1.RemoveZeros()
-			p2 := &Polynomial{
-				fieldOrder:   fieldOrder,
-				coefficients: p2coe,
-			}
-			p2 = p2.RemoveZeros()
-			product := p1.mul(p2)
-			solutionCoe := []*big.Int{big.NewInt(2)}
 			Expect(product.coefficients).Should(Equal(solutionCoe))
 		})
 	})
@@ -493,6 +501,7 @@ var _ = Describe("Polynomial", func() {
 			Expect(quotient).Should(BeNil())
 			Expect(remainder).Should(BeNil())
 		})
+
 	})
 
 	Context("fDiv()", func() {
