@@ -139,14 +139,18 @@ func (p *Polynomial) SetConstant(value *big.Int) {
 
 // RemoveZeros removes the zeros from the end of the polyminal.
 func (p *Polynomial) RemoveZeros() *Polynomial {
-	endIndex := 0
-	for i := p.Len() - 1; i > 0; i-- {
-		if p.coefficients[i].Cmp(big.NewInt(0)) != 0 {
-			endIndex = i
-			break
+	for i := p.Len() - 1; i >= 0; i-- {
+		if p.coefficients[i].Cmp(big0) == 0 {
+			continue
+		}
+		newSlice := p.coefficients[:i+1]
+		return &Polynomial{
+			fieldOrder:   p.fieldOrder,
+			coefficients: newSlice,
 		}
 	}
-	newSlice := p.coefficients[:endIndex+1]
+	//should return constant term, which is zero, when all the coeffcients are 0
+	newSlice := p.coefficients[:1]
 	return &Polynomial{
 		fieldOrder:   p.fieldOrder,
 		coefficients: newSlice,
@@ -165,7 +169,8 @@ func (p *Polynomial) Mod() *Polynomial {
 func (p *Polynomial) CheckIfValid() bool {
 	if p.coefficients[p.Len()-1] == nil {
 		return false
-	} else if p.coefficients[p.Len()-1].Cmp(big.NewInt(0)) == 0 && p.Len() != 1 {
+	}
+	if p.coefficients[p.Len()-1].Cmp(big.NewInt(0)) == 0 && p.Len() != 1 {
 		return false
 	}
 	return true
@@ -183,29 +188,16 @@ func (p *Polynomial) Add(P *Polynomial) (*Polynomial, error) {
 func (p *Polynomial) add(P *Polynomial) *Polynomial {
 	p = p.RemoveZeros()
 	P = P.RemoveZeros()
-	// compare the length of 2 poly, and get the longer legnth number
 	length := int(math.Max(float64(p.Len()), float64(P.Len())))
 	newPCoeff := make([]*big.Int, length)
-	if p.Len() > P.Len() {
-		for i := 0; i < length; i++ {
-			if i < P.Len() {
-				newPCoeff[i] = new(big.Int).Add(p.coefficients[i], P.coefficients[i])
-			} else {
-				newPCoeff[i] = p.coefficients[i]
-			}
-		}
-	} else if p.Len() < P.Len() {
-		for i := 0; i < length; i++ {
-			if i < p.Len() {
-				newPCoeff[i] = new(big.Int).Add(p.coefficients[i], P.coefficients[i])
-			} else {
-				newPCoeff[i] = new(big.Int).Add(big.NewInt(0), P.coefficients[i])
-			}
-		}
-	} else { // length equal
-		for i := 0; i < length; i++ {
-			newPCoeff[i] = new(big.Int).Add(p.coefficients[i], P.coefficients[i])
-		}
+	for i := 0; i < length; i++ {
+		newPCoeff[i] = big0
+	}
+	for i := 0; i < p.Len(); i++ {
+		newPCoeff[i] = new(big.Int).Add(newPCoeff[i], p.coefficients[i])
+	}
+	for i := 0; i < P.Len(); i++ {
+		newPCoeff[i] = new(big.Int).Add(newPCoeff[i], P.coefficients[i])
 	}
 	sum := &Polynomial{
 		fieldOrder:   p.fieldOrder,

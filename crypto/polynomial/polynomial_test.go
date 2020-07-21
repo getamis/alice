@@ -134,7 +134,7 @@ var _ = Describe("Polynomial", func() {
 		})
 		It("when ends with zero", func() {
 			fieldOrder := big.NewInt(7)
-			pcoe := []*big.Int{big.NewInt(1), big0}
+			pcoe := []*big.Int{big.NewInt(1), big.NewInt(0)}
 			p := &Polynomial{
 				fieldOrder:   fieldOrder,
 				coefficients: pcoe,
