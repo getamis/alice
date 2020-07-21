@@ -137,8 +137,8 @@ func (p *Polynomial) SetConstant(value *big.Int) {
 	p.coefficients[0] = value
 }
 
-// RemoveZeros removes the zeros from the end of the polyminal.
-func (p *Polynomial) RemoveZeros() *Polynomial {
+// removeZeros removes the zeros from the end of the polyminal.
+func (p *Polynomial) removeZeros() *Polynomial {
 	for i := p.Len() - 1; i >= 0; i-- {
 		if p.coefficients[i].Cmp(big0) == 0 {
 			continue
@@ -165,12 +165,12 @@ func (p *Polynomial) Mod() *Polynomial {
 	return p
 }
 
-// CheckIfValid checks if the polynomial has a non-zero coefficient for the highest degree term while constant term can be zero
-func (p *Polynomial) CheckIfValid() bool {
+// checkIfValid checks if the polynomial has a non-zero coefficient for the highest degree term while constant term can be zero
+func (p *Polynomial) checkIfValid() bool {
 	if p.coefficients[p.Len()-1] == nil {
 		return false
 	}
-	if p.coefficients[p.Len()-1].Cmp(big.NewInt(0)) == 0 && p.Len() != 1 {
+	if p.coefficients[p.Len()-1].Cmp(big0) == 0 && p.Len() != 1 {
 		return false
 	}
 	return true
@@ -178,7 +178,7 @@ func (p *Polynomial) CheckIfValid() bool {
 
 // Add is driver of add
 func (p *Polynomial) Add(P *Polynomial) (*Polynomial, error) {
-	if p.CheckIfValid() != true || P.CheckIfValid() != true {
+	if p.checkIfValid() != true || P.checkIfValid() != true {
 		return nil, ErrInvalidPolynomial
 	}
 	return p.add(P), nil
@@ -186,8 +186,6 @@ func (p *Polynomial) Add(P *Polynomial) (*Polynomial, error) {
 
 // add adds 2 polynomianls together.
 func (p *Polynomial) add(P *Polynomial) *Polynomial {
-	p = p.RemoveZeros()
-	P = P.RemoveZeros()
 	length := int(math.Max(float64(p.Len()), float64(P.Len())))
 	newPCoeff := make([]*big.Int, length)
 	for i := 0; i < length; i++ {
@@ -204,13 +202,13 @@ func (p *Polynomial) add(P *Polynomial) *Polynomial {
 		coefficients: newPCoeff,
 	}
 	sum = sum.Mod()
-	sum = sum.RemoveZeros()
+	sum = sum.removeZeros()
 	return sum
 }
 
 // Minus is driver of minus
 func (p *Polynomial) Minus(P *Polynomial) (*Polynomial, error) {
-	if p.CheckIfValid() != true || P.CheckIfValid() != true {
+	if p.checkIfValid() != true || P.checkIfValid() != true {
 		return nil, ErrInvalidPolynomial
 	}
 	return p.minus(P), nil
@@ -230,13 +228,13 @@ func (p *Polynomial) minus(P *Polynomial) *Polynomial {
 	// negP = negP.RemoveZeros()
 	newP := p.add(negP)
 	newP = newP.Mod()
-	newP = newP.RemoveZeros()
+	newP = newP.removeZeros()
 	return newP
 }
 
 // Mul is the driver of mul
 func (p *Polynomial) Mul(p2 *Polynomial) (*Polynomial, error) {
-	if p.CheckIfValid() != true || p2.CheckIfValid() != true {
+	if p.checkIfValid() != true || p2.checkIfValid() != true {
 		return nil, ErrInvalidPolynomial
 	}
 	return p.mul(p2), nil
@@ -244,8 +242,8 @@ func (p *Polynomial) Mul(p2 *Polynomial) (*Polynomial, error) {
 
 // mul multiply 2 polynominals into 1 then output
 func (p *Polynomial) mul(p2 *Polynomial) *Polynomial {
-	p = p.RemoveZeros()
-	p2 = p2.RemoveZeros()
+	p = p.removeZeros()
+	p2 = p2.removeZeros()
 	length := p.Len() + p2.Len() - 1
 	newP := make([]*big.Int, length)
 	product := &Polynomial{
@@ -253,7 +251,7 @@ func (p *Polynomial) mul(p2 *Polynomial) *Polynomial {
 		coefficients: newP,
 	}
 	for i := 0; i < length; i++ {
-		product.coefficients[i] = big.NewInt(0)
+		product.coefficients[i] = big0
 	}
 	for i := 0; i < p.Len(); i++ {
 		for j := 0; j < p2.Len(); j++ {
@@ -261,7 +259,7 @@ func (p *Polynomial) mul(p2 *Polynomial) *Polynomial {
 		}
 	}
 	product = product.Mod()
-	product = product.RemoveZeros()
+	product = product.removeZeros()
 	return product
 }
 
@@ -269,14 +267,14 @@ func (p *Polynomial) mul(p2 *Polynomial) *Polynomial {
 func (p *Polynomial) rem(l int) *Polynomial {
 	newPCoeff := make([]*big.Int, l, l)
 	for i := 0; i < l; i++ {
-		newPCoeff[i] = p.coefficients[i]
+		newPCoeff[i] = new(big.Int).Set(p.coefficients[i])
 	}
 	remainder := &Polynomial{
 		fieldOrder:   p.fieldOrder,
 		coefficients: newPCoeff,
 	}
 	remainder = remainder.Mod()
-	remainder = remainder.RemoveZeros()
+	remainder = remainder.removeZeros()
 	return remainder
 }
 
@@ -313,7 +311,7 @@ func (p *Polynomial) invert(l *big.Int) *Polynomial {
 		Jmm := Jm.minus(pgg)
 		gi = (Jmm).rem(int(math.Pow(2, float64(i))))
 		gi = gi.Mod()
-		gi = gi.RemoveZeros()
+		gi = gi.removeZeros()
 		g0 = gTemp
 	}
 	return gi
@@ -335,7 +333,7 @@ func (p *Polynomial) rev(k uint32) *Polynomial {
 		coefficients: newPCoeff,
 	}
 	rev = rev.Mod()
-	rev = rev.RemoveZeros()
+	rev = rev.removeZeros()
 	return rev
 }
 
@@ -351,7 +349,7 @@ func (p *Polynomial) CheckIfOnlyZero() bool {
 
 // FDiv is the driver of fDiv
 func (p *Polynomial) FDiv(b *Polynomial) (q, r *Polynomial, err error) {
-	if p.CheckIfValid() != true || b.CheckIfValid() != true {
+	if p.checkIfValid() != true || b.checkIfValid() != true {
 		return nil, nil, ErrInvalidPolynomial
 	}
 	if b.CheckIfOnlyZero() {
@@ -363,7 +361,7 @@ func (p *Polynomial) FDiv(b *Polynomial) (q, r *Polynomial, err error) {
 
 // FDiv (algorithm 9.5) means fast division with remainder, it performs division between polynomials with smaller complexity than the normal one
 func (p *Polynomial) fDiv(b *Polynomial) (q, r *Polynomial) {
-	b = b.RemoveZeros()
+	b = b.removeZeros()
 	newPCoeff := make([]*big.Int, 1)
 	if p.Degree() < b.Degree() {
 		newP := &Polynomial{

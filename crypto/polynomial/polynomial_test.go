@@ -128,7 +128,7 @@ var _ = Describe("Polynomial", func() {
 				fieldOrder:   fieldOrder,
 				coefficients: pcoe,
 			}
-			pRemoved := p.RemoveZeros()
+			pRemoved := p.removeZeros()
 			pSolution := []*big.Int{big.NewInt(1), big.NewInt(5), big.NewInt(2), big.NewInt(3)}
 			Expect(pRemoved.coefficients).Should(Equal(pSolution))
 		})
@@ -139,7 +139,7 @@ var _ = Describe("Polynomial", func() {
 				fieldOrder:   fieldOrder,
 				coefficients: pcoe,
 			}
-			pRemoved := p.RemoveZeros()
+			pRemoved := p.removeZeros()
 			pSolution := []*big.Int{big.NewInt(1)}
 			Expect(pRemoved.coefficients).Should(Equal(pSolution))
 		})
@@ -150,7 +150,7 @@ var _ = Describe("Polynomial", func() {
 				fieldOrder:   fieldOrder,
 				coefficients: pcoe,
 			}
-			pRemoved := p.RemoveZeros()
+			pRemoved := p.removeZeros()
 			pSolution := []*big.Int{big.NewInt(0)}
 			Expect(pRemoved.coefficients).Should(Equal(pSolution))
 		})
@@ -177,7 +177,7 @@ var _ = Describe("Polynomial", func() {
 				fieldOrder:   fieldOrder,
 				coefficients: pcoe,
 			}
-			Expect(p.CheckIfValid()).Should(BeTrue())
+			Expect(p.checkIfValid()).Should(BeTrue())
 		})
 		It("when length is one", func() {
 			fieldOrder := big.NewInt(6)
@@ -186,7 +186,7 @@ var _ = Describe("Polynomial", func() {
 				fieldOrder:   fieldOrder,
 				coefficients: pcoe,
 			}
-			Expect(p.CheckIfValid()).Should(BeTrue())
+			Expect(p.checkIfValid()).Should(BeTrue())
 		})
 		It("should not be ok", func() {
 			fieldOrder := big.NewInt(6)
@@ -195,7 +195,7 @@ var _ = Describe("Polynomial", func() {
 				fieldOrder:   fieldOrder,
 				coefficients: pcoe,
 			}
-			Expect(p.CheckIfValid()).Should(BeFalse())
+			Expect(p.checkIfValid()).Should(BeFalse())
 		})
 		It("ends with nil", func() {
 			fieldOrder := big.NewInt(6)
@@ -204,7 +204,7 @@ var _ = Describe("Polynomial", func() {
 				fieldOrder:   fieldOrder,
 				coefficients: pcoe,
 			}
-			Expect(p.CheckIfValid()).Should(BeFalse())
+			Expect(p.checkIfValid()).Should(BeFalse())
 		})
 	})
 
