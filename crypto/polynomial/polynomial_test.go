@@ -20,6 +20,7 @@ import (
 	"github.com/getamis/alice/crypto/utils"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -114,4 +115,27 @@ var _ = Describe("Polynomial", func() {
 			Expect(p.coefficients[0]).Should(Equal(big.NewInt(6)))
 		})
 	})
+
+	DescribeTable("should be ok", func(coefficient, expected []*big.Int, x, fieldOrder *big.Int) {
+		result := expendPolynomial(coefficient, x, fieldOrder)
+		Expect(result).Should(Equal(expected))
+	},
+		Entry("2(x-1)^2+5(x-1)+1", []*big.Int{big.NewInt(1), big.NewInt(5), big.NewInt(2)}, []*big.Int{big.NewInt(99), big.NewInt(1), big.NewInt(2)}, big.NewInt(1), big.NewInt(101)),
+		Entry("2(x-2)^2+5(x-2)+1", []*big.Int{big.NewInt(1), big.NewInt(5), big.NewInt(2)}, []*big.Int{big.NewInt(100), big.NewInt(98), big.NewInt(2)}, big.NewInt(2), big.NewInt(101)),
+		Entry("3(x-3)^3+2(x-3)^2+5(x-1)+1", []*big.Int{big.NewInt(1), big.NewInt(5), big.NewInt(2), big.NewInt(3)},
+			[]*big.Int{big.NewInt(24), big.NewInt(74), big.NewInt(76), big.NewInt(3)}, big.NewInt(3), big.NewInt(101)),
+	)
+
+	DescribeTable("should be ok", func(x, specialValue, fieldOrder *big.Int, degree uint32) {
+		randomPoly, err := RandomPolynomialWithSpecialValueAtPoint(fieldOrder, x, specialValue, degree)
+		Expect(err).Should(BeNil())
+		result := randomPoly.Evaluate(x)
+		specialValueMod := new(big.Int).Mod(specialValue, fieldOrder)
+		Expect(result).Should(Equal(specialValueMod))
+	},
+		Entry("f(29) = 23 mod 101", big.NewInt(29), big.NewInt(23), big.NewInt(101), uint32(4)),
+		Entry("f(65) = 100 mod 101", big.NewInt(65), big.NewInt(100), big.NewInt(101), uint32(5)),
+		Entry("f(65) = 122 = 11 mod 101", big.NewInt(21), big.NewInt(112), big.NewInt(101), uint32(5)),
+		Entry("f(65) = -1 mod bigPrime", big.NewInt(21), big.NewInt(-1), bigPrime, uint32(5)),
+	)
 })

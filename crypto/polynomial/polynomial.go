@@ -132,3 +132,81 @@ func (p *Polynomial) Degree() uint32 {
 func (p *Polynomial) SetConstant(value *big.Int) {
 	p.coefficients[0] = value
 }
+
+// RandomPolynomialWithSpecialValueAtPoint gives a random polynomial f with the given degree with the condition: f(x) = specialValue.
+func RandomPolynomialWithSpecialValueAtPoint(fieldOrder, x, specialValue *big.Int, degree uint32) (*Polynomial, error) {
+	coefficients := make([]*big.Int, degree+1)
+	coefficients[0] = new(big.Int).Mod(specialValue, fieldOrder)
+	for i := 1; i < len(coefficients); i++ {
+		tempValue, err := utils.RandomInt(fieldOrder)
+		if err != nil {
+			return nil, err
+		}
+		coefficients[i] = tempValue
+	}
+	expandCoefficient := expendPolynomial(coefficients, new(big.Int).Mod(x, fieldOrder), fieldOrder)
+	return NewPolynomial(fieldOrder, expandCoefficient)
+}
+
+// Ex: Let coefficient = [1,2,3], givenPoint = 5. Then the output is 3(x-5)^2 + 2(x-5)+1
+func expendPolynomial(coefficient []*big.Int, givenPoint, fieldOrder *big.Int) []*big.Int {
+	givenPointPower := make([]*big.Int, len(coefficient))
+	givenPointPower[0] = big.NewInt(1)
+	for i := 1; i < len(givenPointPower); i++ {
+		givenPointPower[i] = new(big.Int).Mul(givenPointPower[i-1], givenPoint)
+		givenPointPower[i].Mod(givenPointPower[i], fieldOrder)
+	}
+	result := make([]*big.Int, len(coefficient))
+	result[0] = new(big.Int).Set(coefficient[0])
+	for i := 1; i < len(result); i++ {
+		result[i] = big.NewInt(0)
+	}
+	for i := uint32(1); i < uint32(len(result)); i++ {
+		tempResult := expandMonomial(coefficient[i], givenPointPower, i)
+		for j := 0; j < len(tempResult); j++ {
+			result[j].Add(result[j], tempResult[j])
+			result[j].Mod(result[j], fieldOrder)
+		}
+	}
+	return result
+}
+
+// Get pascal number. Ex: If degree = 4. The output is [1,4,6,4,1].
+func getPascalNumber(degree uint32) []*big.Int {
+	result := make([]*big.Int, degree+1)
+	result[0] = big.NewInt(1)
+	startValue := make([]uint64, degree+1)
+	startValue[0] = 1
+	n := uint64(degree)
+	for i := uint64(0); i <= n/2; i++ {
+		startValue[i+1] = ((startValue[i]) * (n - i)) / (i + 1)
+		result[i+1] = new(big.Int).SetUint64(startValue[i+1])
+	}
+	for i := n; i > n/2; i-- {
+		result[i] = new(big.Int).SetUint64(startValue[n-i])
+	}
+	return result
+}
+
+// Get leadingCoefficient*(x-power[1])^degree.
+func expandMonomial(leadingCoefficient *big.Int, power []*big.Int, degree uint32) []*big.Int {
+	result := make([]*big.Int, degree+1)
+	maxIndex := len(result) - 1
+	pascalNumber := getPascalNumber(degree)
+	result[maxIndex] = new(big.Int).Set(leadingCoefficient)
+	isNeg := true
+	for i := maxIndex - 1; i >= 0; i-- {
+		var tempValue *big.Int
+		tempIndex := maxIndex - i
+		if isNeg {
+			tempValue = new(big.Int).Neg(power[tempIndex])
+		} else {
+			tempValue = new(big.Int).Set(power[tempIndex])
+		}
+		tempValue.Mul(tempValue, leadingCoefficient)
+		tempValue.Mul(tempValue, pascalNumber[i])
+		result[i] = tempValue
+		isNeg = !isNeg
+	}
+	return result
+}
