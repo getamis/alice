@@ -15,12 +15,8 @@
 package birkhoffinterpolation
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"fmt"
 	"math/big"
 
-	"github.com/getamis/alice/crypto/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -33,19 +29,5 @@ var _ = Describe("BK", func() {
 		msg := bk.ToMessage()
 		gotBk := msg.ToBk()
 		Expect(bk).Should(Equal(gotBk))
-	})
-
-	It("ToBk2()", func() {
-		key := []byte("14725836qazwsxed")
-
-		block, _ := aes.NewCipher(key)
-		//iv := []byte("asdada")
-		iv, _ := utils.GenRandomBytes(block.BlockSize())
-		blockMode := cipher.NewCTR(block, iv)
-		text := []byte("257111")
-		fmt.Println(text)
-		message := make([]byte, len(text))
-		blockMode.XORKeyStream(message, text)
-		fmt.Println(message)
 	})
 })
