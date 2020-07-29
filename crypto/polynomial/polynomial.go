@@ -132,3 +132,68 @@ func (p *Polynomial) Degree() uint32 {
 func (p *Polynomial) SetConstant(value *big.Int) {
 	p.coefficients[0] = value
 }
+
+// RandomPolynomialWithSpecialValueAtPoint gives a random polynomial f with the given degree with the condition: f(x) = specialValue.
+func RandomPolynomialWithSpecialValueAtPoint(x *big.Int, specialValue *big.Int, fieldOrder *big.Int, degree uint32) (*Polynomial, error) {
+	p, err := RandomPolynomial(fieldOrder, degree)
+	if err != nil {
+		return nil, err
+	}
+	return p.expend(x, specialValue)
+}
+
+// Ex: Let coefficient = [1,2,3], givenPoint = 5. Then the output is 3(x-5)^2 + 2(x-5)+1
+func (p *Polynomial) expend(xpoint, givenPoint *big.Int) (*Polynomial, error) {
+	givenPointPower := make([]*big.Int, len(p.coefficients))
+	givenPointPower[0] = big.NewInt(1)
+	for i := 1; i < len(givenPointPower); i++ {
+		givenPointPower[i] = new(big.Int).Mul(givenPointPower[i-1], xpoint)
+	}
+	newCos := make([]*big.Int, len(p.coefficients))
+	newCos[0] = new(big.Int).Set(givenPoint)
+	for i := 1; i < len(newCos); i++ {
+		newCos[i] = big.NewInt(0)
+	}
+	for i := uint32(1); i < uint32(len(newCos)); i++ {
+		tempResult := expandMonomial(p.coefficients[i], givenPointPower, i)
+		for j := 0; j < len(tempResult); j++ {
+			newCos[j].Add(newCos[j], tempResult[j])
+		}
+	}
+	return NewPolynomial(p.fieldOrder, newCos)
+}
+
+// Get pascal number. Ex: If degree = 4. The output is [1,4,6,4,1].
+func getPascalNumber(degree uint32) []uint64 {
+	result := make([]uint64, degree+1)
+	result[0] = 1
+	n := uint64(degree)
+	for i := uint64(0); i <= n/2; i++ {
+		result[i+1] = ((result[i]) * (n - i)) / (i + 1)
+	}
+	for i := n; i > n/2; i-- {
+		result[i] = result[n-i]
+	}
+	return result
+}
+
+// Get leadingCoefficient*(x-power[1])^degree.
+func expandMonomial(leadingCoefficient *big.Int, power []*big.Int, degree uint32) []*big.Int {
+	result := make([]*big.Int, degree+1)
+	maxIndex := len(result) - 1
+	pascalNumber := getPascalNumber(degree)
+	result[maxIndex] = new(big.Int).Set(leadingCoefficient)
+	isNeg := true
+	for i := maxIndex - 1; i >= 0; i-- {
+		tempIndex := maxIndex - i
+		tempValue := new(big.Int).Set(power[tempIndex])
+		if isNeg {
+			tempValue = new(big.Int).Neg(power[tempIndex])
+		}
+		tempValue.Mul(tempValue, leadingCoefficient)
+		tempValue.Mul(tempValue, new(big.Int).SetUint64(pascalNumber[i]))
+		result[i] = tempValue
+		isNeg = !isNeg
+	}
+	return result
+}

@@ -20,6 +20,7 @@ import (
 	"github.com/getamis/alice/crypto/utils"
 
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
@@ -114,4 +115,27 @@ var _ = Describe("Polynomial", func() {
 			Expect(p.coefficients[0]).Should(Equal(big.NewInt(6)))
 		})
 	})
+
+	DescribeTable("should be ok", func(x, specialValue, fieldOrder *big.Int, degree uint32) {
+		randomPoly, err := RandomPolynomialWithSpecialValueAtPoint(x, specialValue, fieldOrder, degree)
+		Expect(err).Should(BeNil())
+		result := randomPoly.Evaluate(x)
+		specialValueMod := new(big.Int).Mod(specialValue, fieldOrder)
+		Expect(result).Should(Equal(specialValueMod))
+	},
+		Entry("f(29) = 23 mod 101", big.NewInt(29), big.NewInt(23), big.NewInt(101), uint32(4)),
+		Entry("f(65) = 100 mod 101", big.NewInt(65), big.NewInt(100), big.NewInt(101), uint32(5)),
+		Entry("f(65) = 122 = 11 mod 101", big.NewInt(21), big.NewInt(112), big.NewInt(101), uint32(5)),
+		Entry("f(65) = -1 mod bigPrime", big.NewInt(21), big.NewInt(-1), bigPrime, uint32(5)),
+	)
+
+	DescribeTable("should be ok", func(degree uint32, exp []uint64) {
+		got := getPascalNumber(degree)
+		Expect(got).Should(Equal(exp))
+	},
+		Entry("4", uint32(4), []uint64{1, 4, 6, 4, 1}),
+		Entry("3", uint32(3), []uint64{1, 3, 3, 1}),
+		Entry("2", uint32(2), []uint64{1, 2, 1}),
+		Entry("1", uint32(1), []uint64{1, 1}),
+	)
 })
