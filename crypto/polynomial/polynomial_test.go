@@ -206,6 +206,15 @@ var _ = Describe("Polynomial", func() {
 			}
 			Expect(p.checkIfValid()).Should(BeFalse())
 		})
+		It("nothing, should not be okay", func() {
+			fieldOrder := big.NewInt(6)
+			pcoe := []*big.Int{}
+			p := &Polynomial{
+				fieldOrder:   fieldOrder,
+				coefficients: pcoe,
+			}
+			Expect(p.checkIfValid()).Should(BeFalse())
+		})
 	})
 
 	Context("Add()", func() {
@@ -326,6 +335,50 @@ var _ = Describe("Polynomial", func() {
 			Expect(err).Should(BeNil())
 			solutionCoe := []*big.Int{big.NewInt(6), big.NewInt(2), big.NewInt(3)}
 			Expect(difference.coefficients).Should(Equal(solutionCoe))
+		})
+	})
+
+	Context("findSmallestPowerOfTwo()", func() {
+		It("should be ok", func() {
+			a := 31
+			b := findSmallestPowerOfTwo(a)
+			solution := 32
+			Expect(b).Should(Equal(solution))
+		})
+		It("should be ok", func() {
+			a := 32
+			b := findSmallestPowerOfTwo(a)
+			solution := 64
+			Expect(b).Should(Equal(solution))
+		})
+	})
+
+	Context("padZeros()", func() {
+		It("should be ok", func() {
+			n := 8
+			fieldOrder := big.NewInt(7)
+			p1coe := []*big.Int{big.NewInt(7), big.NewInt(5), big.NewInt(6), big0, big.NewInt(4), big.NewInt(5)}
+			p1, err := NewPolynomial(fieldOrder, p1coe)
+			Expect(err).Should(BeNil())
+			answerP := p1.padZeros(n)
+			solutionCoe := []*big.Int{big.NewInt(7), big.NewInt(5), big.NewInt(6), big0, big.NewInt(4), big.NewInt(5), big0, big0}
+			soluP, err := NewPolynomial(fieldOrder, solutionCoe)
+			Expect(answerP).Should(Equal(soluP))
+		})
+	})
+
+	Context("pointwiseMul()", func() {
+		It("should be ok", func() {
+			fieldOrder := big.NewInt(10)
+			p1coe := []*big.Int{big.NewInt(1), big.NewInt(5), big.NewInt(2)}
+			p2coe := []*big.Int{big.NewInt(3), big.NewInt(3), big.NewInt(4)}
+			p1, err := NewPolynomial(fieldOrder, p1coe)
+			Expect(err).Should(BeNil())
+			p2, err := NewPolynomial(fieldOrder, p2coe)
+			Expect(err).Should(BeNil())
+			product := p1.pointwiseMul(p2)
+			solutionCoe := []*big.Int{big.NewInt(3), big.NewInt(15), big.NewInt(8)}
+			Expect(product.coefficients).Should(Equal(solutionCoe))
 		})
 	})
 

@@ -24,6 +24,7 @@ import (
 
 var (
 	big0 = big.NewInt(0)
+	big1 = big.NewInt(1)
 	// ErrEmptyCoefficients is returned if the coefficients is empty
 	ErrEmptyCoefficients = errors.New("empty coefficient")
 	// ErrInvalidPolynomial is returned if the coefficient of the highest degree term is zero
@@ -167,7 +168,7 @@ func (p *Polynomial) Mod() *Polynomial {
 
 // checkIfValid checks if the polynomial has a non-zero coefficient for the highest degree term while constant term can be zero
 func (p *Polynomial) checkIfValid() bool {
-	if p.coefficients[p.Len()-1] == nil {
+	if p.Len() == 0 || p.coefficients[p.Len()-1] == nil {
 		return false
 	}
 	if p.coefficients[p.Len()-1].Cmp(big0) == 0 && p.Len() != 1 {
@@ -230,6 +231,123 @@ func (p *Polynomial) minus(P *Polynomial) *Polynomial {
 	newP = newP.Mod()
 	newP = newP.removeZeros()
 	return newP
+}
+
+// FFT transfer a polynomial into point-value representation through DFT where n is assumes to be a power of two
+func (p *Polynomial) FFT(n, w int) *Polynomial {
+	if n == 1 {
+		return p
+	}
+	rEvenCoe := make([]*big.Int, n/2)
+	rOddCoe := make([]*big.Int, n/2)
+	for j := 0; j < n/2; j++ {
+		if j%2 == 0 {
+			rEvenCoe[j] = new(big.Int).Set(p.coefficients[j])
+		} else {
+			rOddCoe[j] = new(big.Int).Set(p.coefficients[j])
+		}
+	}
+	rEven := &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: rEvenCoe,
+	}
+	rOdd := &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: rOddCoe,
+	}
+	FEven := rEven.FFT(n/2, w*w)
+	FOdd := rOdd.FFT(n/2, w*w)
+	FCoe := make([]*big.Int, n)
+	x := 1
+	for j := 0; j < n/2; j++ {
+		FCoe[j] = new(big.Int).Add(FEven.coefficients[j], new(big.Int).Mul(FOdd.coefficients[j], big.NewInt(int64(x))))
+		FCoe[j+n/2] = new(big.Int).Sub(FEven.coefficients[j], new(big.Int).Mul(FOdd.coefficients[j], big.NewInt(int64(x))))
+		x *= w
+	}
+	F := &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: FCoe,
+	}
+	return F
+}
+
+// omega N is the
+func (p *Polynomial) omega(N int) int {
+	return -1
+}
+
+// findSmallestPowerOfTwo returns smallest N which makes N > n  && N = pow(2,k) where k is an integer
+func findSmallestPowerOfTwo(n int) (N int) {
+	for i := 1; i < 100; i++ {
+		if n >= int(math.Pow(2, float64(i))) {
+			continue
+		}
+		N = int(math.Pow(2, float64(i)))
+		return
+	}
+	return -1
+}
+
+// padZeros returns p with length of n but fill extended index with zero
+func (p *Polynomial) padZeros(n int) (P *Polynomial) {
+	PCoeff := make([]*big.Int, n)
+	for i := 0; i < p.Len(); i++ {
+		PCoeff[i] = new(big.Int).Set(p.coefficients[i])
+	}
+	for i := p.Len(); i < n; i++ {
+		PCoeff[i] = big0
+	}
+	P = &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: PCoeff,
+	}
+	return
+}
+
+// pointwiseMul example: [2,3,4]*[4,5,6] = [8,15,24], O(n), no coeffcient will be "Moded"
+func (p *Polynomial) pointwiseMul(p2 *Polynomial) *Polynomial {
+	newPCoe := make([]*big.Int, p.Len())
+	for i := 0; i < p.Len(); i++ {
+		newPCoe[i] = new(big.Int).Mul(p.coefficients[i], p2.coefficients[i])
+	}
+	newP := &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: newPCoe,
+	}
+	return newP
+}
+
+// fastMul calculates the product of two polynomials with O(nlog(n)): FFT -> pointwise multiplication -> FFT^-1
+func (p *Polynomial) fastMul(p2 *Polynomial) (product *Polynomial) {
+	// padding zeros from the end of both polynomials till the length is power of 2
+	n := p.Degree() + p2.Degree() + 1
+	N := findSmallestPowerOfTwo(int(n))
+	P := p.padZeros(int(N))
+	P2 := p2.padZeros(int(N))
+	// compute omega from 0 to N-1 here
+	FP := P.FFT(N, omega)
+	FP2 := P2.FFT(N, omega)
+	productInversed := FP.pointwiseMul(FP2)
+	temp := productInversed.FFT(N, omegaInversed)
+	productCoe := make([]*big.Int, temp.Len())
+	for i := 0; i < temp.Len(); i++ {
+		productCoe[i] = new(big.Int).Div(temp.coefficients[i], big.NewInt(int64(N)))
+	}
+	product = &Polynomial{
+		fieldOrder:   p.fieldOrder,
+		coefficients: productCoe,
+	}
+	product = product.removeZeros()
+	product = product.Mod()
+	return product
+}
+
+// FastMul is the driver of fastConvolution
+func (p *Polynomial) FastMul(p2 *Polynomial) (*Polynomial, error) {
+	if p.checkIfValid() != true || p2.checkIfValid() != true {
+		return nil, ErrInvalidPolynomial
+	}
+	return p.fastMul(p2), nil
 }
 
 // Mul is the driver of mul
