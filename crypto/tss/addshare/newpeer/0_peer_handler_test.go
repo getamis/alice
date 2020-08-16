@@ -46,7 +46,9 @@ var _ = Describe("peer handler, negative cases", func() {
 		})
 
 		It("message is handled before", func() {
-			ph.peers[peerID] = &peer{}
+			ph.peers[peerID] = &peer{
+				peer: &peerData{},
+			}
 			Expect(ph.IsHandled(log.Discard(), peerID)).Should(BeTrue())
 		})
 

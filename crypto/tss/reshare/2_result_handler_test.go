@@ -114,12 +114,12 @@ var _ = Describe("result handler, negative cases", func() {
 		var fromH, toH *resultHandler
 		BeforeEach(func() {
 			var ok bool
-			fromId = getID(1)
+			fromId = tss.GetTestID(1)
 			fromR := reshares[fromId]
 			fromH, ok = fromR.GetHandler().(*resultHandler)
 			Expect(ok).Should(BeTrue())
 
-			toId = getID(0)
+			toId = tss.GetTestID(0)
 			toR := reshares[toId]
 			toH, ok = toR.GetHandler().(*resultHandler)
 			Expect(ok).Should(BeTrue())
@@ -157,7 +157,7 @@ var _ = Describe("result handler, negative cases", func() {
 		var toH *resultHandler
 		BeforeEach(func() {
 			var ok bool
-			toId := getID(0)
+			toId := tss.GetTestID(0)
 			toR := reshares[toId]
 			toH, ok = toR.GetHandler().(*resultHandler)
 			Expect(ok).Should(BeTrue())

@@ -15,7 +15,6 @@ package dkg
 
 import (
 	"crypto/elliptic"
-	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -28,7 +27,6 @@ import (
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/alice/crypto/utils"
-	proto "github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -95,27 +93,16 @@ var _ = Describe("DKG", func() {
 	)
 
 	DescribeTable("newDKGWithHandler", func(c elliptic.Curve, threshold uint32, coefficients [][]*big.Int, x []*big.Int, ranks []uint32, expectShare []*big.Int, expPubKey *ecpointgrouplaw.ECPoint) {
+		dkgs, listeners := newDKGWithPeerHandler(c, threshold, ranks, x, coefficients)
 		// new peer managers and dkgs
 		lens := len(ranks)
-		dkgs := make(map[string]*DKG, lens)
 		bks := make(map[string]*birkhoffinterpolation.BkParameter, lens)
-		peerManagers := make([]types.PeerManager, lens)
-		listener := make([]*mocks.StateChangedListener, lens)
 		for i := 0; i < lens; i++ {
-			id := getID(i)
-			pm := newPeerManager(id, lens-1)
-			pm.setDKGs(dkgs)
-			peerManagers[i] = pm
-			poly, err := polynomial.NewPolynomial(c.Params().N, coefficients[i])
-			Expect(err).Should(BeNil())
-			ph, err := newPeerHandlerWithPolynomial(c, peerManagers[i], threshold, x[i], ranks[i], poly)
-			Expect(err).Should(BeNil())
-			listener[i] = new(mocks.StateChangedListener)
-			listener[i].On("OnStateChanged", types.StateInit, types.StateDone).Once()
-			dkgs[id], err = newDKGWithHandler(peerManagers[i], threshold, ranks[i], listener[i], ph)
-			Expect(err).Should(BeNil())
-			dkgs[id].Start()
+			id := tss.GetTestID(i)
 			bks[id] = birkhoffinterpolation.NewBkParameter(x[i], ranks[i])
+		}
+		for _, l := range listeners {
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
 		}
 
 		// Send out peer message
@@ -132,7 +119,7 @@ var _ = Describe("DKG", func() {
 
 		secret := big.NewInt(0)
 		for i := 0; i < len(dkgs); i++ {
-			id := getID(i)
+			id := tss.GetTestID(i)
 			d := dkgs[id]
 			d.Stop()
 			r, err := d.GetResult()
@@ -144,8 +131,8 @@ var _ = Describe("DKG", func() {
 		}
 		pubkey := ecpointgrouplaw.ScalarBaseMult(c, secret)
 		Expect(pubkey.Equal(expPubKey)).Should(BeTrue())
-		for i := 0; i < lens; i++ {
-			listener[i].AssertExpectations(GinkgoT())
+		for _, l := range listeners {
+			l.AssertExpectations(GinkgoT())
 		}
 	},
 		Entry("Case #0", curve, uint32(3), [][]*big.Int{
@@ -350,24 +337,9 @@ var _ = Describe("DKG", func() {
 
 	DescribeTable("negative cases", func(c elliptic.Curve, threshold uint32, coefficients [][]*big.Int, x []*big.Int, ranks []uint32) {
 		// new peer managers and dkgs
-		lens := len(ranks)
-		dkgs := make(map[string]*DKG, lens)
-		peerManagers := make([]types.PeerManager, lens)
-		listener := make([]*mocks.StateChangedListener, lens)
-		for i := 0; i < lens; i++ {
-			id := getID(i)
-			pm := newPeerManager(id, lens-1)
-			pm.setDKGs(dkgs)
-			peerManagers[i] = pm
-			poly, err := polynomial.NewPolynomial(c.Params().N, coefficients[i])
-			Expect(err).Should(BeNil())
-			ph, err := newPeerHandlerWithPolynomial(c, peerManagers[i], threshold, x[i], ranks[i], poly)
-			Expect(err).Should(BeNil())
-			listener[i] = new(mocks.StateChangedListener)
-			listener[i].On("OnStateChanged", types.StateInit, types.StateFailed).Once()
-			dkgs[id], err = newDKGWithHandler(peerManagers[i], threshold, ranks[i], listener[i], ph)
-			Expect(err).Should(BeNil())
-			dkgs[id].Start()
+		dkgs, listeners := newDKGWithPeerHandler(c, threshold, ranks, x, coefficients)
+		for _, l := range listeners {
+			l.On("OnStateChanged", types.StateInit, types.StateFailed).Once()
 		}
 
 		// Send out peer message
@@ -381,8 +353,8 @@ var _ = Describe("DKG", func() {
 			}
 		}
 		time.Sleep(1 * time.Second)
-		for i := 0; i < lens; i++ {
-			listener[i].AssertExpectations(GinkgoT())
+		for _, l := range listeners {
+			l.AssertExpectations(GinkgoT())
 		}
 	},
 		Entry("trivial public key", curve, uint32(3), [][]*big.Int{
@@ -457,12 +429,9 @@ var _ = Describe("DKG", func() {
 			0, 0, 0,
 		}
 		lens := len(ranks)
-		dkgs := make(map[string]*DKG, lens)
 		peerManagers := make([]types.PeerManager, lens)
 		for i := 0; i < lens; i++ {
-			id := getID(i)
-			pm := newPeerManager(id, lens-1)
-			pm.setDKGs(dkgs)
+			pm := tss.NewTestPeerManager(i, lens)
 			peerManagers[i] = pm
 			poly, err := polynomial.NewPolynomial(curve.Params().N, coefficients[i])
 			Expect(err).Should(BeNil())
@@ -474,34 +443,34 @@ var _ = Describe("DKG", func() {
 
 	Context("negative cases", func() {
 		It("larger threshold", func() {
-			d, err := NewDKG(curve, newPeerManager("id", 4), 6, 0, nil)
+			d, err := NewDKG(curve, tss.NewTestPeerManager(0, 4), 6, 0, nil)
 			Expect(err).Should(Equal(utils.ErrLargeThreshold))
 			Expect(d).Should(BeNil())
 
-			d, err = newDKGWithHandler(newPeerManager("id", 4), 6, 0, nil, nil)
+			d, err = newDKGWithHandler(tss.NewTestPeerManager(0, 4), 6, 0, nil, nil)
 			Expect(err).Should(Equal(utils.ErrLargeThreshold))
 			Expect(d).Should(BeNil())
 		})
 
 		It("large rank", func() {
-			d, err := NewDKG(curve, newPeerManager("id", 4), 3, 3, nil)
+			d, err := NewDKG(curve, tss.NewTestPeerManager(0, 4), 3, 3, nil)
 			Expect(err).Should(Equal(utils.ErrLargeRank))
 			Expect(d).Should(BeNil())
 
-			d, err = newDKGWithHandler(newPeerManager("id", 4), 3, 3, nil, nil)
+			d, err = newDKGWithHandler(tss.NewTestPeerManager(0, 4), 3, 3, nil, nil)
 			Expect(err).Should(Equal(utils.ErrLargeRank))
 			Expect(d).Should(BeNil())
 		})
 
 		It("larger threshold", func() {
-			d, err := NewDKG(curve, newPeerManager("id", 4), 5, 0, nil)
+			d, err := NewDKG(curve, tss.NewTestPeerManager(0, 5), 5, 0, nil)
 			Expect(err).Should(BeNil())
 			Expect(d).ShouldNot(BeNil())
 			r, err := d.GetResult()
 			Expect(err).Should(Equal(tss.ErrNotReady))
 			Expect(r).Should(BeNil())
 
-			d, err = newDKGWithHandler(newPeerManager("id", 4), 5, 0, nil, nil)
+			d, err = newDKGWithHandler(tss.NewTestPeerManager(0, 5), 5, 0, nil, nil)
 			Expect(err).Should(BeNil())
 			Expect(d).ShouldNot(BeNil())
 			r, err = d.GetResult()
@@ -511,58 +480,49 @@ var _ = Describe("DKG", func() {
 	})
 })
 
-func getID(id int) string {
-	return fmt.Sprintf("id-%d", id)
-}
-
-type peerManager struct {
-	id       string
-	numPeers uint32
-	dkgs     map[string]*DKG
-}
-
-func newPeerManager(id string, numPeers int) *peerManager {
-	return &peerManager{
-		id:       id,
-		numPeers: uint32(numPeers),
-	}
-}
-
-func (p *peerManager) setDKGs(dkgs map[string]*DKG) {
-	p.dkgs = dkgs
-}
-
-func (p *peerManager) NumPeers() uint32 {
-	return p.numPeers
-}
-
-func (p *peerManager) SelfID() string {
-	return p.id
-}
-
-func (p *peerManager) MustSend(id string, message proto.Message) {
-	d := p.dkgs[id]
-	msg := message.(types.Message)
-	Expect(d.AddMessage(msg)).Should(BeNil())
-}
-
 func newDKGs(curve elliptic.Curve, threshold uint32, ranks []uint32) (map[string]*DKG, map[string]*mocks.StateChangedListener) {
 	lens := len(ranks)
 	dkgs := make(map[string]*DKG, lens)
+	dkgsMain := make(map[string]types.MessageMain, lens)
 	peerManagers := make([]types.PeerManager, lens)
 	listeners := make(map[string]*mocks.StateChangedListener, lens)
 	for i := 0; i < lens; i++ {
-		id := getID(i)
-		pm := newPeerManager(id, lens-1)
-		pm.setDKGs(dkgs)
+		id := tss.GetTestID(i)
+		pm := tss.NewTestPeerManager(i, lens)
+		pm.Set(dkgsMain)
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
 		var err error
 		dkgs[id], err = NewDKG(curve, peerManagers[i], threshold, ranks[i], listeners[id])
 		Expect(err).Should(BeNil())
+		dkgsMain[id] = dkgs[id]
 		r, err := dkgs[id].GetResult()
 		Expect(r).Should(BeNil())
 		Expect(err).Should(Equal(tss.ErrNotReady))
+		dkgs[id].Start()
+	}
+	return dkgs, listeners
+}
+
+func newDKGWithPeerHandler(curve elliptic.Curve, threshold uint32, ranks []uint32, x []*big.Int, coefficients [][]*big.Int) (map[string]*DKG, map[string]*mocks.StateChangedListener) {
+	lens := len(ranks)
+	dkgs := make(map[string]*DKG, lens)
+	dkgsMain := make(map[string]types.MessageMain, lens)
+	peerManagers := make([]types.PeerManager, lens)
+	listeners := make(map[string]*mocks.StateChangedListener, lens)
+	for i := 0; i < lens; i++ {
+		id := tss.GetTestID(i)
+		pm := tss.NewTestPeerManager(i, lens)
+		pm.Set(dkgsMain)
+		peerManagers[i] = pm
+		poly, err := polynomial.NewPolynomial(curve.Params().N, coefficients[i])
+		Expect(err).Should(BeNil())
+		ph, err := newPeerHandlerWithPolynomial(curve, peerManagers[i], threshold, x[i], ranks[i], poly)
+		Expect(err).Should(BeNil())
+		listeners[id] = new(mocks.StateChangedListener)
+		dkgs[id], err = newDKGWithHandler(peerManagers[i], threshold, ranks[i], listeners[id], ph)
+		Expect(err).Should(BeNil())
+		dkgsMain[id] = dkgs[id]
 		dkgs[id].Start()
 	}
 	return dkgs, listeners

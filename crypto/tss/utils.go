@@ -16,10 +16,12 @@ package tss
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -77,4 +79,80 @@ func ValidatePublicKey(logger log.Logger, bks birkhoffinterpolation.BkParameters
 		return ErrInconsistentPubKey
 	}
 	return nil
+}
+
+// ------------
+// Below funcs are for testing
+func GetTestID(id int) string {
+	return fmt.Sprintf("id-%d", id)
+}
+
+func GetTestPeers(id int, lens int) []string {
+	var peers []string
+	for i := 0; i < lens; i++ {
+		if i == id {
+			continue
+		}
+		peers = append(peers, GetTestID(i))
+	}
+	return peers
+}
+
+func GetTestPeersByArray(id int, ids []int) []string {
+	var peers []string
+	for _, peerID := range ids {
+		if peerID == id {
+			continue
+		}
+		peers = append(peers, GetTestID(peerID))
+	}
+	return peers
+}
+
+type TestPeerManager struct {
+	id       string
+	peers    []string
+	msgMains map[string]types.MessageMain
+}
+
+func NewTestPeerManager(id int, lens int) *TestPeerManager {
+	return &TestPeerManager{
+		id:       GetTestID(id),
+		peers:    GetTestPeers(id, lens),
+		msgMains: make(map[string]types.MessageMain),
+	}
+}
+
+func NewTestPeerManagerWithPeers(id int, peers []string) *TestPeerManager {
+	return &TestPeerManager{
+		id:       GetTestID(id),
+		peers:    peers,
+		msgMains: make(map[string]types.MessageMain),
+	}
+}
+
+func (p *TestPeerManager) Set(msgMains map[string]types.MessageMain) {
+	p.msgMains = msgMains
+}
+
+func (p *TestPeerManager) NumPeers() uint32 {
+	return uint32(len(p.peers))
+}
+
+func (p *TestPeerManager) SelfID() string {
+	return p.id
+}
+
+func (p *TestPeerManager) PeerIDs() []string {
+	return p.peers
+}
+
+// Only send if the msg main exists
+func (p *TestPeerManager) MustSend(id string, message interface{}) {
+	d, ok := p.msgMains[id]
+	if !ok {
+		return
+	}
+	msg := message.(types.Message)
+	d.AddMessage(msg)
 }

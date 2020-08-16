@@ -23,7 +23,6 @@ import (
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -132,13 +131,13 @@ var _ = Describe("enck handler, negative cases", func() {
 			mockMta = new(mtaMocks.Mta)
 
 			var ok bool
-			fromId = getID(1)
+			fromId = tss.GetTestID(1)
 			fromS := signers[fromId]
 			fromH, ok = fromS.GetHandler().(*encKHandler)
 			Expect(ok).Should(BeTrue())
 			msg = fromH.getEnckMessage()
 
-			toId := getID(0)
+			toId := tss.GetTestID(0)
 			toS := signers[toId]
 			toH, ok = toS.GetHandler().(*encKHandler)
 			Expect(ok).Should(BeTrue())
@@ -196,7 +195,7 @@ func newStopPeerManager(stopMessageType Type, p types.PeerManager) *stopPeerMana
 	}
 }
 
-func (p *stopPeerManager) MustSend(id string, message proto.Message) {
+func (p *stopPeerManager) MustSend(id string, message interface{}) {
 	if p.isStopped {
 		return
 	}

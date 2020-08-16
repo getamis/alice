@@ -57,6 +57,12 @@ type Message interface {
 	IsValid() bool
 }
 
+// MessageMain defines the message main interface
+//go:generate mockery -name=MessageMain
+type MessageMain interface {
+	AddMessage(msg Message) error
+}
+
 // MainState defines the msg main state
 type MainState uint32
 
