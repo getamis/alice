@@ -20,7 +20,6 @@ import (
 
 	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
-	"github.com/golang/protobuf/proto"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/protocol"
 )
@@ -49,7 +48,17 @@ func (p *peerManager) SelfID() string {
 	return p.id
 }
 
-func (p *peerManager) MustSend(peerID string, message proto.Message) {
+func (p *peerManager) PeerIDs() []string {
+	ids := make([]string, len(p.peers))
+	i := 0
+	for id := range p.peers {
+		ids[i] = id
+		i++
+	}
+	return ids
+}
+
+func (p *peerManager) MustSend(peerID string, message interface{}) {
 	send(context.Background(), p.host, p.peers[peerID], message, p.protocol)
 }
 
