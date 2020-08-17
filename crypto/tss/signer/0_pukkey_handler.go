@@ -147,7 +147,7 @@ func (p *pubkeyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	return newEncKHandler(p)
 }
 
-func (p *pubkeyHandler) GetPubkeyMessage() *Message {
+func (p *pubkeyHandler) getPubkeyMessage() *Message {
 	return &Message{
 		Type: Type_Pubkey,
 		Id:   p.peerManager.SelfID(),

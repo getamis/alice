@@ -78,32 +78,26 @@ var _ = Describe("verify handler, negative cases", func() {
 				p := newStopPeerManager(Type_Verify, d.ph.peerManager)
 				d.ph.peerManager = p
 			}
-
-			// Send out peer message
-			for fromID, fromD := range dkgs {
-				msg := fromD.ph.GetPeerMessage()
-				for toID, toD := range dkgs {
-					if fromID == toID {
-						continue
-					}
-					Expect(toD.AddMessage(msg)).Should(BeNil())
-				}
+			for _, d := range dkgs {
+				d.Start()
 			}
 			// Ensure all handlers are verify handlers
 			for _, d := range dkgs {
-				_, ok := d.GetHandler().(*verifyHandler)
-				if !ok {
-					time.Sleep(500 * time.Millisecond)
+				for {
+					_, ok := d.GetHandler().(*verifyHandler)
+					if !ok {
+						time.Sleep(500 * time.Millisecond)
+						continue
+					}
+					break
 				}
 			}
-			// Wait for the new handler
-			time.Sleep(500 * time.Millisecond)
-		})
-
-		AfterEach(func() {
 			for _, l := range listeners {
 				l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
 			}
+		})
+
+		AfterEach(func() {
 			for _, d := range dkgs {
 				d.Stop()
 			}

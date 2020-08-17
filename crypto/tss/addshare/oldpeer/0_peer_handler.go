@@ -170,7 +170,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	return newComputeHandler(p, co, deltaI), nil
 }
 
-func (p *peerHandler) GetOldPeerMessage() *addshare.Message {
+func (p *peerHandler) getOldPeerMessage() *addshare.Message {
 	pubkey, err := p.pubkey.ToEcPointMessage()
 	if err != nil {
 		log.Warn("Failed to convert public key", "err", err)

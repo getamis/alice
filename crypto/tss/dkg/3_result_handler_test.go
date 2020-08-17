@@ -82,29 +82,27 @@ var _ = Describe("result handler, negative cases", func() {
 				d.ph.peerManager = p
 			}
 
-			// Send out peer message
-			for fromID, fromD := range dkgs {
-				msg := fromD.ph.GetPeerMessage()
-				for toID, toD := range dkgs {
-					if fromID == toID {
-						continue
-					}
-					Expect(toD.AddMessage(msg)).Should(BeNil())
-				}
+			for _, d := range dkgs {
+				d.Start()
 			}
+
 			// Wait dkgs to handle result messages
 			for _, d := range dkgs {
-				_, ok := d.GetHandler().(*resultHandler)
-				if !ok {
-					time.Sleep(500 * time.Millisecond)
+				for {
+					_, ok := d.GetHandler().(*resultHandler)
+					if !ok {
+						time.Sleep(500 * time.Millisecond)
+						continue
+					}
+					break
 				}
+			}
+			for _, l := range listeners {
+				l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
 			}
 		})
 
 		AfterEach(func() {
-			for _, l := range listeners {
-				l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
-			}
 			for _, d := range dkgs {
 				d.Stop()
 			}

@@ -50,13 +50,6 @@ var _ = Describe("Signer", func() {
 		signers, listeners := newSigners(curve, expPublic, ss, msg)
 		doneChs := make([]chan struct{}, threshold)
 		i := 0
-
-		for _, s := range signers {
-			r, err := s.GetResult()
-			Expect(r).Should(BeNil())
-			Expect(err).Should(Equal(tss.ErrNotReady))
-		}
-
 		for _, l := range listeners {
 			doneChs[i] = make(chan struct{})
 			doneCh := doneChs[i]
@@ -66,15 +59,8 @@ var _ = Describe("Signer", func() {
 			i++
 		}
 
-		// Send out pubkey message
-		for fromID, fromD := range signers {
-			msg := fromD.GetPubkeyMessage()
-			for toID, toD := range signers {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, s := range signers {
+			s.Start()
 		}
 
 		for i := 0; i < threshold; i++ {
@@ -177,7 +163,6 @@ func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][
 		r, err := signers[id].GetResult()
 		Expect(r).Should(BeNil())
 		Expect(err).Should(Equal(tss.ErrNotReady))
-		signers[id].Start()
 	}
 	return signers, listeners
 }

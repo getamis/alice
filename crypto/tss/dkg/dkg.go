@@ -101,6 +101,9 @@ func (d *DKG) GetResult() (*Result, error) {
 	}, nil
 }
 
-func (d *DKG) GetPeerMessage() *Message {
-	return d.ph.GetPeerMessage()
+func (d *DKG) Start() {
+	d.MsgMain.Start()
+
+	// Send the first message to new peer
+	d.ph.broadcast(d.ph.getPeerMessage())
 }

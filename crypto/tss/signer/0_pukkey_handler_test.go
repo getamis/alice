@@ -16,7 +16,6 @@ package signer
 import (
 	"errors"
 	"math/big"
-	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
@@ -25,7 +24,6 @@ import (
 	homoMocks "github.com/getamis/alice/crypto/homo/mocks"
 	"github.com/getamis/alice/crypto/matrix"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/sirius/log"
 	. "github.com/onsi/ginkgo"
@@ -137,13 +135,6 @@ var _ = Describe("pubkey handler, negative cases", func() {
 
 		AfterEach(func() {
 			for _, l := range listeners {
-				l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
-			}
-			for _, s := range signers {
-				s.Stop()
-			}
-			time.Sleep(500 * time.Millisecond)
-			for _, l := range listeners {
 				l.AssertExpectations(GinkgoT())
 			}
 		})
@@ -163,7 +154,7 @@ var _ = Describe("pubkey handler, negative cases", func() {
 			for _, s := range signers {
 				cl, err := cl.NewCL(big.NewInt(1024), 40, bigPrime, safeParameter, 80)
 				Expect(err).Should(BeNil())
-				invalidMsg := s.GetPubkeyMessage()
+				invalidMsg := s.ph.getPubkeyMessage()
 				invalidMsg.Body = &Message_Pubkey{
 					Pubkey: &BodyPublicKey{
 						Pubkey:       cl.ToPubKeyBytes(),
