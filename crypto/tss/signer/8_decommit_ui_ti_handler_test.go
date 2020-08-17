@@ -109,12 +109,12 @@ var _ = Describe("decommit ui ti handler, negative cases", func() {
 		var msg *Message
 		BeforeEach(func() {
 			var ok bool
-			fromId := getID(1)
+			fromId := tss.GetTestID(1)
 			fromS := signers[fromId]
 			fromH, ok = fromS.GetHandler().(*decommitUiTiHandler)
 			Expect(ok).Should(BeTrue())
 
-			toId := getID(0)
+			toId := tss.GetTestID(0)
 			toS := signers[toId]
 			toH, ok = toS.GetHandler().(*decommitUiTiHandler)
 			Expect(ok).Should(BeTrue())
@@ -164,7 +164,7 @@ var _ = Describe("decommit ui ti handler, negative cases", func() {
 		var toH *decommitUiTiHandler
 		BeforeEach(func() {
 			var ok bool
-			toId := getID(0)
+			toId := tss.GetTestID(0)
 			toS := signers[toId]
 			toH, ok = toS.GetHandler().(*decommitUiTiHandler)
 			Expect(ok).Should(BeTrue())

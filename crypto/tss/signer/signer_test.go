@@ -16,7 +16,6 @@ package signer
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -27,7 +26,6 @@ import (
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
-	proto "github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -147,62 +145,35 @@ var _ = Describe("Signer", func() {
 	)
 })
 
-func getID(id int) string {
-	return fmt.Sprintf("id-%d", id)
-}
-
 type peerManager struct {
 	id       string
 	numPeers uint32
 	signers  map[string]*Signer
 }
 
-func newPeerManager(id string, numPeers int) *peerManager {
-	return &peerManager{
-		id:       id,
-		numPeers: uint32(numPeers),
-	}
-}
-
-func (p *peerManager) setSigners(signers map[string]*Signer) {
-	p.signers = signers
-}
-
-func (p *peerManager) NumPeers() uint32 {
-	return p.numPeers
-}
-
-func (p *peerManager) SelfID() string {
-	return p.id
-}
-
-func (p *peerManager) MustSend(id string, message proto.Message) {
-	d := p.signers[id]
-	msg := message.(types.Message)
-	Expect(d.AddMessage(msg)).Should(BeNil())
-}
-
 func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][]*big.Int, msg []byte) (map[string]*Signer, map[string]*mocks.StateChangedListener) {
 	threshold := len(ss)
 	signers := make(map[string]*Signer, threshold)
+	signersMain := make(map[string]types.MessageMain, threshold)
 	peerManagers := make([]types.PeerManager, threshold)
 	listeners := make(map[string]*mocks.StateChangedListener, threshold)
 
 	bks := make(map[string]*birkhoffinterpolation.BkParameter, threshold)
 	for i := 0; i < threshold; i++ {
-		bks[getID(i)] = birkhoffinterpolation.NewBkParameter(ss[i][0], uint32(ss[i][2].Uint64()))
+		bks[tss.GetTestID(i)] = birkhoffinterpolation.NewBkParameter(ss[i][0], uint32(ss[i][2].Uint64()))
 	}
 
 	for i := 0; i < threshold; i++ {
-		id := getID(i)
-		pm := newPeerManager(id, threshold-1)
-		pm.setSigners(signers)
+		id := tss.GetTestID(i)
+		pm := tss.NewTestPeerManager(i, threshold)
+		pm.Set(signersMain)
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
 		homo, err := paillier.NewPaillier(2048)
 		Expect(err).Should(BeNil())
 		signers[id], err = NewSigner(peerManagers[i], expPublic, homo, ss[i][1], bks, msg, listeners[id])
 		Expect(err).Should(BeNil())
+		signersMain[id] = signers[id]
 		r, err := signers[id].GetResult()
 		Expect(r).Should(BeNil())
 		Expect(err).Should(Equal(tss.ErrNotReady))

@@ -107,12 +107,12 @@ var _ = Describe("verify handler, negative cases", func() {
 		var fromH, toH *verifyHandler
 		BeforeEach(func() {
 			var ok bool
-			fromId = getID(1)
+			fromId = tss.GetTestID(1)
 			fromR := reshares[fromId]
 			fromH, ok = fromR.GetHandler().(*verifyHandler)
 			Expect(ok).Should(BeTrue())
 
-			toId = getID(0)
+			toId = tss.GetTestID(0)
 			toR := reshares[toId]
 			toH, ok = toR.GetHandler().(*verifyHandler)
 			Expect(ok).Should(BeTrue())

@@ -122,7 +122,7 @@ var _ = Describe("delta handler, negative cases", func() {
 
 	Context("Finalize", func() {
 		It("failed to get ai mta proof", func() {
-			toId := getID(0)
+			toId := tss.GetTestID(0)
 			toS := signers[toId]
 			toH, ok := toS.GetHandler().(*deltaHandler)
 			Expect(ok).Should(BeTrue())

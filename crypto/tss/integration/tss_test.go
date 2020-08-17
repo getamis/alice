@@ -16,7 +16,6 @@ package integration
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -31,12 +30,10 @@ import (
 	"github.com/getamis/alice/crypto/tss/addshare/newpeer"
 	"github.com/getamis/alice/crypto/tss/addshare/oldpeer"
 	"github.com/getamis/alice/crypto/tss/dkg"
-	"github.com/getamis/alice/crypto/tss/message"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/alice/crypto/tss/reshare"
 	"github.com/getamis/alice/crypto/tss/signer"
-	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -68,19 +65,19 @@ var _ = Describe("TSS", func() {
 
 		By("Step 1: DKG")
 		dkgs := make(map[string]*dkg.DKG, lens)
-		msgMain := make(map[string]*message.MsgMain, lens)
+		msgMain := make(map[string]types.MessageMain, lens)
 		dkgPeerManagers := make([]types.PeerManager, lens)
 		for i := 0; i < lens; i++ {
-			id := getID(i)
-			pm := newPeerManager(id, lens-1)
-			pm.setMsgMains(msgMain)
+			id := tss.GetTestID(i)
+			pm := tss.NewTestPeerManager(i, lens)
+			pm.Set(msgMain)
 			dkgPeerManagers[i] = pm
 			listener[i] = new(mocks.StateChangedListener)
 			listener[i].On("OnStateChanged", types.StateInit, types.StateDone).Once()
 			var err error
 			dkgs[id], err = dkg.NewDKG(c, dkgPeerManagers[i], threshold, ranks[i], listener[i])
 			Expect(err).Should(BeNil())
-			msgMain[id] = dkgs[id].MsgMain
+			msgMain[id] = dkgs[id]
 			dkgResult, err := dkgs[id].GetResult()
 			Expect(dkgResult).Should(BeNil())
 			Expect(err).Should(Equal(tss.ErrNotReady))
@@ -127,18 +124,18 @@ var _ = Describe("TSS", func() {
 
 		By("Step 3: Reshare")
 		reshares := make(map[string]*reshare.Reshare, lens)
-		msgMain = make(map[string]*message.MsgMain, lens)
+		msgMain = make(map[string]types.MessageMain, lens)
 		resharePeerManagers := make([]types.PeerManager, lens)
 		for i := 0; i < lens; i++ {
-			id := getID(i)
-			pm := newPeerManager(id, lens-1)
-			pm.setMsgMains(msgMain)
+			id := tss.GetTestID(i)
+			pm := tss.NewTestPeerManager(i, lens)
+			pm.Set(msgMain)
 			resharePeerManagers[i] = pm
 			listener[i].On("OnStateChanged", types.StateInit, types.StateDone).Once()
 			var err error
 			reshares[id], err = reshare.NewReshare(resharePeerManagers[i], threshold, r.publicKey, r.share[id], r.bks, listener[i])
 			Expect(err).Should(BeNil())
-			msgMain[id] = reshares[id].MsgMain
+			msgMain[id] = reshares[id]
 			reshareResult, err := reshares[id].GetResult()
 			Expect(reshareResult).Should(BeNil())
 			Expect(err).Should(Equal(tss.ErrNotReady))
@@ -172,19 +169,19 @@ var _ = Describe("TSS", func() {
 		}
 
 		By("Step 5: Add new share")
-		newPeerID := getID(lens)
+		newPeerID := tss.GetTestID(lens)
 		newPeerRank := uint32(0)
 
 		var addShareForNew *newpeer.AddShare
 		var addSharesForOld = make(map[string]*oldpeer.AddShare, lens)
-		msgMain = make(map[string]*message.MsgMain, lens+1)
+		msgMain = make(map[string]types.MessageMain, lens+1)
 
-		pmNew := newPeerManager(newPeerID, lens)
-		pmNew.setMsgMains(msgMain)
+		pmNew := tss.NewTestPeerManager(lens, lens+1)
+		pmNew.Set(msgMain)
 		listenerNew := new(mocks.StateChangedListener)
 		listenerNew.On("OnStateChanged", types.StateInit, types.StateDone).Once()
 		addShareForNew = newpeer.NewAddShare(pmNew, r.publicKey, threshold, newPeerRank, listenerNew)
-		msgMain[newPeerID] = addShareForNew.MsgMain
+		msgMain[newPeerID] = addShareForNew
 		addShareNewResult, err := addShareForNew.GetResult()
 		Expect(addShareNewResult).Should(BeNil())
 		Expect(err).Should(Equal(tss.ErrNotReady))
@@ -193,16 +190,16 @@ var _ = Describe("TSS", func() {
 		pmOlds := make([]types.PeerManager, lens)
 		listenersOld := make([]*mocks.StateChangedListener, lens)
 		for i := 0; i < lens; i++ {
-			id := getID(i)
-			pm := newPeerManager(id, lens-1)
-			pm.setMsgMains(msgMain)
+			id := tss.GetTestID(i)
+			pm := tss.NewTestPeerManager(i, lens)
+			pm.Set(msgMain)
 			pmOlds[i] = pm
 			listenersOld[i] = new(mocks.StateChangedListener)
 			listenersOld[i].On("OnStateChanged", types.StateInit, types.StateDone).Once()
 			var err error
 			addSharesForOld[id], err = oldpeer.NewAddShare(pmOlds[i], r.publicKey, threshold, r.share[id], r.bks, newPeerID, listenersOld[i])
 			Expect(err).Should(BeNil())
-			msgMain[id] = addSharesForOld[id].MsgMain
+			msgMain[id] = addSharesForOld[id]
 			addShareOldResult, err := addSharesForOld[id].GetResult()
 			Expect(addShareOldResult).Should(BeNil())
 			Expect(err).Should(Equal(tss.ErrNotReady))
@@ -262,13 +259,13 @@ func sign(homoFunc func() (homo.Crypto, error), threshold, num int, dkgResult *r
 	for _, c := range combination {
 		signers := make(map[string]*signer.Signer, threshold)
 		doneChs := make(map[string]chan struct{}, threshold)
-		msgMain := make(map[string]*message.MsgMain, threshold)
+		msgMain := make(map[string]types.MessageMain, threshold)
 		for _, i := range c {
 			h, err := homoFunc()
 			Expect(err).Should(BeNil())
-			id := getID(i)
-			pm := newPeerManager(id, threshold-1)
-			pm.setMsgMains(msgMain)
+			id := tss.GetTestID(i)
+			pm := tss.NewTestPeerManagerWithPeers(i, tss.GetTestPeersByArray(i, c))
+			pm.Set(msgMain)
 			doneChs[id] = make(chan struct{})
 			doneCh := doneChs[id]
 			listener[i] = new(mocks.StateChangedListener)
@@ -281,12 +278,12 @@ func sign(homoFunc func() (homo.Crypto, error), threshold, num int, dkgResult *r
 				if i == j {
 					continue
 				}
-				pID := getID(j)
+				pID := tss.GetTestID(j)
 				bks[pID] = dkgResult.bks[pID]
 			}
 			signers[id], err = signer.NewSigner(pm, dkgResult.publicKey, h, dkgResult.share[id], bks, msg, listener[i])
 			Expect(err).Should(BeNil())
-			msgMain[id] = signers[id].MsgMain
+			msgMain[id] = signers[id]
 			signerResult, err := signers[id].GetResult()
 			Expect(signerResult).Should(BeNil())
 			Expect(err).Should(Equal(tss.ErrNotReady))
@@ -305,7 +302,7 @@ func sign(homoFunc func() (homo.Crypto, error), threshold, num int, dkgResult *r
 		}
 
 		for _, i := range c {
-			id := getID(i)
+			id := tss.GetTestID(i)
 			<-doneChs[id]
 		}
 
@@ -344,38 +341,4 @@ type result struct {
 	publicKey *ecpointgrouplaw.ECPoint
 	bks       map[string]*birkhoffinterpolation.BkParameter
 	share     map[string]*big.Int
-}
-
-func getID(id int) string {
-	return fmt.Sprintf("id-%d", id)
-}
-
-type peerManager struct {
-	id       string
-	numPeers uint32
-	msgMains map[string]*message.MsgMain
-}
-
-func newPeerManager(id string, numPeers int) *peerManager {
-	return &peerManager{
-		id:       id,
-		numPeers: uint32(numPeers),
-	}
-}
-
-func (p *peerManager) NumPeers() uint32 {
-	return p.numPeers
-}
-
-func (p *peerManager) SelfID() string {
-	return p.id
-}
-
-func (p *peerManager) MustSend(id string, message proto.Message) {
-	msg := message.(types.Message)
-	Expect(p.msgMains[id].AddMessage(msg)).Should(BeNil())
-}
-
-func (p *peerManager) setMsgMains(msgMains map[string]*message.MsgMain) {
-	p.msgMains = msgMains
 }

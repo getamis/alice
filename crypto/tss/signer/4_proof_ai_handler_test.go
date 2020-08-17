@@ -113,12 +113,12 @@ var _ = Describe("proof ai handler, negative cases", func() {
 		var msg *Message
 		BeforeEach(func() {
 			var ok bool
-			fromId := getID(1)
+			fromId := tss.GetTestID(1)
 			fromS := signers[fromId]
 			fromH, ok = fromS.GetHandler().(*proofAiHandler)
 			Expect(ok).Should(BeTrue())
 
-			toId := getID(0)
+			toId := tss.GetTestID(0)
 			toS := signers[toId]
 			toH, ok = toS.GetHandler().(*proofAiHandler)
 			Expect(ok).Should(BeTrue())
@@ -170,7 +170,7 @@ var _ = Describe("proof ai handler, negative cases", func() {
 		var toH *proofAiHandler
 		var mockMta *mtaMocks.Mta
 		BeforeEach(func() {
-			toId := getID(0)
+			toId := tss.GetTestID(0)
 			toS := signers[toId]
 			var ok bool
 			toH, ok = toS.GetHandler().(*proofAiHandler)

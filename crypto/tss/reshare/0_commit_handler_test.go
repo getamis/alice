@@ -26,7 +26,6 @@ import (
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -183,7 +182,7 @@ func newStopPeerManager(stopMessageType Type, p types.PeerManager) *stopPeerMana
 	}
 }
 
-func (p *stopPeerManager) MustSend(id string, message proto.Message) {
+func (p *stopPeerManager) MustSend(id string, message interface{}) {
 	if p.isStopped {
 		return
 	}

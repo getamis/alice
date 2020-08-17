@@ -90,6 +90,11 @@ func newPeerHandlerWithPolynomial(curve elliptic.Curve, peerManager types.PeerMa
 		return nil, err
 	}
 
+	// Construct peers
+	peers := make(map[string]*peer, peerManager.NumPeers())
+	for _, peerID := range peerManager.PeerIDs() {
+		peers[peerID] = newPeer(peerID)
+	}
 	return &peerHandler{
 		bk:                  bk,
 		poly:                poly,
@@ -101,7 +106,7 @@ func newPeerHandlerWithPolynomial(curve elliptic.Curve, peerManager types.PeerMa
 
 		peerManager: peerManager,
 		peerNum:     peerManager.NumPeers(),
-		peers:       make(map[string]*peer, peerManager.NumPeers()),
+		peers:       peers,
 	}, nil
 }
 
@@ -114,19 +119,26 @@ func (p *peerHandler) GetRequiredMessageCount() uint32 {
 }
 
 func (p *peerHandler) IsHandled(logger log.Logger, id string) bool {
-	_, ok := p.peers[id]
-	return ok
+	peer, ok := p.peers[id]
+	if !ok {
+		logger.Warn("Peer not found")
+		return false
+	}
+	return peer.peer != nil
 }
 
 func (p *peerHandler) HandleMessage(logger log.Logger, message types.Message) error {
 	msg := getMessage(message)
 	id := msg.GetId()
+	peer, ok := p.peers[id]
+	if !ok {
+		logger.Warn("Peer not found")
+		return tss.ErrPeerNotFound
+	}
 	body := msg.GetPeer()
-	peer := newPeer(id)
 	peer.peer = &peerData{
 		bk: body.GetBk().ToBk(),
 	}
-	p.peers[id] = peer
 	return peer.AddMessage(msg)
 }
 
