@@ -42,19 +42,11 @@ var _ = Describe("DKG", func() {
 	DescribeTable("NewDKG()", func(c elliptic.Curve, threshold uint32, ranks []uint32) {
 		// new peer managers and dkgs
 		dkgs, listeners := newDKGs(c, threshold, ranks)
-
 		for _, l := range listeners {
 			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
 		}
-		// Send out peer message
-		for fromID, fromD := range dkgs {
-			msg := fromD.GetPeerMessage()
-			for toID, toD := range dkgs {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, d := range dkgs {
+			d.Start()
 		}
 		time.Sleep(1 * time.Second)
 
@@ -104,16 +96,8 @@ var _ = Describe("DKG", func() {
 		for _, l := range listeners {
 			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
 		}
-
-		// Send out peer message
-		for fromID, fromD := range dkgs {
-			msg := fromD.GetPeerMessage()
-			for toID, toD := range dkgs {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, d := range dkgs {
+			d.Start()
 		}
 		time.Sleep(1 * time.Second)
 
@@ -338,21 +322,13 @@ var _ = Describe("DKG", func() {
 	DescribeTable("negative cases", func(c elliptic.Curve, threshold uint32, coefficients [][]*big.Int, x []*big.Int, ranks []uint32) {
 		// new peer managers and dkgs
 		dkgs, listeners := newDKGWithPeerHandler(c, threshold, ranks, x, coefficients)
+		for _, d := range dkgs {
+			d.Start()
+		}
 		for _, l := range listeners {
 			l.On("OnStateChanged", types.StateInit, types.StateFailed).Once()
 		}
-
-		// Send out peer message
-		for fromID, fromD := range dkgs {
-			msg := fromD.GetPeerMessage()
-			for toID, toD := range dkgs {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
-		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(time.Second)
 		for _, l := range listeners {
 			l.AssertExpectations(GinkgoT())
 		}
@@ -499,7 +475,6 @@ func newDKGs(curve elliptic.Curve, threshold uint32, ranks []uint32) (map[string
 		r, err := dkgs[id].GetResult()
 		Expect(r).Should(BeNil())
 		Expect(err).Should(Equal(tss.ErrNotReady))
-		dkgs[id].Start()
 	}
 	return dkgs, listeners
 }
@@ -523,7 +498,6 @@ func newDKGWithPeerHandler(curve elliptic.Curve, threshold uint32, ranks []uint3
 		dkgs[id], err = newDKGWithHandler(peerManagers[i], threshold, ranks[i], listeners[id], ph)
 		Expect(err).Should(BeNil())
 		dkgsMain[id] = dkgs[id]
-		dkgs[id].Start()
 	}
 	return dkgs, listeners
 }

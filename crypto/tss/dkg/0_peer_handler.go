@@ -163,7 +163,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	return newDecommitHandler(p), nil
 }
 
-func (p *peerHandler) GetPeerMessage() *Message {
+func (p *peerHandler) getPeerMessage() *Message {
 	return &Message{
 		Type: Type_Peer,
 		Id:   p.peerManager.SelfID(),

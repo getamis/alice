@@ -78,13 +78,7 @@ func (p *service) Process() {
 	p.dkg.Start()
 	defer p.dkg.Stop()
 
-	// 2. Connect the host to peers and send the peer message to them.
-	msg := p.dkg.GetPeerMessage()
-	for _, peerPort := range p.config.Peers {
-		p.pm.MustSend(utils.GetPeerIDFromPort(peerPort), msg)
-	}
-
-	// 3. Wait the dkg is done or failed
+	// 2. Wait the dkg is done or failed
 	<-p.done
 }
 

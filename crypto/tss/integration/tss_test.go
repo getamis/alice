@@ -81,18 +81,10 @@ var _ = Describe("TSS", func() {
 			dkgResult, err := dkgs[id].GetResult()
 			Expect(dkgResult).Should(BeNil())
 			Expect(err).Should(Equal(tss.ErrNotReady))
-			dkgs[id].Start()
 		}
 
-		// Send out peer message
-		for fromID, fromD := range dkgs {
-			msg := fromD.GetPeerMessage()
-			for toID, toD := range dkgs {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, d := range dkgs {
+			d.Start()
 		}
 		time.Sleep(1 * time.Second)
 
@@ -139,18 +131,10 @@ var _ = Describe("TSS", func() {
 			reshareResult, err := reshares[id].GetResult()
 			Expect(reshareResult).Should(BeNil())
 			Expect(err).Should(Equal(tss.ErrNotReady))
-			reshares[id].Start()
 		}
 
-		// Send out commit message
-		for fromID, fromD := range reshares {
-			msg := fromD.GetCommitMessage()
-			for toID, toD := range reshares {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, r := range reshares {
+			r.Start()
 		}
 		time.Sleep(1 * time.Second)
 
@@ -203,13 +187,11 @@ var _ = Describe("TSS", func() {
 			addShareOldResult, err := addSharesForOld[id].GetResult()
 			Expect(addShareOldResult).Should(BeNil())
 			Expect(err).Should(Equal(tss.ErrNotReady))
-			addSharesForOld[id].Start()
 		}
 
 		// Send out all old peer message to new peer
 		for _, fromA := range addSharesForOld {
-			msg := fromA.GetPeerMessage()
-			Expect(addShareForNew.AddMessage(msg)).Should(BeNil())
+			fromA.Start()
 		}
 		time.Sleep(1 * time.Second)
 
@@ -287,18 +269,10 @@ func sign(homoFunc func() (homo.Crypto, error), threshold, num int, dkgResult *r
 			signerResult, err := signers[id].GetResult()
 			Expect(signerResult).Should(BeNil())
 			Expect(err).Should(Equal(tss.ErrNotReady))
-			signers[id].Start()
 		}
 
-		// Send out pubkey message.
-		for fromID, fromD := range signers {
-			msg := fromD.GetPubkeyMessage()
-			for toID, toD := range signers {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, s := range signers {
+			s.Start()
 		}
 
 		for _, i := range c {
