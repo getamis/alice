@@ -15,7 +15,6 @@ package reshare
 
 import (
 	"math/big"
-	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
@@ -132,13 +131,6 @@ var _ = Describe("commit handler, negative cases", func() {
 		})
 
 		AfterEach(func() {
-			for _, l := range listeners {
-				l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
-			}
-			for _, r := range reshares {
-				r.Stop()
-			}
-			time.Sleep(500 * time.Millisecond)
 			for _, l := range listeners {
 				l.AssertExpectations(GinkgoT())
 			}

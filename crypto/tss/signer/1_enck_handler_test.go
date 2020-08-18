@@ -43,29 +43,26 @@ var _ = Describe("enck handler, negative cases", func() {
 			s.ph.peerManager = p
 		}
 
-		// Send out peer message
-		for fromID, fromD := range signers {
-			msg := fromD.ph.GetPubkeyMessage()
-			for toID, toD := range signers {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, s := range signers {
+			s.Start()
 		}
 		// Wait dkgs to handle decommit messages
 		for _, s := range signers {
-			_, ok := s.GetHandler().(*encKHandler)
-			if !ok {
-				time.Sleep(500 * time.Millisecond)
+			for {
+				_, ok := s.GetHandler().(*encKHandler)
+				if !ok {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				break
 			}
+		}
+		for _, l := range listeners {
+			l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
 		}
 	})
 
 	AfterEach(func() {
-		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
-		}
 		for _, s := range signers {
 			s.Stop()
 		}

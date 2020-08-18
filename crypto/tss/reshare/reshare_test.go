@@ -45,15 +45,8 @@ var _ = Describe("Reshare", func() {
 			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
 		}
 
-		// Send out peer message
-		for fromID, fromD := range reshares {
-			msg := fromD.GetCommitMessage()
-			for toID, toD := range reshares {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, r := range reshares {
+			r.Start()
 		}
 		time.Sleep(1 * time.Second)
 
@@ -270,7 +263,6 @@ func newReshares(c elliptic.Curve, threshold uint32, bks []*birkhoffinterpolatio
 		r, err := reshares[id].GetResult()
 		Expect(r).Should(BeNil())
 		Expect(err).Should(Equal(tss.ErrNotReady))
-		reshares[id].Start()
 	}
 	return reshares, listeners
 }

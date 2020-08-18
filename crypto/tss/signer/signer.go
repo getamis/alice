@@ -63,8 +63,11 @@ func NewSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo h
 	}, nil
 }
 
-func (s *Signer) GetPubkeyMessage() *Message {
-	return s.ph.GetPubkeyMessage()
+func (s *Signer) Start() {
+	s.MsgMain.Start()
+
+	// Send the first message to new peer
+	s.ph.broadcast(s.ph.getPubkeyMessage())
 }
 
 // GetResult returns the final result: public key, share, bks (including self bk)

@@ -76,6 +76,9 @@ func (a *AddShare) GetResult() (*Result, error) {
 	}, nil
 }
 
-func (a *AddShare) GetPeerMessage() *addshare.Message {
-	return a.ph.GetOldPeerMessage()
+func (a *AddShare) Start() {
+	a.MsgMain.Start()
+
+	// Send the first message to new peer
+	a.ph.peerManager.MustSend(a.ph.newPeer.Id, a.ph.getOldPeerMessage())
 }
