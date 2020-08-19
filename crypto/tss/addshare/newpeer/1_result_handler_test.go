@@ -71,6 +71,7 @@ var _ = Describe("result handler, negative cases", func() {
 
 			rh.threshold = threshold
 			rh.pubkey = pubkey
+			rh.fieldOrder = pubkey.GetCurve().Params().N
 		})
 
 		It("fails with peer not found", func() {

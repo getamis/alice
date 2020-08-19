@@ -75,7 +75,7 @@ func (p *computeHandler) HandleMessage(logger log.Logger, message types.Message)
 		return tss.ErrPeerNotFound
 	}
 	delta := new(big.Int).SetBytes(body.GetDelta())
-	if err := utils.InRange(delta, big.NewInt(0), p.pubkey.GetCurve().Params().N); err != nil {
+	if err := utils.InRange(delta, big.NewInt(0), p.fieldOrder); err != nil {
 		logger.Warn("Invalid delta value", "delta", delta.String(), "err", err)
 		return err
 	}
@@ -104,7 +104,7 @@ func (p *computeHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	for _, peer := range p.peers {
 		delta.Add(delta, peer.compute.delta)
 	}
-	p.deltaI = delta.Mod(delta, p.pubkey.GetCurve().Params().N)
+	p.deltaI = delta.Mod(delta, p.fieldOrder)
 
 	// Send the new delta_i to the new peer.
 	msg := &addshare.Message{

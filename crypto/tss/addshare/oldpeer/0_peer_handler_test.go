@@ -78,6 +78,7 @@ var _ = Describe("peer handler, negative cases", func() {
 
 			ph.bk = selfBk
 			ph.pubkey = pubkey
+			ph.fieldOrder = pubkey.GetCurve().Params().N
 			ph.peers = map[string]*peer{}
 		})
 
@@ -93,6 +94,21 @@ var _ = Describe("peer handler, negative cases", func() {
 			}
 			err := ph.HandleMessage(log.Discard(), msg)
 			Expect(err).Should(Equal(tss.ErrInvalidMsg))
+		})
+
+		It("invalid x", func() {
+			invalidBk := birkhoffinterpolation.NewBkParameter(big.NewInt(0), uint32(0))
+			msg := &addshare.Message{
+				Type: addshare.Type_NewBk,
+				Id:   peerID,
+				Body: &addshare.Message_NewBk{
+					NewBk: &addshare.BodyNewBk{
+						Bk: invalidBk.ToMessage(),
+					},
+				},
+			}
+			err := ph.HandleMessage(log.Discard(), msg)
+			Expect(err).Should(Equal(utils.ErrNotInRange))
 		})
 
 		It("fails to get add share coefficient", func() {
