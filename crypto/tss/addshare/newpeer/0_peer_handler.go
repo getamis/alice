@@ -50,6 +50,11 @@ type peerHandler struct {
 }
 
 func newPeerHandler(peerManager types.PeerManager, pubkey *ecpointgrouplaw.ECPoint, threshold, newPeerRank uint32) *peerHandler {
+	// Construct peers
+	peers := make(map[string]*peer, peerManager.NumPeers())
+	for _, peerID := range peerManager.PeerIDs() {
+		peers[peerID] = newPeer(peerID)
+	}
 	return &peerHandler{
 		pubkey:      pubkey,
 		threshold:   threshold,
@@ -57,7 +62,7 @@ func newPeerHandler(peerManager types.PeerManager, pubkey *ecpointgrouplaw.ECPoi
 
 		peerManager: peerManager,
 		peerNum:     peerManager.NumPeers(),
-		peers:       make(map[string]*peer, peerManager.NumPeers()),
+		peers:       peers,
 	}
 }
 
@@ -70,8 +75,12 @@ func (p *peerHandler) GetRequiredMessageCount() uint32 {
 }
 
 func (p *peerHandler) IsHandled(logger log.Logger, id string) bool {
-	_, ok := p.peers[id]
-	return ok
+	peer, ok := p.peers[id]
+	if !ok {
+		logger.Warn("Peer not found")
+		return false
+	}
+	return peer.peer != nil
 }
 
 func (p *peerHandler) HandleMessage(logger log.Logger, message types.Message) error {

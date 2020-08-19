@@ -20,7 +20,7 @@ import (
 	"github.com/getamis/alice/crypto/tss/reshare"
 	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/libp2p/go-libp2p-core/network"
 )
 
@@ -85,13 +85,7 @@ func (p *service) Process() {
 	p.reshare.Start()
 	defer p.reshare.Stop()
 
-	// 2. Connect the host to peers and send the commit message to them.
-	msg := p.reshare.GetCommitMessage()
-	for _, peerPort := range p.config.Peers {
-		p.pm.MustSend(utils.GetPeerIDFromPort(peerPort), msg)
-	}
-
-	// 3. Wait the reshare is done or failed
+	// 2. Wait the reshare is done or failed
 	<-p.done
 }
 

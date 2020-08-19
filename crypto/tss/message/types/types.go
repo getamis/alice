@@ -16,15 +16,15 @@ package types
 
 import (
 	"github.com/getamis/sirius/log"
-	"github.com/golang/protobuf/proto"
 )
 
 // PeerManager defines the peer interface
 //go:generate mockery -name=PeerManager
 type PeerManager interface {
 	NumPeers() uint32
+	PeerIDs() []string
 	SelfID() string
-	MustSend(id string, msg proto.Message)
+	MustSend(id string, msg interface{})
 }
 
 // Handler defines the message handler
@@ -55,6 +55,12 @@ type Message interface {
 	GetMessageType() MessageType
 	// IsValid checks if message is valid or not
 	IsValid() bool
+}
+
+// MessageMain defines the message main interface
+//go:generate mockery -name=MessageMain
+type MessageMain interface {
+	AddMessage(msg Message) error
 }
 
 // MainState defines the msg main state

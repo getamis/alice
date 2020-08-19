@@ -23,7 +23,6 @@ import (
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -44,29 +43,26 @@ var _ = Describe("enck handler, negative cases", func() {
 			s.ph.peerManager = p
 		}
 
-		// Send out peer message
-		for fromID, fromD := range signers {
-			msg := fromD.ph.GetPubkeyMessage()
-			for toID, toD := range signers {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, s := range signers {
+			s.Start()
 		}
 		// Wait dkgs to handle decommit messages
 		for _, s := range signers {
-			_, ok := s.GetHandler().(*encKHandler)
-			if !ok {
-				time.Sleep(500 * time.Millisecond)
+			for {
+				_, ok := s.GetHandler().(*encKHandler)
+				if !ok {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				break
 			}
+		}
+		for _, l := range listeners {
+			l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
 		}
 	})
 
 	AfterEach(func() {
-		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
-		}
 		for _, s := range signers {
 			s.Stop()
 		}
@@ -132,13 +128,13 @@ var _ = Describe("enck handler, negative cases", func() {
 			mockMta = new(mtaMocks.Mta)
 
 			var ok bool
-			fromId = getID(1)
+			fromId = tss.GetTestID(1)
 			fromS := signers[fromId]
 			fromH, ok = fromS.GetHandler().(*encKHandler)
 			Expect(ok).Should(BeTrue())
 			msg = fromH.getEnckMessage()
 
-			toId := getID(0)
+			toId := tss.GetTestID(0)
 			toS := signers[toId]
 			toH, ok = toS.GetHandler().(*encKHandler)
 			Expect(ok).Should(BeTrue())
@@ -196,7 +192,7 @@ func newStopPeerManager(stopMessageType Type, p types.PeerManager) *stopPeerMana
 	}
 }
 
-func (p *stopPeerManager) MustSend(id string, message proto.Message) {
+func (p *stopPeerManager) MustSend(id string, message interface{}) {
 	if p.isStopped {
 		return
 	}

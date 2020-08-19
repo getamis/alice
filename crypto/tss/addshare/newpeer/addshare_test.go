@@ -29,7 +29,6 @@ import (
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -46,13 +45,12 @@ var _ = Describe("AddShare", func() {
 		threshold := uint32(1)
 
 		// new peer static information
-		newPeerID := "id-new"
 		newPeerRank := uint32(0)
 		listener := new(mocks.StateChangedListener)
 		listener.On("OnStateChanged", types.StateInit, types.StateDone).Once()
 
 		// old peer static information
-		oldPeerID := "id-old"
+		oldPeerID := tss.GetTestID(1)
 		oldPeerRank := uint32(0)
 		oldPeerX := big.NewInt(5)
 		oldPeerBk := birkhoffinterpolation.NewBkParameter(oldPeerX, oldPeerRank)
@@ -67,7 +65,7 @@ var _ = Describe("AddShare", func() {
 		oldPeerShare := newPoly.Evaluate(oldPeerX)
 		siGProofMsg, err := zkproof.NewBaseSchorrMessage(curve, oldPeerShare)
 		Expect(err).Should(BeNil())
-		pm := newAddshareNewPeerManager(newPeerID, 1)
+		pm := tss.NewTestPeerManager(0, 2)
 
 		// Create and start a new addShare process.
 		addShare := NewAddShare(pm, pubkey, threshold, newPeerRank, listener)
@@ -132,27 +130,3 @@ var _ = Describe("AddShare", func() {
 		Expect(r.PublicKey).Should(Equal(pubkey))
 	})
 })
-
-type addShareNewPeerManager struct {
-	id       string
-	numPeers uint32
-}
-
-func newAddshareNewPeerManager(id string, numPeers int) *addShareNewPeerManager {
-	return &addShareNewPeerManager{
-		id:       id,
-		numPeers: uint32(numPeers),
-	}
-}
-
-func (p *addShareNewPeerManager) NumPeers() uint32 {
-	return p.numPeers
-}
-
-func (p *addShareNewPeerManager) SelfID() string {
-	return p.id
-}
-
-func (p *addShareNewPeerManager) MustSend(id string, message proto.Message) {
-	// Do nothing.
-}

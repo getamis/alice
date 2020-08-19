@@ -15,7 +15,6 @@ package reshare
 
 import (
 	"crypto/elliptic"
-	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -28,7 +27,6 @@ import (
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/alice/crypto/utils"
-	proto "github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -47,15 +45,8 @@ var _ = Describe("Reshare", func() {
 			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
 		}
 
-		// Send out peer message
-		for fromID, fromD := range reshares {
-			msg := fromD.GetCommitMessage()
-			for toID, toD := range reshares {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, r := range reshares {
+			r.Start()
 		}
 		time.Sleep(1 * time.Second)
 
@@ -135,7 +126,6 @@ var _ = Describe("Reshare", func() {
 		}
 		// new peer managers and reshares
 		lens := len(ranks)
-		reshares := make(map[string]*Reshare, lens)
 		peerManagers := make([]types.PeerManager, lens)
 		bks := make(map[string]*birkhoffinterpolation.BkParameter)
 		listener := make([]*mocks.StateChangedListener, lens)
@@ -147,21 +137,19 @@ var _ = Describe("Reshare", func() {
 
 		// Build bks
 		for i := 0; i < lens; i++ {
-			id := getID(i)
+			id := tss.GetTestID(i)
 			bks[id] = birkhoffinterpolation.NewBkParameter(xs[i], ranks[i])
 		}
 
 		for i := 0; i < lens; i++ {
-			id := getID(i)
 			// Create one more peer deliberately
-			pm := newPeerManager(id, lens)
-			pm.setReshares(reshares)
+			pm := tss.NewTestPeerManager(i, lens+1)
 			peerManagers[i] = pm
 			listener[i] = new(mocks.StateChangedListener)
 			listener[i].On("OnStateChanged", types.StateInit, types.StateFailed).Once()
 			tempPoly := poly.Differentiate(ranks[i])
 			oldShare := tempPoly.Evaluate(xs[i])
-			reshares[id], err = NewReshare(peerManagers[i], threshold, pubkey, oldShare, bks, listener[i])
+			_, err = NewReshare(peerManagers[i], threshold, pubkey, oldShare, bks, listener[i])
 			Expect(err).Should(Equal(tss.ErrNotEnoughBKs))
 		}
 	})
@@ -175,7 +163,6 @@ var _ = Describe("Reshare", func() {
 			0, 0, 0,
 		}
 		lens := len(ranks)
-		reshares := make(map[string]*Reshare, lens)
 		bks := make(map[string]*birkhoffinterpolation.BkParameter)
 		listener := new(mocks.StateChangedListener)
 		pubkey := ecpointgrouplaw.ScalarBaseMult(curve, big.NewInt(100))
@@ -184,13 +171,11 @@ var _ = Describe("Reshare", func() {
 		// Build bks
 		for i := 0; i < lens; i++ {
 			// Deliberately plus 1 to make bks[0] not found
-			id := getID(i + 1)
+			id := tss.GetTestID(i + 1)
 			bks[id] = birkhoffinterpolation.NewBkParameter(xs[i], ranks[i])
 		}
 
-		id := getID(0)
-		pm := newPeerManager(id, lens-1)
-		pm.setReshares(reshares)
+		pm := tss.NewTestPeerManager(0, lens)
 		listener.On("OnStateChanged", types.StateInit, types.StateFailed).Once()
 		var err error
 		_, err = NewReshare(pm, threshold, pubkey, oldShare, bks, listener)
@@ -219,14 +204,13 @@ var _ = Describe("Reshare", func() {
 
 		// Build bks
 		for i := 0; i < lens; i++ {
-			id := getID(i)
+			id := tss.GetTestID(i)
 			bks[id] = birkhoffinterpolation.NewBkParameter(xs[i], ranks[i])
 		}
 
 		for i := 0; i < lens; i++ {
-			id := getID(i)
-			pm := newPeerManager(id, lens-1)
-			pm.setReshares(reshares)
+			id := tss.GetTestID(i)
+			pm := tss.NewTestPeerManager(i, lens)
 			peerManagers[i] = pm
 			listener[i] = new(mocks.StateChangedListener)
 			listener[i].On("OnStateChanged", types.StateInit, types.StateFailed).Once()
@@ -239,45 +223,17 @@ var _ = Describe("Reshare", func() {
 	})
 })
 
-func getID(id int) string {
-	return fmt.Sprintf("id-%d", id)
-}
-
 type peerManager struct {
 	id       string
 	numPeers uint32
 	reshares map[string]*Reshare
 }
 
-func newPeerManager(id string, numPeers int) *peerManager {
-	return &peerManager{
-		id:       id,
-		numPeers: uint32(numPeers),
-	}
-}
-
-func (p *peerManager) setReshares(reshares map[string]*Reshare) {
-	p.reshares = reshares
-}
-
-func (p *peerManager) NumPeers() uint32 {
-	return p.numPeers
-}
-
-func (p *peerManager) SelfID() string {
-	return p.id
-}
-
-func (p *peerManager) MustSend(id string, message proto.Message) {
-	d := p.reshares[id]
-	msg := message.(types.Message)
-	Expect(d.AddMessage(msg)).Should(BeNil())
-}
-
 func newReshares(c elliptic.Curve, threshold uint32, bks []*birkhoffinterpolation.BkParameter) (map[string]*Reshare, map[string]*mocks.StateChangedListener) {
 	// new peer managers and reshares
 	lens := len(bks)
 	reshares := make(map[string]*Reshare, lens)
+	reshareMains := make(map[string]types.MessageMain, lens)
 	peerManagers := make([]types.PeerManager, lens)
 	bksMap := make(map[string]*birkhoffinterpolation.BkParameter)
 	listeners := make(map[string]*mocks.StateChangedListener, lens)
@@ -289,24 +245,24 @@ func newReshares(c elliptic.Curve, threshold uint32, bks []*birkhoffinterpolatio
 
 	// Convert bks to map
 	for i := 0; i < lens; i++ {
-		id := getID(i)
+		id := tss.GetTestID(i)
 		bksMap[id] = bks[i]
 	}
 
 	for i := 0; i < lens; i++ {
-		id := getID(i)
-		pm := newPeerManager(id, lens-1)
-		pm.setReshares(reshares)
+		id := tss.GetTestID(i)
+		pm := tss.NewTestPeerManager(i, lens)
+		pm.Set(reshareMains)
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
 		tempPoly := poly.Differentiate(bks[i].GetRank())
 		oldShare := tempPoly.Evaluate(bks[i].GetX())
 		reshares[id], err = NewReshare(peerManagers[i], threshold, pubkey, oldShare, bksMap, listeners[id])
 		Expect(err).Should(BeNil())
+		reshareMains[id] = reshares[id]
 		r, err := reshares[id].GetResult()
 		Expect(r).Should(BeNil())
 		Expect(err).Should(Equal(tss.ErrNotReady))
-		reshares[id].Start()
 	}
 	return reshares, listeners
 }

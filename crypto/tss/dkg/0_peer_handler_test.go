@@ -14,11 +14,8 @@
 package dkg
 
 import (
-	"time"
-
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
-	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/sirius/log"
 	. "github.com/onsi/ginkgo"
@@ -42,7 +39,9 @@ var _ = Describe("peer handler, negative cases", func() {
 		})
 
 		It("message is handled before", func() {
-			ph.peers[peerId] = &peer{}
+			ph.peers[peerId] = &peer{
+				peer: &peerData{},
+			}
 			Expect(ph.IsHandled(log.Discard(), peerId)).Should(BeTrue())
 		})
 
@@ -66,25 +65,19 @@ var _ = Describe("peer handler, negative cases", func() {
 
 		AfterEach(func() {
 			for _, l := range listeners {
-				l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
-			}
-			for _, d := range dkgs {
-				d.Stop()
-			}
-			time.Sleep(500 * time.Millisecond)
-			for _, l := range listeners {
 				l.AssertExpectations(GinkgoT())
 			}
 		})
 
 		It("duplicate bks", func() {
+			// time.Sleep(time.Second)
 			// Add peer messages into dkg
 			for selfId, selfD := range dkgs {
 				for id, d := range dkgs {
 					if selfId == id {
 						continue
 					}
-					Expect(selfD.ph.HandleMessage(log.Discard(), d.GetPeerMessage())).Should(BeNil())
+					Expect(selfD.ph.HandleMessage(log.Discard(), d.ph.getPeerMessage())).Should(BeNil())
 				}
 			}
 

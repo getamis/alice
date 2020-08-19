@@ -46,29 +46,27 @@ var _ = Describe("proof ai handler, negative cases", func() {
 			s.ph.peerManager = p
 		}
 
-		// Send out peer message
-		for fromID, fromD := range signers {
-			msg := fromD.ph.GetPubkeyMessage()
-			for toID, toD := range signers {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, s := range signers {
+			s.Start()
 		}
+
 		// Wait dkgs to handle decommit messages
 		for _, s := range signers {
-			_, ok := s.GetHandler().(*proofAiHandler)
-			if !ok {
-				time.Sleep(500 * time.Millisecond)
+			for {
+				_, ok := s.GetHandler().(*proofAiHandler)
+				if !ok {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				break
 			}
+		}
+		for _, l := range listeners {
+			l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
 		}
 	})
 
 	AfterEach(func() {
-		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
-		}
 		for _, s := range signers {
 			s.Stop()
 		}
@@ -113,12 +111,12 @@ var _ = Describe("proof ai handler, negative cases", func() {
 		var msg *Message
 		BeforeEach(func() {
 			var ok bool
-			fromId := getID(1)
+			fromId := tss.GetTestID(1)
 			fromS := signers[fromId]
 			fromH, ok = fromS.GetHandler().(*proofAiHandler)
 			Expect(ok).Should(BeTrue())
 
-			toId := getID(0)
+			toId := tss.GetTestID(0)
 			toS := signers[toId]
 			toH, ok = toS.GetHandler().(*proofAiHandler)
 			Expect(ok).Should(BeTrue())
@@ -170,7 +168,7 @@ var _ = Describe("proof ai handler, negative cases", func() {
 		var toH *proofAiHandler
 		var mockMta *mtaMocks.Mta
 		BeforeEach(func() {
-			toId := getID(0)
+			toId := tss.GetTestID(0)
 			toS := signers[toId]
 			var ok bool
 			toH, ok = toS.GetHandler().(*proofAiHandler)

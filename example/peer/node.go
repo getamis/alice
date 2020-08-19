@@ -15,6 +15,7 @@ package peer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 
@@ -83,7 +84,12 @@ func generateIdentity(port int64) (crypto.PrivKey, error) {
 }
 
 // send sends the proto message to specified peer.
-func send(ctx context.Context, host host.Host, target string, data proto.Message, protocol protocol.ID) error {
+func send(ctx context.Context, host host.Host, target string, data interface{}, protocol protocol.ID) error {
+	msg, ok := data.(proto.Message)
+	if !ok {
+		log.Warn("invalid proto message")
+		return errors.New("invalid proto message")
+	}
 	// Turn the destination into a multiaddr.
 	maddr, err := multiaddr.NewMultiaddr(target)
 	if err != nil {
@@ -104,7 +110,7 @@ func send(ctx context.Context, host host.Host, target string, data proto.Message
 		return err
 	}
 	writer := ggio.NewFullWriter(s)
-	err = writer.WriteMsg(data)
+	err = writer.WriteMsg(msg)
 	if err != nil {
 		log.Warn("Cannot write message to IO", "err", err)
 		return err

@@ -22,7 +22,6 @@ import (
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -72,30 +71,26 @@ var _ = Describe("decommit handler, negative cases", func() {
 				p := newStopPeerManager(Type_Decommit, d.ph.peerManager)
 				d.ph.peerManager = p
 			}
-
-			// Send out peer message
-			for fromID, fromD := range dkgs {
-				msg := fromD.ph.GetPeerMessage()
-				for toID, toD := range dkgs {
-					if fromID == toID {
-						continue
-					}
-					Expect(toD.AddMessage(msg)).Should(BeNil())
-				}
+			for _, d := range dkgs {
+				d.Start()
 			}
 			// Wait dkgs to handle decommit messages
 			for _, d := range dkgs {
-				_, ok := d.GetHandler().(*decommitHandler)
-				if !ok {
-					time.Sleep(500 * time.Millisecond)
+				for {
+					_, ok := d.GetHandler().(*decommitHandler)
+					if !ok {
+						time.Sleep(500 * time.Millisecond)
+						continue
+					}
+					break
 				}
+			}
+			for _, l := range listeners {
+				l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
 			}
 		})
 
 		AfterEach(func() {
-			for _, l := range listeners {
-				l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
-			}
 			for _, d := range dkgs {
 				d.Stop()
 			}
@@ -154,7 +149,7 @@ func newStopPeerManager(stopMessageType Type, p types.PeerManager) *stopPeerMana
 	}
 }
 
-func (p *stopPeerManager) MustSend(id string, message proto.Message) {
+func (p *stopPeerManager) MustSend(id string, message interface{}) {
 	if p.isStopped {
 		return
 	}

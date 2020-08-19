@@ -16,7 +16,6 @@ package oldpeer
 
 import (
 	"crypto/elliptic"
-	"fmt"
 	"math/big"
 	"testing"
 	"time"
@@ -32,7 +31,6 @@ import (
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -155,6 +153,7 @@ var _ = Describe("AddShare", func() {
 		// new peer managers and reshares
 		lens := len(ranks)
 		addShares := make(map[string]*AddShare, lens)
+		addShareMains := make(map[string]types.MessageMain, lens)
 		peerManagers := make([]types.PeerManager, lens)
 		bks := make(map[string]*birkhoffinterpolation.BkParameter)
 		listener := make([]*mocks.StateChangedListener, lens)
@@ -166,15 +165,15 @@ var _ = Describe("AddShare", func() {
 
 		// Build bks
 		for i := 0; i < lens; i++ {
-			id := getID(i)
+			id := tss.GetTestID(i)
 			bks[id] = birkhoffinterpolation.NewBkParameter(xs[i], ranks[i])
 		}
 
 		for i := 0; i < lens; i++ {
-			id := getID(i)
+			id := tss.GetTestID(i)
 			// Create one more peer deliberately
-			pm := newAddshareOldPeerManager(id, newPeerID, lens)
-			pm.setAddshares(addShares)
+			pm := tss.NewTestPeerManager(i, lens+1)
+			pm.Set(addShareMains)
 			peerManagers[i] = pm
 			listener[i] = new(mocks.StateChangedListener)
 			listener[i].On("OnStateChanged", types.StateInit, types.StateFailed).Once()
@@ -182,6 +181,7 @@ var _ = Describe("AddShare", func() {
 			oldShare := tempPoly.Evaluate(xs[i])
 			addShares[id], err = NewAddShare(peerManagers[i], pubkey, threshold, oldShare, bks, newPeerID, listener[i])
 			Expect(err).Should(Equal(tss.ErrInconsistentPeerNumAndBks))
+			addShareMains[id] = addShares[id]
 		}
 	})
 
@@ -195,7 +195,6 @@ var _ = Describe("AddShare", func() {
 		}
 		// new peer managers and reshares
 		lens := len(ranks)
-		addShares := make(map[string]*AddShare, lens)
 		peerManagers := make([]types.PeerManager, lens)
 		bks := make(map[string]*birkhoffinterpolation.BkParameter)
 		listener := make([]*mocks.StateChangedListener, lens)
@@ -207,20 +206,18 @@ var _ = Describe("AddShare", func() {
 
 		// Build bks
 		for i := 0; i < lens; i++ {
-			id := getID(i)
+			id := tss.GetTestID(i)
 			bks[id] = birkhoffinterpolation.NewBkParameter(xs[i], ranks[i])
 		}
 
 		for i := 0; i < lens; i++ {
-			id := getID(i)
-			pm := newAddshareOldPeerManager(id, newPeerID, lens-1)
-			pm.setAddshares(addShares)
+			pm := tss.NewTestPeerManager(i, lens)
 			peerManagers[i] = pm
 			listener[i] = new(mocks.StateChangedListener)
 			listener[i].On("OnStateChanged", types.StateInit, types.StateFailed).Once()
 			tempPoly := poly.Differentiate(ranks[i])
 			oldShare := tempPoly.Evaluate(xs[i])
-			addShares[id], err = NewAddShare(peerManagers[i], pubkey, threshold, oldShare, bks, newPeerID, listener[i])
+			_, err = NewAddShare(peerManagers[i], pubkey, threshold, oldShare, bks, newPeerID, listener[i])
 			Expect(err).Should(Equal(utils.ErrLargeThreshold))
 		}
 	})
@@ -234,7 +231,6 @@ var _ = Describe("AddShare", func() {
 			0, 0, 0,
 		}
 		lens := len(ranks)
-		addShares := make(map[string]*AddShare, lens)
 		bks := make(map[string]*birkhoffinterpolation.BkParameter)
 		listener := new(mocks.StateChangedListener)
 		pubkey := ecpointgrouplaw.ScalarBaseMult(curve, big.NewInt(100))
@@ -243,13 +239,11 @@ var _ = Describe("AddShare", func() {
 		// Build bks
 		for i := 0; i < lens; i++ {
 			// Deliberately plus 1 to make bks[0] not found
-			id := getID(i + 1)
+			id := tss.GetTestID(i + 1)
 			bks[id] = birkhoffinterpolation.NewBkParameter(xs[i], ranks[i])
 		}
 
-		id := getID(0)
-		pm := newAddshareOldPeerManager(id, newPeerID, lens-1)
-		pm.setAddshares(addShares)
+		pm := tss.NewTestPeerManager(0, lens)
 		listener.On("OnStateChanged", types.StateInit, types.StateFailed).Once()
 		var err error
 		_, err = NewAddShare(pm, pubkey, threshold, oldShare, bks, newPeerID, listener)
@@ -261,6 +255,7 @@ func newAddShares(c elliptic.Curve, threshold uint32, bks []*birkhoffinterpolati
 	// new peer managers and reshares
 	lens := len(bks)
 	addShares := make(map[string]*AddShare, lens)
+	addShareMains := make(map[string]types.MessageMain, lens)
 	peerManagers := make([]types.PeerManager, lens)
 	bksMap := make(map[string]*birkhoffinterpolation.BkParameter)
 	listeners := make(map[string]*mocks.StateChangedListener, lens)
@@ -272,65 +267,25 @@ func newAddShares(c elliptic.Curve, threshold uint32, bks []*birkhoffinterpolati
 
 	// Convert bks to map
 	for i := 0; i < lens; i++ {
-		id := getID(i)
+		id := tss.GetTestID(i)
 		bksMap[id] = bks[i]
 	}
 
 	for i := 0; i < lens; i++ {
-		id := getID(i)
-		pm := newAddshareOldPeerManager(id, newPeerID, lens-1)
-		pm.setAddshares(addShares)
+		id := tss.GetTestID(i)
+		pm := tss.NewTestPeerManager(i, lens)
+		pm.Set(addShareMains)
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
 		tempPoly := poly.Differentiate(bks[i].GetRank())
 		oldShare := tempPoly.Evaluate(bks[i].GetX())
 		addShares[id], err = NewAddShare(peerManagers[i], pubkey, threshold, oldShare, bksMap, newPeerID, listeners[id])
 		Expect(err).Should(BeNil())
+		addShareMains[id] = addShares[id]
 		r, err := addShares[id].GetResult()
 		Expect(r).Should(BeNil())
 		Expect(err).Should(Equal(tss.ErrNotReady))
 		addShares[id].Start()
 	}
 	return addShares, listeners
-}
-
-func getID(id int) string {
-	return fmt.Sprintf("id-%d", id)
-}
-
-type addShareOldPeerManager struct {
-	id              string
-	newPeerID       string
-	numPeers        uint32
-	addSharesForOld map[string]*AddShare
-}
-
-func newAddshareOldPeerManager(id, newPeerID string, numPeers int) *addShareOldPeerManager {
-	return &addShareOldPeerManager{
-		id:        id,
-		newPeerID: newPeerID,
-		numPeers:  uint32(numPeers),
-	}
-}
-
-func (p *addShareOldPeerManager) setAddshares(addSharesForOld map[string]*AddShare) {
-	p.addSharesForOld = addSharesForOld
-}
-
-func (p *addShareOldPeerManager) NumPeers() uint32 {
-	return p.numPeers
-}
-
-func (p *addShareOldPeerManager) SelfID() string {
-	return p.id
-}
-
-func (p *addShareOldPeerManager) MustSend(id string, message proto.Message) {
-	msg := message.(types.Message)
-	if id == p.newPeerID {
-		// Do nothing.
-	} else {
-		d := p.addSharesForOld[id]
-		Expect(d.AddMessage(msg)).Should(BeNil())
-	}
 }

@@ -43,31 +43,29 @@ var _ = Describe("delta handler, negative cases", func() {
 			s.ph.peerManager = p
 		}
 
-		// Send out peer message
-		for fromID, fromD := range signers {
-			msg := fromD.ph.GetPubkeyMessage()
-			for toID, toD := range signers {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, s := range signers {
+			s.Start()
 		}
+
 		// Wait dkgs to handle decommit messages
 		for _, s := range signers {
-			_, ok := s.GetHandler().(*deltaHandler)
-			if !ok {
-				time.Sleep(500 * time.Millisecond)
+			for {
+				_, ok := s.GetHandler().(*deltaHandler)
+				if !ok {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				break
 			}
+		}
+		for _, l := range listeners {
+			l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
 		}
 
 		mockMta = new(mtaMocks.Mta)
 	})
 
 	AfterEach(func() {
-		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
-		}
 		for _, s := range signers {
 			s.Stop()
 		}
@@ -122,7 +120,7 @@ var _ = Describe("delta handler, negative cases", func() {
 
 	Context("Finalize", func() {
 		It("failed to get ai mta proof", func() {
-			toId := getID(0)
+			toId := tss.GetTestID(0)
 			toS := signers[toId]
 			toH, ok := toS.GetHandler().(*deltaHandler)
 			Expect(ok).Should(BeTrue())

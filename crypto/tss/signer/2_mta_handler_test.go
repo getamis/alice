@@ -48,31 +48,27 @@ var _ = Describe("mta handler, negative cases", func() {
 			s.ph.peerManager = p
 		}
 
-		// Send out peer message
-		for fromID, fromD := range signers {
-			msg := fromD.ph.GetPubkeyMessage()
-			for toID, toD := range signers {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, s := range signers {
+			s.Start()
 		}
 		// Wait dkgs to handle decommit messages
 		for _, s := range signers {
-			_, ok := s.GetHandler().(*mtaHandler)
-			if !ok {
-				time.Sleep(500 * time.Millisecond)
+			for {
+				_, ok := s.GetHandler().(*mtaHandler)
+				if !ok {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				break
 			}
 		}
-
+		for _, l := range listeners {
+			l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
+		}
 		mockMta = new(mtaMocks.Mta)
 	})
 
 	AfterEach(func() {
-		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
-		}
 		for _, s := range signers {
 			s.Stop()
 		}
@@ -119,12 +115,12 @@ var _ = Describe("mta handler, negative cases", func() {
 		var fromH, toH *mtaHandler
 		BeforeEach(func() {
 			var ok bool
-			fromId := getID(1)
+			fromId := tss.GetTestID(1)
 			fromS := signers[fromId]
 			fromH, ok = fromS.GetHandler().(*mtaHandler)
 			Expect(ok).Should(BeTrue())
 
-			toId = getID(0)
+			toId = tss.GetTestID(0)
 			toS := signers[toId]
 			toH, ok = toS.GetHandler().(*mtaHandler)
 			Expect(ok).Should(BeTrue())
@@ -170,7 +166,7 @@ var _ = Describe("mta handler, negative cases", func() {
 		var toH *mtaHandler
 		BeforeEach(func() {
 			var ok bool
-			toId := getID(0)
+			toId := tss.GetTestID(0)
 			toS := signers[toId]
 			toH, ok = toS.GetHandler().(*mtaHandler)
 			Expect(ok).Should(BeTrue())

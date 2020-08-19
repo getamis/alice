@@ -67,6 +67,7 @@ func (d *Reshare) GetResult() (*Result, error) {
 	}, nil
 }
 
-func (d *Reshare) GetCommitMessage() *Message {
-	return d.ch.GetCommitMessage()
+func (d *Reshare) Start() {
+	d.MsgMain.Start()
+	d.ch.broadcast(d.ch.getCommitMessage())
 }

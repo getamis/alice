@@ -15,7 +15,6 @@ package reshare
 
 import (
 	"math/big"
-	"time"
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
@@ -26,7 +25,6 @@ import (
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -134,13 +132,6 @@ var _ = Describe("commit handler, negative cases", func() {
 
 		AfterEach(func() {
 			for _, l := range listeners {
-				l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
-			}
-			for _, r := range reshares {
-				r.Stop()
-			}
-			time.Sleep(500 * time.Millisecond)
-			for _, l := range listeners {
 				l.AssertExpectations(GinkgoT())
 			}
 		})
@@ -183,7 +174,7 @@ func newStopPeerManager(stopMessageType Type, p types.PeerManager) *stopPeerMana
 	}
 }
 
-func (p *stopPeerManager) MustSend(id string, message proto.Message) {
+func (p *stopPeerManager) MustSend(id string, message interface{}) {
 	if p.isStopped {
 		return
 	}

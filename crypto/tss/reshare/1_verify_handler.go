@@ -21,7 +21,6 @@ import (
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 )
 
 type verifyData struct{}
@@ -109,11 +108,5 @@ func (p *verifyHandler) getResultMessage() *Message {
 				SiGProofMsg: p.siGProofMsg,
 			},
 		},
-	}
-}
-
-func (p *verifyHandler) broadcast(msg proto.Message) {
-	for id := range p.peers {
-		p.peerManager.MustSend(id, msg)
 	}
 }

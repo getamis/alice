@@ -41,29 +41,26 @@ var _ = Describe("verify handler, negative cases", func() {
 			r.ch.peerManager = p
 		}
 
-		// Send out peer message
-		for fromID, fromD := range reshares {
-			msg := fromD.ch.GetCommitMessage()
-			for toID, toD := range reshares {
-				if fromID == toID {
-					continue
-				}
-				Expect(toD.AddMessage(msg)).Should(BeNil())
-			}
+		for _, r := range reshares {
+			r.Start()
 		}
 		// Wait reshares to handle decommit messages
 		for _, s := range reshares {
-			_, ok := s.GetHandler().(*verifyHandler)
-			if !ok {
-				time.Sleep(500 * time.Millisecond)
+			for {
+				_, ok := s.GetHandler().(*verifyHandler)
+				if !ok {
+					time.Sleep(500 * time.Millisecond)
+					continue
+				}
+				break
 			}
+		}
+		for _, l := range listeners {
+			l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
 		}
 	})
 
 	AfterEach(func() {
-		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateFailed).Return().Once()
-		}
 		for _, r := range reshares {
 			r.Stop()
 		}
@@ -107,12 +104,12 @@ var _ = Describe("verify handler, negative cases", func() {
 		var fromH, toH *verifyHandler
 		BeforeEach(func() {
 			var ok bool
-			fromId = getID(1)
+			fromId = tss.GetTestID(1)
 			fromR := reshares[fromId]
 			fromH, ok = fromR.GetHandler().(*verifyHandler)
 			Expect(ok).Should(BeTrue())
 
-			toId = getID(0)
+			toId = tss.GetTestID(0)
 			toR := reshares[toId]
 			toH, ok = toR.GetHandler().(*verifyHandler)
 			Expect(ok).Should(BeTrue())

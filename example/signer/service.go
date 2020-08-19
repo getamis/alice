@@ -21,7 +21,7 @@ import (
 	"github.com/getamis/alice/crypto/tss/signer"
 	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/libp2p/go-libp2p-core/network"
 )
 
@@ -93,13 +93,7 @@ func (p *service) Process() {
 	p.signer.Start()
 	defer p.signer.Stop()
 
-	// 2. Connect the host to peers and send the public key message to them.
-	msg := p.signer.GetPubkeyMessage()
-	for _, peerPort := range p.config.Peers {
-		p.pm.MustSend(utils.GetPeerIDFromPort(peerPort), msg)
-	}
-
-	// 3. Wait the signer is done or failed
+	// 2. Wait the signer is done or failed
 	<-p.done
 }
 
