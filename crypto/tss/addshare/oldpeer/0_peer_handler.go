@@ -33,6 +33,7 @@ type peerData struct {
 
 type peerHandler struct {
 	// self information
+	fieldOrder  *big.Int
 	pubkey      *ecpointgrouplaw.ECPoint
 	share       *big.Int
 	siGProofMsg *zkproof.SchnorrProofMessage
@@ -71,6 +72,7 @@ func newPeerHandler(peerManager types.PeerManager, pubkey *ecpointgrouplaw.ECPoi
 	}
 
 	return &peerHandler{
+		fieldOrder:  fieldOrder,
 		pubkey:      pubkey,
 		share:       share,
 		siGProofMsg: siGProofMsg,
@@ -109,10 +111,15 @@ func (p *peerHandler) HandleMessage(logger log.Logger, message types.Message) er
 		return tss.ErrInvalidMsg
 	}
 	body := msg.GetNewBk()
-	p.newPeer.peer = &peerData{
-		bk: body.GetBk().ToBk(),
+	bk, err := body.GetBk().ToBk(p.fieldOrder)
+	if err != nil {
+		logger.Warn("Failed to get bk", "err", err)
+		return err
 	}
 
+	p.newPeer.peer = &peerData{
+		bk: bk,
+	}
 	return p.newPeer.AddMessage(msg)
 }
 
@@ -126,8 +133,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 
 	// Compute delta_i.
-	fieldOrder := p.pubkey.GetCurve().Params().N
-	co, err := bks.GetAddShareCoefficient(p.bk, p.newPeer.peer.bk, fieldOrder, p.threshold)
+	co, err := bks.GetAddShareCoefficient(p.bk, p.newPeer.peer.bk, p.fieldOrder, p.threshold)
 	if err != nil {
 		logger.Warn("Failed to get coefficient", "err", err)
 		return nil, err
@@ -139,7 +145,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	deltaIJ := make([]*big.Int, p.peerNum)
 	sumDeltaJ := big.NewInt(0)
 	for j := 0; j < int(p.peerNum); j++ {
-		deltaJ, err := utils.RandomInt(fieldOrder)
+		deltaJ, err := utils.RandomInt(p.fieldOrder)
 		if err != nil {
 			return nil, err
 		}
@@ -148,7 +154,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 	// Keep the last item itself and make sure it is within the field order.
 	deltaI := new(big.Int).Sub(delta, sumDeltaJ)
-	deltaI.Mod(deltaI, fieldOrder)
+	deltaI.Mod(deltaI, p.fieldOrder)
 
 	i = 0
 	for id := range p.peers {

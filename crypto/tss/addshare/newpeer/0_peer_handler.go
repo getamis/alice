@@ -39,6 +39,7 @@ type peerData struct {
 
 type peerHandler struct {
 	// self information
+	fieldOrder  *big.Int
 	pubkey      *ecpointgrouplaw.ECPoint
 	threshold   uint32
 	newPeerRank uint32
@@ -55,6 +56,7 @@ func newPeerHandler(peerManager types.PeerManager, pubkey *ecpointgrouplaw.ECPoi
 		peers[peerID] = newPeer(peerID)
 	}
 	return &peerHandler{
+		fieldOrder:  pubkey.GetCurve().Params().N,
 		pubkey:      pubkey,
 		threshold:   threshold,
 		newPeerRank: newPeerRank,
@@ -91,6 +93,11 @@ func (p *peerHandler) HandleMessage(logger log.Logger, message types.Message) er
 		logger.Warn("Inconsistent threshold", "got", body.GetThreshold(), "expected", p.threshold)
 		return tss.ErrInconsistentThreshold
 	}
+	bk, err := body.GetBk().ToBk(p.fieldOrder)
+	if err != nil {
+		logger.Warn("Failed to get bk", "err", err)
+		return err
+	}
 	pubkey, err := body.GetPubkey().ToPoint()
 	if err != nil {
 		logger.Warn("Failed to get point", "err", err)
@@ -113,7 +120,7 @@ func (p *peerHandler) HandleMessage(logger log.Logger, message types.Message) er
 	}
 	peer := newPeer(id)
 	peer.peer = &peerData{
-		bk:          body.GetBk().ToBk(),
+		bk:          bk,
 		siG:         siG,
 		siGProofMsg: siGProofMsg,
 	}
@@ -137,7 +144,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 		return nil, err
 	}
 
-	selfBK, err := generateNewBK(logger, p.pubkey.GetCurve().Params().N, bks, p.threshold, p.newPeerRank)
+	selfBK, err := generateNewBK(logger, p.fieldOrder, bks, p.threshold, p.newPeerRank)
 	if err != nil {
 		return nil, err
 	}
