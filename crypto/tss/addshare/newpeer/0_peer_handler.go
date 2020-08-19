@@ -25,7 +25,6 @@ import (
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 )
 
 const (
@@ -152,14 +151,8 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 			},
 		},
 	}
-	p.broadcast(msg)
+	tss.Broadcast(p.peerManager, msg)
 	return newResultHandler(p, selfBK, bks, sgs), nil
-}
-
-func (p *peerHandler) broadcast(msg proto.Message) {
-	for id := range p.peers {
-		p.peerManager.MustSend(id, msg)
-	}
 }
 
 func getMessage(messsage types.Message) *addshare.Message {

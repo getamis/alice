@@ -43,14 +43,7 @@ var _ = Describe("oprf test", func() {
 		got, err := requester.Compute(responserMessage)
 		Expect(err).Should(BeNil())
 
-		pwHash, err := secp256k1Hasher.Hash(pw)
-		Expect(err).Should(BeNil())
-		pwMessage, err := pwHash.ToEcPointMessage()
-		Expect(err).Should(BeNil())
-		productPoint := pwHash.ScalarMult(k)
-		productMessage, err := productPoint.ToEcPointMessage()
-		Expect(err).Should(BeNil())
-		expected, err := utils.HashProtosToInt(pw, pwMessage, productMessage)
+		expected, err := ComputeShare(k, pw, secp256k1Hasher)
 		Expect(err).Should(BeNil())
 		Expect(got.Cmp(expected) == 0).Should(BeTrue())
 	},

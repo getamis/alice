@@ -16,6 +16,7 @@ package dkg
 import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
+	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/sirius/log"
 	. "github.com/onsi/ginkgo"
@@ -50,6 +51,15 @@ var _ = Describe("peer handler, negative cases", func() {
 		})
 	})
 
+	Context("HandleMessage", func() {
+		It("peer not found", func() {
+			msg := &Message{
+				Id: "invalid peer",
+			}
+			Expect(ph.HandleMessage(log.Discard(), msg)).Should(Equal(tss.ErrPeerNotFound))
+		})
+	})
+
 	Context("Finalize", func() {
 		var (
 			curve     = btcec.S256()
@@ -77,14 +87,15 @@ var _ = Describe("peer handler, negative cases", func() {
 					if selfId == id {
 						continue
 					}
-					Expect(selfD.ph.HandleMessage(log.Discard(), d.ph.getPeerMessage())).Should(BeNil())
+					Expect(selfD.ph.HandleMessage(log.Discard(), d.ph.GetFirstMessage())).Should(BeNil())
 				}
 			}
 
 			for _, d := range dkgs {
+				ph := d.ph.GetPeerHandler()
 				// Make duplicate bk
-				for _, p := range d.ph.peers {
-					p.peer.bk = d.ph.bk
+				for _, p := range ph.peers {
+					p.peer.bk = ph.bk
 					break
 				}
 				got, err := d.ph.Finalize(log.Discard())

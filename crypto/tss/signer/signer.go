@@ -67,7 +67,7 @@ func (s *Signer) Start() {
 	s.MsgMain.Start()
 
 	// Send the first message to new peer
-	s.ph.broadcast(s.ph.getPubkeyMessage())
+	tss.Broadcast(s.ph.peerManager, s.ph.getPubkeyMessage())
 }
 
 // GetResult returns the final result: public key, share, bks (including self bk)

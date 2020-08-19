@@ -54,7 +54,8 @@ var _ = Describe("DKG", func() {
 		secret := big.NewInt(0)
 		for _, d := range dkgs {
 			d.Stop()
-			secret = new(big.Int).Add(secret, d.ph.poly.Get(0))
+			ph := d.ph.GetPeerHandler()
+			secret = new(big.Int).Add(secret, ph.poly.Get(0))
 		}
 		pubkey := ecpointgrouplaw.ScalarBaseMult(c, secret)
 		for _, d := range dkgs {
@@ -111,7 +112,8 @@ var _ = Describe("DKG", func() {
 			Expect(r.Share).Should(Equal(new(big.Int).Mod(expectShare[i], curve.Params().N)))
 			Expect(r.PublicKey.Equal(expPubKey)).Should(BeTrue())
 			Expect(r.Bks).Should(Equal(bks))
-			secret = new(big.Int).Add(secret, d.ph.poly.Get(0))
+			ph := d.ph.GetPeerHandler()
+			secret = new(big.Int).Add(secret, ph.poly.Get(0))
 		}
 		pubkey := ecpointgrouplaw.ScalarBaseMult(c, secret)
 		Expect(pubkey.Equal(expPubKey)).Should(BeTrue())
@@ -456,7 +458,7 @@ var _ = Describe("DKG", func() {
 	})
 })
 
-func newDKGs(curve elliptic.Curve, threshold uint32, ranks []uint32) (map[string]*DKG, map[string]*mocks.StateChangedListener) {
+func newDKGs(curve elliptic.Curve, threshold uint32, ranks []uint32, funcs ...func(types.PeerManager) types.PeerManager) (map[string]*DKG, map[string]*mocks.StateChangedListener) {
 	lens := len(ranks)
 	dkgs := make(map[string]*DKG, lens)
 	dkgsMain := make(map[string]types.MessageMain, lens)
@@ -466,7 +468,11 @@ func newDKGs(curve elliptic.Curve, threshold uint32, ranks []uint32) (map[string
 		id := tss.GetTestID(i)
 		pm := tss.NewTestPeerManager(i, lens)
 		pm.Set(dkgsMain)
-		peerManagers[i] = pm
+		var ppm types.PeerManager = pm
+		for _, f := range funcs {
+			ppm = f(ppm)
+		}
+		peerManagers[i] = ppm
 		listeners[id] = new(mocks.StateChangedListener)
 		var err error
 		dkgs[id], err = NewDKG(curve, peerManagers[i], threshold, ranks[i], listeners[id])

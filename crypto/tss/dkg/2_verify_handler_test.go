@@ -72,12 +72,9 @@ var _ = Describe("verify handler, negative cases", func() {
 			listeners map[string]*mocks.StateChangedListener
 		)
 		BeforeEach(func() {
-			dkgs, listeners = newDKGs(curve, threshold, ranks)
-			// Override peer manager
-			for _, d := range dkgs {
-				p := newStopPeerManager(Type_Verify, d.ph.peerManager)
-				d.ph.peerManager = p
-			}
+			dkgs, listeners = newDKGs(curve, threshold, ranks, func(p types.PeerManager) types.PeerManager {
+				return newStopPeerManager(Type_Verify, p)
+			})
 			for _, d := range dkgs {
 				d.Start()
 			}

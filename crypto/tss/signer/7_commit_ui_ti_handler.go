@@ -16,6 +16,7 @@ package signer
 
 import (
 	"github.com/getamis/alice/crypto/commitment"
+	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/sirius/log"
 )
@@ -71,6 +72,6 @@ func (p *commitUiTiHandler) HandleMessage(logger log.Logger, message types.Messa
 
 func (p *commitUiTiHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	msg := p.getDecommitUiTiMessage()
-	p.broadcast(msg)
+	tss.Broadcast(p.peerManager, msg)
 	return newDecommitUiTiHandler(p)
 }

@@ -27,7 +27,6 @@ import (
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 )
 
 var (
@@ -143,7 +142,7 @@ func (p *pubkeyHandler) HandleMessage(logger log.Logger, message types.Message) 
 
 func (p *pubkeyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	msg := p.getEnckMessage()
-	p.broadcast(msg)
+	tss.Broadcast(p.peerManager, msg)
 	return newEncKHandler(p)
 }
 
@@ -178,12 +177,6 @@ func (p *pubkeyHandler) getCurve() elliptic.Curve {
 
 func (p *pubkeyHandler) getN() *big.Int {
 	return p.getCurve().Params().N
-}
-
-func (p *pubkeyHandler) broadcast(msg proto.Message) {
-	for id := range p.peers {
-		p.peerManager.MustSend(id, msg)
-	}
 }
 
 func getMessage(messsage types.Message) *Message {

@@ -127,7 +127,7 @@ func (p *decommitViAiHandler) Finalize(logger log.Logger) (types.Handler, error)
 
 	//Build and send Type_SignerCommitUiTi message
 	msg := p.getCommitUiTiMessage()
-	p.broadcast(msg)
+	tss.Broadcast(p.peerManager, msg)
 	return newCommitUiTiHandler(p)
 }
 

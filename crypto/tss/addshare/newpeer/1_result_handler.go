@@ -124,6 +124,6 @@ func (r *resultHandler) Finalize(logger log.Logger) (types.Handler, error) {
 			},
 		},
 	}
-	r.broadcast(msg)
+	tss.Broadcast(r.peerManager, msg)
 	return nil, nil
 }

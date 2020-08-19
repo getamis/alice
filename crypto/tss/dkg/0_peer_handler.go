@@ -27,7 +27,6 @@ import (
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 )
 
 var (
@@ -153,17 +152,17 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 	err := bks.CheckValid(p.threshold, p.curve.Params().N)
 	if err != nil {
-		logger.Warn("Failed to check bks", "err", err)
+		logger.Warn("Failed to check bks", "bks", bks, "err", err)
 		return nil, err
 	}
 
 	// Send out Feldman commit message and decommit message to all peers
 	msg := p.getDecommitMessage()
-	p.broadcast(msg)
+	tss.Broadcast(p.peerManager, msg)
 	return newDecommitHandler(p), nil
 }
 
-func (p *peerHandler) getPeerMessage() *Message {
+func (p *peerHandler) GetFirstMessage() *Message {
 	return &Message{
 		Type: Type_Peer,
 		Id:   p.peerManager.SelfID(),
@@ -189,10 +188,8 @@ func (p *peerHandler) getDecommitMessage() *Message {
 	}
 }
 
-func (p *peerHandler) broadcast(msg proto.Message) {
-	for id := range p.peers {
-		p.peerManager.MustSend(id, msg)
-	}
+func (p *peerHandler) GetPeerHandler() *peerHandler {
+	return p
 }
 
 func getMessage(messsage types.Message) *Message {

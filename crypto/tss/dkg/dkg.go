@@ -27,8 +27,16 @@ import (
 	"github.com/getamis/sirius/log"
 )
 
+type FirstHandler interface {
+	types.Handler
+
+	GetFirstMessage() *Message
+	GetPeerHandler() *peerHandler
+}
+
 type DKG struct {
-	ph *peerHandler
+	ph          FirstHandler
+	peerManager types.PeerManager
 	*message.MsgMain
 }
 
@@ -36,32 +44,51 @@ type Result struct {
 	PublicKey *ecpointgrouplaw.ECPoint
 	Share     *big.Int
 	Bks       map[string]*birkhoffinterpolation.BkParameter
+
+	// If it's a server DKG, there's a K
+	K *big.Int
 }
 
 func NewDKG(curve elliptic.Curve, peerManager types.PeerManager, threshold uint32, rank uint32, listener types.StateChangedListener) (*DKG, error) {
-	peerNum := peerManager.NumPeers()
-	if err := ensureRandAndThreshold(rank, threshold, peerNum); err != nil {
-		return nil, err
-	}
 	ph, err := newPeerHandler(curve, peerManager, threshold, rank)
 	if err != nil {
 		return nil, err
 	}
-	return &DKG{
-		ph:      ph,
-		MsgMain: message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_Peer), types.MessageType(Type_Decommit), types.MessageType(Type_Verify), types.MessageType(Type_Result)),
-	}, nil
+	return newDKGWithHandler(peerManager, threshold, rank, listener, ph)
+}
+
+func NewPasswordUserDKG(peerManager types.PeerManager, listener types.StateChangedListener, password []byte) (*DKG, error) {
+	ph, err := newPasswordPeerUserHandler(peerManager, password)
+	if err != nil {
+		return nil, err
+	}
+	return newDKG(peerManager, listener, ph, types.MessageType(Type_OPRFResponse))
+}
+
+func NewPasswordServerDKG(peerManager types.PeerManager, listener types.StateChangedListener) (*DKG, error) {
+	ph, err := newPasswordPeerServerHandler(peerManager)
+	if err != nil {
+		return nil, err
+	}
+	return newDKG(peerManager, listener, ph, types.MessageType(Type_OPRFRequest))
 }
 
 // For testing use
-func newDKGWithHandler(peerManager types.PeerManager, threshold uint32, rank uint32, listener types.StateChangedListener, ph *peerHandler) (*DKG, error) {
+func newDKGWithHandler(peerManager types.PeerManager, threshold uint32, rank uint32, listener types.StateChangedListener, ph FirstHandler, msgs ...types.MessageType) (*DKG, error) {
 	peerNum := peerManager.NumPeers()
 	if err := ensureRandAndThreshold(rank, threshold, peerNum); err != nil {
 		return nil, err
 	}
+	return newDKG(peerManager, listener, ph, msgs...)
+}
+
+func newDKG(peerManager types.PeerManager, listener types.StateChangedListener, ph FirstHandler, msgs ...types.MessageType) (*DKG, error) {
+	peerNum := peerManager.NumPeers()
+	msgs = append(msgs, types.MessageType(Type_Peer), types.MessageType(Type_Decommit), types.MessageType(Type_Verify), types.MessageType(Type_Result))
 	return &DKG{
-		ph:      ph,
-		MsgMain: message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_Peer), types.MessageType(Type_Decommit), types.MessageType(Type_Verify), types.MessageType(Type_Result)),
+		ph:          ph,
+		peerManager: peerManager,
+		MsgMain:     message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, msgs...),
 	}, nil
 }
 
@@ -89,21 +116,29 @@ func (d *DKG) GetResult() (*Result, error) {
 		return nil, tss.ErrNotReady
 	}
 
-	bks := make(map[string]*birkhoffinterpolation.BkParameter, d.ph.peerManager.NumPeers()+1)
-	bks[d.ph.peerManager.SelfID()] = d.ph.bk
-	for id, peer := range d.ph.peers {
+	bks := make(map[string]*birkhoffinterpolation.BkParameter, d.peerManager.NumPeers()+1)
+	ph := d.ph.GetPeerHandler()
+	bks[d.peerManager.SelfID()] = ph.bk
+	for id, peer := range ph.peers {
 		bks[id] = peer.peer.bk
 	}
-	return &Result{
+	result := &Result{
 		PublicKey: rh.publicKey,
 		Share:     rh.share,
 		Bks:       bks,
-	}, nil
+	}
+
+	// Return K if it's a password server handler
+	if h, ok := d.ph.(*passwordServerHandler); ok {
+		result.K = h.oprfResponser.GetK()
+	}
+	return result, nil
 }
 
 func (d *DKG) Start() {
 	d.MsgMain.Start()
-
-	// Send the first message to new peer
-	d.ph.broadcast(d.ph.getPeerMessage())
+	msg := d.ph.GetFirstMessage()
+	if msg != nil {
+		tss.Broadcast(d.peerManager, msg)
+	}
 }

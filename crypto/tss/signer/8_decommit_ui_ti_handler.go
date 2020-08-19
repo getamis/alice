@@ -103,7 +103,7 @@ func (p *decommitUiTiHandler) Finalize(logger log.Logger) (types.Handler, error)
 
 	// Send out the si message
 	msg := p.getSiMessage()
-	p.broadcast(msg)
+	tss.Broadcast(p.peerManager, msg)
 	return newSiHandler(p)
 }
 

@@ -17,6 +17,7 @@ package signer
 import (
 	"math/big"
 
+	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/sirius/log"
 )
@@ -83,7 +84,7 @@ func (p *deltaHandler) Finalize(logger log.Logger) (types.Handler, error) {
 		logger.Warn("Failed to get proof ai message", "err", err)
 		return nil, err
 	}
-	p.broadcast(msg)
+	tss.Broadcast(p.peerManager, msg)
 	return newproofAiHandler(p)
 }
 

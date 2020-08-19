@@ -95,7 +95,7 @@ func (p *verifyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 
 	msg := p.getResultMessage()
-	p.broadcast(msg)
+	tss.Broadcast(p.peerManager, msg)
 	return newResultHandler(p), nil
 }
 
