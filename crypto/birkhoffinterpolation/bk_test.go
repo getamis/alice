@@ -17,17 +17,42 @@ package birkhoffinterpolation
 import (
 	"math/big"
 
+	"github.com/getamis/alice/crypto/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("BK", func() {
-	It("ToBk()", func() {
-		x := big.NewInt(1)
-		rank := uint32(10)
-		bk := NewBkParameter(x, rank)
-		msg := bk.ToMessage()
-		gotBk := msg.ToBk()
-		Expect(bk).Should(Equal(gotBk))
+	Context("ToBk()", func() {
+		fieldOrder := big.NewInt(100)
+		It("should be ok", func() {
+			x := big.NewInt(1)
+			rank := uint32(10)
+			bk := NewBkParameter(x, rank)
+			msg := bk.ToMessage()
+			gotBk, err := msg.ToBk(fieldOrder)
+			Expect(bk).Should(Equal(gotBk))
+			Expect(err).Should(BeNil())
+		})
+
+		It("invalid x = 0", func() {
+			x := big.NewInt(0)
+			rank := uint32(10)
+			bk := NewBkParameter(x, rank)
+			msg := bk.ToMessage()
+			gotBk, err := msg.ToBk(fieldOrder)
+			Expect(gotBk).Should(BeNil())
+			Expect(err).Should(Equal(utils.ErrNotInRange))
+		})
+
+		It("invalid x = fieldOrder", func() {
+			x := fieldOrder
+			rank := uint32(10)
+			bk := NewBkParameter(x, rank)
+			msg := bk.ToMessage()
+			gotBk, err := msg.ToBk(fieldOrder)
+			Expect(gotBk).Should(BeNil())
+			Expect(err).Should(Equal(utils.ErrNotInRange))
+		})
 	})
 })
