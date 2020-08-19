@@ -136,7 +136,7 @@ func (p *proofAiHandler) Finalize(logger log.Logger) (types.Handler, error) {
 
 	//Send Type_SignerCommitViAi message
 	msg := p.getCommitAiViMessage()
-	p.broadcast(msg)
+	tss.Broadcast(p.peerManager, msg)
 	return newCommitViAiHandler(p)
 }
 

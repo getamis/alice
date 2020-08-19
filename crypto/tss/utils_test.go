@@ -24,6 +24,7 @@ import (
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/polynomial"
+	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/sirius/log"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -141,6 +142,32 @@ var _ = Describe("Utils", func() {
 			}
 			err = ValidatePublicKey(log.Discard(), bks, sgs, threshold, expPubkey)
 			Expect(err).Should(Equal(ErrInconsistentPubKey))
+		})
+	})
+
+	Context("Broadcast", func() {
+		var mockPeerManager *mocks.PeerManager
+
+		BeforeEach(func() {
+			mockPeerManager = new(mocks.PeerManager)
+		})
+
+		AfterEach(func() {
+			mockPeerManager.AssertExpectations(GinkgoT())
+		})
+
+		It("should be ok", func() {
+			peers := []string{
+				"peer-1",
+				"peer-2",
+				"peer-3",
+			}
+			msg := "message"
+			mockPeerManager.On("PeerIDs").Return(peers).Once()
+			for _, id := range peers {
+				mockPeerManager.On("MustSend", id, msg).Return(nil).Once()
+			}
+			Broadcast(mockPeerManager, msg)
 		})
 	})
 })

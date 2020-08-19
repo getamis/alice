@@ -20,6 +20,7 @@ import (
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/mta"
+	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/sirius/log"
 )
@@ -109,7 +110,7 @@ func (p *mtaHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 	// Send out delta message
 	msg := p.getDeltaMessage()
-	p.broadcast(msg)
+	tss.Broadcast(p.peerManager, msg)
 	return newDeltaHandler(p)
 }
 

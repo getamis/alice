@@ -81,6 +81,13 @@ func ValidatePublicKey(logger log.Logger, bks birkhoffinterpolation.BkParameters
 	return nil
 }
 
+func Broadcast(peerManager types.PeerManager, message interface{}) {
+	peers := peerManager.PeerIDs()
+	for _, id := range peers {
+		peerManager.MustSend(id, message)
+	}
+}
+
 // ------------
 // Below funcs are for testing
 func GetTestID(id int) string {

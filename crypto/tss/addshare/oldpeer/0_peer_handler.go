@@ -25,7 +25,6 @@ import (
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/sirius/log"
-	"github.com/golang/protobuf/proto"
 )
 
 type peerData struct {
@@ -187,12 +186,6 @@ func (p *peerHandler) getOldPeerMessage() *addshare.Message {
 				Threshold:   p.threshold,
 			},
 		},
-	}
-}
-
-func (p *peerHandler) broadcast(msg proto.Message) {
-	for id := range p.peers {
-		p.peerManager.MustSend(id, msg)
 	}
 }
 

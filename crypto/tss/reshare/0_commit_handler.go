@@ -25,7 +25,6 @@ import (
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 )
 
 type peerData struct {
@@ -139,12 +138,6 @@ func (p *commitHandler) getCommitMessage() *Message {
 				PointCommitment: p.feldmanCommitmenter.GetCommitmentMessage(),
 			},
 		},
-	}
-}
-
-func (p *commitHandler) broadcast(msg proto.Message) {
-	for id := range p.peers {
-		p.peerManager.MustSend(id, msg)
 	}
 }
 
