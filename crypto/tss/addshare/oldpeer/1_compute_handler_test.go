@@ -73,6 +73,7 @@ var _ = Describe("compute handler, negative cases", func() {
 			pubkey = ecpointgrouplaw.NewBase(btcec.S256()).ScalarMult(big.NewInt(2))
 
 			ch.pubkey = pubkey
+			ch.fieldOrder = pubkey.GetCurve().Params().N
 			ch.peers[peerID] = newPeer(peerID)
 		})
 

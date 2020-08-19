@@ -78,7 +78,7 @@ func (r *resultHandler) HandleMessage(logger log.Logger, message types.Message) 
 	}
 
 	delta := new(big.Int).SetBytes(body.GetDelta())
-	if err := utils.InRange(delta, big.NewInt(0), r.pubkey.GetCurve().Params().N); err != nil {
+	if err := utils.InRange(delta, big.NewInt(0), r.fieldOrder); err != nil {
 		logger.Warn("Invalid delta value", "delta", delta.String(), "err", err)
 		return err
 	}
@@ -90,14 +90,13 @@ func (r *resultHandler) HandleMessage(logger log.Logger, message types.Message) 
 
 func (r *resultHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	curve := r.pubkey.GetCurve()
-	fieldOrder := curve.Params().N
 
 	// Assign new share to sum of delta from all old peers.
 	share := big.NewInt(0)
 	for _, peer := range r.peers {
 		share = new(big.Int).Add(share, peer.result.delta)
 	}
-	share.Mod(share, fieldOrder)
+	share.Mod(share, r.fieldOrder)
 	siG := ecpointgrouplaw.ScalarBaseMult(curve, share)
 
 	// bks = old peer bk + self bk

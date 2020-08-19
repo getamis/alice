@@ -39,6 +39,7 @@ type peerData struct {
 
 type peerHandler struct {
 	// self information
+	fieldOrder          *big.Int
 	bk                  *birkhoffinterpolation.BkParameter
 	poly                *polynomial.Polynomial
 	threshold           uint32
@@ -68,6 +69,7 @@ func newPeerHandler(curve elliptic.Curve, peerManager types.PeerManager, thresho
 }
 
 func newPeerHandlerWithPolynomial(curve elliptic.Curve, peerManager types.PeerManager, threshold uint32, x *big.Int, rank uint32, poly *polynomial.Polynomial) (*peerHandler, error) {
+	fieldOrder := curve.Params().N
 	if err := utils.EnsureThreshold(threshold, peerManager.NumPeers()+1); err != nil {
 		return nil, err
 	}
@@ -95,6 +97,7 @@ func newPeerHandlerWithPolynomial(curve elliptic.Curve, peerManager types.PeerMa
 		peers[peerID] = newPeer(peerID)
 	}
 	return &peerHandler{
+		fieldOrder:          fieldOrder,
 		bk:                  bk,
 		poly:                poly,
 		threshold:           threshold,
@@ -135,8 +138,14 @@ func (p *peerHandler) HandleMessage(logger log.Logger, message types.Message) er
 		return tss.ErrPeerNotFound
 	}
 	body := msg.GetPeer()
+	bk, err := body.GetBk().ToBk(p.fieldOrder)
+	if err != nil {
+		logger.Warn("Failed to get bk", "err", err)
+		return err
+	}
+
 	peer.peer = &peerData{
-		bk: body.GetBk().ToBk(),
+		bk: bk,
 	}
 	return peer.AddMessage(msg)
 }
@@ -150,7 +159,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 		bks[i] = peer.peer.bk
 		i++
 	}
-	err := bks.CheckValid(p.threshold, p.curve.Params().N)
+	err := bks.CheckValid(p.threshold, p.fieldOrder)
 	if err != nil {
 		logger.Warn("Failed to check bks", "bks", bks, "err", err)
 		return nil, err

@@ -14,6 +14,8 @@
 package dkg
 
 import (
+	"math/big"
+
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/tss"
@@ -55,6 +57,20 @@ var _ = Describe("peer handler, negative cases", func() {
 		It("peer not found", func() {
 			msg := &Message{
 				Id: "invalid peer",
+			}
+			Expect(ph.HandleMessage(log.Discard(), msg)).Should(Equal(tss.ErrPeerNotFound))
+		})
+
+		It("invalid x", func() {
+			invalidBk := birkhoffinterpolation.NewBkParameter(big.NewInt(0), uint32(0))
+			msg := &Message{
+				Id:   peerId,
+				Type: Type_Peer,
+				Body: &Message_Peer{
+					Peer: &BodyPeer{
+						Bk: invalidBk.ToMessage(),
+					},
+				},
 			}
 			Expect(ph.HandleMessage(log.Discard(), msg)).Should(Equal(tss.ErrPeerNotFound))
 		})

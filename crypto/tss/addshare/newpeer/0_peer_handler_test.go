@@ -22,6 +22,7 @@ import (
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/addshare"
+	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/sirius/log"
 	. "github.com/onsi/ginkgo"
@@ -68,13 +69,14 @@ var _ = Describe("peer handler, negative cases", func() {
 
 		BeforeEach(func() {
 			threshold = uint32(0)
-			oldPeerBk = birkhoffinterpolation.NewBkParameter(big.NewInt(0), uint32(0))
+			oldPeerBk = birkhoffinterpolation.NewBkParameter(big.NewInt(10), uint32(0))
 			pubkey := ecpointgrouplaw.NewBase(btcec.S256()).ScalarMult(big.NewInt(2))
 			pubkeyMsg, err = pubkey.ToEcPointMessage()
 			Expect(err).Should(BeNil())
 			siGProofMsg, err = zkproof.NewBaseSchorrMessage(btcec.S256(), big.NewInt(5))
 			Expect(err).Should(BeNil())
 
+			ph.fieldOrder = pubkey.GetCurve().Params().N
 			ph.threshold = threshold
 			ph.pubkey = pubkey
 		})
@@ -95,6 +97,24 @@ var _ = Describe("peer handler, negative cases", func() {
 			}
 			err := ph.HandleMessage(log.Discard(), msg)
 			Expect(err).Should(Equal(tss.ErrInconsistentThreshold))
+		})
+
+		It("invalid x", func() {
+			invalidBk := birkhoffinterpolation.NewBkParameter(big.NewInt(0), uint32(0))
+			msg := &addshare.Message{
+				Type: addshare.Type_OldPeer,
+				Id:   peerID,
+				Body: &addshare.Message_OldPeer{
+					OldPeer: &addshare.BodyOldPeer{
+						Bk:          invalidBk.ToMessage(),
+						SiGProofMsg: siGProofMsg,
+						Pubkey:      nil,
+						Threshold:   threshold,
+					},
+				},
+			}
+			err = ph.HandleMessage(log.Discard(), msg)
+			Expect(err).Should(Equal(utils.ErrNotInRange))
 		})
 
 		It("fails to get public key", func() {

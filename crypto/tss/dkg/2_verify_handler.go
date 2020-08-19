@@ -112,7 +112,7 @@ func (p *verifyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 		v := peer.verify.verify
 		p.share = new(big.Int).Add(p.share, new(big.Int).SetBytes(v.Evaluation))
 	}
-	p.share = new(big.Int).Mod(p.share, p.curve.Params().N)
+	p.share = new(big.Int).Mod(p.share, p.fieldOrder)
 
 	// Build and send out the result message
 	p.siGProofMsg, err = zkproof.NewBaseSchorrMessage(p.curve, p.share)
