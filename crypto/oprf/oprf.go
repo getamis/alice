@@ -161,3 +161,20 @@ func (r *Responser) Handle(msg *OprfRequestMessage) (*OprfResponseMessage, error
 		Beta: response,
 	}, nil
 }
+
+func ComputeShare(k *big.Int, password []byte, hashCurve hasher.Hasher) (*big.Int, error) {
+	pwHash, err := hashCurve.Hash(password)
+	if err != nil {
+		return nil, err
+	}
+	pwMessage, err := pwHash.ToEcPointMessage()
+	if err != nil {
+		return nil, err
+	}
+	productPoint := pwHash.ScalarMult(k)
+	productMessage, err := productPoint.ToEcPointMessage()
+	if err != nil {
+		return nil, err
+	}
+	return utils.HashProtosToInt(password, pwMessage, productMessage)
+}
