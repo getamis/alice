@@ -19,12 +19,17 @@ package dkg;
 import "github.com/getamis/alice/crypto/birkhoffinterpolation/bk.proto";
 import "github.com/getamis/alice/crypto/commitment/message.proto";
 import "github.com/getamis/alice/crypto/zkproof/message.proto";
+import "github.com/getamis/alice/crypto/oprf/message.proto";
 
 enum Type {
     Peer = 0;
     Decommit = 1;
     Verify = 2;
     Result = 3;
+
+    // For OPRF
+    OPRFRequest = 4;
+    OPRFResponse = 5;
 }
 
 message Message {
@@ -35,6 +40,10 @@ message Message {
         BodyDecommit decommit = 4;
         BodyVerify verify = 5;
         BodyResult result = 6;
+
+        // For OPRF
+        BodyOPRFRequest oprfRequest = 7;
+        oprf.OprfResponseMessage oprfResponse = 8;
     }
 }
 
@@ -54,4 +63,9 @@ message BodyVerify {
 
 message BodyResult {
     zkproof.SchnorrProofMessage siGProofMsg = 1;
+}
+
+message BodyOPRFRequest {
+    bytes x = 1;
+    oprf.OprfRequestMessage request = 2;
 }

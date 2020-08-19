@@ -28,6 +28,10 @@ func (m *Message) IsValid() bool {
 		return m.GetVerify() != nil
 	case Type_Result:
 		return m.GetResult() != nil
+	case Type_OPRFRequest:
+		return m.GetOprfRequest() != nil
+	case Type_OPRFResponse:
+		return m.GetOprfResponse() != nil
 	}
 	return false
 }
