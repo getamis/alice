@@ -24,7 +24,6 @@ import (
 )
 
 var (
-	ErrOldMessage             = errors.New("old message")
 	ErrInvalidStateTransition = errors.New("invalid state transition")
 	ErrDupMsg                 = errors.New("duplicate message")
 )
@@ -77,12 +76,6 @@ func (t *MsgMain) Stop() {
 }
 
 func (t *MsgMain) AddMessage(msg types.Message) error {
-	currentMsgType := t.currentHandler.MessageType()
-	newMessageType := msg.GetMessageType()
-	if currentMsgType > newMessageType {
-		t.logger.Debug("Ignore old message", "currentMsgType", currentMsgType, "newMessageType", newMessageType)
-		return ErrOldMessage
-	}
 	return t.msgChs.Push(msg)
 }
 

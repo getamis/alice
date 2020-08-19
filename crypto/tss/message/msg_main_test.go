@@ -56,18 +56,10 @@ var _ = Describe("MsgMain", func() {
 
 	Context("AddMessage", func() {
 		It("should be ok", func() {
-			mockHandler.On("MessageType").Return(msgType).Once()
-			mockMsg.On("GetMessageType").Return(msgType).Twice()
+			mockMsg.On("GetMessageType").Return(msgType).Once()
 			mockMsg.On("IsValid").Return(true).Once()
 			err := msgMain.AddMessage(mockMsg)
 			Expect(err).Should(BeNil())
-		})
-
-		It("old message", func() {
-			mockHandler.On("MessageType").Return(msgType).Once()
-			mockMsg.On("GetMessageType").Return(types.MessageType(9)).Once()
-			err := msgMain.AddMessage(mockMsg)
-			Expect(err).Should(Equal(ErrOldMessage))
 		})
 	})
 
@@ -79,8 +71,7 @@ var _ = Describe("MsgMain", func() {
 		)
 
 		BeforeEach(func() {
-			mockHandler.On("MessageType").Return(msgType).Once()
-			mockMsg.On("GetMessageType").Return(msgType).Twice()
+			mockMsg.On("GetMessageType").Return(msgType).Once()
 			mockMsg.On("IsValid").Return(true).Once()
 			err := msgMain.AddMessage(mockMsg)
 			Expect(err).Should(BeNil())
