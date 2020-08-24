@@ -14,6 +14,7 @@
 package utils
 
 import (
+	"crypto/rand"
 	"math/big"
 	"testing"
 
@@ -198,6 +199,26 @@ var _ = Describe("Utils", func() {
 			result, err := HashProtosToInt(salt, msg)
 			Expect(err).Should(Succeed())
 			Expect(result).ShouldNot(BeNil())
+		})
+	})
+
+	DescribeTable("SafePrime()", func(size int) {
+		safePrime, err := SafePrime(rand.Reader, size)
+		Expect(err).Should(BeNil())
+		maxFactor := new(big.Int).Sub(safePrime, big1)
+		maxFactor.Rsh(maxFactor, 1)
+		Expect(safePrime.ProbablyPrime(1)).Should(BeTrue())
+		Expect(maxFactor.ProbablyPrime(1)).Should(BeTrue())
+	},
+		Entry("size = 37", 33),
+		Entry("size = 1024", 1024),
+	)
+
+	Context("SafePrime()", func() {
+		It("it does not work", func() {
+			safePrime, err := SafePrime(rand.Reader, 8)
+			Expect(safePrime).Should(BeNil())
+			Expect(err).Should(Equal(ErrSmallSafePrime))
 		})
 	})
 })

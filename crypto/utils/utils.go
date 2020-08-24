@@ -17,6 +17,7 @@ package utils
 import (
 	"crypto/rand"
 	"errors"
+	"io"
 	"math/big"
 
 	"github.com/golang/protobuf/proto"
@@ -53,6 +54,8 @@ var (
 	ErrEmptySlice = errors.New("empty slice")
 	// ErrSmallThreshold is returned if the threshold < 2.
 	ErrSmallThreshold = errors.New("threshold < 2")
+	// ErrSmallSafePrime is returned if the safePrime < 2^10.
+	ErrSmallSafePrime = errors.New("safe-prime size must be at least 10-bit")
 
 	// maxGenPrimeInt defines the max retries to generate a prime int
 	maxGenPrimeInt = 100
@@ -257,4 +260,157 @@ func HashProtos(salt []byte, msgs ...proto.Message) ([]byte, error) {
 	}
 	bs := blake2b.Sum256(inputData)
 	return bs[:], nil
+}
+
+// The algorithm appear in the paper Safe Prime Generation with a Combined Sieve
+// https://eprint.iacr.org/2003/186.pdf
+func SafePrime(rand io.Reader, bits int) (*big.Int, error) {
+	if bits < 10 {
+		return nil, ErrSmallSafePrime
+	}
+	b := uint(bits % 8)
+	if b == 0 {
+		b = 8
+	}
+	bytes := make([]byte, (bits+7)/8)
+	p := new(big.Int)
+	q := new(big.Int)
+	bigMod := new(big.Int)
+	for {
+		_, err := io.ReadFull(rand, bytes)
+		if err != nil {
+			return nil, err
+		}
+
+		// Clear bits in the first byte to make sure the candidate has a size <= bits.
+		bytes[0] &= uint8(int(1<<b) - 1)
+		// Don't let the value be too small, i.e, set the most significant two bits.
+		// Setting the top two bits, rather than just the top bit,
+		// means that when two of these values are multiplied together,
+		// the result isn't ever one bit short.
+		if b >= 2 {
+			bytes[0] |= 3 << (b - 2)
+		} else {
+			// Here b==1, because b cannot be zero.
+			bytes[0] |= 1
+			if len(bytes) > 1 {
+				bytes[1] |= 0x80
+				// Prime returns a number, p, of the given size, such that p is prime
+				// with high probability.
+				// Prime will return error for any error returned by rand.Read or if bits < 2.
+
+			}
+		}
+		// Make the value odd since an even number this large certainly isn't prime.
+		bytes[len(bytes)-1] |= 1
+		q.SetBytes(bytes)
+
+		// Calculate the value mod the product of smallPrimes. If it's
+		// a multiple of any of these primes we add two until it isn't.
+		// The probability of overflowing is minimal and can be ignored
+		// because we still perform Miller-Rabin tests on the result.
+		bigMod.Mod(q, smallPrimesProduct)
+		mod := bigMod.Mod(q, smallPrimesProduct).Uint64()
+		mod3 := FastMod3(bigMod)
+		if mod3 == 1 {
+			q.Add(q, big1)
+			mod = mod + 1
+		} else if mod3 == 0 {
+			q.Add(q, big2)
+			mod = mod + 2
+		}
+
+	NextDelta:
+		for delta := uint64(0); delta < 1<<20; delta += 6 {
+			m := mod + delta
+			for _, prime := range smallPrimes {
+				primeInt64 := uint64(prime)
+				residue := m % primeInt64
+				if residue == 0 && (bits > 6 || m != primeInt64) {
+					continue NextDelta
+				}
+
+				r := primeInt64 >> 1
+				if residue == r {
+					continue NextDelta
+				}
+			}
+
+			if delta > 0 {
+				bigMod.SetUint64(delta)
+				q.Add(q, bigMod)
+			}
+
+			// p = 2q+1
+			p.Lsh(q, 1)
+			p.Add(p, big1)
+			resediueP := new(big.Int).Mod(q, smallPrimesProduct).Uint64()
+			for i := 0; i < len(smallPrimes); i++ {
+				nmod := resediueP % uint64(smallPrimes[i])
+				r := uint64(smallPrimes[i]) >> 1
+				if nmod == r || nmod == 0 {
+					continue NextDelta
+				}
+			}
+
+			for i := 0; i < len(otherSmallPrimeList); i++ {
+				if !checkSafePrime(p, q, otherSmallPrimeProductList[i], otherSmallPrimeList[i]) {
+					continue NextDelta
+				}
+			}
+			break
+		}
+
+		// So far, there is no prime which can pass Miller-Rabin test and Lucas test simultaneously.
+		if q.ProbablyPrime(1) && checkPrimeByPocklingtonCriterion(p) && q.BitLen() == bits {
+			return p, nil
+		}
+	}
+}
+
+// This is a algorithm to get number % 3. The velocity of this function is faster than new(bigInt).mod(number, 3).
+func FastMod3(number *big.Int) int {
+	numberOne, numberTwo := 0, 0
+	for i := 0; i < number.BitLen(); i = i + 2 {
+		if number.Bit(i) != 0 {
+			numberOne++
+		}
+	}
+	for i := 1; i < number.BitLen(); i = i + 2 {
+		if number.Bit(i) != 0 {
+			numberTwo++
+		}
+	}
+	result := 0
+	if numberOne > numberTwo {
+		result = numberOne - numberTwo
+	} else {
+		result = numberTwo - numberOne
+		result = result << 1
+	}
+	return result % 3
+}
+
+// Pocklington's criterion can used to prove that p = 2q+1 is prime.
+// ref: https://en.wikipedia.org/wiki/Pocklington_primality_test
+func checkPrimeByPocklingtonCriterion(p *big.Int) bool {
+	apower := new(big.Int).Exp(big2, new(big.Int).Sub(p, big1), p)
+	return apower.Cmp(big1) == 0
+}
+
+func checkSafePrime(p, q, product *big.Int, primeList []uint64) bool {
+	modP := new(big.Int).Mod(p, product).Uint64()
+	modQ := new(big.Int).Mod(q, product).Uint64()
+	for i := 0; i < len(primeList); i++ {
+		r := primeList[i] >> 1
+		resediueBigQ := modQ % primeList[i]
+		resediueBigP := modP % primeList[i]
+		if resediueBigQ == r || resediueBigQ == 0 {
+			return false
+		}
+		if resediueBigP == r || resediueBigP == 0 {
+			return false
+		}
+	}
+	return true
 }

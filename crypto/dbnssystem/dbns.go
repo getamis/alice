@@ -17,6 +17,8 @@ package dbnssystem
 import (
 	"errors"
 	"math/big"
+
+	"github.com/getamis/alice/crypto/utils"
 )
 
 var (
@@ -72,29 +74,6 @@ func (expan *expansion23) GetExp3() int {
 }
 func (expan *expansion23) GetSign() int {
 	return expan.sign
-}
-
-// This is a algorithm to get number % 3. The velocity of this function is faster than new(bigInt).mod(number, 3).
-func fastMod3(number *big.Int) int {
-	numberOne, numberTwo := 0, 0
-	for i := 0; i < number.BitLen(); i = i + 2 {
-		if number.Bit(i) != 0 {
-			numberOne++
-		}
-	}
-	for i := 1; i < number.BitLen(); i = i + 2 {
-		if number.Bit(i) != 0 {
-			numberTwo++
-		}
-	}
-	result := 0
-	if numberOne > numberTwo {
-		result = numberOne - numberTwo
-	} else {
-		result = numberTwo - numberOne
-		result = result << 1
-	}
-	return result % 3
 }
 
 func (dbns *dbnsMentor) ExpansionBase2And3(number *big.Int) ([]*expansion23, error) {
@@ -234,7 +213,7 @@ func getMax2Factor(number *big.Int) (*big.Int, int) {
 func getMax3Factor(number *big.Int) (*big.Int, int) {
 	bitLength := number.BitLen()
 	for i := 0; i < bitLength; i++ {
-		residue := fastMod3(number)
+		residue := utils.FastMod3(number)
 		if residue == 0 {
 			number.Div(number, big3)
 			continue
