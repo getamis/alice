@@ -264,10 +264,12 @@ func HashProtos(salt []byte, msgs ...proto.Message) ([]byte, error) {
 
 // The algorithm appear in the paper Safe Prime Generation with a Combined Sieve
 // https://eprint.iacr.org/2003/186.pdf
-func SafePrime(rand io.Reader, bits int) (*big.Int, error) {
-	if bits < 10 {
+// safe prime: p = 2q+1, where p and q are both primes.
+func SafePrime(rand io.Reader, pbits int) (*big.Int, error) {
+	if pbits < 10 {
 		return nil, ErrSmallSafePrime
 	}
+	bits := pbits - 1
 	b := uint(bits % 8)
 	if b == 0 {
 		b = 8
@@ -353,8 +355,8 @@ func SafePrime(rand io.Reader, bits int) (*big.Int, error) {
 				}
 			}
 
-			for i := 0; i < len(otherSmallPrimeList); i++ {
-				if !checkSafePrime(p, q, otherSmallPrimeProductList[i], otherSmallPrimeList[i]) {
+			for i := 0; i < len(otherSmallPrimesList); i++ {
+				if !checkSafePrime(p, q, otherSmallPrimeProductList[i], otherSmallPrimesList[i]) {
 					continue NextDelta
 				}
 			}
@@ -362,7 +364,7 @@ func SafePrime(rand io.Reader, bits int) (*big.Int, error) {
 		}
 
 		// So far, there is no prime which can pass Miller-Rabin test and Lucas test simultaneously.
-		if q.ProbablyPrime(1) && checkPrimeByPocklingtonCriterion(p) && q.BitLen() == bits {
+		if q.ProbablyPrime(1) && checkPrimeByPocklingtonCriterion(p) && p.BitLen() == pbits {
 			return p, nil
 		}
 	}
