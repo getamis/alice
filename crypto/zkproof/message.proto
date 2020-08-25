@@ -33,3 +33,11 @@ message SchnorrProofMessage {
   bytes u = 4;
   bytes t = 5;
 }
+
+message ConsistencyTwoPointsMessage {
+  bytes salt = 1;
+  bytes u = 2;
+  bytes t = 3;
+  ecpointgrouplaw.EcPointMessage A = 4;
+  ecpointgrouplaw.EcPointMessage B = 5;
+}
