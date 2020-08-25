@@ -53,6 +53,8 @@ var (
 	ErrEmptySlice = errors.New("empty slice")
 	// ErrSmallThreshold is returned if the threshold < 2.
 	ErrSmallThreshold = errors.New("threshold < 2")
+	// ErrSmallSafePrime is returned if the safePrime < 2^10.
+	ErrSmallSafePrime = errors.New("safe-prime size must be at least 10-bit")
 
 	// maxGenPrimeInt defines the max retries to generate a prime int
 	maxGenPrimeInt = 100
@@ -60,6 +62,7 @@ var (
 	big0 = big.NewInt(0)
 	big1 = big.NewInt(1)
 	big2 = big.NewInt(2)
+	big4 = big.NewInt(4)
 )
 
 // EnsureFieldOrder ensures the field order should be more than 2.
