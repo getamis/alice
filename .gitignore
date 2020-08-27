@@ -22,3 +22,8 @@ profile.out
 
 # Exclude example binaries
 example/example
+
+node_modules
+
+.DS_Store
+/wasm/tss.wasm
