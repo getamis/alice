@@ -324,11 +324,11 @@ var _ = Describe("DKG", func() {
 	DescribeTable("negative cases", func(c elliptic.Curve, threshold uint32, coefficients [][]*big.Int, x []*big.Int, ranks []uint32) {
 		// new peer managers and dkgs
 		dkgs, listeners := newDKGWithPeerHandler(c, threshold, ranks, x, coefficients)
-		for _, d := range dkgs {
-			d.Start()
-		}
 		for _, l := range listeners {
 			l.On("OnStateChanged", types.StateInit, types.StateFailed).Once()
+		}
+		for _, d := range dkgs {
+			d.Start()
 		}
 		time.Sleep(time.Second)
 		for _, l := range listeners {
