@@ -17,6 +17,8 @@ package dbnssystem
 import (
 	"errors"
 	"math/big"
+
+	"github.com/getamis/alice/crypto/utils"
 )
 
 var (
@@ -234,7 +236,7 @@ func getMax2Factor(number *big.Int) (*big.Int, int) {
 func getMax3Factor(number *big.Int) (*big.Int, int) {
 	bitLength := number.BitLen()
 	for i := 0; i < bitLength; i++ {
-		residue := fastMod3(number)
+		residue := utils.FastMod3(number)
 		if residue == 0 {
 			number.Div(number, big3)
 			continue
