@@ -15,6 +15,7 @@
 package ecpointgrouplaw
 
 import (
+	"crypto/ecdsa"
 	"crypto/elliptic"
 	"errors"
 	"fmt"
@@ -78,6 +79,15 @@ func NewBase(curve elliptic.Curve) *ECPoint {
 // IsIdentity checks if the point is the identity element.
 func (p *ECPoint) IsIdentity() bool {
 	return isIdentity(p.x, p.y)
+}
+
+// ToPubKey returns pubkey
+func (p *ECPoint) ToPubKey() *ecdsa.PublicKey {
+	return &ecdsa.PublicKey{
+		Curve: p.curve,
+		X:     new(big.Int).Set(p.x),
+		Y:     new(big.Int).Set(p.y),
+	}
 }
 
 // String returns the string format of the point.

@@ -27,7 +27,7 @@ import (
 )
 
 type Result struct {
-	R *big.Int
+	R *pt.ECPoint
 	S *big.Int
 }
 
@@ -84,7 +84,7 @@ func (s *Signer) GetResult() (*Result, error) {
 	}
 
 	return &Result{
-		R: new(big.Int).Set(rh.r.GetX()),
+		R: rh.r.Copy(),
 		S: new(big.Int).Set(rh.s),
 	}, nil
 }
