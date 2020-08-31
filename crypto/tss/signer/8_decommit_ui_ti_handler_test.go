@@ -35,13 +35,9 @@ var _ = Describe("decommit ui ti handler, negative cases", func() {
 		listeners map[string]*mocks.StateChangedListener
 	)
 	BeforeEach(func() {
-		signers, listeners = newTestSigners()
-		// Override peer manager
-		for _, s := range signers {
-			p := newStopPeerManager(Type_DecommitUiTi, s.ph.peerManager)
-			s.ph.peerManager = p
-		}
-
+		signers, listeners = newTestSigners(func(p types.PeerManager) types.PeerManager {
+			return newStopPeerManager(Type_DecommitUiTi, p)
+		})
 		for _, s := range signers {
 			s.Start()
 		}
@@ -85,7 +81,7 @@ var _ = Describe("decommit ui ti handler, negative cases", func() {
 			for _, s := range signers {
 				rh, ok := s.GetHandler().(*decommitUiTiHandler)
 				Expect(ok).Should(BeTrue())
-				s.ph.peers[peerId] = &peer{
+				rh.peers[peerId] = &peer{
 					decommitUiTi: &decommitUiTiData{},
 				}
 				Expect(rh.IsHandled(log.Discard(), peerId)).Should(BeTrue())
@@ -96,7 +92,7 @@ var _ = Describe("decommit ui ti handler, negative cases", func() {
 			for _, s := range signers {
 				rh, ok := s.GetHandler().(*decommitUiTiHandler)
 				Expect(ok).Should(BeTrue())
-				s.ph.peers[peerId] = &peer{}
+				rh.peers[peerId] = &peer{}
 				Expect(rh.IsHandled(log.Discard(), peerId)).Should(BeFalse())
 			}
 		})

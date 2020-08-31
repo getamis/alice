@@ -146,7 +146,7 @@ func (p *pubkeyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	return newEncKHandler(p)
 }
 
-func (p *pubkeyHandler) getPubkeyMessage() *Message {
+func (p *pubkeyHandler) GetFirstMessage() *Message {
 	return &Message{
 		Type: Type_Pubkey,
 		Id:   p.peerManager.SelfID(),
@@ -169,6 +169,10 @@ func (p *pubkeyHandler) getEnckMessage() *Message {
 			},
 		},
 	}
+}
+
+func (p *pubkeyHandler) GetPubKHandler() *pubkeyHandler {
+	return p
 }
 
 func (p *pubkeyHandler) getCurve() elliptic.Curve {

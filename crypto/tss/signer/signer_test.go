@@ -134,7 +134,7 @@ type peerManager struct {
 	signers  map[string]*Signer
 }
 
-func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][]*big.Int, msg []byte) (map[string]*Signer, map[string]*mocks.StateChangedListener) {
+func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][]*big.Int, msg []byte, funcs ...func(types.PeerManager) types.PeerManager) (map[string]*Signer, map[string]*mocks.StateChangedListener) {
 	threshold := len(ss)
 	signers := make(map[string]*Signer, threshold)
 	signersMain := make(map[string]types.MessageMain, threshold)
@@ -150,7 +150,11 @@ func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][
 		id := tss.GetTestID(i)
 		pm := tss.NewTestPeerManager(i, threshold)
 		pm.Set(signersMain)
-		peerManagers[i] = pm
+		var ppm types.PeerManager = pm
+		for _, f := range funcs {
+			ppm = f(ppm)
+		}
+		peerManagers[i] = ppm
 		listeners[id] = new(mocks.StateChangedListener)
 		homo, err := paillier.NewPaillier(2048)
 		Expect(err).Should(BeNil())
