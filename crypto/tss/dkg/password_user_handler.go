@@ -47,7 +47,7 @@ type passwordUserHandler struct {
 func newPasswordPeerUserHandler(peerManager types.PeerManager, password []byte) (*passwordUserHandler, error) {
 	fieldOrder := passwordCurve.N
 	peerNum := peerManager.NumPeers()
-	if peerNum != PasswordN-1 {
+	if peerNum != tss.PasswordN-1 {
 		return nil, ErrInvalidPeerNum
 	}
 	requester, err := oprf.NewRequester(password)
@@ -65,8 +65,8 @@ func newPasswordPeerUserHandler(peerManager types.PeerManager, password []byte) 
 		return nil, err
 	}
 	return &passwordUserHandler{
-		rank:          PasswordRank,
-		threshold:     PasswordThreshold,
+		rank:          tss.PasswordRank,
+		threshold:     tss.PasswordThreshold,
 		fieldOrder:    fieldOrder,
 		peerManager:   peerManager,
 		peerNum:       peerNum,

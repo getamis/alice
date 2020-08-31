@@ -28,10 +28,6 @@ import (
 )
 
 const (
-	PasswordRank      = 0
-	PasswordThreshold = 2
-	PasswordN         = 2
-
 	maxRetry = 100
 )
 
@@ -65,7 +61,7 @@ type passwordServerHandler struct {
 func newPasswordPeerServerHandler(peerManager types.PeerManager) (*passwordServerHandler, error) {
 	fieldOrder := passwordCurve.N
 	peerNum := peerManager.NumPeers()
-	if peerNum != PasswordN-1 {
+	if peerNum != tss.PasswordN-1 {
 		return nil, ErrInvalidPeerNum
 	}
 	responser, err := oprf.NewResponser()
@@ -78,8 +74,8 @@ func newPasswordPeerServerHandler(peerManager types.PeerManager) (*passwordServe
 		peers[peerID] = &oprfServerData{}
 	}
 	return &passwordServerHandler{
-		rank:          PasswordRank,
-		threshold:     PasswordThreshold,
+		rank:          tss.PasswordRank,
+		threshold:     tss.PasswordThreshold,
 		fieldOrder:    fieldOrder,
 		peerManager:   peerManager,
 		peerNum:       peerNum,

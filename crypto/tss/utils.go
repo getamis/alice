@@ -25,6 +25,13 @@ import (
 	"github.com/getamis/sirius/log"
 )
 
+const (
+	// For password cases, we only support 2-of-2 and rank 0 for now
+	PasswordRank      = 0
+	PasswordThreshold = 2
+	PasswordN         = 2
+)
+
 var (
 	ErrInvalidMsg                = errors.New("invalid message")
 	ErrNotReady                  = errors.New("not ready")
