@@ -26,6 +26,13 @@ import (
 	"github.com/getamis/sirius/log"
 )
 
+type FirstHandler interface {
+	types.Handler
+
+	GetFirstMessage() *Message
+	GetPubKHandler() *pubkeyHandler
+}
+
 type Result struct {
 	R *pt.ECPoint
 	S *big.Int
@@ -60,42 +67,64 @@ func (r *Result) EthSignature() []byte {
 }
 
 type Signer struct {
-	ph *pubkeyHandler
+	ph          FirstHandler
+	peerManager types.PeerManager
 	*message.MsgMain
 }
 
 func NewSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo homo.Crypto, secret *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, listener types.StateChangedListener) (*Signer, error) {
-	numPeers := peerManager.NumPeers()
 	ph, err := newPubkeyHandler(expectedPubkey, peerManager, homo, secret, bks, msg)
 	if err != nil {
 		log.Warn("Failed to new a public key handler", "err", err)
 		return nil, err
 	}
-	return &Signer{
-		ph: ph,
-		MsgMain: message.NewMsgMain(peerManager.SelfID(),
-			numPeers,
-			listener,
-			ph,
-			types.MessageType(Type_Pubkey),
-			types.MessageType(Type_EncK),
-			types.MessageType(Type_Mta),
-			types.MessageType(Type_Delta),
-			types.MessageType(Type_ProofAi),
-			types.MessageType(Type_CommitViAi),
-			types.MessageType(Type_DecommitViAi),
-			types.MessageType(Type_CommitUiTi),
-			types.MessageType(Type_DecommitUiTi),
-			types.MessageType(Type_Si),
-		),
-	}, nil
+	return newSigner(peerManager, listener, ph)
 }
 
+func NewPasswordUserSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo homo.Crypto, password []byte, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, listener types.StateChangedListener) (*Signer, error) {
+	ph, err := newPasswordUserHandler(expectedPubkey, peerManager, homo, password, bks, msg)
+	if err != nil {
+		log.Warn("Failed to new a public key handler", "err", err)
+		return nil, err
+	}
+	return newSigner(peerManager, listener, ph, types.MessageType(Type_OPRFResponse))
+}
+
+func NewPasswordServerSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo homo.Crypto, k *big.Int, secret *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, listener types.StateChangedListener) (*Signer, error) {
+	ph, err := newPasswordServerHandler(expectedPubkey, peerManager, homo, secret, k, bks, msg)
+	if err != nil {
+		log.Warn("Failed to new a public key handler", "err", err)
+		return nil, err
+	}
+	return newSigner(peerManager, listener, ph, types.MessageType(Type_OPRFRequest))
+}
+
+func newSigner(peerManager types.PeerManager, listener types.StateChangedListener, ph FirstHandler, msgs ...types.MessageType) (*Signer, error) {
+	peerNum := peerManager.NumPeers()
+	msgs = append(msgs,
+		types.MessageType(Type_Pubkey),
+		types.MessageType(Type_EncK),
+		types.MessageType(Type_Mta),
+		types.MessageType(Type_Delta),
+		types.MessageType(Type_ProofAi),
+		types.MessageType(Type_CommitViAi),
+		types.MessageType(Type_DecommitViAi),
+		types.MessageType(Type_CommitUiTi),
+		types.MessageType(Type_DecommitUiTi),
+		types.MessageType(Type_Si))
+	return &Signer{
+		ph:          ph,
+		peerManager: peerManager,
+		MsgMain:     message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, msgs...),
+	}, nil
+}
 func (s *Signer) Start() {
 	s.MsgMain.Start()
 
-	// Send the first message to new peer
-	tss.Broadcast(s.ph.peerManager, s.ph.getPubkeyMessage())
+	msg := s.ph.GetFirstMessage()
+	if msg != nil {
+		tss.Broadcast(s.peerManager, msg)
+	}
 }
 
 // GetResult returns the final result: public key, share, bks (including self bk)
