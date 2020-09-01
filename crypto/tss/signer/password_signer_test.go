@@ -19,10 +19,8 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo"
-	"github.com/getamis/alice/crypto/homo/cl"
 	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/dkg"
@@ -34,7 +32,6 @@ import (
 )
 
 var _ = Describe("Password Tests", func() {
-	c := btcec.S256()
 	DescribeTable("should be ok", func(homoFunc func() (homo.Crypto, error)) {
 		By("Step 1: DKG")
 		password := []byte("edwin-haha")
@@ -70,7 +67,8 @@ var _ = Describe("Password Tests", func() {
 		time.Sleep(2 * time.Second)
 
 		// Build public key
-		var r, s *big.Int
+		var r *ecpointgrouplaw.ECPoint
+		var s *big.Int
 		for _, signer := range ss {
 			signer.Stop()
 			result, err := signer.GetResult()
@@ -84,12 +82,7 @@ var _ = Describe("Password Tests", func() {
 				s = result.S
 			}
 		}
-		ecdsaPublicKey := &ecdsa.PublicKey{
-			Curve: expPublic.GetCurve(),
-			X:     expPublic.GetX(),
-			Y:     expPublic.GetY(),
-		}
-		Expect(ecdsa.Verify(ecdsaPublicKey, msg, r, s)).Should(BeTrue())
+		Expect(ecdsa.Verify(expPublic.ToPubKey(), msg, r.GetX(), s)).Should(BeTrue())
 
 		for _, l := range listeners {
 			l.AssertExpectations(GinkgoT())
@@ -97,11 +90,6 @@ var _ = Describe("Password Tests", func() {
 	},
 		Entry("paillier", func() (homo.Crypto, error) {
 			return paillier.NewPaillier(2048)
-		}),
-		Entry("CL", func() (homo.Crypto, error) {
-			safeParameter := 1348
-			distributionDistance := uint(40)
-			return cl.NewCL(big.NewInt(1024), 40, c.Params().N, safeParameter, distributionDistance)
 		}),
 	)
 
@@ -149,11 +137,6 @@ var _ = Describe("Password Tests", func() {
 	},
 		Entry("paillier", func() (homo.Crypto, error) {
 			return paillier.NewPaillier(2048)
-		}),
-		Entry("CL", func() (homo.Crypto, error) {
-			safeParameter := 1348
-			distributionDistance := uint(40)
-			return cl.NewCL(big.NewInt(1024), 40, c.Params().N, safeParameter, distributionDistance)
 		}),
 	)
 })

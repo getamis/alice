@@ -44,7 +44,7 @@ type passwordUserHandler struct {
 	newPubkeyHandlerFunc func(secret *big.Int) (*pubkeyHandler, error)
 }
 
-// Only support secp2561 curve and 2-of-2 case
+// Only support secp256k1 curve and 2-of-2 case
 func newPasswordUserHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo homo.Crypto, password []byte, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte) (*passwordUserHandler, error) {
 	fieldOrder := passwordCurve.N
 	peerNum := peerManager.NumPeers()

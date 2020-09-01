@@ -43,7 +43,7 @@ type passwordUserHandler struct {
 	peers         map[string]*oprfUserData
 }
 
-// Only support secp2561 curve and 2-of-2 case
+// Only support secp256k1 curve and 2-of-2 case
 func newPasswordPeerUserHandler(peerManager types.PeerManager, password []byte) (*passwordUserHandler, error) {
 	fieldOrder := passwordCurve.N
 	peerNum := peerManager.NumPeers()
