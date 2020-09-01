@@ -4,6 +4,7 @@ SHELL := /bin/bash
 TOOL_DIR := $(CURDIR)/tools
 TOOL_BIN_DIR := $(TOOL_DIR)/bin
 TOOL_TEMP_DIR := $(TOOL_DIR)/tmp
+GOROOT := $(shell go env GOROOT)
 DIRS := \
 	$(TOOL_BIN_DIR) \
 	$(TOOL_TEMP_DIR)
@@ -25,11 +26,12 @@ PHONY+= tools
 tools: $(DIRS) $(PROTOC)
 	@go build -mod=vendor -o $(TOOL_BIN_DIR)/protoc-gen-go $(CURDIR)/vendor/github.com/golang/protobuf/protoc-gen-go
 
+# Build go/js generated files
 PHONY += protobuf
 protobuf:
-	@for d in $$(find "crypto" -type f -name "*.proto"); do		\
-		protoc -I$(GOPATH)/src --go_out=$(GOPATH)/src $(CURDIR)/$$d; \
-	done; 
+	@for d in $$(find "crypto" "wasm" -type f -name "*.proto"); do		\
+		protoc -I$(GOPATH)/src --go_out=$(GOPATH)/src --js_out=import_style=commonjs,binary:$(GOPATH)/src $(CURDIR)/$$d; \
+	done;
 
 PHONY += coverage.txt
 coverage.txt:
@@ -37,7 +39,7 @@ coverage.txt:
 
 PHONY += unit-test
 unit-test: coverage.txt
-	@for d in $$(go list ./... | grep -v example); do		\
+	@for d in $$(go list ./... | grep -v example | grep -v wasm); do		\
 		set -o pipefail;		\
 		go test -timeout $(GO_UNIT_TEST_TIMEOUT) -v -coverprofile=profile.out -covermode=$(GO_TEST_COVER_MODE) $$d 2>&1;	\
 		if [ $$? -eq 0 ]; then						\
@@ -53,5 +55,14 @@ unit-test: coverage.txt
 PHONY += tss-example
 tss-example:
 	cd example && go build
+
+PHONY += wasm
+wasm:
+	GOOS=js GOARCH=wasm go build -o wasm/tss.wasm wasm/*.go
+
+# Run index.js and copy correct wasm_exec.js into wasm folder
+PHONY += wasm-test
+wasm-test:
+	cd wasm && cp "$(GOROOT)/misc/wasm/wasm_exec.js" . && node index.js
 
 .PHONY: $(PHONY)
