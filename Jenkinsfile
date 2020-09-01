@@ -13,7 +13,7 @@ import jenkins.model.CauseOfInterruption.UserInterruption
 @Field def packageName = "github.com/amis/alice"
 @Field def packagePath = "src/${packageName}"
 
-@Field def coverageGoal = "0.84"
+@Field def coverageGoal = "0.83"
 
 if (env.CHANGE_TITLE) {
     currentBuild.rawBuild.project.setDisplayName("${env.BRANCH_NAME} | ${env.CHANGE_TITLE}")
