@@ -281,7 +281,8 @@ func sign(homoFunc func() (homo.Crypto, error), threshold, num int, dkgResult *r
 		}
 
 		// Stop signer process and verify the signature.
-		var r, s *big.Int
+		var r *ecpointgrouplaw.ECPoint
+		var s *big.Int
 		for _, signer := range signers {
 			signer.Stop()
 			signerResult, err := signer.GetResult()
@@ -295,12 +296,7 @@ func sign(homoFunc func() (homo.Crypto, error), threshold, num int, dkgResult *r
 				s = signerResult.S
 			}
 		}
-		ecdsaPublicKey := &ecdsa.PublicKey{
-			Curve: dkgResult.publicKey.GetCurve(),
-			X:     dkgResult.publicKey.GetX(),
-			Y:     dkgResult.publicKey.GetY(),
-		}
-		Expect(ecdsa.Verify(ecdsaPublicKey, msg, r, s)).Should(BeTrue())
+		Expect(ecdsa.Verify(dkgResult.publicKey.ToPubKey(), msg, r.GetX(), s)).Should(BeTrue())
 		assertListener(listener, threshold)
 	}
 }

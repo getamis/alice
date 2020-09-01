@@ -22,6 +22,7 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
@@ -68,7 +69,8 @@ var _ = Describe("Signer", func() {
 		}
 
 		// Build public key
-		var r, s *big.Int
+		var r *pt.ECPoint
+		var s *big.Int
 		for _, signer := range signers {
 			signer.Stop()
 			result, err := signer.GetResult()
@@ -82,12 +84,7 @@ var _ = Describe("Signer", func() {
 				s = result.S
 			}
 		}
-		ecdsaPublicKey := &ecdsa.PublicKey{
-			Curve: expPublic.GetCurve(),
-			X:     expPublic.GetX(),
-			Y:     expPublic.GetY(),
-		}
-		Expect(ecdsa.Verify(ecdsaPublicKey, msg, r, s)).Should(BeTrue())
+		Expect(ecdsa.Verify(expPublic.ToPubKey(), msg, r.GetX(), s)).Should(BeTrue())
 
 		for _, l := range listeners {
 			l.AssertExpectations(GinkgoT())
