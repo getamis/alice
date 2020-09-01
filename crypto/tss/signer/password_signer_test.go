@@ -104,6 +104,58 @@ var _ = Describe("Password Tests", func() {
 			return cl.NewCL(big.NewInt(1024), 40, c.Params().N, safeParameter, distributionDistance)
 		}),
 	)
+
+	DescribeTable("wrong password", func(homoFunc func() (homo.Crypto, error)) {
+		By("Step 1: DKG")
+		password := []byte("edwin-haha")
+		dkgs, listeners := newPasswordDKGs(password)
+		for _, l := range listeners {
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
+		}
+		for _, d := range dkgs {
+			d.Start()
+		}
+		time.Sleep(2 * time.Second)
+
+		// Stop DKG process and record the result.
+		for _, dkg := range dkgs {
+			dkg.Stop()
+		}
+		for _, l := range listeners {
+			l.AssertExpectations(GinkgoT())
+		}
+
+		By("Step 2: Signer")
+		fmt.Println("Signers")
+		msg := []byte("1234567")
+		homo, err := homoFunc()
+		Expect(err).Should(BeNil())
+		_, ss, listeners := newPasswordSigners([]byte("wrong password"), dkgs, homo, msg)
+		for _, l := range listeners {
+			l.On("OnStateChanged", types.StateInit, types.StateFailed).Once()
+		}
+		for _, s := range ss {
+			s.Start()
+		}
+		time.Sleep(1 * time.Second)
+
+		// Build public key
+		for _, signer := range ss {
+			Expect(signer.IsWrongPasswordError()).Should(BeTrue())
+		}
+		for _, l := range listeners {
+			l.AssertExpectations(GinkgoT())
+		}
+	},
+		Entry("paillier", func() (homo.Crypto, error) {
+			return paillier.NewPaillier(2048)
+		}),
+		Entry("CL", func() (homo.Crypto, error) {
+			safeParameter := 1348
+			distributionDistance := uint(40)
+			return cl.NewCL(big.NewInt(1024), 40, c.Params().N, safeParameter, distributionDistance)
+		}),
+	)
 })
 
 func newPasswordDKGs(password []byte) (map[string]*dkg.DKG, map[string]*mocks.StateChangedListener) {
