@@ -35,6 +35,7 @@ type MsgMain struct {
 	state          types.MainState
 	currentHandler types.Handler
 	listener       types.StateChangedListener
+	finalError     error
 
 	lock   sync.RWMutex
 	cancel context.CancelFunc
@@ -87,12 +88,16 @@ func (t *MsgMain) GetState() types.MainState {
 	return t.state
 }
 
+func (t *MsgMain) GetFinalError() error {
+	return t.finalError
+}
+
 func (t *MsgMain) messageLoop(ctx context.Context) (err error) {
 	defer func() {
 		if err == nil {
-			_ = t.setState(types.StateDone)
+			_ = t.setState(types.StateDone, nil)
 		} else {
-			_ = t.setState(types.StateFailed)
+			_ = t.setState(types.StateFailed, err)
 		}
 		t.Stop()
 	}()
@@ -147,7 +152,7 @@ func (t *MsgMain) messageLoop(ctx context.Context) (err error) {
 	}
 }
 
-func (t *MsgMain) setState(newState types.MainState) error {
+func (t *MsgMain) setState(newState types.MainState, err error) error {
 	if t.isInFinalState() {
 		t.logger.Warn("Invalid state transition", "old", t.state, "new", newState)
 		return ErrInvalidStateTransition
@@ -156,6 +161,7 @@ func (t *MsgMain) setState(newState types.MainState) error {
 	t.logger.Info("State changed", "old", t.state, "new", newState)
 	oldState := t.state
 	t.state = newState
+	t.finalError = err
 	t.listener.OnStateChanged(oldState, newState)
 	return nil
 }

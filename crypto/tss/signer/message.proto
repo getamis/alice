@@ -18,6 +18,7 @@ package signer;
 
 import "github.com/getamis/alice/crypto/commitment/message.proto";
 import "github.com/getamis/alice/crypto/zkproof/message.proto";
+import "github.com/getamis/alice/crypto/oprf/message.proto";
 
 enum Type {
     Pubkey = 0;
@@ -30,6 +31,10 @@ enum Type {
     CommitUiTi = 7;
     DecommitUiTi = 8;
     Si = 9;
+
+    // For OPRF
+    OPRFRequest = 10;
+    OPRFResponse = 11;    
 }
 
 message Message {
@@ -46,6 +51,10 @@ message Message {
         BodyCommitUiTi commitUiTi = 10;
         BodyDecommitUiTi decommitUiTi = 11;
         BodySi si = 12;
+
+        // For OPRF
+        oprf.OprfRequestMessage oprfRequest = 13;
+        oprf.OprfResponseMessage oprfResponse = 14;        
     }
 }
 

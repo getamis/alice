@@ -40,6 +40,10 @@ func (m *Message) IsValid() bool {
 		return m.GetDecommitUiTi() != nil
 	case Type_Si:
 		return m.GetSi() != nil
+	case Type_OPRFRequest:
+		return m.GetOprfRequest() != nil
+	case Type_OPRFResponse:
+		return m.GetOprfResponse() != nil
 	}
 	return false
 }

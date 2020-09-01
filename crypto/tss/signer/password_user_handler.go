@@ -12,16 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dkg
+package signer
 
 import (
 	"math/big"
 
+	"github.com/getamis/alice/crypto/birkhoffinterpolation"
+	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/oprf"
-	"github.com/getamis/alice/crypto/polynomial"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
-	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/sirius/log"
 )
 
@@ -30,25 +31,26 @@ type oprfUserData struct {
 }
 
 type passwordUserHandler struct {
-	*peerHandler
+	*pubkeyHandler
 
-	rank          uint32
-	threshold     uint32
-	fieldOrder    *big.Int
-	peerManager   types.PeerManager
-	peerNum       uint32
-	oprfRequester *oprf.Requester
-	x             *big.Int
-	share         *big.Int
-	peers         map[string]*oprfUserData
+	rank                 uint32
+	threshold            uint32
+	fieldOrder           *big.Int
+	peerManager          types.PeerManager
+	peerNum              uint32
+	oprfRequester        *oprf.Requester
+	peers                map[string]*oprfUserData
+	share                *big.Int
+	newPubkeyHandlerFunc func(secret *big.Int) (*pubkeyHandler, error)
 }
 
 // Only support secp256k1 curve and 2-of-2 case
-func newPasswordPeerUserHandler(peerManager types.PeerManager, password []byte) (*passwordUserHandler, error) {
+func newPasswordUserHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo homo.Crypto, password []byte, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte) (*passwordUserHandler, error) {
 	fieldOrder := passwordCurve.N
 	peerNum := peerManager.NumPeers()
-	if peerNum != tss.PasswordN-1 {
-		return nil, ErrInvalidPeerNum
+	err := ensureBksAndPeerNum(publicKey.GetCurve(), peerNum, bks)
+	if err != nil {
+		return nil, err
 	}
 	requester, err := oprf.NewRequester(password)
 	if err != nil {
@@ -59,11 +61,6 @@ func newPasswordPeerUserHandler(peerManager types.PeerManager, password []byte) 
 	for _, peerID := range peerManager.PeerIDs() {
 		peers[peerID] = &oprfUserData{}
 	}
-	// Random x and build bk
-	x, err := utils.RandomPositiveInt(fieldOrder)
-	if err != nil {
-		return nil, err
-	}
 	return &passwordUserHandler{
 		rank:          tss.PasswordRank,
 		threshold:     tss.PasswordThreshold,
@@ -71,8 +68,10 @@ func newPasswordPeerUserHandler(peerManager types.PeerManager, password []byte) 
 		peerManager:   peerManager,
 		peerNum:       peerNum,
 		oprfRequester: requester,
-		x:             x,
 		peers:         peers,
+		newPubkeyHandlerFunc: func(secret *big.Int) (*pubkeyHandler, error) {
+			return newPubkeyHandler(publicKey, peerManager, homo, secret, bks, msg)
+		},
 	}, nil
 }
 
@@ -103,29 +102,24 @@ func (p *passwordUserHandler) HandleMessage(logger log.Logger, message types.Mes
 	}
 	res := msg.GetOprfResponse()
 	peer.response = res
-	share, err := p.oprfRequester.Compute(res)
+	var err error
+	p.share, err = p.oprfRequester.Compute(res)
 	if err != nil {
 		logger.Warn("Failed to compute", "err", err)
 		return err
 	}
-	p.share = share
 	return nil
 }
 
 func (p *passwordUserHandler) Finalize(logger log.Logger) (types.Handler, error) {
-	poly, err := polynomial.RandomPolynomialWithSpecialValueAtPoint(p.x, p.share, p.fieldOrder, p.threshold-1)
+	var err error
+	p.pubkeyHandler, err = p.newPubkeyHandlerFunc(p.share)
 	if err != nil {
-		logger.Warn("Failed to expand", "err", err)
+		logger.Warn("Failed to new pubkey handler", "err", err)
 		return nil, err
 	}
-
-	p.peerHandler, err = newPeerHandlerWithPolynomial(passwordCurve, p.peerManager, p.threshold, p.x, p.rank, poly)
-	if err != nil {
-		logger.Warn("Failed to new peer handler", "err", err)
-		return nil, err
-	}
-	tss.Broadcast(p.peerManager, p.peerHandler.GetFirstMessage())
-	return p.peerHandler, nil
+	tss.Broadcast(p.peerManager, p.pubkeyHandler.GetFirstMessage())
+	return p.pubkeyHandler, nil
 }
 
 func (p *passwordUserHandler) GetFirstMessage() *Message {
@@ -133,14 +127,11 @@ func (p *passwordUserHandler) GetFirstMessage() *Message {
 		Type: Type_OPRFRequest,
 		Id:   p.peerManager.SelfID(),
 		Body: &Message_OprfRequest{
-			OprfRequest: &BodyOPRFRequest{
-				X:       p.x.Bytes(),
-				Request: p.oprfRequester.GetRequestMessage(),
-			},
+			OprfRequest: p.oprfRequester.GetRequestMessage(),
 		},
 	}
 }
 
-func (p *passwordUserHandler) GetPeerHandler() *peerHandler {
-	return p.peerHandler
+func (p *passwordUserHandler) GetPubKHandler() *pubkeyHandler {
+	return p.pubkeyHandler
 }

@@ -36,13 +36,9 @@ var _ = Describe("enck handler, negative cases", func() {
 		listeners map[string]*mocks.StateChangedListener
 	)
 	BeforeEach(func() {
-		signers, listeners = newTestSigners()
-		// Override peer manager
-		for _, s := range signers {
-			p := newStopPeerManager(Type_EncK, s.ph.peerManager)
-			s.ph.peerManager = p
-		}
-
+		signers, listeners = newTestSigners(func(p types.PeerManager) types.PeerManager {
+			return newStopPeerManager(Type_EncK, p)
+		})
 		for _, s := range signers {
 			s.Start()
 		}
@@ -102,7 +98,7 @@ var _ = Describe("enck handler, negative cases", func() {
 			for _, s := range signers {
 				rh, ok := s.GetHandler().(*encKHandler)
 				Expect(ok).Should(BeTrue())
-				s.ph.peers[peerId] = &peer{
+				rh.peers[peerId] = &peer{
 					enck: &encKData{},
 				}
 				Expect(rh.IsHandled(log.Discard(), peerId)).Should(BeTrue())
@@ -113,7 +109,7 @@ var _ = Describe("enck handler, negative cases", func() {
 			for _, s := range signers {
 				rh, ok := s.GetHandler().(*encKHandler)
 				Expect(ok).Should(BeTrue())
-				s.ph.peers[peerId] = &peer{}
+				rh.peers[peerId] = &peer{}
 				Expect(rh.IsHandled(log.Discard(), peerId)).Should(BeFalse())
 			}
 		})

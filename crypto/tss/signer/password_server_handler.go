@@ -12,18 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dkg
+package signer
 
 import (
+	"crypto/elliptic"
 	"errors"
+	fmt "fmt"
 	"math/big"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/birkhoffinterpolation"
+	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/oprf"
-	"github.com/getamis/alice/crypto/polynomial"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
-	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/sirius/log"
 )
 
@@ -35,17 +38,17 @@ var (
 	big1          = big.NewInt(1)
 	passwordCurve = btcec.S256()
 
+	ErrNotS256Curve   = errors.New("not S256 curve")
 	ErrInvalidPeerNum = errors.New("invalid peer number")
-	ErrInvalidUserX   = errors.New("invalid user x")
-	ErrFailedGenX     = errors.New("failed to generate x")
+	ErrInvalidBk      = errors.New("invalid bk")
 )
 
 type oprfServerData struct {
-	request *BodyOPRFRequest
+	request *oprf.OprfRequestMessage
 }
 
 type passwordServerHandler struct {
-	*peerHandler
+	*pubkeyHandler
 
 	rank          uint32
 	threshold     uint32
@@ -53,18 +56,18 @@ type passwordServerHandler struct {
 	peerManager   types.PeerManager
 	peerNum       uint32
 	oprfResponser *oprf.Responser
-	userX         *big.Int
 	peers         map[string]*oprfServerData
 }
 
 // Only support secp256k1 curve and 2-of-2 case
-func newPasswordPeerServerHandler(peerManager types.PeerManager) (*passwordServerHandler, error) {
+func newPasswordServerHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo homo.Crypto, secret *big.Int, k *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte) (*passwordServerHandler, error) {
 	fieldOrder := passwordCurve.N
 	peerNum := peerManager.NumPeers()
-	if peerNum != tss.PasswordN-1 {
-		return nil, ErrInvalidPeerNum
+	err := ensureBksAndPeerNum(publicKey.GetCurve(), peerNum, bks)
+	if err != nil {
+		return nil, err
 	}
-	responser, err := oprf.NewResponser()
+	responser, err := oprf.NewResponserWithK(k)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +76,12 @@ func newPasswordPeerServerHandler(peerManager types.PeerManager) (*passwordServe
 	for _, peerID := range peerManager.PeerIDs() {
 		peers[peerID] = &oprfServerData{}
 	}
+	pubkeyHandler, err := newPubkeyHandler(publicKey, peerManager, homo, secret, bks, msg)
+	if err != nil {
+		return nil, err
+	}
 	return &passwordServerHandler{
+		pubkeyHandler: pubkeyHandler,
 		rank:          tss.PasswordRank,
 		threshold:     tss.PasswordThreshold,
 		fieldOrder:    fieldOrder,
@@ -112,15 +120,8 @@ func (p *passwordServerHandler) HandleMessage(logger log.Logger, message types.M
 	request := msg.GetOprfRequest()
 	peer.request = request
 
-	// Check user x
-	p.userX = new(big.Int).SetBytes(request.X)
-	if err := utils.InRange(p.userX, big1, p.fieldOrder); err != nil {
-		logger.Warn("Invalid user x")
-		return ErrInvalidUserX
-	}
-
 	// Check request
-	res, err := p.oprfResponser.Handle(request.Request)
+	res, err := p.oprfResponser.Handle(request)
 	if err != nil {
 		logger.Warn("Failed to handle oprf", "err", err)
 		return err
@@ -136,43 +137,30 @@ func (p *passwordServerHandler) HandleMessage(logger log.Logger, message types.M
 }
 
 func (p *passwordServerHandler) Finalize(logger log.Logger) (types.Handler, error) {
-	poly, err := polynomial.RandomPolynomialWithSpecialValueAtPoint(p.userX, big.NewInt(0), p.fieldOrder, p.threshold-1)
-	if err != nil {
-		logger.Warn("Failed to expand", "err", err)
-		return nil, err
-	}
-
-	// Random x
-	x, err := p.getRandomX()
-	if err != nil {
-		logger.Warn("Failed to generate x", "err", err)
-		return nil, err
-	}
-
-	p.peerHandler, err = newPeerHandlerWithPolynomial(passwordCurve, p.peerManager, p.threshold, x, p.rank, poly)
-	if err != nil {
-		logger.Warn("Failed to new peer handler", "err", err)
-		return nil, err
-	}
-	tss.Broadcast(p.peerManager, p.peerHandler.GetFirstMessage())
-	return p.peerHandler, nil
+	tss.Broadcast(p.peerManager, p.pubkeyHandler.GetFirstMessage())
+	return p.pubkeyHandler, nil
 }
 
 func (p *passwordServerHandler) GetFirstMessage() *Message {
 	return nil
 }
 
-func (p *passwordServerHandler) GetPeerHandler() *peerHandler {
-	return p.peerHandler
+func (p *passwordServerHandler) GetPubKHandler() *pubkeyHandler {
+	return p.pubkeyHandler
 }
 
-func (p *passwordServerHandler) getRandomX() (*big.Int, error) {
-	for i := 0; i < maxRetry; i++ {
-		x, err := utils.RandomPositiveInt(p.fieldOrder)
-		if err != nil {
-			continue
-		}
-		return x, nil
+func ensureBksAndPeerNum(curve elliptic.Curve, peerNum uint32, bks map[string]*birkhoffinterpolation.BkParameter) error {
+	if curve != btcec.S256() {
+		return ErrNotS256Curve
 	}
-	return nil, ErrFailedGenX
+	if peerNum != tss.PasswordN-1 {
+		return ErrInvalidPeerNum
+	}
+	for _, bk := range bks {
+		if bk.GetRank() != tss.PasswordRank {
+			fmt.Println("x", bk.GetX(), "rank", bk.GetRank())
+			return ErrInvalidBk
+		}
+	}
+	return nil
 }

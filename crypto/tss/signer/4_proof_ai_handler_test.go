@@ -18,7 +18,6 @@ import (
 	"time"
 
 	"github.com/btcsuite/btcd/btcec"
-
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	mtaMocks "github.com/getamis/alice/crypto/mta/mocks"
@@ -39,12 +38,9 @@ var _ = Describe("proof ai handler, negative cases", func() {
 		listeners map[string]*mocks.StateChangedListener
 	)
 	BeforeEach(func() {
-		signers, listeners = newTestSigners()
-		// Override peer manager
-		for _, s := range signers {
-			p := newStopPeerManager(Type_ProofAi, s.ph.peerManager)
-			s.ph.peerManager = p
-		}
+		signers, listeners = newTestSigners(func(p types.PeerManager) types.PeerManager {
+			return newStopPeerManager(Type_ProofAi, p)
+		})
 
 		for _, s := range signers {
 			s.Start()
@@ -89,7 +85,7 @@ var _ = Describe("proof ai handler, negative cases", func() {
 			for _, s := range signers {
 				rh, ok := s.GetHandler().(*proofAiHandler)
 				Expect(ok).Should(BeTrue())
-				s.ph.peers[peerId] = &peer{
+				rh.peers[peerId] = &peer{
 					proofAi: &proofAiData{},
 				}
 				Expect(rh.IsHandled(log.Discard(), peerId)).Should(BeTrue())
@@ -100,7 +96,7 @@ var _ = Describe("proof ai handler, negative cases", func() {
 			for _, s := range signers {
 				rh, ok := s.GetHandler().(*proofAiHandler)
 				Expect(ok).Should(BeTrue())
-				s.ph.peers[peerId] = &peer{}
+				rh.peers[peerId] = &peer{}
 				Expect(rh.IsHandled(log.Discard(), peerId)).Should(BeFalse())
 			}
 		})

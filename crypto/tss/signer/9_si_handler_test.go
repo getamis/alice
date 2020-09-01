@@ -32,13 +32,9 @@ var _ = Describe("si handler, negative cases", func() {
 		listeners map[string]*mocks.StateChangedListener
 	)
 	BeforeEach(func() {
-		signers, listeners = newTestSigners()
-		// Override peer manager
-		for _, s := range signers {
-			p := newStopPeerManager(Type_Si, s.ph.peerManager)
-			s.ph.peerManager = p
-		}
-
+		signers, listeners = newTestSigners(func(p types.PeerManager) types.PeerManager {
+			return newStopPeerManager(Type_Si, p)
+		})
 		for _, s := range signers {
 			s.Start()
 		}
@@ -82,7 +78,7 @@ var _ = Describe("si handler, negative cases", func() {
 			for _, s := range signers {
 				rh, ok := s.GetHandler().(*siHandler)
 				Expect(ok).Should(BeTrue())
-				s.ph.peers[peerId] = &peer{
+				rh.peers[peerId] = &peer{
 					si: &siData{},
 				}
 				Expect(rh.IsHandled(log.Discard(), peerId)).Should(BeTrue())
@@ -93,7 +89,7 @@ var _ = Describe("si handler, negative cases", func() {
 			for _, s := range signers {
 				rh, ok := s.GetHandler().(*siHandler)
 				Expect(ok).Should(BeTrue())
-				s.ph.peers[peerId] = &peer{}
+				rh.peers[peerId] = &peer{}
 				Expect(rh.IsHandled(log.Discard(), peerId)).Should(BeFalse())
 			}
 		})

@@ -24,6 +24,7 @@ import (
 	homoMocks "github.com/getamis/alice/crypto/homo/mocks"
 	"github.com/getamis/alice/crypto/matrix"
 	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
 	"github.com/getamis/sirius/log"
 	. "github.com/onsi/ginkgo"
@@ -154,7 +155,7 @@ var _ = Describe("pubkey handler, negative cases", func() {
 			for _, s := range signers {
 				cl, err := cl.NewCL(big.NewInt(1024), 40, bigPrime, safeParameter, 80)
 				Expect(err).Should(BeNil())
-				invalidMsg := s.ph.getPubkeyMessage()
+				invalidMsg := s.ph.GetFirstMessage()
 				invalidMsg.Body = &Message_Pubkey{
 					Pubkey: &BodyPublicKey{
 						Pubkey:       cl.ToPubKeyBytes(),
@@ -167,7 +168,7 @@ var _ = Describe("pubkey handler, negative cases", func() {
 	})
 })
 
-func newTestSigners() (map[string]*Signer, map[string]*mocks.StateChangedListener) {
+func newTestSigners(funcs ...func(types.PeerManager) types.PeerManager) (map[string]*Signer, map[string]*mocks.StateChangedListener) {
 	curve := btcec.S256()
 	ss := [][]*big.Int{
 		{big.NewInt(1094), big.NewInt(591493497), big.NewInt(0)},
@@ -176,5 +177,5 @@ func newTestSigners() (map[string]*Signer, map[string]*mocks.StateChangedListene
 	}
 	gScale := big.NewInt(5987)
 	expPublic := ecpointgrouplaw.ScalarBaseMult(curve, gScale)
-	return newSigners(curve, expPublic, ss, []byte{1, 2, 3})
+	return newSigners(curve, expPublic, ss, []byte{1, 2, 3}, funcs...)
 }
