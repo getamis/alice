@@ -52,6 +52,7 @@ If you have more questions, you can connect [us](https://www.am.is/) directly wi
     *	[DKG](#DKGusage)
     *	[Signer](#signerusage)
     *	[Reshare](#reshareusage)
+    *	[AddShare](#addshareusage)
 *	[Examples](#Example)
     *	[Standard threshold signature](#lagrangecase)
     	*	[DKG](#DKGLagrangeCase)
@@ -294,12 +295,62 @@ if err != nil {
 myReshare.Start()
 // send out commit message...
 myReshare.Stop()
-signerResult, err := myReshare.GetResult()
+reshareResult, err := myReshare.GetResult()
 if err != nil {
     // handle error
 }
 ```
 After resharing, all the participants should get their new shares.
+
+<h3 id="addshareusage">Add Share:</h3>
+
+Adding share creates a new share for new participant without changing the original public key. This action will have two different roles: old peer and new peer. Each role will have different parameters be filled.
+
+For old peer:
+
+* **addShareOldPeerManager**: an old peer manager for add share
+* **publicKey**: the public key generated from DKG
+* **threshold**: minimum number of participants required to sign
+* **share**: the private share from DKG
+* **bks**: Birkhoff parameters from all participants
+* **listener**: a function to monitor the state change
+* **newPeerID**: the new peer ID
+
+```go
+oldPeerAddShare, err = oldpeer.NewAddShare(addSharePeerManager, publicKey, threshold, share, bks, newPeerID, listener)
+if err != nil {
+    // handle error
+}
+oldPeerAddShare.Start()
+// send out peer message...
+oldPeerAddShare.Stop()
+addShareResult, err := oldPeerAddShare.GetResult()
+if err != nil {
+    // handle error
+}
+```
+
+For new peer:
+
+* **addShareNewPeerManager**: a new peer manager for add share
+* **publicKey**: the public key generated from DKG
+* **threshold**: minimum number of participants required to sign
+* **listener**: a function to monitor the state change
+* **newPeerRank**: the new peer's rank
+
+```go
+newPeerAddShare, err = newpeer.NewAddShare(addSharePeerManager, publicKey, threshold, newPeerRank, listener)
+if err != nil {
+    // handle error
+}
+newPeerAddShare.Start()
+// send out peer message...
+newPeerAddShare.Stop()
+addShareResult, err := newPeerAddShare.GetResult()
+if err != nil {
+    // handle error
+}
+```
 
 <h2 id="Example">Examples:</h2>
 
