@@ -13,6 +13,7 @@ var global = Function('return this')();
 
 var github_com_getamis_alice_crypto_commitment_message_pb = require('../../../../../../github.com/getamis/alice/crypto/commitment/message_pb.js');
 var github_com_getamis_alice_crypto_zkproof_message_pb = require('../../../../../../github.com/getamis/alice/crypto/zkproof/message_pb.js');
+var github_com_getamis_alice_crypto_oprf_message_pb = require('../../../../../../github.com/getamis/alice/crypto/oprf/message_pb.js');
 goog.exportSymbol('proto.signer.BodyCommitUiTi', null, global);
 goog.exportSymbol('proto.signer.BodyCommitViAi', null, global);
 goog.exportSymbol('proto.signer.BodyDecommitUiTi', null, global);
@@ -51,7 +52,7 @@ if (goog.DEBUG && !COMPILED) {
  * @private {!Array<!Array<number>>}
  * @const
  */
-proto.signer.Message.oneofGroups_ = [[3,4,5,6,7,8,9,10,11,12]];
+proto.signer.Message.oneofGroups_ = [[3,4,5,6,7,8,9,10,11,12,13,14]];
 
 /**
  * @enum {number}
@@ -67,7 +68,9 @@ proto.signer.Message.BodyCase = {
   DECOMMITVIAI: 9,
   COMMITUITI: 10,
   DECOMMITUITI: 11,
-  SI: 12
+  SI: 12,
+  OPRFREQUEST: 13,
+  OPRFRESPONSE: 14
 };
 
 /**
@@ -117,7 +120,9 @@ proto.signer.Message.toObject = function(includeInstance, msg) {
     decommitviai: (f = msg.getDecommitviai()) && proto.signer.BodyDecommitViAi.toObject(includeInstance, f),
     commituiti: (f = msg.getCommituiti()) && proto.signer.BodyCommitUiTi.toObject(includeInstance, f),
     decommituiti: (f = msg.getDecommituiti()) && proto.signer.BodyDecommitUiTi.toObject(includeInstance, f),
-    si: (f = msg.getSi()) && proto.signer.BodySi.toObject(includeInstance, f)
+    si: (f = msg.getSi()) && proto.signer.BodySi.toObject(includeInstance, f),
+    oprfrequest: (f = msg.getOprfrequest()) && github_com_getamis_alice_crypto_oprf_message_pb.OprfRequestMessage.toObject(includeInstance, f),
+    oprfresponse: (f = msg.getOprfresponse()) && github_com_getamis_alice_crypto_oprf_message_pb.OprfResponseMessage.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -211,6 +216,16 @@ proto.signer.Message.deserializeBinaryFromReader = function(msg, reader) {
       var value = new proto.signer.BodySi;
       reader.readMessage(value,proto.signer.BodySi.deserializeBinaryFromReader);
       msg.setSi(value);
+      break;
+    case 13:
+      var value = new github_com_getamis_alice_crypto_oprf_message_pb.OprfRequestMessage;
+      reader.readMessage(value,github_com_getamis_alice_crypto_oprf_message_pb.OprfRequestMessage.deserializeBinaryFromReader);
+      msg.setOprfrequest(value);
+      break;
+    case 14:
+      var value = new github_com_getamis_alice_crypto_oprf_message_pb.OprfResponseMessage;
+      reader.readMessage(value,github_com_getamis_alice_crypto_oprf_message_pb.OprfResponseMessage.deserializeBinaryFromReader);
+      msg.setOprfresponse(value);
       break;
     default:
       reader.skipField();
@@ -333,6 +348,22 @@ proto.signer.Message.serializeBinaryToWriter = function(message, writer) {
       12,
       f,
       proto.signer.BodySi.serializeBinaryToWriter
+    );
+  }
+  f = message.getOprfrequest();
+  if (f != null) {
+    writer.writeMessage(
+      13,
+      f,
+      github_com_getamis_alice_crypto_oprf_message_pb.OprfRequestMessage.serializeBinaryToWriter
+    );
+  }
+  f = message.getOprfresponse();
+  if (f != null) {
+    writer.writeMessage(
+      14,
+      f,
+      github_com_getamis_alice_crypto_oprf_message_pb.OprfResponseMessage.serializeBinaryToWriter
     );
   }
 };
@@ -665,6 +696,66 @@ proto.signer.Message.prototype.clearSi = function() {
  */
 proto.signer.Message.prototype.hasSi = function() {
   return jspb.Message.getField(this, 12) != null;
+};
+
+
+/**
+ * optional oprf.OprfRequestMessage oprfRequest = 13;
+ * @return {?proto.oprf.OprfRequestMessage}
+ */
+proto.signer.Message.prototype.getOprfrequest = function() {
+  return /** @type{?proto.oprf.OprfRequestMessage} */ (
+    jspb.Message.getWrapperField(this, github_com_getamis_alice_crypto_oprf_message_pb.OprfRequestMessage, 13));
+};
+
+
+/** @param {?proto.oprf.OprfRequestMessage|undefined} value */
+proto.signer.Message.prototype.setOprfrequest = function(value) {
+  jspb.Message.setOneofWrapperField(this, 13, proto.signer.Message.oneofGroups_[0], value);
+};
+
+
+proto.signer.Message.prototype.clearOprfrequest = function() {
+  this.setOprfrequest(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.signer.Message.prototype.hasOprfrequest = function() {
+  return jspb.Message.getField(this, 13) != null;
+};
+
+
+/**
+ * optional oprf.OprfResponseMessage oprfResponse = 14;
+ * @return {?proto.oprf.OprfResponseMessage}
+ */
+proto.signer.Message.prototype.getOprfresponse = function() {
+  return /** @type{?proto.oprf.OprfResponseMessage} */ (
+    jspb.Message.getWrapperField(this, github_com_getamis_alice_crypto_oprf_message_pb.OprfResponseMessage, 14));
+};
+
+
+/** @param {?proto.oprf.OprfResponseMessage|undefined} value */
+proto.signer.Message.prototype.setOprfresponse = function(value) {
+  jspb.Message.setOneofWrapperField(this, 14, proto.signer.Message.oneofGroups_[0], value);
+};
+
+
+proto.signer.Message.prototype.clearOprfresponse = function() {
+  this.setOprfresponse(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {!boolean}
+ */
+proto.signer.Message.prototype.hasOprfresponse = function() {
+  return jspb.Message.getField(this, 14) != null;
 };
 
 
@@ -2760,7 +2851,9 @@ proto.signer.Type = {
   DECOMMITVIAI: 6,
   COMMITUITI: 7,
   DECOMMITUITI: 8,
-  SI: 9
+  SI: 9,
+  OPRFREQUEST: 10,
+  OPRFRESPONSE: 11
 };
 
 goog.object.extend(exports, proto.signer);
