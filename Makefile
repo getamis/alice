@@ -29,8 +29,8 @@ tools: $(DIRS) $(PROTOC)
 # Build go/js generated files
 PHONY += protobuf
 protobuf:
-	@for d in $$(find "crypto" "wasm" -type f -name "*.proto"); do		\
-		protoc -I$(GOPATH)/src --go_out=$(GOPATH)/src --js_out=import_style=commonjs,binary:$(GOPATH)/src $(CURDIR)/$$d; \
+	@for d in $$(find "crypto" -type f -name "*.proto"); do		\
+		protoc -I$(GOPATH)/src --go_out=$(GOPATH)/src $(CURDIR)/$$d; \
 	done;
 
 PHONY += coverage.txt
