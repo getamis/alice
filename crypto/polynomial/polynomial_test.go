@@ -125,8 +125,8 @@ var _ = Describe("Polynomial", func() {
 	},
 		Entry("f(29) = 23 mod 101", big.NewInt(29), big.NewInt(23), big.NewInt(101), uint32(4)),
 		Entry("f(65) = 100 mod 101", big.NewInt(65), big.NewInt(100), big.NewInt(101), uint32(5)),
-		Entry("f(65) = 122 = 11 mod 101", big.NewInt(21), big.NewInt(112), big.NewInt(101), uint32(5)),
-		Entry("f(65) = -1 mod bigPrime", big.NewInt(21), big.NewInt(-1), bigPrime, uint32(5)),
+		Entry("f(21) = 112 mod 101", big.NewInt(21), big.NewInt(112), big.NewInt(101), uint32(5)),
+		Entry("f(21) = -1 mod bigPrime", big.NewInt(21), big.NewInt(-1), bigPrime, uint32(5)),
 	)
 
 	DescribeTable("should be ok", func(degree uint32, exp []uint64) {
