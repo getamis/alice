@@ -20,7 +20,6 @@ import (
 	"math/big"
 
 	"github.com/golang/protobuf/proto"
-	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	"golang.org/x/crypto/blake2b"
 )
@@ -245,11 +244,13 @@ func HashProtos(salt []byte, msgs ...proto.Message) ([]byte, error) {
 		Msgs: make([]*any.Any, len(msgs)+1),
 	}
 	for i, m := range msgs {
-		anyMsg, err := ptypes.MarshalAny(m)
+		b, err := proto.Marshal(m)
 		if err != nil {
 			return nil, err
 		}
-		hMsg.Msgs[i] = anyMsg
+		hMsg.Msgs[i] = &any.Any{
+			Value: b,
+		}
 	}
 	hMsg.Msgs[len(msgs)] = &any.Any{
 		Value: salt,
