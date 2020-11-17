@@ -146,7 +146,6 @@ func (s *Signer) GetResult() (*Result, error) {
 	}, nil
 }
 
-func (s *Signer) IsWrongPasswordError() bool {
-	err := s.MsgMain.GetFinalError()
+func IsWrongPasswordError(err error) bool {
 	return err == ErrUnexpectedPublickey
 }
