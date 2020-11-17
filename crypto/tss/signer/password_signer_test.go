@@ -129,7 +129,7 @@ var _ = Describe("Password Tests", func() {
 
 		// Build public key
 		for _, signer := range ss {
-			Expect(signer.IsWrongPasswordError()).Should(BeTrue())
+			Expect(IsWrongPasswordError(signer.GetFinalError())).Should(BeTrue())
 		}
 		for _, l := range listeners {
 			l.AssertExpectations(GinkgoT())
