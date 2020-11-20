@@ -21,6 +21,7 @@ import (
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/oprf/hasher"
 	"github.com/getamis/alice/crypto/utils"
+	"golang.org/x/crypto/sha3"
 )
 
 var (
@@ -100,11 +101,12 @@ func (r *Requester) Compute(msg *OprfResponseMessage) (*big.Int, error) {
 	fieldOrder := beta.GetCurve().Params().N
 	inverseMaskValue := new(big.Int).ModInverse(r.r, fieldOrder)
 	point := beta.ScalarMult(inverseMaskValue)
-	pointMsg, err := point.ToEcPointMessage()
+	result, err := hashUserData(r.pw, r.hashPW, point)
 	if err != nil {
 		return nil, err
 	}
-	return utils.HashProtosToInt(r.pw, r.hashPWMsg, pointMsg)
+	// This mod will arise a little bias in the case of secp256k1.
+	return result.Mod(result, fieldOrder), nil
 }
 
 func generateMaskPoint(pw []byte) (*pt.ECPoint, *big.Int, *pt.ECPoint, error) {
@@ -163,18 +165,56 @@ func (r *Responser) Handle(msg *OprfRequestMessage) (*OprfResponseMessage, error
 }
 
 func ComputeShare(k *big.Int, password []byte, hashCurve hasher.Hasher) (*big.Int, error) {
+	curveN := hashCurve.GetN()
 	pwHash, err := hashCurve.Hash(password)
 	if err != nil {
 		return nil, err
 	}
-	pwMessage, err := pwHash.ToEcPointMessage()
-	if err != nil {
-		return nil, err
-	}
 	productPoint := pwHash.ScalarMult(k)
-	productMessage, err := productPoint.ToEcPointMessage()
+	result, err := hashUserData(password, pwHash, productPoint)
 	if err != nil {
 		return nil, err
 	}
-	return utils.HashProtosToInt(password, pwMessage, productMessage)
+	// This mod will arise a little bias in the case of secp256k1.
+	return result.Mod(result, curveN), nil
+}
+
+// We fix a method to compute hash(password, pwHash, productPoint):
+// The output is sha3(serialize), where
+// serialize := password+','+pwHash X coordinate+','+pwHash Y coordinate+','+productPoint X coordinate+','+productPoint Y coordinate+','+curve
+func hashUserData(password []byte, pwHash *pt.ECPoint, product *pt.ECPoint) (*big.Int, error) {
+	pwHashCurve, err := pt.ToCurve(pwHash.GetCurve())
+	if err != nil {
+		return nil, err
+	}
+	productCurve, err := pt.ToCurve(product.GetCurve())
+	if err != nil {
+		return nil, err
+	}
+
+	pad := byte(',')
+	var serialize []byte
+	// append password
+	serialize = append(serialize, password...)
+	serialize = append(serialize, pad)
+
+	// append pw hash
+	serialize = append(serialize, byte(pwHashCurve))
+	serialize = append(serialize, pad)
+	serialize = append(serialize, pwHash.GetX().Bytes()...)
+	serialize = append(serialize, pad)
+	serialize = append(serialize, pwHash.GetY().Bytes()...)
+	serialize = append(serialize, pad)
+
+	// append product hash
+	serialize = append(serialize, byte(productCurve))
+	serialize = append(serialize, pad)
+	serialize = append(serialize, product.GetX().Bytes()...)
+	serialize = append(serialize, pad)
+	serialize = append(serialize, product.GetY().Bytes()...)
+
+	// Do hash
+	h := sha3.New256()
+	h.Write(serialize)
+	return new(big.Int).SetBytes(h.Sum(nil)), nil
 }
