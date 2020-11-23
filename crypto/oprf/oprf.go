@@ -110,9 +110,24 @@ func (r *Requester) Compute(msg *OprfResponseMessage) (*big.Int, error) {
 }
 
 func generateMaskPoint(pw []byte) (*pt.ECPoint, *big.Int, *pt.ECPoint, error) {
-	hashPW, err := secp256k1Hasher.Hash(pw)
+	copypw := make([]byte, len(pw))
+	copy(pw, copypw)
+	hashPW, err := secp256k1Hasher.Hash(copypw)
 	if err != nil {
 		return nil, nil, nil, err
+	}
+
+	for i := 0; i < maxRetry; i++ {
+		if !hashPW.IsIdentity() {
+			break
+		}
+		h := sha3.New256()
+		h.Write(copypw)
+		copypw = h.Sum(nil)
+		hashPW, err = secp256k1Hasher.Hash(copypw)
+		if err != nil {
+			return nil, nil, nil, err
+		}
 	}
 	r, err := utils.RandomPositiveInt(fieldOrder)
 	if err != nil {
