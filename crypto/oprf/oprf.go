@@ -38,6 +38,8 @@ var (
 	ErrZero = errors.New("zero")
 	// ErrIdentityPoint is returned if point is the identity point
 	ErrIdentityPoint = errors.New("identity point")
+	//ErrExceedMaxRetry is returned if we retried over times
+	ErrExceedMaxRetry = errors.New("exceed max retries")
 )
 
 type Requester struct {
@@ -105,8 +107,15 @@ func (r *Requester) Compute(msg *OprfResponseMessage) (*big.Int, error) {
 	if err != nil {
 		return nil, err
 	}
-	// This mod will arise a little bias in the case of secp256k1.
-	return result.Mod(result, fieldOrder), nil
+	for i := 0; i < maxRetry; i++ {
+		if result.Cmp(fieldOrder) < 0 {
+			return result, nil
+		}
+		h := sha3.New256()
+		h.Write(result.Bytes())
+		result = result.SetBytes(h.Sum(nil))
+	}
+	return nil, ErrExceedMaxRetry
 }
 
 func generateMaskPoint(pw []byte) (*pt.ECPoint, *big.Int, *pt.ECPoint, error) {
@@ -175,8 +184,16 @@ func ComputeShare(k *big.Int, password []byte, hashCurve hasher.Hasher) (*big.In
 	if err != nil {
 		return nil, err
 	}
-	// This mod will arise a little bias in the case of secp256k1.
-	return result.Mod(result, curveN), nil
+
+	for i := 0; i < maxRetry; i++ {
+		if result.Cmp(curveN) < 0 {
+			return result, nil
+		}
+		h := sha3.New256()
+		h.Write(result.Bytes())
+		result = result.SetBytes(h.Sum(nil))
+	}
+	return nil, ErrExceedMaxRetry
 }
 
 // We fix a method to compute hash(password, pwHash, productPoint):
