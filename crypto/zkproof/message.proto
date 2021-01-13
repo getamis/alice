@@ -41,3 +41,26 @@ message ConsistencyTwoPointsMessage {
   ecpointgrouplaw.EcPointMessage A = 4;
   ecpointgrouplaw.EcPointMessage B = 5;
 }
+
+message InteractiveSchnorrProver1 {
+  ecpointgrouplaw.EcPointMessage H = 1;
+  ecpointgrouplaw.EcPointMessage V = 2;
+}
+
+message InteractiveSchnorrProver2 {
+  ecpointgrouplaw.EcPointMessage B = 1;
+}
+
+message InteractiveSchnorrProver3 {
+  bytes Z = 1;
+  bytes K = 2;
+}
+
+message InteractiveSchnorrVerifier1 {
+  ecpointgrouplaw.EcPointMessage C = 1;
+}
+
+message InteractiveSchnorrVerifier2 {
+  bytes e = 1;
+  bytes r = 2;
+}
