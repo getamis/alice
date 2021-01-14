@@ -17,6 +17,7 @@ package tss
 import (
 	"errors"
 	"fmt"
+	"math/big"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/commitment"
@@ -76,6 +77,10 @@ func ValidatePublicKey(logger log.Logger, bks birkhoffinterpolation.BkParameters
 		logger.Warn("Failed to compute", "err", err)
 		return err
 	}
+	return ValidatePublicKeyWithBkCoefficients(logger, scalars, sgs, pubkey)
+}
+
+func ValidatePublicKeyWithBkCoefficients(logger log.Logger, scalars []*big.Int, sgs []*pt.ECPoint, pubkey *pt.ECPoint) error {
 	gotPub, err := pt.ComputeLinearCombinationPoint(scalars, sgs)
 	if err != nil {
 		logger.Warn("Failed to calculate public", "err", err)

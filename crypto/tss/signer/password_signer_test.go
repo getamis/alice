@@ -15,7 +15,6 @@ package signer
 
 import (
 	"crypto/ecdsa"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -26,15 +25,21 @@ import (
 	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
+	"github.com/getamis/alice/crypto/tss/passwordreshare"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
+const (
+	oldPassword = "edwin-haha"
+	newPassword = "cy-haha"
+)
+
 var _ = Describe("Password Tests", func() {
 	DescribeTable("should be ok", func(homoFunc func() (homo.Crypto, error)) {
 		By("Step 1: DKG")
-		password := []byte("edwin-haha")
+		password := []byte(oldPassword)
 		dkgs, listeners := newPasswordDKGs(password)
 		for _, l := range listeners {
 			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
@@ -53,7 +58,6 @@ var _ = Describe("Password Tests", func() {
 		}
 
 		By("Step 2: Signer")
-		fmt.Println("Signers")
 		msg := []byte("1234567")
 		homo, err := homoFunc()
 		Expect(err).Should(BeNil())
@@ -87,6 +91,21 @@ var _ = Describe("Password Tests", func() {
 		for _, l := range listeners {
 			l.AssertExpectations(GinkgoT())
 		}
+
+		By("Step 3: Reshare")
+		ur, sr, listeners := newPasswordReshares([]byte(oldPassword), []byte(newPassword), dkgs)
+		for _, l := range listeners {
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
+		}
+		sr.Start()
+		ur.Start()
+		time.Sleep(2 * time.Second)
+		// Stop reshare process.
+		sr.Stop()
+		ur.Stop()
+		for _, l := range listeners {
+			l.AssertExpectations(GinkgoT())
+		}
 	},
 		Entry("paillier", func() (homo.Crypto, error) {
 			return paillier.NewPaillier(2048)
@@ -114,7 +133,6 @@ var _ = Describe("Password Tests", func() {
 		}
 
 		By("Step 2: Signer")
-		fmt.Println("Signers")
 		msg := []byte("1234567")
 		homo, err := homoFunc()
 		Expect(err).Should(BeNil())
@@ -195,4 +213,33 @@ func newPasswordSigners(password []byte, dkgs map[string]*dkg.DKG, homo homo.Cry
 		pubKey = r.PublicKey
 	}
 	return pubKey, ss, listeners
+}
+
+func newPasswordReshares(oldPassword []byte, newPassword []byte, dkgs map[string]*dkg.DKG) (*passwordreshare.UserReshare, *passwordreshare.ServerReshare, map[string]*mocks.StateChangedListener) {
+	var (
+		ur *passwordreshare.UserReshare
+		sr *passwordreshare.ServerReshare
+	)
+	lens := 2
+	ssMain := make(map[string]types.MessageMain, lens)
+	peerManagers := make([]types.PeerManager, lens)
+	listeners := make(map[string]*mocks.StateChangedListener, lens)
+	for i := 0; i < lens; i++ {
+		id := tss.GetTestID(i)
+		pm := tss.NewTestPeerManager(i, lens)
+		pm.Set(ssMain)
+		peerManagers[i] = pm
+		listeners[id] = new(mocks.StateChangedListener)
+		r, err := dkgs[id].GetResult()
+		Expect(err).Should(BeNil())
+		if i == 0 {
+			ur, err = passwordreshare.NewUserReshare(pm, r.PublicKey, oldPassword, newPassword, r.Bks, listeners[id])
+			ssMain[id] = ur
+		} else {
+			sr, err = passwordreshare.NewServerReshare(pm, r.PublicKey, r.K, r.Share, r.Bks, listeners[id])
+			ssMain[id] = sr
+		}
+		Expect(err).Should(BeNil())
+	}
+	return ur, sr, listeners
 }

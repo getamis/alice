@@ -15,6 +15,7 @@
 package zkproof
 
 import (
+	"crypto/elliptic"
 	"math/big"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
@@ -49,7 +50,7 @@ import (
 */
 
 // ECPoint is the struct for an elliptic curve point.
-type prover struct {
+type InteractiveSchnorrProver struct {
 	h *pt.ECPoint
 	c *pt.ECPoint
 	v *pt.ECPoint
@@ -59,7 +60,7 @@ type prover struct {
 	x *big.Int
 }
 
-type verifier struct {
+type InteractiveSchnorrVerifier struct {
 	h *pt.ECPoint
 	e *big.Int
 	r *big.Int
@@ -68,15 +69,14 @@ type verifier struct {
 	b *pt.ECPoint
 }
 
-func NewInteractiveSchnorrProver(secret *big.Int, basePoint *pt.ECPoint) (*prover, error) {
-	curve := basePoint.GetCurve()
+func NewInteractiveSchnorrProver(secret *big.Int, curve elliptic.Curve) (*InteractiveSchnorrProver, error) {
 	k, err := utils.RandomPositiveInt(curve.Params().N)
 	if err != nil {
 		return nil, err
 	}
 	h := pt.ScalarBaseMult(curve, k)
 	v := pt.ScalarBaseMult(curve, secret)
-	return &prover{
+	return &InteractiveSchnorrProver{
 		h: h,
 		k: k,
 		v: v,
@@ -84,7 +84,7 @@ func NewInteractiveSchnorrProver(secret *big.Int, basePoint *pt.ECPoint) (*prove
 	}, nil
 }
 
-func (p *prover) ComputeZ(msg *InteractiveSchnorrVerifier2) (*InteractiveSchnorrProver3, error) {
+func (p *InteractiveSchnorrProver) ComputeZ(msg *InteractiveSchnorrVerifier2) (*InteractiveSchnorrProver3, error) {
 	e := new(big.Int).SetBytes(msg.E)
 	r := new(big.Int).SetBytes(msg.R)
 	// check e in [0,p-1] and r in [0,p-1]
@@ -115,7 +115,7 @@ func (p *prover) ComputeZ(msg *InteractiveSchnorrVerifier2) (*InteractiveSchnorr
 	}, nil
 }
 
-func (p *prover) GetInteractiveSchnorrProver1Message() *InteractiveSchnorrProver1 {
+func (p *InteractiveSchnorrProver) GetInteractiveSchnorrProver1Message() *InteractiveSchnorrProver1 {
 	h, _ := p.h.ToEcPointMessage()
 	pubKey, _ := p.v.ToEcPointMessage()
 	return &InteractiveSchnorrProver1{
@@ -124,8 +124,12 @@ func (p *prover) GetInteractiveSchnorrProver1Message() *InteractiveSchnorrProver
 	}
 }
 
+func (v *InteractiveSchnorrProver) GetV() *pt.ECPoint {
+	return v.v
+}
+
 // B = a*G
-func (p *prover) GetInteractiveSchnorrProver2Message() (*InteractiveSchnorrProver2, error) {
+func (p *InteractiveSchnorrProver) GetInteractiveSchnorrProver2Message() (*InteractiveSchnorrProver2, error) {
 	curve := p.h.GetCurve()
 	a, err := utils.RandomPositiveInt(curve.Params().N)
 	if err != nil {
@@ -139,7 +143,7 @@ func (p *prover) GetInteractiveSchnorrProver2Message() (*InteractiveSchnorrProve
 	}, nil
 }
 
-func (p *prover) SetCommitC(msg *InteractiveSchnorrVerifier1) error {
+func (p *InteractiveSchnorrProver) SetCommitC(msg *InteractiveSchnorrVerifier1) error {
 	c, err := msg.C.ToPoint()
 	if err != nil {
 		return err
@@ -148,7 +152,7 @@ func (p *prover) SetCommitC(msg *InteractiveSchnorrVerifier1) error {
 	return nil
 }
 
-func NewInteractiveSchnorrVerifier(msg *InteractiveSchnorrProver1) (*verifier, error) {
+func NewInteractiveSchnorrVerifier(msg *InteractiveSchnorrProver1) (*InteractiveSchnorrVerifier, error) {
 	h, err := msg.H.ToPoint()
 	if err != nil {
 		return nil, err
@@ -170,7 +174,7 @@ func NewInteractiveSchnorrVerifier(msg *InteractiveSchnorrProver1) (*verifier, e
 	if err != nil {
 		return nil, err
 	}
-	return &verifier{
+	return &InteractiveSchnorrVerifier{
 		h: h,
 		e: e,
 		r: r,
@@ -192,21 +196,21 @@ func computeCommitmentC(H *pt.ECPoint, r *big.Int, e *big.Int) (*pt.ECPoint, err
 	return C, nil
 }
 
-func (v *verifier) GetInteractiveSchnorrVerifier1Message() *InteractiveSchnorrVerifier1 {
+func (v *InteractiveSchnorrVerifier) GetInteractiveSchnorrVerifier1Message() *InteractiveSchnorrVerifier1 {
 	c, _ := v.c.ToEcPointMessage()
 	return &InteractiveSchnorrVerifier1{
 		C: c,
 	}
 }
 
-func (v *verifier) GetInteractiveSchnorrVerifier2Message() *InteractiveSchnorrVerifier2 {
+func (v *InteractiveSchnorrVerifier) GetInteractiveSchnorrVerifier2Message() *InteractiveSchnorrVerifier2 {
 	return &InteractiveSchnorrVerifier2{
 		E: v.e.Bytes(),
 		R: v.r.Bytes(),
 	}
 }
 
-func (v *verifier) SetB(msg *InteractiveSchnorrProver2) error {
+func (v *InteractiveSchnorrVerifier) SetB(msg *InteractiveSchnorrProver2) error {
 	b, err := msg.B.ToPoint()
 	if err != nil {
 		return err
@@ -216,7 +220,7 @@ func (v *verifier) SetB(msg *InteractiveSchnorrProver2) error {
 }
 
 // z*G = B + e*V
-func (v *verifier) Verify(msg *InteractiveSchnorrProver3) error {
+func (v *InteractiveSchnorrVerifier) Verify(msg *InteractiveSchnorrProver3) error {
 	z := new(big.Int).SetBytes(msg.Z)
 	k := new(big.Int).SetBytes(msg.K)
 	curve := v.h.GetCurve()
@@ -242,4 +246,8 @@ func (v *verifier) Verify(msg *InteractiveSchnorrProver3) error {
 		return ErrVerifyFailure
 	}
 	return nil
+}
+
+func (v *InteractiveSchnorrVerifier) GetV() *pt.ECPoint {
+	return v.v
 }
