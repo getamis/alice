@@ -17,7 +17,7 @@ import (
 	"math/big"
 
 	"github.com/btcsuite/btcd/btcec"
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -25,12 +25,12 @@ import (
 
 var _ = Describe("Interactive Schnorr 5 moves", func() {
 	var (
-		G = pt.ScalarBaseMult(btcec.S256(), big.NewInt(1))
+		curve = btcec.S256()
 	)
 
 	DescribeTable("should be ok", func(a *big.Int) {
 		// step 1: The prover randomly chooses an integer k in [1, p-1] and sends H := k*G and V to the verifier.
-		p, err := NewInteractiveSchnorrProver(a, G)
+		p, err := NewInteractiveSchnorrProver(a, curve)
 		Expect(err).Should(BeNil())
 		pmsg1 := p.GetInteractiveSchnorrProver1Message()
 
@@ -63,7 +63,7 @@ var _ = Describe("Interactive Schnorr 5 moves", func() {
 	Context("ComputeZ", func() {
 		It("C != eH+rG", func() {
 			a := big.NewInt(578)
-			p, err := NewInteractiveSchnorrProver(a, G)
+			p, err := NewInteractiveSchnorrProver(a, curve)
 			Expect(err).Should(BeNil())
 			pmsg1 := p.GetInteractiveSchnorrProver1Message()
 			v, err := NewInteractiveSchnorrVerifier(pmsg1)
@@ -75,7 +75,7 @@ var _ = Describe("Interactive Schnorr 5 moves", func() {
 			err = v.SetB(pmsg2)
 			Expect(err).Should(BeNil())
 			vmsg2 := v.GetInteractiveSchnorrVerifier2Message()
-			p.c = G.Copy()
+			p.c = ecpointgrouplaw.NewBase(curve)
 			vmsg3, err := p.ComputeZ(vmsg2)
 			Expect(vmsg3).Should(BeNil())
 			Expect(err).Should(Equal(ErrVerifyFailure))
@@ -83,7 +83,7 @@ var _ = Describe("Interactive Schnorr 5 moves", func() {
 
 		It("e out of range", func() {
 			a := big.NewInt(996)
-			p, err := NewInteractiveSchnorrProver(a, G)
+			p, err := NewInteractiveSchnorrProver(a, curve)
 			Expect(err).Should(BeNil())
 			pmsg1 := p.GetInteractiveSchnorrProver1Message()
 			v, err := NewInteractiveSchnorrVerifier(pmsg1)
@@ -103,7 +103,7 @@ var _ = Describe("Interactive Schnorr 5 moves", func() {
 
 		It("r out of range", func() {
 			a := big.NewInt(5566)
-			p, err := NewInteractiveSchnorrProver(a, G)
+			p, err := NewInteractiveSchnorrProver(a, curve)
 			Expect(err).Should(BeNil())
 			pmsg1 := p.GetInteractiveSchnorrProver1Message()
 			v, err := NewInteractiveSchnorrVerifier(pmsg1)
@@ -124,7 +124,7 @@ var _ = Describe("Interactive Schnorr 5 moves", func() {
 	Context("Verify", func() {
 		It("z*G != B + e*V", func() {
 			a := big.NewInt(12)
-			p, err := NewInteractiveSchnorrProver(a, G)
+			p, err := NewInteractiveSchnorrProver(a, curve)
 			Expect(err).Should(BeNil())
 			pmsg1 := p.GetInteractiveSchnorrProver1Message()
 			v, err := NewInteractiveSchnorrVerifier(pmsg1)
@@ -146,7 +146,7 @@ var _ = Describe("Interactive Schnorr 5 moves", func() {
 
 		It("H != k*G", func() {
 			a := big.NewInt(12)
-			p, err := NewInteractiveSchnorrProver(a, G)
+			p, err := NewInteractiveSchnorrProver(a, curve)
 			Expect(err).Should(BeNil())
 			pmsg1 := p.GetInteractiveSchnorrProver1Message()
 			v, err := NewInteractiveSchnorrVerifier(pmsg1)
@@ -168,7 +168,7 @@ var _ = Describe("Interactive Schnorr 5 moves", func() {
 
 		It("Z out of range", func() {
 			a := big.NewInt(12)
-			p, err := NewInteractiveSchnorrProver(a, G)
+			p, err := NewInteractiveSchnorrProver(a, curve)
 			Expect(err).Should(BeNil())
 			pmsg1 := p.GetInteractiveSchnorrProver1Message()
 			v, err := NewInteractiveSchnorrVerifier(pmsg1)
@@ -189,7 +189,7 @@ var _ = Describe("Interactive Schnorr 5 moves", func() {
 
 		It("k out of range", func() {
 			a := big.NewInt(12)
-			p, err := NewInteractiveSchnorrProver(a, G)
+			p, err := NewInteractiveSchnorrProver(a, curve)
 			Expect(err).Should(BeNil())
 			pmsg1 := p.GetInteractiveSchnorrProver1Message()
 			v, err := NewInteractiveSchnorrVerifier(pmsg1)

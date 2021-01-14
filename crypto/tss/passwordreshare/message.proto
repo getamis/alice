@@ -1,0 +1,85 @@
+// Copyright © 2021 AMIS Technologies
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package passwordreshare;
+
+import "github.com/getamis/alice/crypto/oprf/message.proto";
+import "github.com/getamis/alice/crypto/zkproof/message.proto";
+
+enum Type {
+    MsgUser0 = 0;
+    MsgUser1 = 1;
+    MsgUser2 = 2;
+    MsgUser3 = 3;
+    MsgServer0 = 100;
+    MsgServer1 = 101;
+    MsgServer2 = 102;
+}
+
+message Message {
+    Type type = 1;
+    string id = 2;
+    oneof body {
+        BodyUser0 user0 = 3;
+        BodyUser1 user1 = 4;
+        BodyUser2 user2 = 5;
+        BodyUser3 user3 = 6;
+        BodyServer0 server0 = 10;
+        BodyServer1 server1 = 11;
+        BodyServer2 server2 = 12;
+    }
+}
+
+message BodyUser0 {
+    oprf.OprfRequestMessage oldPasswordRequest = 1;
+    oprf.OprfRequestMessage newPasswordRequest = 2;
+}
+
+message BodyUser1 {
+    zkproof.InteractiveSchnorrProver1 oldShareGProver1 = 1;
+    zkproof.InteractiveSchnorrProver1 newShareGProver1 = 2;
+    zkproof.InteractiveSchnorrVerifier1 serverGVerifier1 = 3;
+}
+
+message BodyUser2 {
+    zkproof.InteractiveSchnorrProver2 oldShareGProver2 = 1;
+    zkproof.InteractiveSchnorrProver2 newShareGProver2 = 2;
+    zkproof.InteractiveSchnorrVerifier2 serverGVerifier2 = 3;
+}
+
+message BodyUser3 {
+    zkproof.InteractiveSchnorrProver3 oldShareGProver3 = 1;
+    zkproof.InteractiveSchnorrProver3 newShareGProver3 = 2;
+    bytes evaluation = 3;
+}
+
+message BodyServer0 {
+    oprf.OprfResponseMessage oldPasswordResponse = 1;
+    oprf.OprfResponseMessage newPasswordResponse = 2;
+    zkproof.InteractiveSchnorrProver1 serverGProver1 = 3;
+}
+
+message BodyServer1 {
+    zkproof.InteractiveSchnorrProver2 serverGProver2 = 1;
+    zkproof.InteractiveSchnorrVerifier1 oldShareGVerifier1 = 2;
+    zkproof.InteractiveSchnorrVerifier1 newShareGVerifier1 = 3;
+}
+
+message BodyServer2 {
+    zkproof.InteractiveSchnorrProver3 serverGProver3 = 1;
+    zkproof.InteractiveSchnorrVerifier2 oldShareGVerifier2 = 2;
+    zkproof.InteractiveSchnorrVerifier2 newShareGVerifier2 = 3;
+}

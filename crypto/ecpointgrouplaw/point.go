@@ -144,6 +144,11 @@ func (p *ECPoint) ScalarMult(k *big.Int) *ECPoint {
 	}
 }
 
+func (p *ECPoint) Neg() *ECPoint {
+	n := p.curve.Params().N
+	return p.ScalarMult(new(big.Int).Sub(n, big.NewInt(1)))
+}
+
 // GetX returns the x coordinate of the point.
 func (p *ECPoint) GetX() *big.Int {
 	if p.IsIdentity() {
