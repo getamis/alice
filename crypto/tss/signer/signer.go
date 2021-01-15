@@ -145,7 +145,3 @@ func (s *Signer) GetResult() (*Result, error) {
 		S: new(big.Int).Set(rh.s),
 	}, nil
 }
-
-func IsWrongPasswordError(err error) bool {
-	return err == ErrUnexpectedPublickey
-}

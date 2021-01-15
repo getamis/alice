@@ -15,7 +15,6 @@
 package signer
 
 import (
-	"errors"
 	"math/big"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
@@ -23,11 +22,6 @@ import (
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/sirius/log"
-)
-
-var (
-	// ErrUnexpectedPublickey is returned if the public key is unexpected
-	ErrUnexpectedPublickey = errors.New("unexpected public key")
 )
 
 type mtaData struct {
@@ -140,7 +134,7 @@ func (p *mtaHandler) ensurePublickey(logger log.Logger) error {
 	}
 	if !p.publicKey.Equal(sum) {
 		logger.Warn("Unexpected public key", "exp", p.publicKey, "got", sum)
-		return ErrUnexpectedPublickey
+		return tss.ErrUnexpectedPublickey
 	}
 	return nil
 }

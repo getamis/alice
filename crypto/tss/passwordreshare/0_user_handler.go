@@ -148,7 +148,7 @@ func (p *userHandler0) HandleMessage(logger log.Logger, message types.Message) e
 	self := p.peers[p.peerManager.SelfID()]
 	err = validatePubKey(logger, peer.bkCoefficient, sG, self.bkCoefficient, ecpointgrouplaw.ScalarBaseMult(p.curve, p.oldShare), p.publicKey)
 	if err != nil {
-		return err
+		return tss.ErrUnexpectedPublickey
 	}
 
 	// Build a0, a1 prover new polynomial
