@@ -65,7 +65,8 @@ func (p *serverHandler3) HandleMessage(logger log.Logger, message types.Message)
 	}
 
 	// Schnorr verify
-	xuInverse := new(big.Int).ModInverse(peer.bk.GetX(), p.curve.Params().N)
+	n := p.curve.Params().N
+	xuInverse := new(big.Int).ModInverse(peer.bk.GetX(), n)
 	err := p.oldShareGVerifier.Verify(user3.OldShareGProver3)
 	if err != nil {
 		logger.Warn("Failed to verify (old share)", "err", err)
@@ -97,7 +98,7 @@ func (p *serverHandler3) HandleMessage(logger log.Logger, message types.Message)
 	s1 := new(big.Int).Mul(p.secret, self.bkCoefficient)
 	s2 := new(big.Int).Sub(peer.bk.GetX(), self.bk.GetX())
 	p.newShare = new(big.Int).Mul(new(big.Int).Mul(s1, s2), xuInverse)
-	p.newShare = new(big.Int).Add(evaluation, p.newShare)
+	p.newShare = new(big.Int).Mod(new(big.Int).Add(evaluation, p.newShare), n)
 
 	// Validate consistent public key
 	err = validatePubKey(logger, self.bkCoefficient, ecpointgrouplaw.ScalarBaseMult(p.curve, p.newShare), peer.bkCoefficient, p.newShareGVerifier.GetV(), p.publicKey)
