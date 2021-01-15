@@ -188,7 +188,7 @@ var _ = Describe("mta handler, negative cases", func() {
 			toH.wiG = pt.NewBase(btcec.S256())
 			got, err := toH.Finalize(log.Discard())
 			Expect(got).Should(BeNil())
-			Expect(err).Should(Equal(ErrUnexpectedPublickey))
+			Expect(err).Should(Equal(tss.ErrUnexpectedPublickey))
 		})
 
 		It("failed to get ai mta GetResult", func() {

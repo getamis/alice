@@ -43,6 +43,9 @@ var (
 	ErrInconsistentThreshold     = errors.New("inconsistent threshold")
 	ErrInconsistentPeerNumAndBks = errors.New("inconsistent peer num and bks")
 	ErrInconsistentPubKey        = errors.New("inconsistent public key")
+
+	// ErrUnexpectedPublickey is returned if the public key is unexpected
+	ErrUnexpectedPublickey = errors.New("unexpected public key")
 )
 
 func NewCommitterByPoint(p *pt.ECPoint) (*commitment.HashCommitmenter, error) {
@@ -174,4 +177,8 @@ func (p *TestPeerManager) MustSend(id string, message interface{}) {
 	}
 	msg := message.(types.Message)
 	d.AddMessage(msg)
+}
+
+func IsWrongPasswordError(err error) bool {
+	return err == ErrUnexpectedPublickey
 }
