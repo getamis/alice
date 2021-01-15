@@ -145,8 +145,16 @@ func (p *ECPoint) ScalarMult(k *big.Int) *ECPoint {
 }
 
 func (p *ECPoint) Neg() *ECPoint {
-	n := p.curve.Params().N
-	return p.ScalarMult(new(big.Int).Sub(n, big.NewInt(1)))
+	if p.IsIdentity() {
+		return NewIdentity(p.curve)
+	}
+	negativeY := new(big.Int).Neg(p.y)
+	negativeY = negativeY.Mod(negativeY, p.curve.Params().P)
+	return &ECPoint{
+		curve: p.curve,
+		x:     new(big.Int).Set(p.x),
+		y:     negativeY,
+	}
 }
 
 // GetX returns the x coordinate of the point.
