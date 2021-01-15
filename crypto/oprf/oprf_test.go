@@ -27,8 +27,12 @@ import (
 
 var _ = Describe("oprf test", func() {
 	DescribeTable("Hash()", func(pw []byte, k *big.Int) {
+		copyPw := make([]byte, len(pw))
+		copy(copyPw, pw)
 		requester, err := NewRequester(pw)
 		Expect(err).Should(BeNil())
+		// Ensure the password is correct
+		Expect(requester.pw).Should(Equal(copyPw))
 		var responser *Responser
 		if k == nil {
 			responser, err = NewResponser()

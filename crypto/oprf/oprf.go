@@ -120,7 +120,7 @@ func (r *Requester) Compute(msg *OprfResponseMessage) (*big.Int, error) {
 
 func generateMaskPoint(pw []byte) (*pt.ECPoint, *big.Int, *pt.ECPoint, error) {
 	copypw := make([]byte, len(pw))
-	copy(pw, copypw)
+	copy(copypw, pw)
 	hashPW, err := secp256k1Hasher.Hash(copypw)
 	if err != nil {
 		return nil, nil, nil, err
