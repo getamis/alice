@@ -72,6 +72,34 @@ var _ = Describe("oprf test", func() {
 		Entry("092834729-37492374", []byte("092834729-37492374"), big.NewInt(999999), "80863401229445569258591851410919083324501633198301704812368958895625043366063"),
 	)
 
+	// Warn: CAN NOT CHANGE THESE TESTS
+	DescribeTable("Fix Vector()", func(pw []byte, k *big.Int, expectedString string) {
+		requester, err := NewRequester(pw)
+		Expect(err).Should(BeNil())
+		var responser *Responser
+		if k == nil {
+			responser, err = NewResponser()
+			Expect(err).Should(BeNil())
+			k = responser.GetK()
+		} else {
+			responser, err = NewResponserWithK(k)
+			Expect(err).Should(BeNil())
+		}
+		responserMessage, err := responser.Handle(requester.GetRequestMessage())
+		Expect(err).Should(BeNil())
+		got, err := requester.Compute(responserMessage)
+		Expect(err).Should(BeNil())
+		expected, _ := new(big.Int).SetString(expectedString, 10)
+		Expect(err).Should(BeNil())
+		Expect(got.Cmp(expected) == 0).Should(BeTrue())
+	},
+		Entry("random k", []byte("cy hahahahahaha"), big.NewInt(2), "39762705969790288698147785435158915025771216702954110676076686122230821070412"),
+		Entry("random k", []byte("cy hahahahahaha"), big.NewInt(3), "66160902141901830464806996240648401353488586023602583499574451231396974735128"),
+		Entry("asdfsasddfgdfs", []byte("asdfsasddfgdfs"), big.NewInt(32000000), "75842743101060490522393730082400262068787578753446434023016710045513511388077"),
+		Entry("092834729837492374", []byte("092834729837492374"), big.NewInt(10000), "29704828473288093072032800362891643369290824425550073036816806344369222682398"),
+		Entry("092834729-37492374", []byte("092834729-37492374"), big.NewInt(999999), "80863401229445569258591851410919083324501633198301704812368958895625043366063"),
+	)
+
 	Context("Negative case", func() {
 		It("ErrNotInRange", func() {
 			responser, err := NewResponserWithK(big.NewInt(0))
