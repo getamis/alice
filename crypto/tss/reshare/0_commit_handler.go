@@ -52,7 +52,7 @@ func newCommitHandler(publicKey *ecpointgrouplaw.ECPoint, peerManager types.Peer
 	numPeers := peerManager.NumPeers()
 	lenBks := len(bks)
 	if lenBks != int(numPeers+1) {
-		log.Warn("Inconsistent peer num", "bks", len(bks), "numPeers", numPeers)
+		log.Debug("Inconsistent peer num", "bks", len(bks), "numPeers", numPeers)
 		return nil, tss.ErrInconsistentPeerNumAndBks
 	}
 	if err := utils.EnsureThreshold(threshold, uint32(lenBks)); err != nil {
@@ -75,7 +75,7 @@ func newCommitHandler(publicKey *ecpointgrouplaw.ECPoint, peerManager types.Peer
 
 	selfBK, peers, err := buildPeers(fieldOrder, peerManager.SelfID(), threshold, bks, feldmanCommitmenter)
 	if err != nil {
-		log.Warn("Failed to build peers", "err", err)
+		log.Debug("Failed to build peers", "err", err)
 		return nil, err
 	}
 
@@ -104,7 +104,7 @@ func (p *commitHandler) GetRequiredMessageCount() uint32 {
 func (p *commitHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.commit != nil
@@ -115,7 +115,7 @@ func (p *commitHandler) HandleMessage(logger log.Logger, message types.Message) 
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 	peer.commit = &commitData{}
@@ -187,7 +187,7 @@ func buildPeers(fieldOrder *big.Int, selfID string, threshold uint32, bks map[st
 	// Check if the bks are ok
 	_, err := allBKs.ComputeBkCoefficient(threshold, fieldOrder)
 	if err != nil {
-		log.Warn("Failed to compute bkCoefficient", "err", err)
+		log.Debug("Failed to compute bkCoefficient", "err", err)
 		return nil, nil, err
 	}
 

@@ -40,7 +40,7 @@ func newEncKHandler(p *pubkeyHandler) (*encKHandler, error) {
 	// Build mta for wi, g
 	wiMta, err := p.aiMta.OverrideA(p.wi)
 	if err != nil {
-		log.Warn("Failed to create wi mta", "wi", p.wi, "err", err)
+		log.Debug("Failed to create wi mta", "wi", p.wi, "err", err)
 		return nil, err
 	}
 
@@ -65,7 +65,7 @@ func (p *encKHandler) GetRequiredMessageCount() uint32 {
 func (p *encKHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.enck != nil
@@ -76,7 +76,7 @@ func (p *encKHandler) HandleMessage(logger log.Logger, message types.Message) er
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return ErrPeerNotFound
 	}
 
@@ -84,17 +84,17 @@ func (p *encKHandler) HandleMessage(logger log.Logger, message types.Message) er
 	body := msg.GetEncK()
 	encAiAlpha, aiBeta, err := p.aiMta.Compute(peer.pubkey.publicKey, body.Enck)
 	if err != nil {
-		logger.Warn("Failed to compute for ai mta", "err", err)
+		logger.Debug("Failed to compute for ai mta", "err", err)
 		return err
 	}
 	encWiAlpha, wiBeta, err := p.wiMta.Compute(peer.pubkey.publicKey, body.Enck)
 	if err != nil {
-		logger.Warn("Failed to compute for wi mta", "err", err)
+		logger.Debug("Failed to compute for wi mta", "err", err)
 		return err
 	}
 	wiProof, err := p.wiMta.GetProofWithCheck(p.getCurve(), wiBeta)
 	if err != nil {
-		logger.Warn("Failed to compute beta proof", "err", err)
+		logger.Debug("Failed to compute beta proof", "err", err)
 		return err
 	}
 

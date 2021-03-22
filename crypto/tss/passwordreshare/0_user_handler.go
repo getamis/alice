@@ -97,7 +97,7 @@ func (p *userHandler0) GetRequiredMessageCount() uint32 {
 func (p *userHandler0) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.GetMessage(p.MessageType()) != nil
@@ -109,7 +109,7 @@ func (p *userHandler0) HandleMessage(logger log.Logger, message types.Message) e
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 
@@ -117,29 +117,29 @@ func (p *userHandler0) HandleMessage(logger log.Logger, message types.Message) e
 	var err error
 	p.oldShare, err = p.oldPasswordRequester.Compute(server0.OldPasswordResponse)
 	if err != nil {
-		logger.Warn("Failed to compute old share", "err", err)
+		logger.Debug("Failed to compute old share", "err", err)
 		return err
 	}
 	p.oldShareGProver, err = zkproof.NewInteractiveSchnorrProver(p.oldShare, p.curve)
 	if err != nil {
-		logger.Warn("Failed to create old share prover", "err", err)
+		logger.Debug("Failed to create old share prover", "err", err)
 		return err
 	}
 	p.newShare, err = p.newPasswordRequester.Compute(server0.NewPasswordResponse)
 	if err != nil {
-		logger.Warn("Failed to compute new share", "err", err)
+		logger.Debug("Failed to compute new share", "err", err)
 		return err
 	}
 	p.newShareGProver, err = zkproof.NewInteractiveSchnorrProver(p.newShare, p.curve)
 	if err != nil {
-		logger.Warn("Failed to create new share prover", "err", err)
+		logger.Debug("Failed to create new share prover", "err", err)
 		return err
 	}
 
 	// Compute server g and build its verifier
 	p.serverGVerifier, err = zkproof.NewInteractiveSchnorrVerifier(server0.ServerGProver1)
 	if err != nil {
-		logger.Warn("Failed to new server g verifier", "err", err)
+		logger.Debug("Failed to new server g verifier", "err", err)
 		return err
 	}
 	sG := p.serverGVerifier.GetV()
@@ -157,7 +157,7 @@ func (p *userHandler0) HandleMessage(logger log.Logger, message types.Message) e
 	a1 := new(big.Int).Mul(new(big.Int).Sub(p.newShare, a0), new(big.Int).ModInverse(self.bk.GetX(), n))
 	p.newF, err = polynomial.NewPolynomial(n, []*big.Int{a0, a1})
 	if err != nil {
-		logger.Warn("Failed to create new polynomial", "err", err)
+		logger.Debug("Failed to create new polynomial", "err", err)
 		return err
 	}
 

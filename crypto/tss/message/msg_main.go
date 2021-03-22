@@ -113,19 +113,19 @@ func (t *MsgMain) messageLoop(ctx context.Context) (err error) {
 		// 5. If yes, finalize the handler. Otherwise, wait for the next message
 		msg, err := t.msgChs.Pop(ctx, msgType)
 		if err != nil {
-			t.logger.Warn("Failed to pop message", "err", err)
+			t.logger.Debug("Failed to pop message", "err", err)
 			return err
 		}
 		id := msg.GetId()
 		logger := t.logger.New("msgType", msgType, "fromId", id)
 		if handler.IsHandled(logger, id) {
-			logger.Warn("The message is handled before")
+			logger.Debug("The message is handled before")
 			return ErrDupMsg
 		}
 
 		err = handler.HandleMessage(logger, msg)
 		if err != nil {
-			logger.Warn("Failed to save message", "err", err)
+			logger.Debug("Failed to save message", "err", err)
 			return err
 		}
 
@@ -136,7 +136,7 @@ func (t *MsgMain) messageLoop(ctx context.Context) (err error) {
 
 		nextHandler, err := handler.Finalize(logger)
 		if err != nil {
-			logger.Warn("Failed to go to next handler", "err", err)
+			logger.Debug("Failed to go to next handler", "err", err)
 			return err
 		}
 		// if nextHandler is nil, it means we got the final result
@@ -154,7 +154,7 @@ func (t *MsgMain) messageLoop(ctx context.Context) (err error) {
 
 func (t *MsgMain) setState(newState types.MainState, err error) error {
 	if t.isInFinalState() {
-		t.logger.Warn("Invalid state transition", "old", t.state, "new", newState)
+		t.logger.Debug("Invalid state transition", "old", t.state, "new", newState)
 		return ErrInvalidStateTransition
 	}
 

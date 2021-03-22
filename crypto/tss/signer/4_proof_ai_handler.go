@@ -70,7 +70,7 @@ func (p *proofAiHandler) GetRequiredMessageCount() uint32 {
 func (p *proofAiHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.proofAi != nil
@@ -83,7 +83,7 @@ func (p *proofAiHandler) HandleMessage(logger log.Logger, message types.Message)
 
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return ErrPeerNotFound
 	}
 
@@ -96,7 +96,7 @@ func (p *proofAiHandler) HandleMessage(logger log.Logger, message types.Message)
 	// Verify ag schnorr proof
 	err = body.GetAiProof().Verify(p.g)
 	if err != nil {
-		logger.Warn("Failed to verify aig schnorr proof", "err", err)
+		logger.Debug("Failed to verify aig schnorr proof", "err", err)
 		return err
 	}
 
@@ -112,13 +112,13 @@ func (p *proofAiHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	for id, peer := range p.peers {
 		p.r, err = p.r.Add(peer.proofAi.aiG)
 		if err != nil {
-			logger.Warn("Failed to add point", "id", id, "err", err)
+			logger.Debug("Failed to add point", "id", id, "err", err)
 			return nil, err
 		}
 	}
 	p.r = p.r.ScalarMult(p.inverseDelta)
 	if p.r.IsIdentity() {
-		logger.Warn("R is an identity element")
+		logger.Debug("R is an identity element")
 		return nil, ErrIndentityR
 	}
 
@@ -181,12 +181,12 @@ func buildViCommitter(logger log.Logger, si *big.Int, r *pt.ECPoint) (*big.Int, 
 	n := curve.Params().N
 	li, err := utils.RandomInt(n)
 	if err != nil {
-		logger.Warn("Failed to random li", "err", err)
+		logger.Debug("Failed to random li", "err", err)
 		return nil, nil, nil, nil, err
 	}
 	proofLi, err := zkproof.NewSchorrMessage(si, li, r)
 	if err != nil {
-		logger.Warn("Failed to proof li", "err", err)
+		logger.Debug("Failed to proof li", "err", err)
 		return nil, nil, nil, nil, err
 	}
 
@@ -195,12 +195,12 @@ func buildViCommitter(logger log.Logger, si *big.Int, r *pt.ECPoint) (*big.Int, 
 	liG := pt.ScalarBaseMult(curve, li)
 	Vi, err := siR.Add(liG)
 	if err != nil {
-		logger.Warn("Failed to add siR and liG", "err", err)
+		logger.Debug("Failed to add siR and liG", "err", err)
 		return nil, nil, nil, nil, err
 	}
 	viCommitmenter, err := tss.NewCommitterByPoint(Vi)
 	if err != nil {
-		logger.Warn("Failed to new viCommitmenter", "err", err)
+		logger.Debug("Failed to new viCommitmenter", "err", err)
 		return nil, nil, nil, nil, err
 	}
 	return li, Vi, proofLi, viCommitmenter, nil
@@ -210,19 +210,19 @@ func buildAiCommitter(logger log.Logger, curve elliptic.Curve) (*big.Int, *pt.EC
 	n := curve.Params().N
 	rhoI, err := utils.RandomInt(n)
 	if err != nil {
-		logger.Warn("Failed to random rho i", "err", err)
+		logger.Debug("Failed to random rho i", "err", err)
 		return nil, nil, nil, nil, err
 	}
 	proofRhoI, err := zkproof.NewBaseSchorrMessage(curve, rhoI)
 	if err != nil {
-		logger.Warn("Failed to proof rho i", "err", err)
+		logger.Debug("Failed to proof rho i", "err", err)
 		return nil, nil, nil, nil, err
 	}
 
 	Ai := pt.ScalarBaseMult(curve, rhoI)
 	aiCommitmenter, err := tss.NewCommitterByPoint(Ai)
 	if err != nil {
-		logger.Warn("Failed to new aiCommitmenter", "err", err)
+		logger.Debug("Failed to new aiCommitmenter", "err", err)
 		return nil, nil, nil, nil, err
 	}
 	return rhoI, Ai, proofRhoI, aiCommitmenter, nil

@@ -48,7 +48,7 @@ func (p *serverHandler3) MessageType() types.MessageType {
 func (p *serverHandler3) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.GetMessage(p.MessageType()) != nil
@@ -60,7 +60,7 @@ func (p *serverHandler3) HandleMessage(logger log.Logger, message types.Message)
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 
@@ -69,12 +69,12 @@ func (p *serverHandler3) HandleMessage(logger log.Logger, message types.Message)
 	xuInverse := new(big.Int).ModInverse(peer.bk.GetX(), n)
 	err := p.oldShareGVerifier.Verify(user3.OldShareGProver3)
 	if err != nil {
-		logger.Warn("Failed to verify (old share)", "err", err)
+		logger.Debug("Failed to verify (old share)", "err", err)
 		return err
 	}
 	err = p.newShareGVerifier.Verify(user3.NewShareGProver3)
 	if err != nil {
-		logger.Warn("Failed to verify (new share)", "err", err)
+		logger.Debug("Failed to verify (new share)", "err", err)
 		return err
 	}
 
@@ -84,13 +84,13 @@ func (p *serverHandler3) HandleMessage(logger log.Logger, message types.Message)
 	a0G := p.oldShareGVerifier.GetV().ScalarMult(peer.bkCoefficient)
 	a1G, err := p.newShareGVerifier.GetV().Add(a0G.Neg())
 	if err != nil {
-		logger.Warn("Failed to add neg a0G", "err", err)
+		logger.Debug("Failed to add neg a0G", "err", err)
 		return err
 	}
 	a1G = a1G.ScalarMult(xuInverse)
 	err = commitment.FeldmanVerify(p.curve, self.bk, []*ecpointgrouplaw.ECPoint{a0G, a1G}, 1, evaluation)
 	if err != nil {
-		logger.Warn("Failed to feldman verify", "err", err)
+		logger.Debug("Failed to feldman verify", "err", err)
 		return err
 	}
 

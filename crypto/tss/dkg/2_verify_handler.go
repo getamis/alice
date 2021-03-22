@@ -59,7 +59,7 @@ func (p *verifyHandler) GetRequiredMessageCount() uint32 {
 func (p *verifyHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.verify != nil
@@ -70,7 +70,7 @@ func (p *verifyHandler) HandleMessage(logger log.Logger, message types.Message) 
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 
@@ -79,7 +79,7 @@ func (p *verifyHandler) HandleMessage(logger log.Logger, message types.Message) 
 	decommitMessage := getMessageByType(peer, Type_Decommit)
 	err := verify.Verify(decommitMessage.GetDecommit().GetPointCommitment(), p.bk, p.threshold-1)
 	if err != nil {
-		logger.Warn("Failed to verify message", "err", err)
+		logger.Debug("Failed to verify message", "err", err)
 		return err
 	}
 	peer.verify = &verifyData{
@@ -95,7 +95,7 @@ func (p *verifyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	for _, peer := range p.peers {
 		publicKey, err = publicKey.Add(peer.decommit.u0g)
 		if err != nil {
-			logger.Warn("Failed to add ug", "err", err)
+			logger.Debug("Failed to add ug", "err", err)
 			return nil, err
 		}
 	}
@@ -117,7 +117,7 @@ func (p *verifyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	// Build and send out the result message
 	p.siGProofMsg, err = zkproof.NewBaseSchorrMessage(p.curve, p.share)
 	if err != nil {
-		log.Warn("Failed to new si schorr proof", "err", err)
+		log.Debug("Failed to new si schorr proof", "err", err)
 		return nil, err
 	}
 	msg := p.getResultMessage()

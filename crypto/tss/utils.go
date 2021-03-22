@@ -51,7 +51,7 @@ var (
 func NewCommitterByPoint(p *pt.ECPoint) (*commitment.HashCommitmenter, error) {
 	msg, err := p.ToEcPointMessage()
 	if err != nil {
-		log.Warn("Failed to convert to an ec point message", "err", err)
+		log.Debug("Failed to convert to an ec point message", "err", err)
 		return nil, err
 	}
 
@@ -62,12 +62,12 @@ func GetPointFromHashCommitment(logger log.Logger, commit *commitment.HashCommit
 	msg := &pt.EcPointMessage{}
 	err := commit.DecommitToProto(decommit, msg)
 	if err != nil {
-		logger.Warn("Failed to decommit message", "err", err)
+		logger.Debug("Failed to decommit message", "err", err)
 		return nil, err
 	}
 	point, err := msg.ToPoint()
 	if err != nil {
-		logger.Warn("Failed to convert to ec point", "err", err)
+		logger.Debug("Failed to convert to ec point", "err", err)
 		return nil, err
 	}
 	return point, nil
@@ -77,7 +77,7 @@ func ValidatePublicKey(logger log.Logger, bks birkhoffinterpolation.BkParameters
 	fieldOrder := pubkey.GetCurve().Params().N
 	scalars, err := bks.ComputeBkCoefficient(threshold, fieldOrder)
 	if err != nil {
-		logger.Warn("Failed to compute", "err", err)
+		logger.Debug("Failed to compute", "err", err)
 		return err
 	}
 	return ValidatePublicKeyWithBkCoefficients(logger, scalars, sgs, pubkey)
@@ -86,11 +86,11 @@ func ValidatePublicKey(logger log.Logger, bks birkhoffinterpolation.BkParameters
 func ValidatePublicKeyWithBkCoefficients(logger log.Logger, scalars []*big.Int, sgs []*pt.ECPoint, pubkey *pt.ECPoint) error {
 	gotPub, err := pt.ComputeLinearCombinationPoint(scalars, sgs)
 	if err != nil {
-		logger.Warn("Failed to calculate public", "err", err)
+		logger.Debug("Failed to calculate public", "err", err)
 		return err
 	}
 	if !pubkey.Equal(gotPub) {
-		logger.Warn("Inconsistent public key", "got", gotPub, "expected", pubkey)
+		logger.Debug("Inconsistent public key", "got", gotPub, "expected", pubkey)
 		return ErrInconsistentPubKey
 	}
 	return nil

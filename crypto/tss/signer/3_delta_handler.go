@@ -49,7 +49,7 @@ func (p *deltaHandler) GetRequiredMessageCount() uint32 {
 func (p *deltaHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.delta != nil
@@ -61,7 +61,7 @@ func (p *deltaHandler) HandleMessage(logger log.Logger, message types.Message) e
 	body := msg.GetDelta()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return ErrPeerNotFound
 	}
 
@@ -81,7 +81,7 @@ func (p *deltaHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	// Build and send out delta message
 	msg, err := p.getProofAiMessage()
 	if err != nil {
-		logger.Warn("Failed to get proof ai message", "err", err)
+		logger.Debug("Failed to get proof ai message", "err", err)
 		return nil, err
 	}
 	tss.Broadcast(p.peerManager, msg)

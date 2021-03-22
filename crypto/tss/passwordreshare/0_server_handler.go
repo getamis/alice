@@ -91,7 +91,7 @@ func (p *serverHandler0) GetRequiredMessageCount() uint32 {
 func (p *serverHandler0) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.GetMessage(p.MessageType()) != nil
@@ -103,18 +103,18 @@ func (p *serverHandler0) HandleMessage(logger log.Logger, message types.Message)
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 
 	oldPasswordRes, err := p.oldPasswordResponser.Handle(user0.OldPasswordRequest)
 	if err != nil {
-		logger.Warn("Failed to handle old password request", "err", err)
+		logger.Debug("Failed to handle old password request", "err", err)
 		return err
 	}
 	newPasswordRes, err := p.newPasswordResponser.Handle(user0.NewPasswordRequest)
 	if err != nil {
-		logger.Warn("Failed to handle new password request", "err", err)
+		logger.Debug("Failed to handle new password request", "err", err)
 		return err
 	}
 	// Send out server 0 message

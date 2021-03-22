@@ -42,7 +42,7 @@ func (p *serverHandler1) MessageType() types.MessageType {
 func (p *serverHandler1) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.GetMessage(p.MessageType()) != nil
@@ -54,25 +54,25 @@ func (p *serverHandler1) HandleMessage(logger log.Logger, message types.Message)
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 
 	err := p.serverGProver.SetCommitC(user1.ServerGVerifier1)
 	if err != nil {
-		logger.Warn("Failed to set commit c", "err", err)
+		logger.Debug("Failed to set commit c", "err", err)
 		return err
 	}
 
 	p.oldShareGVerifier, err = zkproof.NewInteractiveSchnorrVerifier(user1.OldShareGProver1)
 	if err != nil {
-		logger.Warn("Failed to create old share verifier", "err", err)
+		logger.Debug("Failed to create old share verifier", "err", err)
 		return err
 	}
 	oldShareG := p.oldShareGVerifier.GetV()
 	p.newShareGVerifier, err = zkproof.NewInteractiveSchnorrVerifier(user1.NewShareGProver1)
 	if err != nil {
-		logger.Warn("Failed to create new share verifier", "err", err)
+		logger.Debug("Failed to create new share verifier", "err", err)
 		return err
 	}
 
@@ -86,7 +86,7 @@ func (p *serverHandler1) HandleMessage(logger log.Logger, message types.Message)
 	// Send to User
 	sp2, err := p.serverGProver.GetInteractiveSchnorrProver2Message()
 	if err != nil {
-		logger.Warn("Failed to get interactive prover 2", "err", err)
+		logger.Debug("Failed to get interactive prover 2", "err", err)
 		return err
 	}
 

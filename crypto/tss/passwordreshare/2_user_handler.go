@@ -41,7 +41,7 @@ func (p *userHandler2) GetRequiredMessageCount() uint32 {
 func (p *userHandler2) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.GetMessage(p.MessageType()) != nil
@@ -53,24 +53,24 @@ func (p *userHandler2) HandleMessage(logger log.Logger, message types.Message) e
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 
 	// Schnorr verify
 	err := p.serverGVerifier.Verify(server2.ServerGProver3)
 	if err != nil {
-		logger.Warn("Failed to verify", "err", err)
+		logger.Debug("Failed to verify", "err", err)
 		return err
 	}
 	osp3, err := p.oldShareGProver.ComputeZ(server2.OldShareGVerifier2)
 	if err != nil {
-		logger.Warn("Failed to compute z (old share)", "err", err)
+		logger.Debug("Failed to compute z (old share)", "err", err)
 		return err
 	}
 	nsp3, err := p.newShareGProver.ComputeZ(server2.NewShareGVerifier2)
 	if err != nil {
-		logger.Warn("Failed to compute z (old share)", "err", err)
+		logger.Debug("Failed to compute z (old share)", "err", err)
 		return err
 	}
 
