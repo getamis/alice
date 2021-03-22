@@ -87,7 +87,7 @@ func (p *passwordUserHandler) GetRequiredMessageCount() uint32 {
 func (p *passwordUserHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.response != nil
@@ -98,14 +98,14 @@ func (p *passwordUserHandler) HandleMessage(logger log.Logger, message types.Mes
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 	res := msg.GetOprfResponse()
 	peer.response = res
 	share, err := p.oprfRequester.Compute(res)
 	if err != nil {
-		logger.Warn("Failed to compute", "err", err)
+		logger.Debug("Failed to compute", "err", err)
 		return err
 	}
 	p.share = share
@@ -115,13 +115,13 @@ func (p *passwordUserHandler) HandleMessage(logger log.Logger, message types.Mes
 func (p *passwordUserHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	poly, err := polynomial.RandomPolynomialWithSpecialValueAtPoint(p.x, p.share, p.fieldOrder, p.threshold-1)
 	if err != nil {
-		logger.Warn("Failed to expand", "err", err)
+		logger.Debug("Failed to expand", "err", err)
 		return nil, err
 	}
 
 	p.peerHandler, err = newPeerHandlerWithPolynomial(passwordCurve, p.peerManager, p.threshold, p.x, p.rank, poly)
 	if err != nil {
-		logger.Warn("Failed to new peer handler", "err", err)
+		logger.Debug("Failed to new peer handler", "err", err)
 		return nil, err
 	}
 	tss.Broadcast(p.peerManager, p.peerHandler.GetFirstMessage())

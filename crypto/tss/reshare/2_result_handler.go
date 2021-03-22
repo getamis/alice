@@ -47,7 +47,7 @@ func (p *resultHandler) GetRequiredMessageCount() uint32 {
 func (p *resultHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.result != nil
@@ -58,20 +58,20 @@ func (p *resultHandler) HandleMessage(logger log.Logger, message types.Message) 
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 
 	siGProofMsg := msg.GetResult().SiGProofMsg
 	r, err := siGProofMsg.V.ToPoint()
 	if err != nil {
-		logger.Warn("Failed to get point", "err", err)
+		logger.Debug("Failed to get point", "err", err)
 		return err
 	}
 
 	err = siGProofMsg.Verify(ecpointgrouplaw.NewBase(p.publicKey.GetCurve()))
 	if err != nil {
-		logger.Warn("Failed to verify Schorr proof", "err", err)
+		logger.Debug("Failed to verify Schorr proof", "err", err)
 		return err
 	}
 	peer.result = &resultData{
@@ -85,7 +85,7 @@ func (p *resultHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	sgs := make([]*ecpointgrouplaw.ECPoint, p.peerNum+1)
 	siG, err := p.siGProofMsg.V.ToPoint()
 	if err != nil {
-		logger.Warn("Failed to get point", "err", err)
+		logger.Debug("Failed to get point", "err", err)
 		return nil, err
 	}
 	bks[0] = p.bk

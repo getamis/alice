@@ -55,7 +55,7 @@ func (p *decommitViAiHandler) GetRequiredMessageCount() uint32 {
 func (p *decommitViAiHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.decommitViAi != nil
@@ -66,7 +66,7 @@ func (p *decommitViAiHandler) HandleMessage(logger log.Logger, message types.Mes
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return ErrPeerNotFound
 	}
 
@@ -74,24 +74,24 @@ func (p *decommitViAiHandler) HandleMessage(logger log.Logger, message types.Mes
 	body := msg.GetDecommitViAi()
 	err := body.LiProof.Verify(p.r)
 	if err != nil {
-		logger.Warn("Failed to verify li proof message", "err", err)
+		logger.Debug("Failed to verify li proof message", "err", err)
 		return err
 	}
 	err = body.RhoIProof.Verify(p.g)
 	if err != nil {
-		logger.Warn("Failed to verify rho i proof message", "err", err)
+		logger.Debug("Failed to verify rho i proof message", "err", err)
 		return err
 	}
 
 	// Decommit Vi and Ai
 	vi, err := tss.GetPointFromHashCommitment(logger, peer.commitViAi.viCommitment, body.ViDecommitment)
 	if err != nil {
-		logger.Warn("Failed to decommit vi message", "err", err)
+		logger.Debug("Failed to decommit vi message", "err", err)
 		return err
 	}
 	ai, err := tss.GetPointFromHashCommitment(logger, peer.commitViAi.aiCommitment, body.AiDecommitment)
 	if err != nil {
-		logger.Warn("Failed to decommit ai message", "err", err)
+		logger.Debug("Failed to decommit ai message", "err", err)
 		return err
 	}
 
@@ -164,7 +164,7 @@ func buildV(logger log.Logger, pubkey *pt.ECPoint, rx *big.Int, selfVi *pt.ECPoi
 	for id, peer := range peers {
 		sumVi, err = sumVi.Add(peer.decommitViAi.vi)
 		if err != nil {
-			logger.Warn("Failed to add vi", "id", id, "vi", peer.decommitViAi.vi, "err", err)
+			logger.Debug("Failed to add vi", "id", id, "vi", peer.decommitViAi.vi, "err", err)
 			return nil, err
 		}
 	}
@@ -174,12 +174,12 @@ func buildV(logger log.Logger, pubkey *pt.ECPoint, rx *big.Int, selfVi *pt.ECPoi
 	negRxQ := pubkey.ScalarMult(new(big.Int).Neg(rx))
 	V, err := negMg.Add(negRxQ)
 	if err != nil {
-		logger.Warn("Failed to get the sum of negMg and negRxQ", "err", err)
+		logger.Debug("Failed to get the sum of negMg and negRxQ", "err", err)
 		return nil, err
 	}
 	V, err = V.Add(sumVi)
 	if err != nil {
-		logger.Warn("Failed to get the sum of V and the sum of Vi", "err", err)
+		logger.Debug("Failed to get the sum of V and the sum of Vi", "err", err)
 		return nil, err
 	}
 	return V, nil
@@ -191,7 +191,7 @@ func buildA(logger log.Logger, selfAi *pt.ECPoint, peers map[string]*peer) (*pt.
 	for id, peer := range peers {
 		A, err = A.Add(peer.decommitViAi.ai)
 		if err != nil {
-			logger.Warn("Failed to add ai", "id", id, "ai", peer.decommitViAi.ai, "err", err)
+			logger.Debug("Failed to add ai", "id", id, "ai", peer.decommitViAi.ai, "err", err)
 			return nil, err
 		}
 	}

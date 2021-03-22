@@ -47,7 +47,7 @@ func (p *decommitHandler) GetRequiredMessageCount() uint32 {
 func (p *decommitHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.decommit != nil
@@ -58,7 +58,7 @@ func (p *decommitHandler) HandleMessage(logger log.Logger, message types.Message
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 
@@ -67,7 +67,7 @@ func (p *decommitHandler) HandleMessage(logger log.Logger, message types.Message
 	peerMessage := getMessageByType(peer, Type_Peer)
 	u0g, err := tss.GetPointFromHashCommitment(logger, peerMessage.GetPeer().GetCommitment(), body.GetHashDecommitment())
 	if err != nil {
-		logger.Warn("Failed to get u0g", "err", err)
+		logger.Debug("Failed to get u0g", "err", err)
 		return err
 	}
 

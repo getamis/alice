@@ -50,7 +50,7 @@ func (p *verifyHandler) GetRequiredMessageCount() uint32 {
 
 func (p *verifyHandler) IsHandled(logger log.Logger, id string) bool {
 	if id != p.newPeer.Id {
-		logger.Warn("Get message from invalid peer")
+		logger.Debug("Get message from invalid peer")
 		return false
 	}
 	return p.newPeer.verify != nil
@@ -60,19 +60,19 @@ func (p *verifyHandler) HandleMessage(logger log.Logger, message types.Message) 
 	msg := getMessage(message)
 	id := msg.GetId()
 	if id != p.newPeer.Id {
-		logger.Warn("Get message from invalid peer")
+		logger.Debug("Get message from invalid peer")
 		return tss.ErrInvalidMsg
 	}
 	body := msg.GetVerify()
 	siGProofMsg := body.GetSiGProofMsg()
 	siG, err := siGProofMsg.V.ToPoint()
 	if err != nil {
-		logger.Warn("Failed to get point", "err", err)
+		logger.Debug("Failed to get point", "err", err)
 		return err
 	}
 	err = siGProofMsg.Verify(ecpointgrouplaw.NewBase(p.pubkey.GetCurve()))
 	if err != nil {
-		logger.Warn("Failed to verify Schorr proof", "err", err)
+		logger.Debug("Failed to verify Schorr proof", "err", err)
 		return err
 	}
 	p.newPeer.verify = &verifyData{
@@ -85,7 +85,7 @@ func (p *verifyHandler) HandleMessage(logger log.Logger, message types.Message) 
 func (p *verifyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	siG, err := p.siGProofMsg.V.ToPoint()
 	if err != nil {
-		logger.Warn("Failed to get point", "err", err)
+		logger.Debug("Failed to get point", "err", err)
 		return nil, err
 	}
 

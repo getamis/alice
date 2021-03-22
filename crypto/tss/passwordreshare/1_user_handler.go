@@ -41,7 +41,7 @@ func (p *userHandler1) GetRequiredMessageCount() uint32 {
 func (p *userHandler1) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.GetMessage(p.MessageType()) != nil
@@ -53,36 +53,36 @@ func (p *userHandler1) HandleMessage(logger log.Logger, message types.Message) e
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 
 	// Schnorr verify
 	err := p.serverGVerifier.SetB(server1.GetServerGProver2())
 	if err != nil {
-		logger.Warn("Failed to set b (server G)", "err", err)
+		logger.Debug("Failed to set b (server G)", "err", err)
 		return err
 	}
 	err = p.oldShareGProver.SetCommitC(server1.GetOldShareGVerifier1())
 	if err != nil {
-		logger.Warn("Failed to set commit c (old share)", "err", err)
+		logger.Debug("Failed to set commit c (old share)", "err", err)
 		return err
 	}
 	err = p.newShareGProver.SetCommitC(server1.GetNewShareGVerifier1())
 	if err != nil {
-		logger.Warn("Failed to set commit c (new share)", "err", err)
+		logger.Debug("Failed to set commit c (new share)", "err", err)
 		return err
 	}
 
 	// Send to Server
 	osp2, err := p.oldShareGProver.GetInteractiveSchnorrProver2Message()
 	if err != nil {
-		logger.Warn("Failed to get prover message 2 (old share)", "err", err)
+		logger.Debug("Failed to get prover message 2 (old share)", "err", err)
 		return err
 	}
 	nsp2, err := p.newShareGProver.GetInteractiveSchnorrProver2Message()
 	if err != nil {
-		logger.Warn("Failed to get prover message 2 (new share)", "err", err)
+		logger.Debug("Failed to get prover message 2 (new share)", "err", err)
 		return err
 	}
 	p.peerManager.MustSend(message.GetId(), &Message{

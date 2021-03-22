@@ -37,7 +37,7 @@ func (p *serverHandler2) MessageType() types.MessageType {
 func (p *serverHandler2) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.GetMessage(p.MessageType()) != nil
@@ -49,24 +49,24 @@ func (p *serverHandler2) HandleMessage(logger log.Logger, message types.Message)
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 
 	// Schnorr verify
 	err := p.oldShareGVerifier.SetB(user2.OldShareGProver2)
 	if err != nil {
-		logger.Warn("Failed to set B (old share)", "err", err)
+		logger.Debug("Failed to set B (old share)", "err", err)
 		return err
 	}
 	err = p.newShareGVerifier.SetB(user2.NewShareGProver2)
 	if err != nil {
-		logger.Warn("Failed to set B (new share)", "err", err)
+		logger.Debug("Failed to set B (new share)", "err", err)
 		return err
 	}
 	sp3, err := p.serverGProver.ComputeZ(user2.ServerGVerifier2)
 	if err != nil {
-		logger.Warn("Failed to compute z", "err", err)
+		logger.Debug("Failed to compute z", "err", err)
 		return err
 	}
 

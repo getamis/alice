@@ -95,7 +95,7 @@ func (p *passwordServerHandler) GetRequiredMessageCount() uint32 {
 func (p *passwordServerHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.request != nil
@@ -106,7 +106,7 @@ func (p *passwordServerHandler) HandleMessage(logger log.Logger, message types.M
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 	request := msg.GetOprfRequest()
@@ -115,14 +115,14 @@ func (p *passwordServerHandler) HandleMessage(logger log.Logger, message types.M
 	// Check user x
 	p.userX = new(big.Int).SetBytes(request.X)
 	if err := utils.InRange(p.userX, big1, p.fieldOrder); err != nil {
-		logger.Warn("Invalid user x")
+		logger.Debug("Invalid user x")
 		return ErrInvalidUserX
 	}
 
 	// Check request
 	res, err := p.oprfResponser.Handle(request.Request)
 	if err != nil {
-		logger.Warn("Failed to handle oprf", "err", err)
+		logger.Debug("Failed to handle oprf", "err", err)
 		return err
 	}
 	p.peerManager.MustSend(id, &Message{
@@ -138,20 +138,20 @@ func (p *passwordServerHandler) HandleMessage(logger log.Logger, message types.M
 func (p *passwordServerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	poly, err := polynomial.RandomPolynomialWithSpecialValueAtPoint(p.userX, big.NewInt(0), p.fieldOrder, p.threshold-1)
 	if err != nil {
-		logger.Warn("Failed to expand", "err", err)
+		logger.Debug("Failed to expand", "err", err)
 		return nil, err
 	}
 
 	// Random x
 	x, err := p.getRandomX()
 	if err != nil {
-		logger.Warn("Failed to generate x", "err", err)
+		logger.Debug("Failed to generate x", "err", err)
 		return nil, err
 	}
 
 	p.peerHandler, err = newPeerHandlerWithPolynomial(passwordCurve, p.peerManager, p.threshold, x, p.rank, poly)
 	if err != nil {
-		logger.Warn("Failed to new peer handler", "err", err)
+		logger.Debug("Failed to new peer handler", "err", err)
 		return nil, err
 	}
 	tss.Broadcast(p.peerManager, p.peerHandler.GetFirstMessage())

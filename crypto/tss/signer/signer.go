@@ -75,7 +75,7 @@ type Signer struct {
 func NewSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo homo.Crypto, secret *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, listener types.StateChangedListener) (*Signer, error) {
 	ph, err := newPubkeyHandler(expectedPubkey, peerManager, homo, secret, bks, msg)
 	if err != nil {
-		log.Warn("Failed to new a public key handler", "err", err)
+		log.Debug("Failed to new a public key handler", "err", err)
 		return nil, err
 	}
 	return newSigner(peerManager, listener, ph)
@@ -84,7 +84,7 @@ func NewSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo h
 func NewPasswordUserSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo homo.Crypto, password []byte, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, listener types.StateChangedListener) (*Signer, error) {
 	ph, err := newPasswordUserHandler(expectedPubkey, peerManager, homo, password, bks, msg)
 	if err != nil {
-		log.Warn("Failed to new a public key handler", "err", err)
+		log.Debug("Failed to new a public key handler", "err", err)
 		return nil, err
 	}
 	return newSigner(peerManager, listener, ph, types.MessageType(Type_OPRFResponse))
@@ -93,7 +93,7 @@ func NewPasswordUserSigner(peerManager types.PeerManager, expectedPubkey *pt.ECP
 func NewPasswordServerSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo homo.Crypto, k *big.Int, secret *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, listener types.StateChangedListener) (*Signer, error) {
 	ph, err := newPasswordServerHandler(expectedPubkey, peerManager, homo, secret, k, bks, msg)
 	if err != nil {
-		log.Warn("Failed to new a public key handler", "err", err)
+		log.Debug("Failed to new a public key handler", "err", err)
 		return nil, err
 	}
 	return newSigner(peerManager, listener, ph, types.MessageType(Type_OPRFRequest))

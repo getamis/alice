@@ -78,7 +78,7 @@ func (p *peerHandler) GetRequiredMessageCount() uint32 {
 func (p *peerHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.peer != nil
@@ -90,32 +90,32 @@ func (p *peerHandler) HandleMessage(logger log.Logger, message types.Message) er
 	body := msg.GetOldPeer()
 
 	if p.threshold != body.GetThreshold() {
-		logger.Warn("Inconsistent threshold", "got", body.GetThreshold(), "expected", p.threshold)
+		logger.Debug("Inconsistent threshold", "got", body.GetThreshold(), "expected", p.threshold)
 		return tss.ErrInconsistentThreshold
 	}
 	bk, err := body.GetBk().ToBk(p.fieldOrder)
 	if err != nil {
-		logger.Warn("Failed to get bk", "err", err)
+		logger.Debug("Failed to get bk", "err", err)
 		return err
 	}
 	pubkey, err := body.GetPubkey().ToPoint()
 	if err != nil {
-		logger.Warn("Failed to get point", "err", err)
+		logger.Debug("Failed to get point", "err", err)
 		return err
 	}
 	if !p.pubkey.Equal(pubkey) {
-		logger.Warn("Inconsistent public key", "got", pubkey, "expected", p.pubkey)
+		logger.Debug("Inconsistent public key", "got", pubkey, "expected", p.pubkey)
 		return tss.ErrInconsistentPubKey
 	}
 	siGProofMsg := body.GetSiGProofMsg()
 	siG, err := siGProofMsg.V.ToPoint()
 	if err != nil {
-		logger.Warn("Failed to get point", "err", err)
+		logger.Debug("Failed to get point", "err", err)
 		return err
 	}
 	err = siGProofMsg.Verify(ecpointgrouplaw.NewBase(pubkey.GetCurve()))
 	if err != nil {
-		logger.Warn("Failed to verify Schorr proof", "err", err)
+		logger.Debug("Failed to verify Schorr proof", "err", err)
 		return err
 	}
 	peer := newPeer(id)
@@ -179,7 +179,7 @@ func generateNewBK(logger log.Logger, fieldOrder *big.Int, bks birkhoffinterpola
 	for i := 0; i < maxRetry; i++ {
 		x, err = utils.RandomPositiveInt(fieldOrder)
 		if err != nil {
-			logger.Warn("Failed to generate random positive integer", "fieldOrder", fieldOrder, "retryCount", i, "err", err)
+			logger.Debug("Failed to generate random positive integer", "fieldOrder", fieldOrder, "retryCount", i, "err", err)
 			continue
 		}
 		selfBK = birkhoffinterpolation.NewBkParameter(x, newPeerRank)
@@ -188,7 +188,7 @@ func generateNewBK(logger log.Logger, fieldOrder *big.Int, bks birkhoffinterpola
 		allBks := append(bks, selfBK)
 		err = allBks.CheckValid(threshold, fieldOrder)
 		if err != nil {
-			logger.Warn("Failed to check bks", "newBK", selfBK.String(), "retryCount", i, "err", err)
+			logger.Debug("Failed to check bks", "newBK", selfBK.String(), "retryCount", i, "err", err)
 			continue
 		}
 		return selfBK, nil

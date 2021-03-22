@@ -59,7 +59,7 @@ func (p *computeHandler) GetRequiredMessageCount() uint32 {
 func (p *computeHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.compute != nil
@@ -71,23 +71,23 @@ func (p *computeHandler) HandleMessage(logger log.Logger, message types.Message)
 	body := msg.GetCompute()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 	delta := new(big.Int).SetBytes(body.GetDelta())
 	if err := utils.InRange(delta, big.NewInt(0), p.fieldOrder); err != nil {
-		logger.Warn("Invalid delta value", "delta", delta.String(), "err", err)
+		logger.Debug("Invalid delta value", "delta", delta.String(), "err", err)
 		return err
 	}
 	siGProofMsg := body.GetSiGProofMsg()
 	siG, err := siGProofMsg.V.ToPoint()
 	if err != nil {
-		logger.Warn("Failed to get point", "err", err)
+		logger.Debug("Failed to get point", "err", err)
 		return err
 	}
 	err = siGProofMsg.Verify(ecpointgrouplaw.NewBase(p.pubkey.GetCurve()))
 	if err != nil {
-		logger.Warn("Failed to verify Schorr proof", "err", err)
+		logger.Debug("Failed to verify Schorr proof", "err", err)
 		return err
 	}
 	peer.compute = &computeData{

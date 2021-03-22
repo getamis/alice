@@ -47,7 +47,7 @@ func (p *commitViAiHandler) GetRequiredMessageCount() uint32 {
 func (p *commitViAiHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.commitViAi != nil
@@ -58,7 +58,7 @@ func (p *commitViAiHandler) HandleMessage(logger log.Logger, message types.Messa
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return ErrPeerNotFound
 	}
 

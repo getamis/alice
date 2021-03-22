@@ -57,7 +57,7 @@ func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo
 	numPeers := peerManager.NumPeers()
 	lenBks := len(bks)
 	if lenBks != int(numPeers+1) {
-		log.Warn("Inconsistent peer num", "bks", len(bks), "numPeers", numPeers)
+		log.Debug("Inconsistent peer num", "bks", len(bks), "numPeers", numPeers)
 		return nil, tss.ErrInconsistentPeerNumAndBks
 	}
 
@@ -65,7 +65,7 @@ func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo
 	curve := publicKey.GetCurve()
 	aiMta, err := mta.NewMta(curve.Params().N, homo)
 	if err != nil {
-		log.Warn("Failed to new ai mta", "err", err)
+		log.Debug("Failed to new ai mta", "err", err)
 		return nil, err
 	}
 
@@ -74,13 +74,13 @@ func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo
 	p := aiMta.GetAG(curve)
 	agCommitmenter, err := tss.NewCommitterByPoint(p)
 	if err != nil {
-		log.Warn("Failed to new an ag hash commiter", "err", err)
+		log.Debug("Failed to new an ag hash commiter", "err", err)
 		return nil, err
 	}
 
 	wi, peers, err := buildWiAndPeers(curve.Params().N, bks, peerManager.SelfID(), secret)
 	if err != nil {
-		log.Warn("Failed to build wi and peers", "err", err)
+		log.Debug("Failed to build wi and peers", "err", err)
 		return nil, err
 	}
 	return &pubkeyHandler{
@@ -110,7 +110,7 @@ func (p *pubkeyHandler) GetRequiredMessageCount() uint32 {
 func (p *pubkeyHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.pubkey != nil
@@ -121,7 +121,7 @@ func (p *pubkeyHandler) HandleMessage(logger log.Logger, message types.Message) 
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return ErrPeerNotFound
 	}
 
@@ -129,7 +129,7 @@ func (p *pubkeyHandler) HandleMessage(logger log.Logger, message types.Message) 
 	// Verify public key
 	publicKey, err := p.homo.NewPubKeyFromBytes(body.Pubkey)
 	if err != nil {
-		logger.Warn("Failed to get public key", "err", err)
+		logger.Debug("Failed to get public key", "err", err)
 		return err
 	}
 
@@ -212,7 +212,7 @@ func buildWiAndPeers(curveN *big.Int, bks map[string]*birkhoffinterpolation.BkPa
 
 	scalars, err := allBks.ComputeBkCoefficient(uint32(lenBks), curveN)
 	if err != nil {
-		log.Warn("Failed to compute bk coefficient", "allBks", allBks, "err", err)
+		log.Debug("Failed to compute bk coefficient", "allBks", allBks, "err", err)
 		return nil, nil, err
 	}
 	wi := new(big.Int).Mul(secret, scalars[0])

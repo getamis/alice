@@ -123,7 +123,7 @@ func (p *peerHandler) GetRequiredMessageCount() uint32 {
 func (p *peerHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.peer != nil
@@ -134,13 +134,13 @@ func (p *peerHandler) HandleMessage(logger log.Logger, message types.Message) er
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 	body := msg.GetPeer()
 	bk, err := body.GetBk().ToBk(p.fieldOrder)
 	if err != nil {
-		logger.Warn("Failed to get bk", "err", err)
+		logger.Debug("Failed to get bk", "err", err)
 		return err
 	}
 
@@ -161,7 +161,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 	err := bks.CheckValid(p.threshold, p.fieldOrder)
 	if err != nil {
-		logger.Warn("Failed to check bks", "bks", bks, "err", err)
+		logger.Debug("Failed to check bks", "bks", bks, "err", err)
 		return nil, err
 	}
 

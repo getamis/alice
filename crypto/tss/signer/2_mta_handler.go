@@ -54,7 +54,7 @@ func (p *mtaHandler) GetRequiredMessageCount() uint32 {
 func (p *mtaHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.mta != nil
@@ -65,24 +65,24 @@ func (p *mtaHandler) HandleMessage(logger log.Logger, message types.Message) err
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return ErrPeerNotFound
 	}
 
 	body := msg.GetMta()
 	aiAlpha, err := p.aiMta.Decrypt(new(big.Int).SetBytes(body.EncAiAlpha))
 	if err != nil {
-		logger.Warn("Failed to decrypt EncAiAlpha", "err", err)
+		logger.Debug("Failed to decrypt EncAiAlpha", "err", err)
 		return err
 	}
 	wiAlpha, err := p.wiMta.Decrypt(new(big.Int).SetBytes(body.EncWiAlpha))
 	if err != nil {
-		logger.Warn("Failed to decrypt EncWiAlpha", "err", err)
+		logger.Debug("Failed to decrypt EncWiAlpha", "err", err)
 		return err
 	}
 	wiG, err := p.wiMta.VerifyProofWithCheck(body.WiProof, p.getCurve(), wiAlpha)
 	if err != nil {
-		logger.Warn("Failed to verify wi beta proof", "err", err)
+		logger.Debug("Failed to verify wi beta proof", "err", err)
 		return err
 	}
 	peer.mta = &mtaData{
@@ -127,13 +127,13 @@ func (p *mtaHandler) ensurePublickey(logger log.Logger) error {
 	for id, peer := range p.peers {
 		sum, err = sum.Add(peer.mta.wiG)
 		if err != nil {
-			logger.Warn("Failed to add wg", "id", id, "err", err)
+			logger.Debug("Failed to add wg", "id", id, "err", err)
 			return err
 		}
 
 	}
 	if !p.publicKey.Equal(sum) {
-		logger.Warn("Unexpected public key", "exp", p.publicKey, "got", sum)
+		logger.Debug("Unexpected public key", "exp", p.publicKey, "got", sum)
 		return tss.ErrUnexpectedPublickey
 	}
 	return nil
@@ -158,12 +158,12 @@ func computeDeltaIAndSi(logger log.Logger, aiMta mta.Mta, wiMta mta.Mta, peers m
 	var err error
 	deltaI, err := aiMta.GetResult(aiAlpha, aiBeta)
 	if err != nil {
-		logger.Warn("Failed to get result from ai mta", "err", err)
+		logger.Debug("Failed to get result from ai mta", "err", err)
 		return nil, nil, err
 	}
 	tmpSi, err := wiMta.GetResult(wiAlpha, wiBeta)
 	if err != nil {
-		logger.Warn("Failed to get result from wi mta", "err", err)
+		logger.Debug("Failed to get result from wi mta", "err", err)
 		return nil, nil, err
 	}
 	return deltaI, tmpSi, nil

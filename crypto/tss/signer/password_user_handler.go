@@ -86,7 +86,7 @@ func (p *passwordUserHandler) GetRequiredMessageCount() uint32 {
 func (p *passwordUserHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.response != nil
@@ -97,7 +97,7 @@ func (p *passwordUserHandler) HandleMessage(logger log.Logger, message types.Mes
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return tss.ErrPeerNotFound
 	}
 	res := msg.GetOprfResponse()
@@ -105,7 +105,7 @@ func (p *passwordUserHandler) HandleMessage(logger log.Logger, message types.Mes
 	var err error
 	p.share, err = p.oprfRequester.Compute(res)
 	if err != nil {
-		logger.Warn("Failed to compute", "err", err)
+		logger.Debug("Failed to compute", "err", err)
 		return err
 	}
 	return nil
@@ -115,7 +115,7 @@ func (p *passwordUserHandler) Finalize(logger log.Logger) (types.Handler, error)
 	var err error
 	p.pubkeyHandler, err = p.newPubkeyHandlerFunc(p.share)
 	if err != nil {
-		logger.Warn("Failed to new pubkey handler", "err", err)
+		logger.Debug("Failed to new pubkey handler", "err", err)
 		return nil, err
 	}
 	tss.Broadcast(p.peerManager, p.pubkeyHandler.GetFirstMessage())

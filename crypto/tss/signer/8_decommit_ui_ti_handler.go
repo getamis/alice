@@ -53,7 +53,7 @@ func (p *decommitUiTiHandler) GetRequiredMessageCount() uint32 {
 func (p *decommitUiTiHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.decommitUiTi != nil
@@ -64,19 +64,19 @@ func (p *decommitUiTiHandler) HandleMessage(logger log.Logger, message types.Mes
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return ErrPeerNotFound
 	}
 
 	body := msg.GetDecommitUiTi()
 	ui, err := tss.GetPointFromHashCommitment(logger, peer.commitUiTi.uiCommitment, body.UiDecommitment)
 	if err != nil {
-		logger.Warn("Failed to decommit ui message", "err", err)
+		logger.Debug("Failed to decommit ui message", "err", err)
 		return err
 	}
 	ti, err := tss.GetPointFromHashCommitment(logger, peer.commitUiTi.tiCommitment, body.TiDecommitment)
 	if err != nil {
-		logger.Warn("Failed to decommit ti message", "err", err)
+		logger.Debug("Failed to decommit ti message", "err", err)
 		return err
 	}
 
@@ -97,7 +97,7 @@ func (p *decommitUiTiHandler) Finalize(logger log.Logger) (types.Handler, error)
 		return nil, err
 	}
 	if !U.Equal(T) {
-		logger.Warn("Inconsistent U and T", "ui", p.ui, "U", U, "ti", p.ti, "T", T)
+		logger.Debug("Inconsistent U and T", "ui", p.ui, "U", U, "ti", p.ti, "T", T)
 		return nil, ErrInconsistentUT
 	}
 
@@ -125,7 +125,7 @@ func buildU(logger log.Logger, selfUi *pt.ECPoint, peers map[string]*peer) (*pt.
 	for id, peer := range peers {
 		U, err = U.Add(peer.decommitUiTi.ui)
 		if err != nil {
-			logger.Warn("Failed to add ui", "id", id, "ui", peer.decommitUiTi.ui, "err", err)
+			logger.Debug("Failed to add ui", "id", id, "ui", peer.decommitUiTi.ui, "err", err)
 			return nil, err
 		}
 	}
@@ -138,7 +138,7 @@ func buildT(logger log.Logger, selfTi *pt.ECPoint, peers map[string]*peer) (*pt.
 	for id, peer := range peers {
 		T, err = T.Add(peer.decommitUiTi.ti)
 		if err != nil {
-			logger.Warn("Failed to add ti", "id", id, "ti", peer.decommitUiTi.ti, "err", err)
+			logger.Debug("Failed to add ti", "id", id, "ti", peer.decommitUiTi.ti, "err", err)
 			return nil, err
 		}
 	}

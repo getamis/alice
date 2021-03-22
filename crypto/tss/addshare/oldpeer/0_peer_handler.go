@@ -50,7 +50,7 @@ func newPeerHandler(peerManager types.PeerManager, pubkey *ecpointgrouplaw.ECPoi
 	numPeers := peerManager.NumPeers()
 	lenBks := len(bks)
 	if lenBks != int(numPeers+1) {
-		log.Warn("Inconsistent peer num", "bks", len(bks), "numPeers", numPeers)
+		log.Debug("Inconsistent peer num", "bks", len(bks), "numPeers", numPeers)
 		return nil, tss.ErrInconsistentPeerNumAndBks
 	}
 	if err := utils.EnsureThreshold(threshold, uint32(lenBks)); err != nil {
@@ -61,13 +61,13 @@ func newPeerHandler(peerManager types.PeerManager, pubkey *ecpointgrouplaw.ECPoi
 	fieldOrder := curve.Params().N
 	siGProofMsg, err := zkproof.NewBaseSchorrMessage(curve, share)
 	if err != nil {
-		log.Warn("Failed to new si schorr proof", "err", err)
+		log.Debug("Failed to new si schorr proof", "err", err)
 		return nil, err
 	}
 
 	selfBK, peers, err := buildPeers(fieldOrder, peerManager.SelfID(), threshold, bks, newPeerID)
 	if err != nil {
-		log.Warn("Failed to build peers", "err", err)
+		log.Debug("Failed to build peers", "err", err)
 		return nil, err
 	}
 
@@ -97,7 +97,7 @@ func (p *peerHandler) GetRequiredMessageCount() uint32 {
 
 func (p *peerHandler) IsHandled(logger log.Logger, id string) bool {
 	if id != p.newPeer.Id {
-		logger.Warn("Get message from invalid peer")
+		logger.Debug("Get message from invalid peer")
 		return false
 	}
 	return p.newPeer.peer != nil
@@ -107,13 +107,13 @@ func (p *peerHandler) HandleMessage(logger log.Logger, message types.Message) er
 	msg := getMessage(message)
 	id := msg.GetId()
 	if id != p.newPeer.Id {
-		logger.Warn("Get message from invalid peer")
+		logger.Debug("Get message from invalid peer")
 		return tss.ErrInvalidMsg
 	}
 	body := msg.GetNewBk()
 	bk, err := body.GetBk().ToBk(p.fieldOrder)
 	if err != nil {
-		logger.Warn("Failed to get bk", "err", err)
+		logger.Debug("Failed to get bk", "err", err)
 		return err
 	}
 
@@ -135,7 +135,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	// Compute delta_i.
 	co, err := bks.GetAddShareCoefficient(p.bk, p.newPeer.peer.bk, p.fieldOrder, p.threshold)
 	if err != nil {
-		logger.Warn("Failed to get coefficient", "err", err)
+		logger.Debug("Failed to get coefficient", "err", err)
 		return nil, err
 	}
 	delta := new(big.Int).Mul(co, p.share)
@@ -178,7 +178,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 func (p *peerHandler) getOldPeerMessage() *addshare.Message {
 	pubkey, err := p.pubkey.ToEcPointMessage()
 	if err != nil {
-		log.Warn("Failed to convert public key", "err", err)
+		log.Debug("Failed to convert public key", "err", err)
 		return nil
 	}
 	return &addshare.Message{
@@ -211,7 +211,7 @@ func buildPeers(fieldOrder *big.Int, selfID string, threshold uint32, bks map[st
 	i := 0
 	for id, bk := range bks {
 		if id == newPeerID {
-			log.Warn("New peer should not have bk")
+			log.Debug("New peer should not have bk")
 			return nil, nil, tss.ErrInvalidBK
 		}
 
@@ -237,7 +237,7 @@ func buildPeers(fieldOrder *big.Int, selfID string, threshold uint32, bks map[st
 	// Check if the bks are ok
 	_, err := allBKs.ComputeBkCoefficient(threshold, fieldOrder)
 	if err != nil {
-		log.Warn("Failed to compute bkCoefficient", "err", err)
+		log.Debug("Failed to compute bkCoefficient", "err", err)
 		return nil, nil, err
 	}
 

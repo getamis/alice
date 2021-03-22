@@ -55,7 +55,7 @@ func (p *siHandler) GetRequiredMessageCount() uint32 {
 func (p *siHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return false
 	}
 	return peer.si != nil
@@ -66,7 +66,7 @@ func (p *siHandler) HandleMessage(logger log.Logger, message types.Message) erro
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
-		logger.Warn("Peer not found")
+		logger.Debug("Peer not found")
 		return ErrPeerNotFound
 	}
 
