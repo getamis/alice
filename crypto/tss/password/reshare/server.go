@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package passwordreshare
+package reshare
 
 import (
 	"math/big"
@@ -25,54 +25,51 @@ import (
 	"github.com/getamis/sirius/log"
 )
 
-type UserResult struct {
+type ServerResult struct {
 	PublicKey *ecpointgrouplaw.ECPoint
 	Share     *big.Int
 	Bks       map[string]*birkhoffinterpolation.BkParameter
+	K         *big.Int
 }
 
-type UserReshare struct {
+type ServerReshare struct {
 	*message.MsgMain
 
-	ph          *userHandler0
+	ph          *serverHandler0
 	peerManager types.PeerManager
 }
 
-func NewUserReshare(peerManager types.PeerManager, publicKey *ecpointgrouplaw.ECPoint, oldPassword []byte, newPassword []byte, bks map[string]*birkhoffinterpolation.BkParameter, listener types.StateChangedListener) (*UserReshare, error) {
-	ph, err := newUserHandler0(publicKey, peerManager, bks, oldPassword, newPassword)
+func NewServerReshare(peerManager types.PeerManager, publicKey *ecpointgrouplaw.ECPoint, k *big.Int, secret *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, listener types.StateChangedListener) (*ServerReshare, error) {
+	ph, err := newServerHandler0(publicKey, peerManager, bks, k, secret)
 	if err != nil {
 		return nil, err
 	}
 
 	peerNum := peerManager.NumPeers()
-	return &UserReshare{
+	return &ServerReshare{
 		ph:          ph,
 		peerManager: peerManager,
-		MsgMain:     message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_MsgServer0), types.MessageType(Type_MsgServer1), types.MessageType(Type_MsgServer2)),
+		MsgMain:     message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_MsgUser0), types.MessageType(Type_MsgUser1), types.MessageType(Type_MsgUser2), types.MessageType(Type_MsgUser3)),
 	}, nil
 }
 
-func (s *UserReshare) Start() {
-	s.MsgMain.Start()
-	tss.Broadcast(s.peerManager, s.ph.GetFirstMessage())
-}
-
 // GetResult returns the final result: public key, share, bks (including self bk)
-func (s *UserReshare) GetResult() (*UserResult, error) {
+func (s *ServerReshare) GetResult() (*ServerResult, error) {
 	if s.GetState() != types.StateDone {
 		return nil, tss.ErrNotReady
 	}
 
 	h := s.GetHandler()
-	rh, ok := h.(*userHandler2)
+	rh, ok := h.(*serverHandler3)
 	if !ok {
 		log.Error("We cannot convert to result handler in done state")
 		return nil, tss.ErrNotReady
 	}
 
-	return &UserResult{
+	return &ServerResult{
 		PublicKey: rh.publicKey,
 		Share:     rh.newShare,
 		Bks:       rh.bks,
+		K:         rh.newPasswordResponser.GetK(),
 	}, nil
 }

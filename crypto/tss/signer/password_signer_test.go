@@ -25,7 +25,7 @@ import (
 	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
-	"github.com/getamis/alice/crypto/tss/passwordreshare"
+	passwordreshare "github.com/getamis/alice/crypto/tss/password/reshare"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
