@@ -142,16 +142,9 @@ func (p *userHandler0) HandleMessage(logger log.Logger, message types.Message) e
 		logger.Debug("Failed to new server g verifier", "err", err)
 		return err
 	}
-	sG := p.serverGVerifier.GetV()
-
-	// Ensure public key consistent
-	self := p.peers[p.peerManager.SelfID()]
-	err = validatePubKey(logger, peer.bkCoefficient, sG, self.bkCoefficient, ecpointgrouplaw.ScalarBaseMult(p.curve, p.oldShare), p.publicKey)
-	if err != nil {
-		return tss.ErrUnexpectedPublickey
-	}
 
 	// Build a0, a1 prover new polynomial
+	self := p.peers[p.peerManager.SelfID()]
 	n := p.curve.Params().N
 	a0 := new(big.Int).Mul(self.bkCoefficient, p.oldShare)
 	a1 := new(big.Int).Mul(new(big.Int).Sub(p.newShare, a0), new(big.Int).ModInverse(self.bk.GetX(), n))

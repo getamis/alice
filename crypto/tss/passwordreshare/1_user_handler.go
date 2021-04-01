@@ -15,6 +15,7 @@
 package passwordreshare
 
 import (
+	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/sirius/log"
@@ -57,8 +58,16 @@ func (p *userHandler1) HandleMessage(logger log.Logger, message types.Message) e
 		return tss.ErrPeerNotFound
 	}
 
+	// Ensure public key consistent
+	sG := p.serverGVerifier.GetV()
+	self := p.peers[p.peerManager.SelfID()]
+	err := validatePubKey(logger, peer.bkCoefficient, sG, self.bkCoefficient, ecpointgrouplaw.ScalarBaseMult(p.curve, p.oldShare), p.publicKey)
+	if err != nil {
+		return tss.ErrUnexpectedPublickey
+	}
+
 	// Schnorr verify
-	err := p.serverGVerifier.SetB(server1.GetServerGProver2())
+	err = p.serverGVerifier.SetB(server1.GetServerGProver2())
 	if err != nil {
 		logger.Debug("Failed to set b (server G)", "err", err)
 		return err
