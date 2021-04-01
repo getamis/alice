@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package paillier;
 
+option go_package = "github.com/getamis/alice/crypto/homo/paillier";
+
 import "github.com/getamis/alice/crypto/zkproof/message.proto";
 
 message PubKeyMessage {
