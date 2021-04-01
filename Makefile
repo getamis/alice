@@ -19,12 +19,12 @@ $(DIRS):
 
 PHONY+= init
 init: 
-	git submodule init
-	git submodule update
+	@go mod download
 
 PHONY+= tools
 tools: $(DIRS) $(PROTOC)
-	@go build -mod=vendor -o $(TOOL_BIN_DIR)/protoc-gen-go $(CURDIR)/vendor/github.com/golang/protobuf/protoc-gen-go
+	@go install \
+		google.golang.org/protobuf/cmd/protoc-gen-go 
 
 # Build go/js generated files
 PHONY += protobuf
