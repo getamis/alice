@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package passwordreshare;
 
+option go_package = "github.com/getamis/alice/crypto/tss/passwordreshare/";
+
 import "github.com/getamis/alice/crypto/oprf/message.proto";
 import "github.com/getamis/alice/crypto/zkproof/message.proto";
 

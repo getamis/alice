@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package birkhoffinterpolation;
 
+option go_package = "github.com/getamis/alice/crypto/birkhoffinterpolation";
+
 message BkParameterMessage {
     bytes x = 1;
     uint32 rank = 2;
