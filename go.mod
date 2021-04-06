@@ -7,7 +7,7 @@ require (
 	github.com/getamis/sirius v1.1.7
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gogo/protobuf v1.3.1
-	github.com/golang/protobuf v1.3.2
+	github.com/golang/protobuf v1.5.0
 	github.com/hpcloud/tail v1.0.1-0.20180514194441-a1dbeea552b7 // indirect
 	github.com/libp2p/go-libp2p v0.7.0
 	github.com/libp2p/go-libp2p-core v0.5.0
@@ -24,6 +24,7 @@ require (
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/tools v0.0.0-20200129045341-207d3de1faaf // indirect
 	gonum.org/v1/gonum v0.7.0
+	google.golang.org/protobuf v1.26.0
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v2 v2.2.4
 )
