@@ -25,7 +25,8 @@ import (
 	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/tss/message/types/mocks"
-	"github.com/getamis/alice/crypto/tss/passwordreshare"
+	"github.com/getamis/alice/crypto/tss/password/reshare"
+	"github.com/getamis/alice/crypto/tss/password/verifier"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -92,7 +93,22 @@ var _ = Describe("Password Tests", func() {
 			l.AssertExpectations(GinkgoT())
 		}
 
-		By("Step 3: Reshare")
+		By("Step 3: Verifer")
+		urV, srV, listeners := newPasswordVerifiers([]byte(oldPassword), dkgs)
+		for _, l := range listeners {
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
+		}
+		srV.Start()
+		urV.Start()
+		time.Sleep(2 * time.Second)
+		// Stop verifer process.
+		srV.Stop()
+		urV.Stop()
+		for _, l := range listeners {
+			l.AssertExpectations(GinkgoT())
+		}
+
+		By("Step 4: Reshare")
 		ur, sr, listeners := newPasswordReshares([]byte(oldPassword), []byte(newPassword), dkgs)
 		for _, l := range listeners {
 			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
@@ -215,10 +231,10 @@ func newPasswordSigners(password []byte, dkgs map[string]*dkg.DKG, homo homo.Cry
 	return pubKey, ss, listeners
 }
 
-func newPasswordReshares(oldPassword []byte, newPassword []byte, dkgs map[string]*dkg.DKG) (*passwordreshare.UserReshare, *passwordreshare.ServerReshare, map[string]*mocks.StateChangedListener) {
+func newPasswordReshares(oldPassword []byte, newPassword []byte, dkgs map[string]*dkg.DKG) (*reshare.UserReshare, *reshare.ServerReshare, map[string]*mocks.StateChangedListener) {
 	var (
-		ur *passwordreshare.UserReshare
-		sr *passwordreshare.ServerReshare
+		ur *reshare.UserReshare
+		sr *reshare.ServerReshare
 	)
 	lens := 2
 	ssMain := make(map[string]types.MessageMain, lens)
@@ -233,10 +249,39 @@ func newPasswordReshares(oldPassword []byte, newPassword []byte, dkgs map[string
 		r, err := dkgs[id].GetResult()
 		Expect(err).Should(BeNil())
 		if i == 0 {
-			ur, err = passwordreshare.NewUserReshare(pm, r.PublicKey, oldPassword, newPassword, r.Bks, listeners[id])
+			ur, err = reshare.NewUserReshare(pm, r.PublicKey, oldPassword, newPassword, r.Bks, listeners[id])
 			ssMain[id] = ur
 		} else {
-			sr, err = passwordreshare.NewServerReshare(pm, r.PublicKey, r.K, r.Share, r.Bks, listeners[id])
+			sr, err = reshare.NewServerReshare(pm, r.PublicKey, r.K, r.Share, r.Bks, listeners[id])
+			ssMain[id] = sr
+		}
+		Expect(err).Should(BeNil())
+	}
+	return ur, sr, listeners
+}
+
+func newPasswordVerifiers(oldPassword []byte, dkgs map[string]*dkg.DKG) (*verifier.UserVerifier, *verifier.ServerVerifier, map[string]*mocks.StateChangedListener) {
+	var (
+		ur *verifier.UserVerifier
+		sr *verifier.ServerVerifier
+	)
+	lens := 2
+	ssMain := make(map[string]types.MessageMain, lens)
+	peerManagers := make([]types.PeerManager, lens)
+	listeners := make(map[string]*mocks.StateChangedListener, lens)
+	for i := 0; i < lens; i++ {
+		id := tss.GetTestID(i)
+		pm := tss.NewTestPeerManager(i, lens)
+		pm.Set(ssMain)
+		peerManagers[i] = pm
+		listeners[id] = new(mocks.StateChangedListener)
+		r, err := dkgs[id].GetResult()
+		Expect(err).Should(BeNil())
+		if i == 0 {
+			ur, err = verifier.NewUserVerifier(pm, r.PublicKey, oldPassword, r.Bks, listeners[id])
+			ssMain[id] = ur
+		} else {
+			sr, err = verifier.NewServerVerifier(pm, r.PublicKey, r.K, r.Share, r.Bks, listeners[id])
 			ssMain[id] = sr
 		}
 		Expect(err).Should(BeNil())

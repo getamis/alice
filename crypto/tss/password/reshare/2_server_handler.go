@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package passwordreshare
+package reshare
 
 import (
 	"github.com/getamis/alice/crypto/tss"
@@ -20,25 +20,21 @@ import (
 	"github.com/getamis/sirius/log"
 )
 
-type userHandler2 struct {
-	*userHandler1
+type serverHandler2 struct {
+	*serverHandler1
 }
 
-func newUserHandler2(s *userHandler1) (*userHandler2, error) {
-	return &userHandler2{
-		userHandler1: s,
+func newServerHandler2(s *serverHandler1) (*serverHandler2, error) {
+	return &serverHandler2{
+		serverHandler1: s,
 	}, nil
 }
 
-func (p *userHandler2) MessageType() types.MessageType {
-	return types.MessageType(Type_MsgServer2)
+func (p *serverHandler2) MessageType() types.MessageType {
+	return types.MessageType(Type_MsgUser2)
 }
 
-func (p *userHandler2) GetRequiredMessageCount() uint32 {
-	return 1
-}
-
-func (p *userHandler2) IsHandled(logger log.Logger, id string) bool {
+func (p *serverHandler2) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := p.peers[id]
 	if !ok {
 		logger.Debug("Peer not found")
@@ -47,9 +43,9 @@ func (p *userHandler2) IsHandled(logger log.Logger, id string) bool {
 	return peer.GetMessage(p.MessageType()) != nil
 }
 
-func (p *userHandler2) HandleMessage(logger log.Logger, message types.Message) error {
+func (p *serverHandler2) HandleMessage(logger log.Logger, message types.Message) error {
 	msg := getMessage(message)
-	server2 := msg.GetServer2()
+	user2 := msg.GetUser2()
 	id := msg.GetId()
 	peer, ok := p.peers[id]
 	if !ok {
@@ -58,37 +54,41 @@ func (p *userHandler2) HandleMessage(logger log.Logger, message types.Message) e
 	}
 
 	// Schnorr verify
-	err := p.serverGVerifier.Verify(server2.ServerGProver3)
+	err := p.oldShareGVerifier.SetB(user2.OldShareGProver2)
 	if err != nil {
-		logger.Debug("Failed to verify", "err", err)
+		logger.Debug("Failed to set B (old share)", "err", err)
 		return err
 	}
-	osp3, err := p.oldShareGProver.ComputeZ(server2.OldShareGVerifier2)
+	err = p.newShareGVerifier.SetB(user2.NewShareGProver2)
 	if err != nil {
-		logger.Debug("Failed to compute z (old share)", "err", err)
+		logger.Debug("Failed to set B (new share)", "err", err)
 		return err
 	}
-	nsp3, err := p.newShareGProver.ComputeZ(server2.NewShareGVerifier2)
+	sp3, err := p.serverGProver.ComputeZ(user2.ServerGVerifier2)
 	if err != nil {
-		logger.Debug("Failed to compute z (old share)", "err", err)
+		logger.Debug("Failed to compute z", "err", err)
 		return err
 	}
 
-	// Send to Server
+	// Send to User
 	p.peerManager.MustSend(message.GetId(), &Message{
-		Type: Type_MsgUser3,
+		Type: Type_MsgServer2,
 		Id:   p.peerManager.SelfID(),
-		Body: &Message_User3{
-			User3: &BodyUser3{
-				OldShareGProver3: osp3,
-				NewShareGProver3: nsp3,
-				Evaluation:       p.newF.Evaluate(peer.bk.GetX()).Bytes(),
+		Body: &Message_Server2{
+			Server2: &BodyServer2{
+				OldShareGVerifier2: p.oldShareGVerifier.GetInteractiveSchnorrVerifier2Message(),
+				NewShareGVerifier2: p.newShareGVerifier.GetInteractiveSchnorrVerifier2Message(),
+				ServerGProver3:     sp3,
 			},
 		},
 	})
 	return peer.AddMessage(msg)
 }
 
-func (p *userHandler2) Finalize(logger log.Logger) (types.Handler, error) {
-	return nil, nil
+func (p *serverHandler2) Finalize(logger log.Logger) (types.Handler, error) {
+	return newServerHandler3(p)
+}
+
+func (p *serverHandler2) GetFirstMessage() *Message {
+	return nil
 }

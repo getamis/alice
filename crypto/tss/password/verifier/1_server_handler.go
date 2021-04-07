@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package passwordreshare
+package verifier
 
 import (
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
@@ -24,9 +24,6 @@ import (
 
 type serverHandler1 struct {
 	*serverHandler0
-
-	oldShareGVerifier *zkproof.InteractiveSchnorrVerifier
-	newShareGVerifier *zkproof.InteractiveSchnorrVerifier
 }
 
 func newServerHandler1(s *serverHandler0) (*serverHandler1, error) {
@@ -58,23 +55,12 @@ func (p *serverHandler1) HandleMessage(logger log.Logger, message types.Message)
 		return tss.ErrPeerNotFound
 	}
 
-	err := p.serverGProver.SetCommitC(user1.ServerGVerifier1)
-	if err != nil {
-		logger.Debug("Failed to set commit c", "err", err)
-		return err
-	}
-
-	p.oldShareGVerifier, err = zkproof.NewInteractiveSchnorrVerifier(user1.OldShareGProver1)
+	oldShareGVerifier, err := zkproof.NewInteractiveSchnorrVerifier(user1.OldShareGProver1)
 	if err != nil {
 		logger.Debug("Failed to create old share verifier", "err", err)
 		return err
 	}
-	oldShareG := p.oldShareGVerifier.GetV()
-	p.newShareGVerifier, err = zkproof.NewInteractiveSchnorrVerifier(user1.NewShareGProver1)
-	if err != nil {
-		logger.Debug("Failed to create new share verifier", "err", err)
-		return err
-	}
+	oldShareG := oldShareGVerifier.GetV()
 
 	// Ensure the public key consistent
 	self := p.peers[p.peerManager.SelfID()]
@@ -82,28 +68,9 @@ func (p *serverHandler1) HandleMessage(logger log.Logger, message types.Message)
 	if err != nil {
 		return tss.ErrUnexpectedPublickey
 	}
-
-	// Send to User
-	sp2, err := p.serverGProver.GetInteractiveSchnorrProver2Message()
-	if err != nil {
-		logger.Debug("Failed to get interactive prover 2", "err", err)
-		return err
-	}
-
-	p.peerManager.MustSend(message.GetId(), &Message{
-		Type: Type_MsgServer1,
-		Id:   p.peerManager.SelfID(),
-		Body: &Message_Server1{
-			Server1: &BodyServer1{
-				OldShareGVerifier1: p.oldShareGVerifier.GetInteractiveSchnorrVerifier1Message(),
-				NewShareGVerifier1: p.newShareGVerifier.GetInteractiveSchnorrVerifier1Message(),
-				ServerGProver2:     sp2,
-			},
-		},
-	})
 	return peer.AddMessage(msg)
 }
 
 func (p *serverHandler1) Finalize(logger log.Logger) (types.Handler, error) {
-	return newServerHandler2(p)
+	return nil, nil
 }

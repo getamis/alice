@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package passwordreshare
+package verifier
 
 import (
 	"crypto/elliptic"
@@ -22,7 +22,6 @@ import (
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/oprf"
-	"github.com/getamis/alice/crypto/polynomial"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/zkproof"
@@ -43,17 +42,12 @@ type userHandler0 struct {
 	curve       elliptic.Curve
 
 	oldPasswordRequester *oprf.Requester
-	newPasswordRequester *oprf.Requester
 
 	oldShare        *big.Int
-	newShare        *big.Int
-	newF            *polynomial.Polynomial
-	serverGVerifier *zkproof.InteractiveSchnorrVerifier
 	oldShareGProver *zkproof.InteractiveSchnorrProver
-	newShareGProver *zkproof.InteractiveSchnorrProver
 }
 
-func newUserHandler0(publicKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, bks map[string]*birkhoffinterpolation.BkParameter, oldPassword []byte, newPassword []byte) (*userHandler0, error) {
+func newUserHandler0(publicKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, bks map[string]*birkhoffinterpolation.BkParameter, oldPassword []byte) (*userHandler0, error) {
 	if publicKey.IsIdentity() {
 		return nil, ErrIndentityPublicKey
 	}
@@ -70,10 +64,7 @@ func newUserHandler0(publicKey *ecpointgrouplaw.ECPoint, peerManager types.PeerM
 	if err != nil {
 		return nil, err
 	}
-	newRequester, err := oprf.NewRequester(newPassword)
-	if err != nil {
-		return nil, err
-	}
+
 	return &userHandler0{
 		publicKey:   publicKey,
 		peerManager: peerManager,
@@ -82,7 +73,6 @@ func newUserHandler0(publicKey *ecpointgrouplaw.ECPoint, peerManager types.PeerM
 		curve:       curve,
 
 		oldPasswordRequester: oldRequester,
-		newPasswordRequester: newRequester,
 	}, nil
 }
 
@@ -125,41 +115,6 @@ func (p *userHandler0) HandleMessage(logger log.Logger, message types.Message) e
 		logger.Debug("Failed to create old share prover", "err", err)
 		return err
 	}
-	p.newShare, err = p.newPasswordRequester.Compute(server0.NewPasswordResponse)
-	if err != nil {
-		logger.Debug("Failed to compute new share", "err", err)
-		return err
-	}
-	p.newShareGProver, err = zkproof.NewInteractiveSchnorrProver(p.newShare, p.curve)
-	if err != nil {
-		logger.Debug("Failed to create new share prover", "err", err)
-		return err
-	}
-
-	// Compute server g and build its verifier
-	p.serverGVerifier, err = zkproof.NewInteractiveSchnorrVerifier(server0.ServerGProver1)
-	if err != nil {
-		logger.Debug("Failed to new server g verifier", "err", err)
-		return err
-	}
-	sG := p.serverGVerifier.GetV()
-
-	// Ensure public key consistent
-	self := p.peers[p.peerManager.SelfID()]
-	err = validatePubKey(logger, peer.bkCoefficient, sG, self.bkCoefficient, ecpointgrouplaw.ScalarBaseMult(p.curve, p.oldShare), p.publicKey)
-	if err != nil {
-		return tss.ErrUnexpectedPublickey
-	}
-
-	// Build a0, a1 prover new polynomial
-	n := p.curve.Params().N
-	a0 := new(big.Int).Mul(self.bkCoefficient, p.oldShare)
-	a1 := new(big.Int).Mul(new(big.Int).Sub(p.newShare, a0), new(big.Int).ModInverse(self.bk.GetX(), n))
-	p.newF, err = polynomial.NewPolynomial(n, []*big.Int{a0, a1})
-	if err != nil {
-		logger.Debug("Failed to create new polynomial", "err", err)
-		return err
-	}
 
 	// Send to Server
 	p.peerManager.MustSend(message.GetId(), &Message{
@@ -168,8 +123,6 @@ func (p *userHandler0) HandleMessage(logger log.Logger, message types.Message) e
 		Body: &Message_User1{
 			User1: &BodyUser1{
 				OldShareGProver1: p.oldShareGProver.GetInteractiveSchnorrProver1Message(),
-				NewShareGProver1: p.newShareGProver.GetInteractiveSchnorrProver1Message(),
-				ServerGVerifier1: p.serverGVerifier.GetInteractiveSchnorrVerifier1Message(),
 			},
 		},
 	})
@@ -177,7 +130,7 @@ func (p *userHandler0) HandleMessage(logger log.Logger, message types.Message) e
 }
 
 func (p *userHandler0) Finalize(logger log.Logger) (types.Handler, error) {
-	return newUserHandler1(p)
+	return nil, nil
 }
 
 func (p *userHandler0) GetFirstMessage() *Message {
@@ -186,7 +139,6 @@ func (p *userHandler0) GetFirstMessage() *Message {
 		Id:   p.peerManager.SelfID(),
 		Body: &Message_User0{
 			User0: &BodyUser0{
-				NewPasswordRequest: p.newPasswordRequester.GetRequestMessage(),
 				OldPasswordRequest: p.oldPasswordRequester.GetRequestMessage(),
 			},
 		},
