@@ -41,10 +41,11 @@ type userHandler0 struct {
 	bks         map[string]*birkhoffinterpolation.BkParameter
 	curve       elliptic.Curve
 
-	oldPasswordRequester *oprf.Requester
+	passwordRequester *oprf.Requester
 
-	oldShare        *big.Int
-	oldShareGProver *zkproof.InteractiveSchnorrProver
+	share           *big.Int
+	serverGVerifier *zkproof.InteractiveSchnorrVerifier
+	shareGProver    *zkproof.InteractiveSchnorrProver
 }
 
 func newUserHandler0(publicKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, bks map[string]*birkhoffinterpolation.BkParameter, oldPassword []byte) (*userHandler0, error) {
@@ -60,7 +61,7 @@ func newUserHandler0(publicKey *ecpointgrouplaw.ECPoint, peerManager types.PeerM
 	}
 
 	// Build requesters
-	oldRequester, err := oprf.NewRequester(oldPassword)
+	requester, err := oprf.NewRequester(oldPassword)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +73,7 @@ func newUserHandler0(publicKey *ecpointgrouplaw.ECPoint, peerManager types.PeerM
 		bks:         bks,
 		curve:       curve,
 
-		oldPasswordRequester: oldRequester,
+		passwordRequester: requester,
 	}, nil
 }
 
@@ -105,25 +106,30 @@ func (p *userHandler0) HandleMessage(logger log.Logger, message types.Message) e
 
 	// Compute shares
 	var err error
-	p.oldShare, err = p.oldPasswordRequester.Compute(server0.OldPasswordResponse)
+	p.share, err = p.passwordRequester.Compute(server0.PasswordResponse)
 	if err != nil {
 		logger.Debug("Failed to compute old share", "err", err)
 		return err
 	}
-	p.oldShareGProver, err = zkproof.NewInteractiveSchnorrProver(p.oldShare, p.curve)
+	p.shareGProver, err = zkproof.NewInteractiveSchnorrProver(p.share, p.curve)
 	if err != nil {
 		logger.Debug("Failed to create old share prover", "err", err)
 		return err
 	}
-
+	// Compute server g and build its verifier
+	p.serverGVerifier, err = zkproof.NewInteractiveSchnorrVerifier(server0.ServerGProver1)
+	if err != nil {
+		logger.Debug("Failed to new server g verifier", "err", err)
+		return err
+	}
 	// Send to Server
 	p.peerManager.MustSend(message.GetId(), &Message{
 		Type: Type_MsgUser1,
 		Id:   p.peerManager.SelfID(),
 		Body: &Message_User1{
 			User1: &BodyUser1{
-				OldShareGProver1: p.oldShareGProver.GetInteractiveSchnorrProver1Message(),
-			},
+				ShareGProver1:    p.shareGProver.GetInteractiveSchnorrProver1Message(),
+				ServerGVerifier1: p.serverGVerifier.GetInteractiveSchnorrVerifier1Message()},
 		},
 	})
 	return peer.AddMessage(msg)
@@ -139,7 +145,7 @@ func (p *userHandler0) GetFirstMessage() *Message {
 		Id:   p.peerManager.SelfID(),
 		Body: &Message_User0{
 			User0: &BodyUser0{
-				OldPasswordRequest: p.oldPasswordRequester.GetRequestMessage(),
+				PasswordRequest: p.passwordRequester.GetRequestMessage(),
 			},
 		},
 	}

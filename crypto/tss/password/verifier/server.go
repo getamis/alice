@@ -40,6 +40,6 @@ func NewServerVerifier(peerManager types.PeerManager, publicKey *ecpointgrouplaw
 	return &ServerVerifier{
 		ph:          ph,
 		peerManager: peerManager,
-		MsgMain:     message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_MsgUser0), types.MessageType(Type_MsgUser1)),
+		MsgMain:     message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_MsgUser0), types.MessageType(Type_MsgUser1), types.MessageType(Type_MsgUser2), types.MessageType(Type_MsgUser3)),
 	}, nil
 }
