@@ -52,7 +52,7 @@ func newServerHandler0(publicKey *ecpointgrouplaw.ECPoint, peerManager types.Pee
 	}
 
 	// Build responsers
-	oldResponser, err := oprf.NewResponserWithK(k)
+	responser, err := oprf.NewResponserWithK(k)
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +69,7 @@ func newServerHandler0(publicKey *ecpointgrouplaw.ECPoint, peerManager types.Pee
 		curve:       curve,
 
 		secret:            secret,
-		passwordResponser: oldResponser,
+		passwordResponser: responser,
 		serverGProver:     secretProver,
 	}, nil
 }
@@ -101,7 +101,7 @@ func (p *serverHandler0) HandleMessage(logger log.Logger, message types.Message)
 		return tss.ErrPeerNotFound
 	}
 
-	oldPasswordRes, err := p.passwordResponser.Handle(user0.PasswordRequest)
+	passwordRes, err := p.passwordResponser.Handle(user0.PasswordRequest)
 	if err != nil {
 		logger.Debug("Failed to handle old password request", "err", err)
 		return err
@@ -113,7 +113,7 @@ func (p *serverHandler0) HandleMessage(logger log.Logger, message types.Message)
 		Id:   p.peerManager.SelfID(),
 		Body: &Message_Server0{
 			Server0: &BodyServer0{
-				PasswordResponse: oldPasswordRes,
+				PasswordResponse: passwordRes,
 				ServerGProver1:   p.serverGProver.GetInteractiveSchnorrProver1Message(),
 			},
 		},

@@ -48,7 +48,7 @@ type userHandler0 struct {
 	shareGProver    *zkproof.InteractiveSchnorrProver
 }
 
-func newUserHandler0(publicKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, bks map[string]*birkhoffinterpolation.BkParameter, oldPassword []byte) (*userHandler0, error) {
+func newUserHandler0(publicKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, bks map[string]*birkhoffinterpolation.BkParameter, password []byte) (*userHandler0, error) {
 	if publicKey.IsIdentity() {
 		return nil, ErrIndentityPublicKey
 	}
@@ -61,7 +61,7 @@ func newUserHandler0(publicKey *ecpointgrouplaw.ECPoint, peerManager types.PeerM
 	}
 
 	// Build requesters
-	requester, err := oprf.NewRequester(oldPassword)
+	requester, err := oprf.NewRequester(password)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func (p *userHandler0) HandleMessage(logger log.Logger, message types.Message) e
 }
 
 func (p *userHandler0) Finalize(logger log.Logger) (types.Handler, error) {
-	return nil, nil
+	return newUserHandler1(p)
 }
 
 func (p *userHandler0) GetFirstMessage() *Message {

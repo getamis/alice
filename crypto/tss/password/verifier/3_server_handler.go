@@ -65,7 +65,7 @@ func (p *serverHandler3) HandleMessage(logger log.Logger, message types.Message)
 	// Schnorr verify
 	err := p.shareGVerifier.Verify(user3.ShareGProver3)
 	if err != nil {
-		logger.Debug("Failed to verify (old share)", "err", err)
+		logger.Debug("Failed to verify (share)", "err", err)
 		return err
 	}
 

@@ -39,7 +39,7 @@ func NewUserVerifier(peerManager types.PeerManager, publicKey *ecpointgrouplaw.E
 	return &UserVerifier{
 		ph:          ph,
 		peerManager: peerManager,
-		MsgMain:     message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_MsgServer0)),
+		MsgMain:     message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_MsgServer0), types.MessageType(Type_MsgServer1), types.MessageType(Type_MsgServer2)),
 	}, nil
 }
 
