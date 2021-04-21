@@ -24,8 +24,16 @@ func (m *Message) IsValid() bool {
 		return m.GetUser0() != nil
 	case Type_MsgUser1:
 		return m.GetUser1() != nil
+	case Type_MsgUser2:
+		return m.GetUser2() != nil
+	case Type_MsgUser3:
+		return m.GetUser3() != nil
 	case Type_MsgServer0:
 		return m.GetServer0() != nil
+	case Type_MsgServer1:
+		return m.GetServer1() != nil
+	case Type_MsgServer2:
+		return m.GetServer2() != nil
 	}
 	return false
 }

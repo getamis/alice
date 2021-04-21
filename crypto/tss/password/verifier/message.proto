@@ -24,7 +24,11 @@ import "github.com/getamis/alice/crypto/zkproof/message.proto";
 enum Type {
     MsgUser0 = 0;
     MsgUser1 = 1;
+    MsgUser2 = 2;
+    MsgUser3 = 3;
     MsgServer0 = 100;
+    MsgServer1 = 101;
+    MsgServer2 = 102;
 }
 
 message Message {
@@ -33,19 +37,43 @@ message Message {
     oneof body {
         BodyUser0 user0 = 3;
         BodyUser1 user1 = 4;
+        BodyUser2 user2 = 5;
+        BodyUser3 user3 = 6;
         BodyServer0 server0 = 10;
+        BodyServer1 server1 = 11;
+        BodyServer2 server2 = 12;
     }
 }
 
 message BodyUser0 {
-    oprf.OprfRequestMessage oldPasswordRequest = 1;
+    oprf.OprfRequestMessage passwordRequest = 1;
 }
 
 message BodyUser1 {
-    zkproof.InteractiveSchnorrProver1 oldShareGProver1 = 1;
+    zkproof.InteractiveSchnorrProver1 shareGProver1 = 1;
+    zkproof.InteractiveSchnorrVerifier1 serverGVerifier1 = 2;
+}
+
+message BodyUser2 {
+    zkproof.InteractiveSchnorrProver2 shareGProver2 = 1;
+    zkproof.InteractiveSchnorrVerifier2 serverGVerifier2 = 2;
+}
+
+message BodyUser3 {
+    zkproof.InteractiveSchnorrProver3 shareGProver3 = 1;
 }
 
 message BodyServer0 {
-    oprf.OprfResponseMessage oldPasswordResponse = 1;
-    zkproof.InteractiveSchnorrProver1 serverGProver1 = 3;
+    oprf.OprfResponseMessage passwordResponse = 1;
+    zkproof.InteractiveSchnorrProver1 serverGProver1 = 2;
+}
+
+message BodyServer1 {
+    zkproof.InteractiveSchnorrProver2 serverGProver2 = 1;
+    zkproof.InteractiveSchnorrVerifier1 shareGVerifier1 = 2;
+}
+
+message BodyServer2 {
+    zkproof.InteractiveSchnorrProver3 serverGProver3 = 1;
+    zkproof.InteractiveSchnorrVerifier2 shareGVerifier2 = 2;
 }

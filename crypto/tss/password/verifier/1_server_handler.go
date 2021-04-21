@@ -24,6 +24,7 @@ import (
 
 type serverHandler1 struct {
 	*serverHandler0
+	shareGVerifier *zkproof.InteractiveSchnorrVerifier
 }
 
 func newServerHandler1(s *serverHandler0) (*serverHandler1, error) {
@@ -55,12 +56,18 @@ func (p *serverHandler1) HandleMessage(logger log.Logger, message types.Message)
 		return tss.ErrPeerNotFound
 	}
 
-	oldShareGVerifier, err := zkproof.NewInteractiveSchnorrVerifier(user1.OldShareGProver1)
+	err := p.serverGProver.SetCommitC(user1.ServerGVerifier1)
+	if err != nil {
+		logger.Debug("Failed to set commit c", "err", err)
+		return err
+	}
+
+	p.shareGVerifier, err = zkproof.NewInteractiveSchnorrVerifier(user1.ShareGProver1)
 	if err != nil {
 		logger.Debug("Failed to create old share verifier", "err", err)
 		return err
 	}
-	oldShareG := oldShareGVerifier.GetV()
+	oldShareG := p.shareGVerifier.GetV()
 
 	// Ensure the public key consistent
 	self := p.peers[p.peerManager.SelfID()]
@@ -68,9 +75,27 @@ func (p *serverHandler1) HandleMessage(logger log.Logger, message types.Message)
 	if err != nil {
 		return tss.ErrUnexpectedPublickey
 	}
+
+	// Send to User
+	sp2, err := p.serverGProver.GetInteractiveSchnorrProver2Message()
+	if err != nil {
+		logger.Debug("Failed to get interactive prover 2", "err", err)
+		return err
+	}
+
+	p.peerManager.MustSend(message.GetId(), &Message{
+		Type: Type_MsgServer1,
+		Id:   p.peerManager.SelfID(),
+		Body: &Message_Server1{
+			Server1: &BodyServer1{
+				ShareGVerifier1: p.shareGVerifier.GetInteractiveSchnorrVerifier1Message(),
+				ServerGProver2:  sp2,
+			},
+		},
+	})
 	return peer.AddMessage(msg)
 }
 
 func (p *serverHandler1) Finalize(logger log.Logger) (types.Handler, error) {
-	return nil, nil
+	return newServerHandler2(p)
 }
