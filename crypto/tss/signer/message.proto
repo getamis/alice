@@ -16,6 +16,8 @@ syntax = "proto3";
 
 package signer;
 
+option go_package = "github.com/getamis/alice/crypto/tss/signer";
+
 import "github.com/getamis/alice/crypto/commitment/message.proto";
 import "github.com/getamis/alice/crypto/zkproof/message.proto";
 
