@@ -140,7 +140,6 @@ var _ = Describe("hash", func() {
 			got := &PointCommitmentMessage{}
 			err = c.GetCommitmentMessage().DecommitToProto(c.GetDecommitmentMessage(), got)
 			Expect(err).ShouldNot(BeNil())
-			Expect(got).Should(Equal(&PointCommitmentMessage{}))
 		})
 	})
 })

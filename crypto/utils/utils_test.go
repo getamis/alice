@@ -200,4 +200,27 @@ var _ = Describe("Utils", func() {
 			Expect(result).ShouldNot(BeNil())
 		})
 	})
+
+	DescribeTable("BytesToBits()", func(input []byte, expected []uint8) {
+		got := BytesToBits(input)
+		Expect(got).Should(Equal(expected))
+	},
+		Entry("should be ok", []byte{0, 3, 255}, []uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}),
+	)
+
+	DescribeTable("ScalarMul()", func(bit uint8, input []uint8, expected []uint8) {
+		got := ScalarMul(bit, input)
+		Expect(got).Should(Equal(expected))
+	},
+		Entry("should be ok", uint8(0), []uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, []uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
+		Entry("should be ok", uint8(1), []uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, []uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}),
+	)
+
+	DescribeTable("BitsToBytes()", func(input []byte, expected []uint8) {
+		got, err := BitsToBytes(input)
+		Expect(got).Should(Equal(expected))
+		Expect(err).Should(BeNil())
+	},
+		Entry("should be ok", []uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, []byte{0, 3, 255}),
+	)
 })

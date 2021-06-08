@@ -18,6 +18,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"math/big"
+	"math/bits"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
@@ -32,6 +33,8 @@ const (
 	maxGenNHashValue = 100
 	// minPermittedThreshold
 	minPermittedThreshold = 2
+
+	bitsPerByte = 8
 )
 
 var (
@@ -257,4 +260,80 @@ func HashProtos(salt []byte, msgs ...proto.Message) ([]byte, error) {
 	}
 	bs := blake2b.Sum256(inputData)
 	return bs[:], nil
+}
+
+func Xor(bigArray, smallArray []byte) []byte {
+	if len(bigArray) < len(smallArray) {
+		return Xor(smallArray, bigArray)
+	}
+	result := make([]byte, len(bigArray))
+	for i := 0; i < len(bigArray); i++ {
+		result[i] = bigArray[i] ^ smallArray[i]
+	}
+	for i := len(smallArray); i < len(bigArray); i++ {
+		result[i] = bigArray[i]
+	}
+	return result
+}
+
+func BinaryMul(c uint8, input []byte) []byte {
+	result := make([]byte, len(input))
+	// Copy array
+	if c == 1 {
+		copy(result, input)
+		return result
+	}
+	// Others are zero
+	return result
+}
+
+func BytesToBits(data []byte) []uint8 {
+	st := make([]uint8, len(data)*bitsPerByte) // Performance x 2 as no append occurs.
+	for i, d := range data {
+		for j := 0; j < bitsPerByte; j++ {
+			if bits.LeadingZeros8(d) == 0 {
+				// No leading 0 means that it is a 1
+				st[i*bitsPerByte+j] = 1
+			} else {
+				st[i*bitsPerByte+j] = 0
+			}
+			d = d << 1
+		}
+	}
+	return st
+}
+
+func ScalarMul(bit uint8, input []uint8) []uint8 {
+	result := make([]uint8, len(input))
+	for i := 0; i < len(result); i++ {
+		result[i] = bit & input[i]
+	}
+	return result
+}
+
+func BitsToBytes(input []uint8) ([]byte, error) {
+	if len(input)%bitsPerByte != 0 {
+		return nil, ErrInvalidInput
+	}
+	byteLength := len(input) >> 3
+	result := make([]byte, byteLength)
+	for i := 0; i < byteLength; i++ {
+		low := i << 3
+		temp := input[low : low+bitsPerByte]
+		tempResult := temp[7]
+		for j := 6; j >= 0; j-- {
+			tempResult += temp[j] << uint8(7-j)
+		}
+		result[i] = tempResult
+	}
+	return result, nil
+}
+
+func ReverseByte(s []byte) []byte {
+	result := make([]byte, len(s))
+	upBd := len(s) - 1
+	for i := 0; i < len(s); i++ {
+		result[i] = s[upBd-i]
+	}
+	return result
 }

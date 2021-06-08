@@ -1,0 +1,35 @@
+// Copyright © 2021 AMIS Technologies
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package circuit;
+
+option go_package = "github.com/getamis/alice/crypto/circuit";
+
+message halfGateMessage {
+    bytes tG = 1;
+    bytes tE = 2;
+    int32 wireIndex = 3;
+}
+
+message garbleCircuitMessage {
+    repeated halfGateMessage f = 1;
+    repeated int32 d = 2;
+    repeated bytes HOutputWire0 = 3;
+    repeated bytes HOutputWire1 = 4;
+    bytes startCount = 5;
+    repeated bytes x = 6;
+}
+
