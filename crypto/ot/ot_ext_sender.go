@@ -1,4 +1,4 @@
-// Copyright © 2020 AMIS Technologies
+// Copyright © 2021 AMIS Technologies
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -90,9 +90,9 @@ func (send *OtExtSender) Veirfy(otExtRMsg *OtExtReceiveMessage) (*OtExtSendRespo
 		return nil, err
 	}
 
-	w := scalMulFieldElement(chi[0], getRow(0, Q))
+	w := binaryfield.ScalMulFieldElement(chi[0], getRow(0, Q))
 	for i := 1; i < len(chi); i++ {
-		w, err = binaryfield.AddVector(w, scalMulFieldElement(chi[i], getRow(i, Q)))
+		w, err = binaryfield.AddVector(w, binaryfield.ScalMulFieldElement(chi[i], getRow(i, Q)))
 		if err != nil {
 			return nil, err
 		}
@@ -260,34 +260,22 @@ func Paddingzero(input string, expectedLength uint) string {
 
 // TODO: do not check equal length
 func computeUandV(chi []*binaryfield.FieldElement, M [][]uint8, R [][]uint8) ([]*binaryfield.FieldElement, []*binaryfield.FieldElement, error) {
-	ufieldelement := scalMulFieldElement(chi[0], getRow(0, M))
+	ufieldelement := binaryfield.ScalMulFieldElement(chi[0], getRow(0, M))
 	var err error
-	vfieldelement := scalMulFieldElement(chi[0], getRow(0, R))
+	vfieldelement := binaryfield.ScalMulFieldElement(chi[0], getRow(0, R))
 	for i := 1; i < len(chi); i++ {
-		tempfieldelement := scalMulFieldElement(chi[i], getRow(i, M))
+		tempfieldelement := binaryfield.ScalMulFieldElement(chi[i], getRow(i, M))
 		ufieldelement, err = binaryfield.AddVector(ufieldelement, tempfieldelement)
 		if err != nil {
 			return nil, nil, err
 		}
-		tempfieldelement = scalMulFieldElement(chi[i], getRow(i, R))
+		tempfieldelement = binaryfield.ScalMulFieldElement(chi[i], getRow(i, R))
 		vfieldelement, err = binaryfield.AddVector(vfieldelement, tempfieldelement)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
 	return ufieldelement, vfieldelement, nil
-}
-
-func scalMulFieldElement(element *binaryfield.FieldElement, input []uint8) []*binaryfield.FieldElement {
-	result := make([]*binaryfield.FieldElement, len(input))
-	for i := 0; i < len(result); i++ {
-		if input[i] != 0 {
-			result[i] = element.Copy()
-			continue
-		}
-		result[i] = binaryfield.NewFieldElement(0, 0)
-	}
-	return result
 }
 
 func getRow(indexRow int, input [][]uint8) []uint8 {

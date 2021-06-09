@@ -68,6 +68,18 @@ func (x *FieldElement) Equal(y *FieldElement) bool {
 	return true
 }
 
+func ScalMulFieldElement(element *FieldElement, input []uint8) []*FieldElement {
+	result := make([]*FieldElement, len(input))
+	for i := 0; i < len(result); i++ {
+		if input[i] != 0 {
+			result[i] = element.Copy()
+			continue
+		}
+		result[i] = NewFieldElement(0, 0)
+	}
+	return result
+}
+
 func AddVector(x, y []*FieldElement) ([]*FieldElement, error) {
 	if len(x) != len(y) {
 		return nil, ErrWrongInput
