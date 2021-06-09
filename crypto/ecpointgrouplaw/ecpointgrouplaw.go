@@ -28,6 +28,8 @@ var (
 
 	// big0 is big int 0
 	big0 = big.NewInt(0)
+	// big1 is big int 1
+	big1 = big.NewInt(1)
 	// big2 is big int 2
 	big2 = big.NewInt(2)
 )
