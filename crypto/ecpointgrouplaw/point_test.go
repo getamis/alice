@@ -91,6 +91,25 @@ var _ = Describe("Point", func() {
 		})
 	})
 
+	Context("Neg()", func() {
+		It("Point is the identity element", func() {
+			for i := 0; i < len(curveList); i++ {
+				identity := NewIdentity(curveList[i])
+				result := identity.Neg()
+				Expect(result.IsIdentity()).To(BeTrue())
+			}
+		})
+
+		It("Negative of the base point", func() {
+			for i := 0; i < len(curveList); i++ {
+				base := NewBase(curveList[i])
+				expected := base.ScalarMult(new(big.Int).Sub(base.curve.Params().N, big1))
+				result := base.Neg()
+				Expect(expected.Equal(result)).To(BeTrue())
+			}
+		})
+	})
+
 	Context("String()", func() {
 		It("Returns the string format", func() {
 			for i := 0; i < len(curveList); i++ {
