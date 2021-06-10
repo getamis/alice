@@ -24,7 +24,7 @@ import (
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/polynomial"
-	"github.com/getamis/alice/crypto/tss/message/types/mocks"
+	"github.com/getamis/alice/internal/message/types/mocks"
 	"github.com/getamis/sirius/log"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

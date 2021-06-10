@@ -18,11 +18,11 @@ import (
 	"math/big"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
-	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/internal/message"
 )
 
 type peer struct {
-	*tss.Peer
+	*message.Peer
 
 	bk            *birkhoffinterpolation.BkParameter
 	bkCoefficient *big.Int
@@ -30,7 +30,7 @@ type peer struct {
 
 func newPeer(id string, bk *birkhoffinterpolation.BkParameter) *peer {
 	return &peer{
-		Peer: tss.NewPeer(id),
+		Peer: message.NewPeer(id),
 		bk:   bk,
 	}
 }

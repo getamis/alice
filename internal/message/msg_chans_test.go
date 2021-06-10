@@ -15,8 +15,8 @@ package message
 import (
 	"context"
 
-	"github.com/getamis/alice/crypto/tss/message/types"
-	"github.com/getamis/alice/crypto/tss/message/types/mocks"
+	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/internal/message/types/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
