@@ -131,12 +131,6 @@ var _ = Describe("Signer", func() {
 	)
 })
 
-type peerManager struct {
-	id       string
-	numPeers uint32
-	signers  map[string]*Signer
-}
-
 func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][]*big.Int, msg []byte) (map[string]*Signer, map[string]*mocks.StateChangedListener) {
 	threshold := len(ss)
 	signers := make(map[string]*Signer, threshold)

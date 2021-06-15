@@ -1,0 +1,54 @@
+// Copyright © 2021 AMIS Technologies
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package master;
+
+option go_package = "github.com/getamis/alice/crypto/bip32/master";
+
+import "github.com/getamis/alice/crypto/ot/message.proto";
+import "github.com/getamis/alice/crypto/circuit/message.proto";
+
+enum Type {
+    Intial = 0;
+    OtReceiver = 1;
+    OtSendResponse = 2;
+}
+
+message Message {
+    Type type = 1;
+    string id = 2;
+    oneof body {
+        BodyInitial initial = 3;
+        BodyOtReceiver otReceiver = 4;
+        BodyOtSendResponse otSendResponse = 5;
+    }
+}
+
+message BodyInitial {
+    ot.OtReceiverMessage otRecMsg = 1;
+    circuit.garbleCircuitMessage garcirMsg = 2;
+    repeated bytes otherInfoWire =3;
+    bytes pubKey =4;
+    bytes N = 5;
+}
+
+message BodyOtReceiver {
+    ot.OtExtReceiveMessage otExtReceiveMsg = 1;
+}
+
+message BodyOtSendResponse {
+    ot.OtExtSendResponseMessage otExtSendResponseMsg = 1;
+}

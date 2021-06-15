@@ -37,9 +37,12 @@ type OtExtReceiver struct {
 }
 
 // Note: r is the bit expression
-func NewRecieverSeedOTPhase1(sid []byte, r []byte, otRMsg *OtReceiverMessage) (*OtExtReceiver, error) {
+func NewExtReciever(sid []byte, r []byte, otRMsg *OtReceiverMessage) (*OtExtReceiver, error) {
 	m := uint(len(r))
 	otSend, err := NewSender(sid, otRMsg)
+	if err != nil {
+		return nil, err
+	}
 	kappa := uint(len(otRMsg.GetBi()))
 	if err != nil {
 		return nil, err

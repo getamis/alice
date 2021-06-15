@@ -65,13 +65,13 @@ func NewSender(sid []byte, otReceiverMsg *OtReceiverMessage) (*OtSender, error) 
 	}
 
 	// z = r*G
-	ell := len(otReceiverMsg.GetBi())
+	biArray := otReceiverMsg.GetBi()
+	ell := len(biArray)
 	z := pt.ScalarBaseMult(T.GetCurve(), r)
 	p0 := make([][]byte, ell)
 	p0Ro3 := make([][]byte, ell)
 	p1 := make([][]byte, ell)
 	chall := make([][]byte, ell)
-	biArray := otReceiverMsg.GetBi()
 	for i := 0; i < ell; i++ {
 		bi, err := biArray[i].ToPoint()
 		if err != nil {
@@ -160,7 +160,6 @@ func ro3(sid []byte, message []byte) ([]byte, error) {
 }
 
 func generateT(sid []byte, seed []byte) (*pt.ECPoint, error) {
-	// 44 means ","
 	sidSeed := append(sid, uint8(asciiComma))
 	sidSeed = append(sidSeed, seed...)
 	return secp256k1Hasher.Hash(sidSeed)

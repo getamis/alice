@@ -80,15 +80,107 @@ func newGate(inputWire, outputWire []int, singlegate Gate) *gate {
 
 // ----
 
+type EncFunc func(*GarbleCircuit, []uint8) ([][]byte, error)
+
+func EncryptFunc(startIndex int) EncFunc {
+	return func(g *GarbleCircuit, input []uint8) ([][]byte, error) {
+		return g.Encrypt(startIndex, input), nil
+	}
+}
+
 type GarbleCircuit struct {
 	circuit *Circuit
 
-	e          [][]byte
+	E          [][]byte
 	d          []int32
 	R          []byte
 	outputWire [][][]byte
 }
-type EncFunc func(*GarbleCircuit, []uint8) ([][]byte, error)
+
+func (garcir *GarbleCircuit) GenerateGarbleWire(startIndex, endIndex int) ([][]byte, [][]byte) {
+	countBobWire := endIndex - startIndex
+	W0 := make([][]byte, countBobWire)
+	W1 := make([][]byte, countBobWire)
+	for i := startIndex; i < endIndex; i++ {
+		W0[i-startIndex] = garcir.E[i]
+		W1[i-startIndex] = utils.Xor(garcir.E[i], garcir.R)
+	}
+	return W0, W1
+}
+
+func (garcir *GarbleCircuit) Encrypt(startIndex int, input []uint8) [][]byte {
+	result := make([][]byte, len(input))
+	for i := 0; i < len(result); i++ {
+		// Xi := ei xor xiR
+		xiR := utils.BinaryMul(uint8(input[i]), garcir.R)
+		result[i] = utils.Xor(garcir.E[startIndex+i], xiR)
+	}
+	return result
+}
+
+// Evaluate: procedure Ev
+func (garcir *GarbleCircuit) EvaluateGarbleCircuit(garbledMsg *GarbleCircuitMessage, input [][]byte) ([][]byte, error) {
+	count := new(big.Int).SetBytes(garbledMsg.StartCount)
+	cir := garcir.circuit
+	// Set i in Inputs
+	W := make([][]byte, cir.countWires)
+	inputSize := cir.totalInputSize()
+	for i := 0; i < inputSize; i++ {
+		W[i] = input[i]
+	}
+
+	indexCount := 0
+	for i := 0; i < len(cir.gates); i++ {
+		g := cir.gates[i]
+		if g.gate == XOR {
+			W[g.outputWire[0]] = utils.Xor(W[g.inputWire[0]], W[g.inputWire[1]])
+			continue
+		}
+		if g.gate == AND {
+			F := garbledMsg.F[indexCount]
+			// sa = lsb(Wa), sb = lsb(Wb)
+			Wa := W[g.inputWire[0]]
+			Wb := W[g.inputWire[1]]
+			sa := lsb(Wa)
+			sb := lsb(Wb)
+			tempCount := new(big.Int).Add(count, big1)
+			count.Add(count, big2)
+			// (T_Gi, T_Ei) := Fi
+			// W_Gi = H(Wa,j) xor saT_Gi
+			saTGi := utils.BinaryMul(sa, F.TG)
+			WGi, _ := h(Wa, tempCount)
+			WGi = utils.Xor(WGi, saTGi)
+			// W_Ei = H(Wb,j') xor sa(T_Ei xor Wa)
+			sbTEiWa := utils.Xor(F.TE, Wa)
+			sbTEiWa = utils.BinaryMul(sb, sbTEiWa)
+			WEi, _ := h(Wb, count)
+			WEi = utils.Xor(WEi, sbTEiWa)
+			W[g.outputWire[0]] = utils.Xor(WGi, WEi)
+			indexCount++
+			continue
+		}
+		if g.gate == INV {
+			W[g.outputWire[0]] = W[g.inputWire[0]]
+			continue
+		}
+		if g.gate == EQ {
+			W[g.outputWire[0]] = W[g.inputWire[0]]
+			continue
+		}
+		return nil, ErrNONSUPPORTGATE
+	}
+	// Set the output of the evaluating result.
+	Y := make([][]byte, cir.totalOutputSize())
+	countIndex := 0
+	outputIndex := cir.countWires - cir.totalOutputSize()
+	for i := 0; i < len(cir.outputSize); i++ {
+		for j := 0; j < cir.outputSize[i]; j++ {
+			Y[countIndex] = W[outputIndex+countIndex]
+			countIndex++
+		}
+	}
+	return Y, nil
+}
 
 // ----
 type Circuit struct {
@@ -186,9 +278,9 @@ func (cir *Circuit) totalOutputSize() int {
 
 // Garbled Circuit: Two Halves Make a Whole Reducing data Transfer in Garbled Circuits using Half Gates Fig-2.
 // The permitted inputs of Kbit are 128 or 256
-func (cir *Circuit) Garbled(kBit int, input []uint8, f EncFunc) (*GarbleCircuitMessage, error) {
+func (cir *Circuit) Garbled(kBit int, input []uint8, f EncFunc) (*GarbleCircuit, *GarbleCircuitMessage, error) {
 	if kBit != AES128 && kBit != AES256 {
-		return nil, ErrInputBit
+		return nil, nil, ErrInputBit
 	}
 
 	// Generate Random kBit Integer
@@ -198,7 +290,7 @@ func (cir *Circuit) Garbled(kBit int, input []uint8, f EncFunc) (*GarbleCircuitM
 	for i := 0; i < maxTry; i++ {
 		count, err = utils.RandomInt(shiftKBits)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		if count.BitLen() == kBit {
 			break
@@ -210,7 +302,7 @@ func (cir *Circuit) Garbled(kBit int, input []uint8, f EncFunc) (*GarbleCircuitM
 	KBitMod8 := kBit >> 3
 	R, err := utils.GenRandomBytes(KBitMod8)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	R[len(R)-1] |= 1
 
@@ -226,7 +318,7 @@ func (cir *Circuit) Garbled(kBit int, input []uint8, f EncFunc) (*GarbleCircuitM
 	for i := 0; i < inputSize; i++ {
 		Wi, err := utils.GenRandomBytes(KBitMod8)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		W[i] = [][]byte{
 			Wi,
@@ -249,7 +341,7 @@ func (cir *Circuit) Garbled(kBit int, input []uint8, f EncFunc) (*GarbleCircuitM
 			count.Add(count, big2)
 			W[g.outputWire[0]][0], tempTG, tempTE, err = gbAnd(W[g.inputWire[0]][0], W[g.inputWire[0]][1], W[g.inputWire[1]][0], W[g.inputWire[1]][1], R, tempCount, count)
 			if err != nil {
-				return nil, err
+				return nil, nil, err
 			}
 			W[g.outputWire[0]][1] = utils.Xor(W[g.outputWire[0]][0], R)
 			F = append(F, &HalfGateMessage{
@@ -264,7 +356,7 @@ func (cir *Circuit) Garbled(kBit int, input []uint8, f EncFunc) (*GarbleCircuitM
 			W[g.outputWire[0]][0] = W[g.inputWire[0]][0]
 			W[g.outputWire[0]][1] = utils.Xor(W[g.outputWire[0]][0], R)
 		default:
-			return nil, ErrNONSUPPORTGATE
+			return nil, nil, ErrNONSUPPORTGATE
 		}
 	}
 
@@ -287,18 +379,19 @@ func (cir *Circuit) Garbled(kBit int, input []uint8, f EncFunc) (*GarbleCircuitM
 		}
 	}
 
+	// Encrypt message
 	garcir := &GarbleCircuit{
 		circuit:    cir,
-		e:          e,
+		E:          e,
 		d:          d,
 		R:          R,
 		outputWire: W[outputIndex:],
 	}
 	x, err := f(garcir, input)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return &GarbleCircuitMessage{
+	return garcir, &GarbleCircuitMessage{
 		F:            F,
 		D:            d,
 		X:            x,
@@ -481,4 +574,12 @@ func readText(scanner *bufio.Scanner) string {
 		return scanner.Text()
 	}
 	return ""
+}
+
+func Decrypt(d []int32, Y [][]byte) []uint8 {
+	result := make([]uint8, len(d))
+	for i := 0; i < len(d); i++ {
+		result[i] = uint8(d[i]) ^ lsb(Y[i])
+	}
+	return result
 }

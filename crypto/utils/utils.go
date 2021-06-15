@@ -267,7 +267,7 @@ func Xor(bigArray, smallArray []byte) []byte {
 		return Xor(smallArray, bigArray)
 	}
 	result := make([]byte, len(bigArray))
-	for i := 0; i < len(bigArray); i++ {
+	for i := 0; i < len(smallArray); i++ {
 		result[i] = bigArray[i] ^ smallArray[i]
 	}
 	for i := len(smallArray); i < len(bigArray); i++ {

@@ -62,7 +62,7 @@ var _ = Describe("OT test", func() {
 
 		otExtS, err := NewExtSender(sid, kappa, a0, a1)
 		Expect(err).Should(BeNil())
-		otExtR, err := NewRecieverSeedOTPhase1(sid, rbit, otExtS.GetReceiverMessage())
+		otExtR, err := NewExtReciever(sid, rbit, otExtS.GetReceiverMessage())
 		Expect(err).Should(BeNil())
 		otExtSendResMsg, err := otExtS.Veirfy(otExtR.GetOtExtReceiveMessage())
 		Expect(err).Should(BeNil())

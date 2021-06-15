@@ -112,7 +112,7 @@ var _ = Describe("Bristol fashion evaluate", func() {
 
 		cir, err := LoadBristol("bristolFashion/ModAdd512.txt")
 		Expect(err).Should(BeNil())
-		garMsg, err := cir.Garbled(128, inputSereilize, Encrypt)
+		_, garMsg, err := cir.Garbled(128, inputSereilize, EncryptFunc(0))
 		Expect(err).Should(BeNil())
 		got, err := cir.EvaluateGarbleCircuit(garMsg, garMsg.X)
 		Expect(err).Should(BeNil())
@@ -265,7 +265,7 @@ var _ = Describe("Bristol fashion evaluate", func() {
 
 		cir, err := LoadBristol("bristolFashion/sha256.txt")
 		Expect(err).Should(BeNil())
-		garMsg, err := cir.Garbled(128, inputSereilize, Encrypt)
+		_, garMsg, err := cir.Garbled(128, inputSereilize, EncryptFunc(0))
 		Expect(err).Should(BeNil())
 		got, err := cir.EvaluateGarbleCircuit(garMsg, garMsg.X)
 		Expect(err).Should(BeNil())
@@ -290,7 +290,7 @@ var _ = Describe("Bristol fashion evaluate", func() {
 		// Parse circuit and evaluate it
 		cir, err := LoadBristol("bristolFashion/aes_256.txt")
 		Expect(err).Should(BeNil())
-		garMsg, err := cir.Garbled(128, inputSereilize, Encrypt)
+		_, garMsg, err := cir.Garbled(128, inputSereilize, EncryptFunc(0))
 		Expect(err).Should(BeNil())
 		got, err := cir.EvaluateGarbleCircuit(garMsg, garMsg.X)
 		Expect(err).Should(BeNil())
@@ -394,19 +394,4 @@ func (cir *Circuit) evaluate(input [][]uint8) ([][]uint8, error) {
 	}
 
 	return output, nil
-}
-
-// Assume the input is bitString: procedure En
-func Encrypt(garcir *GarbleCircuit, input []uint8) ([][]byte, error) {
-	if len(input) != len(garcir.e) {
-		return nil, ErrInputBit
-	}
-
-	X := make([][]byte, len(garcir.e))
-	for i := 0; i < len(garcir.e); i++ {
-		// Xi := ei xor xiR
-		xiR := utils.BinaryMul(input[i], garcir.R)
-		X[i] = utils.Xor(garcir.e[i], xiR)
-	}
-	return X, nil
 }
