@@ -85,6 +85,7 @@ var (
 	newBobMasterKey = newMasterKeyFunc(256, 0, 256, bobComputeOwnSeedBitsFunc, bobParseFunc)
 
 	ErrPeerNotFound = errors.New("peer message not found")
+	ErrInvalidSeed  = errors.New("invalid seed")
 )
 
 func newMasterKeyFunc(startIndex int, garbleStart int, garbleEnd int, computeFunc computeOwnSeedBits, parseFunc parseResultFunc) func(peerManager types.PeerManager, sid []uint8, seed []uint8, function string) (*initial, error) {
@@ -92,6 +93,10 @@ func newMasterKeyFunc(startIndex int, garbleStart int, garbleEnd int, computeFun
 		cir, err := circuit.LoadBristol(path)
 		if err != nil {
 			return nil, err
+		}
+
+		if len(seed) != 32 {
+			return nil, ErrInvalidSeed
 		}
 
 		seedRandom, err := utils.RandomInt(secp256k1N)
