@@ -132,7 +132,7 @@ func newMasterKeyFunc(startIndex int, garbleStart int, garbleEnd int, computeFun
 			seedRandom:      seedRandom,
 			parseResultFunc: parseFunc,
 			initialMessage: &Message{
-				Type: Type_Intial,
+				Type: Type_Initial,
 				Id:   peerManager.SelfID(),
 				Body: &Message_Initial{
 					Initial: &BodyInitial{
@@ -147,7 +147,7 @@ func newMasterKeyFunc(startIndex int, garbleStart int, garbleEnd int, computeFun
 }
 
 func (s *initial) MessageType() types.MessageType {
-	return types.MessageType(Type_Intial)
+	return types.MessageType(Type_Initial)
 }
 
 func (s *initial) GetRequiredMessageCount() uint32 {

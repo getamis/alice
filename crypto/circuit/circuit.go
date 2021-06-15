@@ -112,7 +112,7 @@ func (garcir *GarbleCircuit) Encrypt(startIndex int, input []uint8) [][]byte {
 	result := make([][]byte, len(input))
 	for i := 0; i < len(result); i++ {
 		// Xi := ei xor xiR
-		xiR := utils.BinaryMul(uint8(input[i]), garcir.R)
+		xiR := utils.BinaryMul(input[i], garcir.R)
 		result[i] = utils.Xor(garcir.E[startIndex+i], xiR)
 	}
 	return result

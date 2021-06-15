@@ -20,7 +20,7 @@ import (
 
 func (m *Message) IsValid() bool {
 	switch m.Type {
-	case Type_Intial:
+	case Type_Initial:
 		return m.GetInitial() != nil
 	case Type_OtReceiver:
 		return m.GetOtReceiver() != nil

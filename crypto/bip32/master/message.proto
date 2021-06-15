@@ -22,7 +22,7 @@ import "github.com/getamis/alice/crypto/ot/message.proto";
 import "github.com/getamis/alice/crypto/circuit/message.proto";
 
 enum Type {
-    Intial = 0;
+    Initial = 0;
     OtReceiver = 1;
     OtSendResponse = 2;
 }

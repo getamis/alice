@@ -68,7 +68,7 @@ func (s *otSendResponse) HandleMessage(logger log.Logger, message types.Message)
 		log.Warn("Failed to find result", "err", err)
 		return err
 	}
-	initMessage := getMessage(peer.GetMessage(types.MessageType(Type_Intial))).GetInitial()
+	initMessage := getMessage(peer.GetMessage(types.MessageType(Type_Initial))).GetInitial()
 	cir := s.parseResultFunc(initMessage, ownResult)
 
 	garMsg := initMessage.GarcirMsg
