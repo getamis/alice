@@ -146,7 +146,7 @@ func (otSen *OtSender) GetOtSenderMessage() *OtSenderMessage {
 	return otSen.msg
 }
 
-func (otSen *OtSender) Veirfy(otVerifyMsg *OtReceiverVerifyMessage) error {
+func (otSen *OtSender) Verify(otVerifyMsg *OtReceiverVerifyMessage) error {
 	if subtle.ConstantTimeCompare(otSen.ans, otVerifyMsg.GetAns()) != 1 {
 		return ErrFailedVerify
 	}

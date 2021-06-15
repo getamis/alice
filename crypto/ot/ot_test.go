@@ -33,7 +33,7 @@ var _ = Describe("OT test", func() {
 		otrecVerifyMsg, pib, err := otrec.Response(otsend.GetOtSenderMessage())
 		Expect(err).Should(BeNil())
 		Expect(pib).ShouldNot(BeNil())
-		err = otsend.Veirfy(otrecVerifyMsg)
+		err = otsend.Verify(otrecVerifyMsg)
 		Expect(err).Should(BeNil())
 	},
 		Entry("kappa:128, ell:100", []byte("adsfsdfs"), 128, 100),
@@ -62,9 +62,9 @@ var _ = Describe("OT test", func() {
 
 		otExtS, err := NewExtSender(sid, kappa, a0, a1)
 		Expect(err).Should(BeNil())
-		otExtR, err := NewExtReciever(sid, rbit, otExtS.GetReceiverMessage())
+		otExtR, err := NewExtReceiver(sid, rbit, otExtS.GetReceiverMessage())
 		Expect(err).Should(BeNil())
-		otExtSendResMsg, err := otExtS.Veirfy(otExtR.GetOtExtReceiveMessage())
+		otExtSendResMsg, err := otExtS.Verify(otExtR.GetOtExtReceiveMessage())
 		Expect(err).Should(BeNil())
 		result, err := otExtR.GetOTFinalResult(otExtSendResMsg)
 		Expect(err).Should(BeNil())

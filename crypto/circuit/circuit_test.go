@@ -375,7 +375,7 @@ func (cir *Circuit) evaluate(input [][]uint8) ([][]uint8, error) {
 			wires[tempGate.outputWire[0]] = wires[tempGate.inputWire[0]]
 			continue
 		}
-		return nil, ErrNOIMPLEMENT
+		return nil, ErrNONIMPLEMENT
 	}
 
 	// Set the output

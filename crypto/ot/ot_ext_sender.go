@@ -67,7 +67,7 @@ func (s *OtExtSender) GetA1() [][]byte {
 	return s.a1
 }
 
-func (send *OtExtSender) Veirfy(otExtRMsg *OtExtReceiveMessage) (*OtExtSendResponseMessage, error) {
+func (send *OtExtSender) Verify(otExtRMsg *OtExtReceiveMessage) (*OtExtSendResponseMessage, error) {
 	verifyMsg, kib, err := send.otRec.Response(otExtRMsg.GetOtSendMsg())
 	if err != nil {
 		return nil, err

@@ -56,8 +56,8 @@ var (
 	ErrNONSUPPORTGATE = errors.New("the gate is not supportted")
 	// ErrPARSEFAILURE is returned if the parse failures.
 	ErrPARSEFAILURE = errors.New("the parse failures")
-	// ErrNOIMPLEMENT is returned if the gate is not implemented.
-	ErrNOIMPLEMENT = errors.New("the gate is not implemented")
+	// ErrNONIMPLEMENT is returned if the gate is not implemented.
+	ErrNONIMPLEMENT = errors.New("the gate is not implemented")
 	// ErrInputBit is returned if the bit input is wrong.
 	ErrInputBit = errors.New("the bit input is wrong")
 	// ErrInputSize is returned if the size of input is wrong.

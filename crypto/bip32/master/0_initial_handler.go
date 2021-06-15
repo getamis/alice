@@ -175,7 +175,7 @@ func (s *initial) HandleMessage(logger log.Logger, message types.Message) error 
 	body := msg.GetInitial()
 
 	// Build ot receiver
-	otExtR, err := ot.NewExtReciever(s.sid, s.seedBits, body.GetOtRecMsg())
+	otExtR, err := ot.NewExtReceiver(s.sid, s.seedBits, body.GetOtRecMsg())
 	if err != nil {
 		log.Warn("Failed to new ot ext receiver", "err", err)
 		return err

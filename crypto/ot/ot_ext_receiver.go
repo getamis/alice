@@ -37,7 +37,7 @@ type OtExtReceiver struct {
 }
 
 // Note: r is the bit expression
-func NewExtReciever(sid []byte, r []byte, otRMsg *OtReceiverMessage) (*OtExtReceiver, error) {
+func NewExtReceiver(sid []byte, r []byte, otRMsg *OtReceiverMessage) (*OtExtReceiver, error) {
 	m := uint(len(r))
 	otSend, err := NewSender(sid, otRMsg)
 	if err != nil {
@@ -95,7 +95,7 @@ func (otextRec *OtExtReceiver) GetOtExtReceiveMessage() *OtExtReceiveMessage {
 }
 
 func (otextRec *OtExtReceiver) GetOTFinalResult(otextSendMsg *OtExtSendResponseMessage) ([][]byte, error) {
-	err := otextRec.otSend.Veirfy(otextSendMsg.OtRecVerifyMsg)
+	err := otextRec.otSend.Verify(otextSendMsg.OtRecVerifyMsg)
 	if err != nil {
 		return nil, err
 	}
