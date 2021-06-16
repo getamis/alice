@@ -26,6 +26,7 @@ import (
 )
 
 var (
+	ErrIdentityPublicKey   = errors.New("identity public key")
 	ErrInconsistentResults = errors.New("inconsistent results")
 )
 
@@ -93,6 +94,10 @@ func (s *decommitmentHandler) HandleMessage(logger log.Logger, message types.Mes
 	if err != nil {
 		logger.Warn("Failed to add randomChooseG and randomSeedG", "err", err)
 		return err
+	}
+	if s.publicKey.IsIdentity() {
+		logger.Warn("Identity public key")
+		return ErrIdentityPublicKey
 	}
 	got2, err := peer.randomChooseG.Add(s.randomSeedG.Neg())
 	if err != nil {

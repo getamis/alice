@@ -22,6 +22,7 @@ import "github.com/getamis/alice/crypto/ot/message.proto";
 import "github.com/getamis/alice/crypto/circuit/message.proto";
 import "github.com/getamis/alice/crypto/birkhoffinterpolation/bk.proto";
 import "github.com/getamis/alice/crypto/commitment/message.proto";
+import "github.com/getamis/alice/crypto/zkproof/message.proto";
 import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
 
 enum Type {
@@ -79,5 +80,5 @@ message BodyResult {
 }
 
 message BodyVerify {
-    ecpointgrouplaw.EcPointMessage shareG = 1;
+    zkproof.SchnorrProofMessage shareGGProofMsg = 1;
 }

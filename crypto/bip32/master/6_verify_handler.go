@@ -15,6 +15,7 @@
 package master
 
 import (
+	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
@@ -55,8 +56,13 @@ func (s *verifyHandler) HandleMessage(logger log.Logger, message types.Message) 
 		return ErrPeerNotFound
 	}
 
-	shareGMsg := msg.GetVerify().GetShareG()
-	shareG, err := shareGMsg.ToPoint()
+	shareGMsg := msg.GetVerify().GetShareGGProofMsg()
+	err := shareGMsg.Verify(ecpointgrouplaw.NewBase(curve))
+	if err != nil {
+		logger.Warn("Failed to verify Schorr proof", "err", err)
+		return err
+	}
+	shareG, err := shareGMsg.V.ToPoint()
 	if err != nil {
 		logger.Warn("Failed to get ec point", "err", err)
 		return err

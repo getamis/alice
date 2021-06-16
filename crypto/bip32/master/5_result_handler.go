@@ -18,6 +18,7 @@ import (
 	"math/big"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
@@ -78,18 +79,18 @@ func (s *resultHandler) HandleMessage(logger log.Logger, message types.Message) 
 	s.share = new(big.Int).Add(s.poly.Evaluate(s.bk.GetX()), new(big.Int).SetBytes(body.GetResult().Evaluation))
 	s.share = s.share.Mul(s.share, big2Inver)
 	s.share = s.share.Mod(s.share, secp256k1N)
-	s.shareG = pt.ScalarBaseMult(curve, s.share)
-	shareGMsg, err := s.shareG.ToEcPointMessage()
+	shareGMsg, err := zkproof.NewBaseSchorrMessage(curve, s.share)
 	if err != nil {
 		logger.Warn("Failed to get share G message", "err", err)
 		return err
 	}
+	s.shareG, _ = shareGMsg.V.ToPoint()
 	s.peerManager.MustSend(id, &Message{
 		Type: Type_Verify,
 		Id:   s.selfId,
 		Body: &Message_Verify{
 			Verify: &BodyVerify{
-				ShareG: shareGMsg,
+				ShareGGProofMsg: shareGMsg,
 			},
 		},
 	})
