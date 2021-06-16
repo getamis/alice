@@ -33,8 +33,8 @@ const (
 )
 
 var _ = Describe("Bip32 test", func() {
+	sid := []byte("adsfsdfs")
 	DescribeTable("With seed", func(seedstring, expected string, p string) {
-		sid := []byte("adsfsdfs")
 		seed, _ := hex.DecodeString(seedstring)
 		aliceSeed := seed[0:32]
 		bobSeed := seed[32:64]
@@ -87,6 +87,31 @@ var _ = Describe("Bip32 test", func() {
 	},
 		Entry("case1:", "fffcf9f6f3f0edeae7e4e1dedbd8d5d2cfccc9c6c3c0bdbab7b4b1aeaba8a5a29f9c999693908d8a8784817e7b7875726f6c696663605d5a5754514e4b484542", "4b03d6fc340455b363f51020ad3ecca4f0850280cf436c70c727923f6db46c3e60499f801b896d83179a4374aeb7822aaeaceaa0db1f85ee3e904c4defbd9689", "115792089237316195423570985008687907852837564279074904382605163141518161494337"),
 	)
+
+	It("Without seed", func() {
+		masters, listeners := newMasters(sid)
+		doneChs := make([]chan struct{}, 2)
+		i := 0
+		for _, l := range listeners {
+			doneChs[i] = make(chan struct{})
+			doneCh := doneChs[i]
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Run(func(args mock.Arguments) {
+				close(doneCh)
+			}).Once()
+			i++
+		}
+
+		for _, s := range masters {
+			s.Start()
+		}
+		for _, ch := range doneChs {
+			<-ch
+		}
+
+		for _, l := range listeners {
+			l.AssertExpectations(GinkgoT())
+		}
+	})
 })
 
 func TestBip32(t *testing.T) {
