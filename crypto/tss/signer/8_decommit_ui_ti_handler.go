@@ -17,8 +17,8 @@ package signer
 import (
 	"errors"
 
+	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
@@ -69,12 +69,12 @@ func (p *decommitUiTiHandler) HandleMessage(logger log.Logger, message types.Mes
 	}
 
 	body := msg.GetDecommitUiTi()
-	ui, err := tss.GetPointFromHashCommitment(logger, peer.commitUiTi.uiCommitment, body.UiDecommitment)
+	ui, err := commitment.GetPointFromHashCommitment(peer.commitUiTi.uiCommitment, body.UiDecommitment)
 	if err != nil {
 		logger.Warn("Failed to decommit ui message", "err", err)
 		return err
 	}
-	ti, err := tss.GetPointFromHashCommitment(logger, peer.commitUiTi.tiCommitment, body.TiDecommitment)
+	ti, err := commitment.GetPointFromHashCommitment(peer.commitUiTi.tiCommitment, body.TiDecommitment)
 	if err != nil {
 		logger.Warn("Failed to decommit ti message", "err", err)
 		return err

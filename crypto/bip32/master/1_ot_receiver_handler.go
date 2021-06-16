@@ -57,7 +57,7 @@ func (s *otReceiver) HandleMessage(logger log.Logger, message types.Message) err
 	body := msg.GetOtReceiver()
 	senderResponseMsg, err := s.otExtSender.Verify(body.GetOtExtReceiveMsg())
 	if err != nil {
-		log.Warn("Failed to verify ot ext receiver", "err", err)
+		logger.Warn("Failed to verify ot ext receiver", "err", err)
 		return err
 	}
 	s.peerManager.MustSend(id, &Message{

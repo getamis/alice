@@ -14,10 +14,15 @@
 package birkhoffinterpolation
 
 import (
+	"crypto/elliptic"
 	"math/big"
 	"testing"
 
+	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/matrix"
+	"github.com/getamis/alice/crypto/polynomial"
 	"github.com/getamis/alice/crypto/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -257,5 +262,87 @@ var _ = Describe("Birkhoff Interpolation", func() {
 		got, err := ps.getIndexOfBK(find)
 		Expect(err).Should(Equal(ErrNoExistBk))
 		Expect(got).Should(Equal(0))
+	})
+
+	Context("ValidatePublicKey", func() {
+		var (
+			err       error
+			curve     elliptic.Curve
+			threshold uint32
+			poly      *polynomial.Polynomial
+			expPubkey *ecpointgrouplaw.ECPoint
+		)
+
+		BeforeEach(func() {
+			curve = btcec.S256()
+			fieldOrder := curve.Params().N
+			threshold = uint32(3)
+			poly, err = polynomial.RandomPolynomial(fieldOrder, threshold-1)
+			Expect(err).Should(BeNil())
+			expPubkey = ecpointgrouplaw.ScalarBaseMult(curve, poly.Get(0))
+		})
+
+		It("should be ok", func() {
+			xs := []*big.Int{big.NewInt(4), big.NewInt(7), big.NewInt(8)}
+			ranks := []uint32{0, 0, 0}
+
+			bks := make(BkParameters, threshold)
+			sgs := make([]*pt.ECPoint, threshold)
+			for i := 0; i < int(threshold); i++ {
+				bks[i] = NewBkParameter(xs[i], ranks[i])
+				newPoly := poly.Differentiate(ranks[i])
+				si := newPoly.Evaluate(xs[i])
+				sgs[i] = ecpointgrouplaw.ScalarBaseMult(curve, si)
+			}
+			err = bks.ValidatePublicKey(sgs, threshold, expPubkey)
+			Expect(err).Should(BeNil())
+		})
+
+		It("failed to compute bk coefficient", func() {
+			// duplicate bk
+			xs := []*big.Int{big.NewInt(4), big.NewInt(7), big.NewInt(7)}
+			ranks := []uint32{0, 0, 0}
+
+			bks := make(BkParameters, threshold)
+			sgs := make([]*pt.ECPoint, threshold)
+			for i := 0; i < int(threshold); i++ {
+				bks[i] = NewBkParameter(xs[i], ranks[i])
+				newPoly := poly.Differentiate(ranks[i])
+				si := newPoly.Evaluate(xs[i])
+				sgs[i] = ecpointgrouplaw.ScalarBaseMult(curve, si)
+			}
+			err = bks.ValidatePublicKey(sgs, threshold, expPubkey)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("failed to compute public key", func() {
+			xs := []*big.Int{big.NewInt(4), big.NewInt(7), big.NewInt(8)}
+			ranks := []uint32{0, 0, 0}
+
+			bks := make(BkParameters, threshold)
+			// different length between bks and sgs
+			sgs := make([]*pt.ECPoint, threshold+1)
+			for i := 0; i < int(threshold); i++ {
+				bks[i] = NewBkParameter(xs[i], ranks[i])
+				sgs[i] = ecpointgrouplaw.NewBase(curve)
+			}
+			err = bks.ValidatePublicKey(sgs, threshold, expPubkey)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("failed with inconsistent public key", func() {
+			xs := []*big.Int{big.NewInt(4), big.NewInt(7), big.NewInt(8)}
+			ranks := []uint32{0, 0, 0}
+
+			bks := make(BkParameters, threshold)
+			sgs := make([]*pt.ECPoint, threshold)
+			for i := 0; i < int(threshold); i++ {
+				bks[i] = NewBkParameter(xs[i], ranks[i])
+				// irrelevant siGs
+				sgs[i] = ecpointgrouplaw.NewBase(curve)
+			}
+			err = bks.ValidatePublicKey(sgs, threshold, expPubkey)
+			Expect(err).Should(Equal(ErrInconsistentPubKey))
+		})
 	})
 })

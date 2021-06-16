@@ -15,11 +15,19 @@
 package master
 
 import (
+	"github.com/getamis/alice/crypto/birkhoffinterpolation"
+	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/internal/message"
 )
 
 type peer struct {
 	*message.Peer
+
+	bk *birkhoffinterpolation.BkParameter
+
+	aG            *pt.ECPoint
+	randomChooseG *pt.ECPoint
+	randomSeedG   *pt.ECPoint
 }
 
 func newPeer(id string) *peer {

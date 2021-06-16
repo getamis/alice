@@ -19,7 +19,6 @@ import (
 
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
@@ -84,12 +83,12 @@ func (p *decommitViAiHandler) HandleMessage(logger log.Logger, message types.Mes
 	}
 
 	// Decommit Vi and Ai
-	vi, err := tss.GetPointFromHashCommitment(logger, peer.commitViAi.viCommitment, body.ViDecommitment)
+	vi, err := commitment.GetPointFromHashCommitment(peer.commitViAi.viCommitment, body.ViDecommitment)
 	if err != nil {
 		logger.Warn("Failed to decommit vi message", "err", err)
 		return err
 	}
-	ai, err := tss.GetPointFromHashCommitment(logger, peer.commitViAi.aiCommitment, body.AiDecommitment)
+	ai, err := commitment.GetPointFromHashCommitment(peer.commitViAi.aiCommitment, body.AiDecommitment)
 	if err != nil {
 		logger.Warn("Failed to decommit ai message", "err", err)
 		return err
@@ -109,7 +108,7 @@ func (p *decommitViAiHandler) Finalize(logger log.Logger) (types.Handler, error)
 		return nil, err
 	}
 	p.ui = v.ScalarMult(p.rhoI)
-	p.uiCommitter, err = tss.NewCommitterByPoint(p.ui)
+	p.uiCommitter, err = commitment.NewCommitterByPoint(p.ui)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +119,7 @@ func (p *decommitViAiHandler) Finalize(logger log.Logger) (types.Handler, error)
 		return nil, err
 	}
 	p.ti = a.ScalarMult(p.li)
-	p.tiCommitter, err = tss.NewCommitterByPoint(p.ti)
+	p.tiCommitter, err = commitment.NewCommitterByPoint(p.ti)
 	if err != nil {
 		return nil, err
 	}

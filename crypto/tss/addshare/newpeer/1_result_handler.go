@@ -103,7 +103,7 @@ func (r *resultHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	// sgs = old peer siG + new siG
 	bks := append(r.bks, r.bk)
 	sgs := append(r.sgs, siG)
-	err := tss.ValidatePublicKey(logger, bks, sgs, r.threshold, r.pubkey)
+	err := bks.ValidatePublicKey(sgs, r.threshold, r.pubkey)
 	if err != nil {
 		return nil, err
 	}

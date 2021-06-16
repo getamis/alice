@@ -22,7 +22,6 @@ import (
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/mta"
-	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/alice/internal/message/types"
@@ -88,7 +87,7 @@ func (p *proofAiHandler) HandleMessage(logger log.Logger, message types.Message)
 	}
 
 	// Verify ag decommit message
-	agPoint, err := tss.GetPointFromHashCommitment(logger, peer.pubkey.aigCommit, body.GetAgDecommitment())
+	agPoint, err := commitment.GetPointFromHashCommitment(peer.pubkey.aigCommit, body.GetAgDecommitment())
 	if err != nil {
 		return err
 	}
@@ -198,7 +197,7 @@ func buildViCommitter(logger log.Logger, si *big.Int, r *pt.ECPoint) (*big.Int, 
 		logger.Warn("Failed to add siR and liG", "err", err)
 		return nil, nil, nil, nil, err
 	}
-	viCommitmenter, err := tss.NewCommitterByPoint(Vi)
+	viCommitmenter, err := commitment.NewCommitterByPoint(Vi)
 	if err != nil {
 		logger.Warn("Failed to new viCommitmenter", "err", err)
 		return nil, nil, nil, nil, err
@@ -220,7 +219,7 @@ func buildAiCommitter(logger log.Logger, curve elliptic.Curve) (*big.Int, *pt.EC
 	}
 
 	Ai := pt.ScalarBaseMult(curve, rhoI)
-	aiCommitmenter, err := tss.NewCommitterByPoint(Ai)
+	aiCommitmenter, err := commitment.NewCommitterByPoint(Ai)
 	if err != nil {
 		logger.Warn("Failed to new aiCommitmenter", "err", err)
 		return nil, nil, nil, nil, err

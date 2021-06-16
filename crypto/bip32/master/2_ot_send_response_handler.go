@@ -18,6 +18,8 @@ import (
 	"math/big"
 
 	"github.com/getamis/alice/crypto/circuit"
+	"github.com/getamis/alice/crypto/commitment"
+	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
@@ -27,8 +29,12 @@ type otSendResponse struct {
 	*otReceiver
 
 	// Results
-	chiancode    []byte
-	randomChoose *big.Int
+	chiancode             []byte
+	randomChoose          *big.Int
+	randomChooseG         *pt.ECPoint
+	randomSeedG           *pt.ECPoint
+	randomChooseGCommiter *commitment.HashCommitmenter
+	randomSeedGCommiter   *commitment.HashCommitmenter
 }
 
 func newOtSendResponse(oh *otReceiver) *otSendResponse {
@@ -65,7 +71,7 @@ func (s *otSendResponse) HandleMessage(logger log.Logger, message types.Message)
 	body := msg.GetOtSendResponse()
 	ownResult, err := s.otExtReceiver.GetOTFinalResult(body.GetOtExtSendResponseMsg())
 	if err != nil {
-		log.Warn("Failed to find result", "err", err)
+		logger.Warn("Failed to find result", "err", err)
 		return err
 	}
 	initMessage := getMessage(peer.GetMessage(types.MessageType(Type_Initial))).GetInitial()
@@ -74,20 +80,45 @@ func (s *otSendResponse) HandleMessage(logger log.Logger, message types.Message)
 	garMsg := initMessage.GarcirMsg
 	evaluation, err := s.garcircuit.EvaluateGarbleCircuit(garMsg, cir)
 	if err != nil {
-		log.Warn("Failed to evaluate garble circuit", "err", err)
+		logger.Warn("Failed to evaluate garble circuit", "err", err)
 		return err
 	}
 
 	byteSlice, err := utils.BitsToBytes(utils.ReverseByte(circuit.Decrypt(garMsg.GetD(), evaluation)))
 	if err != nil {
-		log.Warn("Failed to convert from bits to bytes", "err", err)
+		logger.Warn("Failed to convert from bits to bytes", "err", err)
 		return err
 	}
 	s.chiancode = byteSlice[0:32]
 	s.randomChoose = new(big.Int).SetBytes(byteSlice[64:])
+
+	// Build committer
+	s.randomChooseG = pt.ScalarBaseMult(curve, s.randomChoose)
+	s.randomChooseGCommiter, err = commitment.NewCommitterByPoint(s.randomChooseG)
+	if err != nil {
+		logger.Warn("Failed to new random choose", "err", err)
+		return err
+	}
+	s.randomSeedG = pt.ScalarBaseMult(curve, s.randomSeed)
+	s.randomSeedGCommiter, err = commitment.NewCommitterByPoint(s.randomSeedG)
+	if err != nil {
+		logger.Warn("Failed to new random seed", "err", err)
+		return err
+	}
+	s.peerManager.MustSend(id, &Message{
+		Type: Type_Commitment,
+		Id:   s.selfId,
+		Body: &Message_Commitment{
+			Commitment: &BodyCommitment{
+				RandomChooseCommitment: s.randomChooseGCommiter.GetCommitmentMessage(),
+				RandomSeedCommitment:   s.randomSeedGCommiter.GetCommitmentMessage(),
+			},
+		},
+	})
+
 	return peer.AddMessage(msg)
 }
 
 func (s *otSendResponse) Finalize(logger log.Logger) (types.Handler, error) {
-	return nil, nil
+	return newCommitmentHandler(s), nil
 }
