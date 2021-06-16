@@ -20,7 +20,6 @@ import (
 
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
-	"github.com/getamis/alice/crypto/commitment"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/polynomial"
@@ -35,33 +34,6 @@ func TestTSSUtils(t *testing.T) {
 }
 
 var _ = Describe("Utils", func() {
-	Context("NewCommitterByPoint/GetPointFromHashCommitment", func() {
-		It("should be ok", func() {
-			p := pt.NewIdentity(btcec.S256())
-			c, err := NewCommitterByPoint(p)
-			Expect(err).Should(BeNil())
-			Expect(c).ShouldNot(BeNil())
-
-			got, err := GetPointFromHashCommitment(log.Discard(), c.GetCommitmentMessage(), c.GetDecommitmentMessage())
-			Expect(err).Should(BeNil())
-			Expect(got.Equal(p)).Should(BeTrue())
-		})
-
-		It("failed to new by empty point", func() {
-			c, err := NewCommitterByPoint(&pt.ECPoint{})
-			Expect(err).ShouldNot(BeNil())
-			Expect(c).Should(BeNil())
-		})
-
-		It("not an ec point", func() {
-			cm, err := commitment.NewHashCommitmenter([]byte{1, 2, 3})
-			Expect(err).Should(BeNil())
-			got, err := GetPointFromHashCommitment(log.Discard(), cm.GetCommitmentMessage(), cm.GetDecommitmentMessage())
-			Expect(err).ShouldNot(BeNil())
-			Expect(got).Should(BeNil())
-		})
-	})
-
 	Context("ValidatePublicKey", func() {
 		var (
 			err       error

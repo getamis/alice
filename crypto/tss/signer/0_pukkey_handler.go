@@ -73,7 +73,7 @@ func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo
 	// Build committer for ag
 	// bit length / 8(to bytes) * 2(x and y point)
 	p := aiMta.GetAG(curve)
-	agCommitmenter, err := tss.NewCommitterByPoint(p)
+	agCommitmenter, err := commitment.NewCommitterByPoint(p)
 	if err != nil {
 		log.Warn("Failed to new an ag hash commiter", "err", err)
 		return nil, err

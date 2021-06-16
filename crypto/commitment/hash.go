@@ -18,6 +18,7 @@ import (
 	"crypto/subtle"
 	"errors"
 
+	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
@@ -99,4 +100,26 @@ func getDigest(salt []byte, originData []byte) ([]byte, error) {
 	return utils.HashProtos(salt, &any.Any{
 		Value: originData,
 	})
+}
+
+func NewCommitterByPoint(p *pt.ECPoint) (*HashCommitmenter, error) {
+	msg, err := p.ToEcPointMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewProtoHashCommitmenter(msg)
+}
+
+func GetPointFromHashCommitment(commit *HashCommitmentMessage, decommit *HashDecommitmentMessage) (*pt.ECPoint, error) {
+	msg := &pt.EcPointMessage{}
+	err := commit.DecommitToProto(decommit, msg)
+	if err != nil {
+		return nil, err
+	}
+	point, err := msg.ToPoint()
+	if err != nil {
+		return nil, err
+	}
+	return point, nil
 }
