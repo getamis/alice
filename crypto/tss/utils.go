@@ -18,10 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/getamis/alice/crypto/birkhoffinterpolation"
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/internal/message/types"
-	"github.com/getamis/sirius/log"
 )
 
 var (
@@ -35,25 +32,6 @@ var (
 	ErrInconsistentPeerNumAndBks = errors.New("inconsistent peer num and bks")
 	ErrInconsistentPubKey        = errors.New("inconsistent public key")
 )
-
-func ValidatePublicKey(logger log.Logger, bks birkhoffinterpolation.BkParameters, sgs []*pt.ECPoint, threshold uint32, pubkey *pt.ECPoint) error {
-	fieldOrder := pubkey.GetCurve().Params().N
-	scalars, err := bks.ComputeBkCoefficient(threshold, fieldOrder)
-	if err != nil {
-		logger.Warn("Failed to compute", "err", err)
-		return err
-	}
-	gotPub, err := pt.ComputeLinearCombinationPoint(scalars, sgs)
-	if err != nil {
-		logger.Warn("Failed to calculate public", "err", err)
-		return err
-	}
-	if !pubkey.Equal(gotPub) {
-		logger.Warn("Inconsistent public key", "got", gotPub, "expected", pubkey)
-		return ErrInconsistentPubKey
-	}
-	return nil
-}
 
 // ------------
 // Below funcs are for testing
