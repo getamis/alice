@@ -15,6 +15,7 @@
 package dkg
 
 import (
+	"github.com/getamis/alice/crypto/commitment"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/internal/message/types"
@@ -65,7 +66,7 @@ func (p *decommitHandler) HandleMessage(logger log.Logger, message types.Message
 	// Ensure decommit successfully
 	body := msg.GetDecommit()
 	peerMessage := getMessageByType(peer, Type_Peer)
-	u0g, err := tss.GetPointFromHashCommitment(logger, peerMessage.GetPeer().GetCommitment(), body.GetHashDecommitment())
+	u0g, err := commitment.GetPointFromHashCommitment(peerMessage.GetPeer().GetCommitment(), body.GetHashDecommitment())
 	if err != nil {
 		logger.Debug("Failed to get u0g", "err", err)
 		return err

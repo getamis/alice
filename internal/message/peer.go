@@ -53,3 +53,10 @@ func (p *Peer) AddMessage(msg types.Message) error {
 func (p *Peer) GetMessage(t types.MessageType) types.Message {
 	return p.Messages[t]
 }
+
+func Broadcast(peerManager types.PeerManager, message interface{}) {
+	peers := peerManager.PeerIDs()
+	for _, id := range peers {
+		peerManager.MustSend(id, message)
+	}
+}

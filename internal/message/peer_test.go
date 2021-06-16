@@ -61,4 +61,30 @@ var _ = Describe("Peer", func() {
 			Expect(p.AddMessage(mockMsg)).Should(Equal(ErrDupMessage))
 		})
 	})
+
+	Context("Broadcast", func() {
+		var mockPeerManager *mocks.PeerManager
+
+		BeforeEach(func() {
+			mockPeerManager = new(mocks.PeerManager)
+		})
+
+		AfterEach(func() {
+			mockPeerManager.AssertExpectations(GinkgoT())
+		})
+
+		It("should be ok", func() {
+			peers := []string{
+				"peer-1",
+				"peer-2",
+				"peer-3",
+			}
+			msg := "message"
+			mockPeerManager.On("PeerIDs").Return(peers).Once()
+			for _, id := range peers {
+				mockPeerManager.On("MustSend", id, msg).Return(nil).Once()
+			}
+			Broadcast(mockPeerManager, msg)
+		})
+	})
 })

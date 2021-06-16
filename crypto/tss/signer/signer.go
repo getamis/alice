@@ -123,7 +123,7 @@ func (s *Signer) Start() {
 
 	msg := s.ph.GetFirstMessage()
 	if msg != nil {
-		tss.Broadcast(s.peerManager, msg)
+		message.Broadcast(s.peerManager, msg)
 	}
 }
 

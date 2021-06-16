@@ -69,5 +69,5 @@ func (d *Reshare) GetResult() (*Result, error) {
 
 func (d *Reshare) Start() {
 	d.MsgMain.Start()
-	tss.Broadcast(d.ch.peerManager, d.ch.getCommitMessage())
+	message.Broadcast(d.ch.peerManager, d.ch.getCommitMessage())
 }

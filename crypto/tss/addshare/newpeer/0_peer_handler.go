@@ -23,6 +23,7 @@ import (
 	"github.com/getamis/alice/crypto/tss/addshare"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/crypto/zkproof"
+	"github.com/getamis/alice/internal/message"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
@@ -158,7 +159,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 			},
 		},
 	}
-	tss.Broadcast(p.peerManager, msg)
+	message.Broadcast(p.peerManager, msg)
 	return newResultHandler(p, selfBK, bks, sgs), nil
 }
 

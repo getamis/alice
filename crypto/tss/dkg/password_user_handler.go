@@ -21,6 +21,7 @@ import (
 	"github.com/getamis/alice/crypto/polynomial"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/utils"
+	"github.com/getamis/alice/internal/message"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
@@ -124,7 +125,7 @@ func (p *passwordUserHandler) Finalize(logger log.Logger) (types.Handler, error)
 		logger.Debug("Failed to new peer handler", "err", err)
 		return nil, err
 	}
-	tss.Broadcast(p.peerManager, p.peerHandler.GetFirstMessage())
+	message.Broadcast(p.peerManager, p.peerHandler.GetFirstMessage())
 	return p.peerHandler, nil
 }
 

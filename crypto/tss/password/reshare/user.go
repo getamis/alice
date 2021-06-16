@@ -54,7 +54,7 @@ func NewUserReshare(peerManager types.PeerManager, publicKey *ecpointgrouplaw.EC
 
 func (s *UserReshare) Start() {
 	s.MsgMain.Start()
-	tss.Broadcast(s.peerManager, s.ph.GetFirstMessage())
+	message.Broadcast(s.peerManager, s.ph.GetFirstMessage())
 }
 
 // GetResult returns the final result: public key, share, bks (including self bk)

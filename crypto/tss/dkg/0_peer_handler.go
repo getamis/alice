@@ -25,6 +25,7 @@ import (
 	"github.com/getamis/alice/crypto/polynomial"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/utils"
+	"github.com/getamis/alice/internal/message"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
@@ -86,7 +87,7 @@ func newPeerHandlerWithPolynomial(curve elliptic.Curve, peerManager types.PeerMa
 	// Calculate u0g
 	u0 := poly.Get(0)
 	u0g := ecpointgrouplaw.ScalarBaseMult(curve, u0)
-	u0gCommiter, err := tss.NewCommitterByPoint(u0g)
+	u0gCommiter, err := commitment.NewCommitterByPoint(u0g)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +168,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 
 	// Send out Feldman commit message and decommit message to all peers
 	msg := p.getDecommitMessage()
-	tss.Broadcast(p.peerManager, msg)
+	message.Broadcast(p.peerManager, msg)
 	return newDecommitHandler(p), nil
 }
 

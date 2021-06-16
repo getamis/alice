@@ -139,6 +139,6 @@ func (d *DKG) Start() {
 	d.MsgMain.Start()
 	msg := d.ph.GetFirstMessage()
 	if msg != nil {
-		tss.Broadcast(d.peerManager, msg)
+		message.Broadcast(d.peerManager, msg)
 	}
 }
