@@ -15,17 +15,17 @@
 package newpeer
 
 import (
-	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/internal/message"
 )
 
 type peer struct {
-	*tss.Peer
+	*message.Peer
 	peer   *peerData
 	result *resultData
 }
 
 func newPeer(id string) *peer {
 	return &peer{
-		Peer: tss.NewPeer(id),
+		Peer: message.NewPeer(id),
 	}
 }

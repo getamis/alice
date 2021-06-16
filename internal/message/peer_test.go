@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tss
+package message
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/getamis/alice/crypto/tss/message/types"
-	"github.com/getamis/alice/crypto/tss/message/types/mocks"
+	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/internal/message/types/mocks"
 )
 
 var _ = Describe("Peer", func() {

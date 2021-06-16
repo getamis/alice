@@ -18,7 +18,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/internal/message/types"
 )
 
 var (

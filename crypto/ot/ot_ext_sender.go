@@ -67,8 +67,8 @@ func (s *OtExtSender) GetA1() [][]byte {
 	return s.a1
 }
 
-func (send *OtExtSender) Veirfy(otExtRMsg *OtExtReceiveMessage) (*OtExtSendResponseMessage, error) {
-	verifyMsg, kib, err := send.otRec.Response(otExtRMsg.OtSendMsg)
+func (send *OtExtSender) Verify(otExtRMsg *OtExtReceiveMessage) (*OtExtSendResponseMessage, error) {
+	verifyMsg, kib, err := send.otRec.Response(otExtRMsg.GetOtSendMsg())
 	if err != nil {
 		return nil, err
 	}
@@ -144,9 +144,9 @@ func prg(seed []byte, outputByteLength int) []byte {
 		seed32 = utils.Xor(seed32, seed[strart:end])
 	}
 	result := make([]byte, outputByteLength)
-	rand.Seed(int64(binary.BigEndian.Uint32(seed32)))
+	r := rand.New(rand.NewSource(int64(binary.BigEndian.Uint32(seed32))))
 	// #nosec: G404: Use of weak random number generator (math/rand instead of crypto/rand)
-	rand.Read(result)
+	r.Read(result)
 	return result
 }
 

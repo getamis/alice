@@ -24,8 +24,8 @@ import (
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/message/types"
-	"github.com/getamis/alice/crypto/tss/message/types/mocks"
+	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/internal/message/types/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -130,12 +130,6 @@ var _ = Describe("Signer", func() {
 		}, big.NewInt(8274194)),
 	)
 })
-
-type peerManager struct {
-	id       string
-	numPeers uint32
-	signers  map[string]*Signer
-}
 
 func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][]*big.Int, msg []byte) (map[string]*Signer, map[string]*mocks.StateChangedListener) {
 	threshold := len(ss)

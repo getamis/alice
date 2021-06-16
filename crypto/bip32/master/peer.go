@@ -1,4 +1,4 @@
-// Copyright © 2020 AMIS Technologies
+// Copyright © 2021 AMIS Technologies
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dkg
+package master
 
 import (
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/internal/message"
 )
 
-func (m *Message) IsValid() bool {
-	switch m.Type {
-	case Type_Peer:
-		return m.GetPeer() != nil
-	case Type_Decommit:
-		return m.GetDecommit() != nil
-	case Type_Verify:
-		return m.GetVerify() != nil
-	case Type_Result:
-		return m.GetResult() != nil
-	}
-	return false
+type peer struct {
+	*message.Peer
 }
 
-func (m *Message) GetMessageType() types.MessageType {
-	return types.MessageType(m.Type)
+func newPeer(id string) *peer {
+	return &peer{
+		Peer: message.NewPeer(id),
+	}
 }

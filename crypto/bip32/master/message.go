@@ -1,4 +1,4 @@
-// Copyright © 2020 AMIS Technologies
+// Copyright © 2021 AMIS Technologies
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package signer
+package master
 
 import (
 	"github.com/getamis/alice/internal/message/types"
@@ -20,26 +20,12 @@ import (
 
 func (m *Message) IsValid() bool {
 	switch m.Type {
-	case Type_Pubkey:
-		return m.GetPubkey() != nil
-	case Type_EncK:
-		return m.GetEncK() != nil
-	case Type_Mta:
-		return m.GetMta() != nil
-	case Type_Delta:
-		return m.GetDelta() != nil
-	case Type_ProofAi:
-		return m.GetProofAi() != nil
-	case Type_CommitViAi:
-		return m.GetCommitViAi() != nil
-	case Type_DecommitViAi:
-		return m.GetDecommitViAi() != nil
-	case Type_CommitUiTi:
-		return m.GetCommitUiTi() != nil
-	case Type_DecommitUiTi:
-		return m.GetDecommitUiTi() != nil
-	case Type_Si:
-		return m.GetSi() != nil
+	case Type_Initial:
+		return m.GetInitial() != nil
+	case Type_OtReceiver:
+		return m.GetOtReceiver() != nil
+	case Type_OtSendResponse:
+		return m.GetOtSendResponse() != nil
 	}
 	return false
 }
