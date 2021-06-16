@@ -140,7 +140,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 
 	// The sum of siG must be equal to the given public key.
-	err := tss.ValidatePublicKey(logger, bks, sgs, p.threshold, p.pubkey)
+	err := bks.ValidatePublicKey(sgs, p.threshold, p.pubkey)
 	if err != nil {
 		return nil, err
 	}

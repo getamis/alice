@@ -20,6 +20,7 @@ import (
 	"math/big"
 	"sort"
 
+	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/matrix"
 	"github.com/getamis/alice/crypto/utils"
 	"gonum.org/v1/gonum/stat/combin"
@@ -33,7 +34,8 @@ var (
 	//ErrNoValidBks is returned if there's no valid bk
 	ErrNoValidBks = errors.New("no valid bks")
 	//ErrNoExistBk is returned if there does not exist bk
-	ErrNoExistBk = errors.New("no exist bk")
+	ErrNoExistBk          = errors.New("no exist bk")
+	ErrInconsistentPubKey = errors.New("inconsistent public key")
 )
 
 type BkParameter struct {
@@ -267,4 +269,24 @@ func (bks BkParameters) getIndexOfBK(ownBk *BkParameter) (int, error) {
 		}
 	}
 	return 0, ErrNoExistBk
+}
+
+func (bks BkParameters) ValidatePublicKey(sgs []*pt.ECPoint, threshold uint32, pubkey *pt.ECPoint) error {
+	fieldOrder := pubkey.GetCurve().Params().N
+	scalars, err := bks.ComputeBkCoefficient(threshold, fieldOrder)
+	if err != nil {
+		return err
+	}
+	return ValidatePublicKeyWithBkCoefficients(scalars, sgs, pubkey)
+}
+
+func ValidatePublicKeyWithBkCoefficients(scalars []*big.Int, sgs []*pt.ECPoint, pubkey *pt.ECPoint) error {
+	gotPub, err := pt.ComputeLinearCombinationPoint(scalars, sgs)
+	if err != nil {
+		return err
+	}
+	if !pubkey.Equal(gotPub) {
+		return ErrInconsistentPubKey
+	}
+	return nil
 }

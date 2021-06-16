@@ -61,7 +61,7 @@ func (p *userHandler1) HandleMessage(logger log.Logger, message types.Message) e
 	// Ensure public key consistent
 	sG := p.serverGVerifier.GetV()
 	self := p.peers[p.peerManager.SelfID()]
-	err := validatePubKey(logger, peer.bkCoefficient, sG, self.bkCoefficient, ecpointgrouplaw.ScalarBaseMult(p.curve, p.oldShare), p.publicKey)
+	err := validatePubKey(peer.bkCoefficient, sG, self.bkCoefficient, ecpointgrouplaw.ScalarBaseMult(p.curve, p.oldShare), p.publicKey)
 	if err != nil {
 		return tss.ErrUnexpectedPublickey
 	}

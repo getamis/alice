@@ -95,5 +95,5 @@ func (p *resultHandler) Finalize(logger log.Logger) (types.Handler, error) {
 		sgs[i] = peer.result.result
 		i++
 	}
-	return nil, tss.ValidatePublicKey(logger, bks, sgs, p.threshold, p.publicKey)
+	return nil, bks.ValidatePublicKey(sgs, p.threshold, p.publicKey)
 }

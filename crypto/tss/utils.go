@@ -17,12 +17,8 @@ package tss
 import (
 	"errors"
 	"fmt"
-	"math/big"
 
-	"github.com/getamis/alice/crypto/birkhoffinterpolation"
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/internal/message/types"
-	"github.com/getamis/sirius/log"
 )
 
 const (
@@ -46,29 +42,6 @@ var (
 	// ErrUnexpectedPublickey is returned if the public key is unexpected
 	ErrUnexpectedPublickey = errors.New("unexpected public key")
 )
-
-func ValidatePublicKey(logger log.Logger, bks birkhoffinterpolation.BkParameters, sgs []*pt.ECPoint, threshold uint32, pubkey *pt.ECPoint) error {
-	fieldOrder := pubkey.GetCurve().Params().N
-	scalars, err := bks.ComputeBkCoefficient(threshold, fieldOrder)
-	if err != nil {
-		logger.Debug("Failed to compute", "err", err)
-		return err
-	}
-	return ValidatePublicKeyWithBkCoefficients(logger, scalars, sgs, pubkey)
-}
-
-func ValidatePublicKeyWithBkCoefficients(logger log.Logger, scalars []*big.Int, sgs []*pt.ECPoint, pubkey *pt.ECPoint) error {
-	gotPub, err := pt.ComputeLinearCombinationPoint(scalars, sgs)
-	if err != nil {
-		logger.Debug("Failed to calculate public", "err", err)
-		return err
-	}
-	if !pubkey.Equal(gotPub) {
-		logger.Debug("Inconsistent public key", "got", gotPub, "expected", pubkey)
-		return ErrInconsistentPubKey
-	}
-	return nil
-}
 
 // ------------
 // Below funcs are for testing
