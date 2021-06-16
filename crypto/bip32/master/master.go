@@ -18,6 +18,9 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/getamis/alice/crypto/birkhoffinterpolation"
+	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/internal/message"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
@@ -25,21 +28,46 @@ import (
 
 var (
 	ErrNotReady = errors.New("not ready")
+
+	msgTypes = []types.MessageType{
+		types.MessageType(Type_Initial),
+		types.MessageType(Type_OtReceiver),
+		types.MessageType(Type_OtSendResponse),
+		types.MessageType(Type_Commitment),
+		types.MessageType(Type_Decommitment),
+		types.MessageType(Type_Result),
+		types.MessageType(Type_Verify),
+	}
 )
+
+type Result struct {
+	PublicKey *ecpointgrouplaw.ECPoint
+	Share     *big.Int
+	Bks       map[string]*birkhoffinterpolation.BkParameter
+	Seed      []byte
+	ChainCode []byte
+}
 
 type Master struct {
 	*message.MsgMain
 
 	ih *initial
-	pm types.PeerManager
 }
 
 // sid/aliceSeed
-func NewAlice(peerManager types.PeerManager, sid []uint8, seed []uint8, path string, listener types.StateChangedListener) (*Master, error) {
-	numPeers := peerManager.NumPeers()
-	ih, err := newAliceMasterKey(peerManager, sid, seed, path)
+func NewAlice(peerManager types.PeerManager, sid []uint8, rank uint32, path string, listener types.StateChangedListener) (*Master, error) {
+	seed, err := utils.GenRandomBytes(SeedLength)
 	if err != nil {
-		log.Warn("Failed to new a public key handler", "err", err)
+		log.Warn("Failed to random a seed", "err", err)
+		return nil, err
+	}
+	return newAlice(peerManager, sid, seed, rank, path, listener)
+}
+func newAlice(peerManager types.PeerManager, sid []uint8, seed []byte, rank uint32, path string, listener types.StateChangedListener) (*Master, error) {
+	numPeers := peerManager.NumPeers()
+	ih, err := newAliceMasterKey(peerManager, sid, seed, rank, path)
+	if err != nil {
+		log.Warn("Failed to new alice", "err", err)
 		return nil, err
 	}
 	return &Master{
@@ -48,18 +76,25 @@ func NewAlice(peerManager types.PeerManager, sid []uint8, seed []uint8, path str
 			numPeers,
 			listener,
 			ih,
-			types.MessageType(Type_Initial),
-			types.MessageType(Type_OtReceiver),
-			types.MessageType(Type_OtSendResponse),
+			msgTypes...,
 		),
 	}, nil
 }
 
-func NewBob(peerManager types.PeerManager, sid []uint8, ownSeedBit []uint8, path string, listener types.StateChangedListener) (*Master, error) {
-	numPeers := peerManager.NumPeers()
-	ih, err := newBobMasterKey(peerManager, sid, ownSeedBit, path)
+func NewBob(peerManager types.PeerManager, sid []uint8, rank uint32, path string, listener types.StateChangedListener) (*Master, error) {
+	seed, err := utils.GenRandomBytes(SeedLength)
 	if err != nil {
-		log.Warn("Failed to new a public key handler", "err", err)
+		log.Warn("Failed to random a seed", "err", err)
+		return nil, err
+	}
+	return newBob(peerManager, sid, seed, rank, path, listener)
+}
+
+func newBob(peerManager types.PeerManager, sid []uint8, seed []byte, rank uint32, path string, listener types.StateChangedListener) (*Master, error) {
+	numPeers := peerManager.NumPeers()
+	ih, err := newBobMasterKey(peerManager, sid, seed, rank, path)
+	if err != nil {
+		log.Warn("Failed to new bob", "err", err)
 		return nil, err
 	}
 	return &Master{
@@ -68,9 +103,7 @@ func NewBob(peerManager types.PeerManager, sid []uint8, ownSeedBit []uint8, path
 			numPeers,
 			listener,
 			ih,
-			types.MessageType(Type_Initial),
-			types.MessageType(Type_OtReceiver),
-			types.MessageType(Type_OtSendResponse),
+			msgTypes...,
 		),
 	}, nil
 }
@@ -80,17 +113,27 @@ func (m *Master) Start() {
 	m.ih.broadcast(m.ih.GetFirstMessage())
 }
 
-func (m *Master) GetResult() ([]byte, *big.Int, error) {
+func (m *Master) GetResult() (*Result, error) {
 	if m.GetState() != types.StateDone {
-		return nil, nil, ErrNotReady
+		return nil, ErrNotReady
 	}
 
 	h := m.GetHandler()
-	rh, ok := h.(*otSendResponse)
+	rh, ok := h.(*verifyHandler)
 	if !ok {
 		log.Error("We cannot convert to otSendResponse handler in done state")
-		return nil, nil, ErrNotReady
+		return nil, ErrNotReady
 	}
-
-	return rh.chiancode, rh.randomChoose, nil
+	bks := make(map[string]*birkhoffinterpolation.BkParameter, m.ih.peerNum+1)
+	bks[m.ih.selfId] = m.ih.bk
+	for id, peer := range m.ih.peers {
+		bks[id] = peer.bk
+	}
+	return &Result{
+		PublicKey: rh.publicKey,
+		Share:     rh.share,
+		Bks:       bks,
+		ChainCode: rh.chiancode,
+		Seed:      rh.seed,
+	}, nil
 }

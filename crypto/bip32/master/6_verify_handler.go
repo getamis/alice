@@ -15,28 +15,29 @@
 package master
 
 import (
+	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
-type otReceiver struct {
-	*initial
+type verifyHandler struct {
+	*resultHandler
 }
 
-func newOtReceiver(ih *initial) *otReceiver {
-	return &otReceiver{
-		initial: ih,
+func newVerifyHandler(oh *resultHandler) *verifyHandler {
+	return &verifyHandler{
+		resultHandler: oh,
 	}
 }
-func (s *otReceiver) MessageType() types.MessageType {
-	return types.MessageType(Type_OtReceiver)
+func (s *verifyHandler) MessageType() types.MessageType {
+	return types.MessageType(Type_Verify)
 }
 
-func (s *otReceiver) GetRequiredMessageCount() uint32 {
+func (s *verifyHandler) GetRequiredMessageCount() uint32 {
 	return s.peerManager.NumPeers()
 }
 
-func (s *otReceiver) IsHandled(logger log.Logger, id string) bool {
+func (s *verifyHandler) IsHandled(logger log.Logger, id string) bool {
 	peer, ok := s.peers[id]
 	if !ok {
 		logger.Warn("Peer not found")
@@ -45,7 +46,7 @@ func (s *otReceiver) IsHandled(logger log.Logger, id string) bool {
 	return peer.GetMessage(s.MessageType()) != nil
 }
 
-func (s *otReceiver) HandleMessage(logger log.Logger, message types.Message) error {
+func (s *verifyHandler) HandleMessage(logger log.Logger, message types.Message) error {
 	msg := getMessage(message)
 	id := msg.GetId()
 	peer, ok := s.peers[id]
@@ -54,24 +55,23 @@ func (s *otReceiver) HandleMessage(logger log.Logger, message types.Message) err
 		return ErrPeerNotFound
 	}
 
-	body := msg.GetOtReceiver()
-	senderResponseMsg, err := s.otExtSender.Verify(body.GetOtExtReceiveMsg())
+	shareGMsg := msg.GetVerify().GetShareG()
+	shareG, err := shareGMsg.ToPoint()
 	if err != nil {
-		logger.Warn("Failed to verify ot ext receiver", "err", err)
+		logger.Warn("Failed to get ec point", "err", err)
 		return err
 	}
-	s.peerManager.MustSend(id, &Message{
-		Type: Type_OtSendResponse,
-		Id:   s.selfId,
-		Body: &Message_OtSendResponse{
-			OtSendResponse: &BodyOtSendResponse{
-				OtExtSendResponseMsg: senderResponseMsg,
-			},
-		},
-	})
+	err = s.bks.ValidatePublicKey([]*pt.ECPoint{
+		s.shareG,
+		shareG,
+	}, Threshold, s.publicKey)
+	if err != nil {
+		logger.Warn("Failed to validate coefficients", "err", err)
+		return err
+	}
 	return peer.AddMessage(msg)
 }
 
-func (s *otReceiver) Finalize(logger log.Logger) (types.Handler, error) {
-	return newOtSendResponse(s), nil
+func (s *verifyHandler) Finalize(logger log.Logger) (types.Handler, error) {
+	return nil, nil
 }

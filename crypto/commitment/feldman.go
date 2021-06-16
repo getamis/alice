@@ -91,12 +91,16 @@ func (vMsg *FeldmanVerifyMessage) Verify(cMsg *PointCommitmentMessage, bk *bkhof
 	if err != nil {
 		return err
 	}
-	fieldOrder := curve.Params().N
-	expectPoint := ecpointgrouplaw.ScalarBaseMult(curve, new(big.Int).SetBytes(vMsg.Evaluation))
 	pts, err := cMsg.EcPoints()
 	if err != nil {
 		return err
 	}
+	return vMsg.VerifyByPoints(curve, pts, bk, degree)
+}
+
+func (vMsg *FeldmanVerifyMessage) VerifyByPoints(curve elliptic.Curve, pts []*pt.ECPoint, bk *bkhoff.BkParameter, degree uint32) error {
+	fieldOrder := curve.Params().N
+	expectPoint := ecpointgrouplaw.ScalarBaseMult(curve, new(big.Int).SetBytes(vMsg.Evaluation))
 	scalars := bk.GetLinearEquationCoefficient(fieldOrder, degree)
 	tempResult, err := pt.ComputeLinearCombinationPoint(scalars, pts)
 	if err != nil {

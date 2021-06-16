@@ -33,13 +33,13 @@ const (
 )
 
 var _ = Describe("Bip32 test", func() {
-	DescribeTable("MPCSEED", func(seedstring, expected string, p string) {
+	DescribeTable("With seed", func(seedstring, expected string, p string) {
 		sid := []byte("adsfsdfs")
 		seed, _ := hex.DecodeString(seedstring)
 		aliceSeed := seed[0:32]
 		bobSeed := seed[32:64]
 
-		masters, listeners := newMasters(sid, [][]byte{
+		masters, listeners := newMastersWithSeed(sid, [][]byte{
 			aliceSeed,
 			bobSeed,
 		})
@@ -69,11 +69,14 @@ var _ = Describe("Bip32 test", func() {
 		// Validate output
 		privateKey := new(big.Int)
 		for _, s := range masters {
-			chaincode, ramdomCode, err := s.GetResult()
+			r, err := s.GetResult()
 			Expect(err).Should(BeNil())
-			Expect(hex.EncodeToString(chaincode)).Should(Equal(expected[64:]))
-			privateKey = new(big.Int).Add(privateKey, ramdomCode)
-			privateKey = new(big.Int).Sub(privateKey, s.ih.seedRandom)
+			Expect(hex.EncodeToString(r.ChainCode)).Should(Equal(expected[64:]))
+			h := s.GetHandler()
+			rh, ok := h.(*verifyHandler)
+			Expect(ok).Should(BeTrue())
+			privateKey = new(big.Int).Add(privateKey, rh.randomChoose)
+			privateKey = new(big.Int).Sub(privateKey, s.ih.randomSeed)
 		}
 		big2 := big.NewInt(2)
 		pBig, _ := new(big.Int).SetString(p, 10)
@@ -91,7 +94,7 @@ func TestBip32(t *testing.T) {
 	RunSpecs(t, "Master Test")
 }
 
-func newMasters(sid []uint8, ss [][]byte) (map[string]*Master, map[string]*mocks.StateChangedListener) {
+func newMastersWithSeed(sid []uint8, ss [][]byte) (map[string]*Master, map[string]*mocks.StateChangedListener) {
 	threshold := len(ss)
 	masters := make(map[string]*Master, threshold)
 	mastersMain := make(map[string]types.MessageMain, threshold)
@@ -106,10 +109,36 @@ func newMasters(sid []uint8, ss [][]byte) (map[string]*Master, map[string]*mocks
 		listeners[id] = new(mocks.StateChangedListener)
 		var err error
 		if i == 0 {
-			masters[id], err = NewAlice(peerManagers[i], sid, ss[i], circuitPtah, listeners[id])
+			masters[id], err = newAlice(peerManagers[i], sid, ss[i], 0, circuitPtah, listeners[id])
 			Expect(err).Should(BeNil())
 		} else if i == 1 {
-			masters[id], err = NewBob(peerManagers[i], sid, ss[i], circuitPtah, listeners[id])
+			masters[id], err = newBob(peerManagers[i], sid, ss[i], 0, circuitPtah, listeners[id])
+			Expect(err).Should(BeNil())
+		}
+
+		mastersMain[id] = masters[id]
+	}
+	return masters, listeners
+}
+
+func newMasters(sid []uint8) (map[string]*Master, map[string]*mocks.StateChangedListener) {
+	masters := make(map[string]*Master, Threshold)
+	mastersMain := make(map[string]types.MessageMain, Threshold)
+	peerManagers := make([]types.PeerManager, Threshold)
+	listeners := make(map[string]*mocks.StateChangedListener, Threshold)
+
+	for i := 0; i < Threshold; i++ {
+		id := tss.GetTestID(i)
+		pm := tss.NewTestPeerManager(i, Threshold)
+		pm.Set(mastersMain)
+		peerManagers[i] = pm
+		listeners[id] = new(mocks.StateChangedListener)
+		var err error
+		if i == 0 {
+			masters[id], err = NewAlice(peerManagers[i], sid, 0, circuitPtah, listeners[id])
+			Expect(err).Should(BeNil())
+		} else if i == 1 {
+			masters[id], err = NewBob(peerManagers[i], sid, 0, circuitPtah, listeners[id])
 			Expect(err).Should(BeNil())
 		}
 

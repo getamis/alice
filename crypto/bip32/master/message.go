@@ -26,6 +26,14 @@ func (m *Message) IsValid() bool {
 		return m.GetOtReceiver() != nil
 	case Type_OtSendResponse:
 		return m.GetOtSendResponse() != nil
+	case Type_Commitment:
+		return m.GetCommitment() != nil
+	case Type_Decommitment:
+		return m.GetDecommitment() != nil
+	case Type_Result:
+		return m.GetResult() != nil
+	case Type_Verify:
+		return m.GetVerify() != nil
 	}
 	return false
 }
