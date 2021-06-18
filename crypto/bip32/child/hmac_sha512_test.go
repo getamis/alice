@@ -19,7 +19,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha512"
 	"encoding/binary"
-	"testing"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -63,11 +62,6 @@ var _ = Describe("Bip32 test", func() {
 		Entry("input:", []byte("yaya"), []byte("IanIsGood")),
 	)
 })
-
-func TestHMAC(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "HMAC Test")
-}
 
 func uint64SliceToByteSlice(input []uint64) []byte {
 	buf := new(bytes.Buffer)

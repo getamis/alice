@@ -20,6 +20,7 @@ import (
 	"math/big"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/bip32"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/circuit"
 	"github.com/getamis/alice/crypto/ot"
@@ -30,7 +31,6 @@ import (
 )
 
 const (
-	KAPPA      = 128
 	SeedLength = 32
 	Threshold  = 2
 
@@ -120,12 +120,12 @@ func newMasterKeyFunc(startIndex int, garbleStart int, garbleEnd int, computeFun
 		}
 
 		seedBits := utils.BytesToBits(seed)
-		garcir, garMsg, err := cir.Garbled(KAPPA, computeFunc(seedBits, randomSeed), circuit.EncryptFunc(startIndex))
+		garcir, garMsg, err := cir.Garbled(bip32.Kappa, computeFunc(seedBits, randomSeed), circuit.EncryptFunc(startIndex))
 		if err != nil {
 			return nil, err
 		}
 		a0, a1 := garcir.GenerateGarbleWire(garbleStart, garbleEnd)
-		otExtS, err := ot.NewExtSender(sid, KAPPA, a0, a1)
+		otExtS, err := ot.NewExtSender(sid, bip32.Kappa, a0, a1)
 		if err != nil {
 			return nil, err
 		}

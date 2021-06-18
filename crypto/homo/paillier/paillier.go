@@ -71,6 +71,10 @@ func (pub *publicKey) GetNSquare() *big.Int {
 	return new(big.Int).Set(pub.nSquare)
 }
 
+func (pub *publicKey) GetN() *big.Int {
+	return new(big.Int).Set(pub.n)
+}
+
 func (pub *publicKey) GetG() *big.Int {
 	return new(big.Int).Set(pub.g)
 }
