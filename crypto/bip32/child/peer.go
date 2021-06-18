@@ -17,7 +17,6 @@ package child
 import (
 	"math/big"
 
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/ot"
 	"github.com/getamis/alice/internal/message"
@@ -29,10 +28,6 @@ type peer struct {
 	pubkey        homo.Pubkey
 	pubkeyN       *big.Int
 	otExtReceiver *ot.OtExtReceiver
-
-	aG            *pt.ECPoint
-	randomChooseG *pt.ECPoint
-	randomSeedG   *pt.ECPoint
 }
 
 func newPeer(id string) *peer {

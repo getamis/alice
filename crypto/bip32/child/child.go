@@ -37,6 +37,13 @@ var (
 	}
 )
 
+type Result struct {
+	Translate *big.Int
+	PublicKey *ecpointgrouplaw.ECPoint
+	ChainCode []byte
+	Depth     byte
+}
+
 type Child struct {
 	*message.MsgMain
 
@@ -86,4 +93,23 @@ func NewBob(peerManager types.PeerManager, sid []uint8, share *big.Int, bks map[
 func (m *Child) Start() {
 	m.MsgMain.Start()
 	m.ih.broadcast(m.ih.GetFirstMessage())
+}
+
+func (m *Child) GetResult() (*Result, error) {
+	if m.GetState() != types.StateDone {
+		return nil, ErrNotReady
+	}
+
+	h := m.GetHandler()
+	rh, ok := h.(*sh2Hash)
+	if !ok {
+		log.Error("We cannot convert to otSendResponse handler in done state")
+		return nil, ErrNotReady
+	}
+	return &Result{
+		Translate: rh.childShare.translate,
+		PublicKey: rh.childShare.publicKey,
+		ChainCode: rh.childShare.chainCode,
+		Depth:     rh.childShare.depth,
+	}, nil
 }

@@ -16,7 +16,6 @@ package child
 
 import (
 	"crypto/subtle"
-	"math/big"
 
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
@@ -26,8 +25,7 @@ import (
 type sh2Hash struct {
 	*encH
 
-	childShare        *big.Int
-	childShareManager *shareManager
+	childShare *childShare
 }
 
 func newSh2Hash(oh *encH) *sh2Hash {
@@ -73,7 +71,7 @@ func (s *sh2Hash) HandleMessage(logger log.Logger, message types.Message) error 
 		logger.Warn("Inconsistent hash")
 		return ErrVerifyFailure
 	}
-	s.childShare, s.childShareManager, err = s.sm.ComputeHardenedChildShare(s.childIndex, s.result)
+	s.childShare, err = s.sm.ComputeHardenedChildShare(s.childIndex, s.result)
 	if err != nil {
 		logger.Warn("Failed to compute child share", "err", err)
 		return ErrVerifyFailure

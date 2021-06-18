@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	// MinHardenKey is the firsrt index of "harded" child key in the bip32 spec
+	// MinHardenKey is the first index of "harded" child key in the bip32 spec
 	MinHardenKey = uint32(0x80000000)
 
 	// PublicKeyCompressedLength is the byte count of a compressed public key
@@ -40,6 +40,10 @@ var (
 	ErrNonHardenedKey = errors.New("the index can not produce any hardened key")
 	// ErrHardenedKey is returned the index >= MinHardenKey
 	ErrHardenedKey = errors.New("the index can not produce any nonhardened key")
+	// ErrInvalidTranslation is invalid translate
+	ErrInvalidTranslation = errors.New("invalid translate")
+	// ErrIdentityChildPublicKey is the child public key is identity
+	ErrIdentityChildPublicKey = errors.New("identity child public key")
 	// ErrNotCorrectShare is the share value is invalid
 	ErrNotCorrectShare = errors.New("the share value is invalid")
 )
@@ -52,13 +56,17 @@ var (
 	Therefore, it maybe product "Invalid" the child key.
 */
 
-// TODO: consider replace shareSimply to the original share + bk coefficeints
 type shareManager struct {
 	share     *big.Int
 	publicKey *ecpointgrouplaw.ECPoint
 	// 32 bytes
 	chainCode []byte
 	depth     byte
+}
+
+type childShare struct {
+	*shareManager
+	translate *big.Int
 }
 
 func NewShareManager(share *big.Int, pubKey *ecpointgrouplaw.ECPoint, chainCode []byte, depth byte) (*shareManager, error) {
@@ -83,15 +91,19 @@ func (sHolder *shareManager) ComputeHardenKeyPrepareData() ([]uint64, error) {
 }
 
 // new Translate (should remainder) and childeShare
-func (sHolder *shareManager) ComputeHardenedChildShare(childIndex uint32, secondState []byte) (*big.Int, *shareManager, error) {
+func (sHolder *shareManager) ComputeHardenedChildShare(childIndex uint32, secondState []byte) (*childShare, error) {
 	if childIndex < MinHardenKey {
-		return nil, nil, ErrNonHardenedKey
+		return nil, ErrNonHardenedKey
 	}
 	curve := sHolder.publicKey.GetCurve()
 	curveN := curve.Params().N
 	hashResult := sHolder.newHmacSha512().Digest(secondState)
-	translate := new(big.Int).Mod(new(big.Int).SetBytes(hashResult[0:32]), curveN)
+	translate := new(big.Int).SetBytes(hashResult[0:32])
+	if translate.Cmp(curveN) > 0 {
+		return nil, ErrInvalidTranslation
+	}
 
+	// TODO: need to define how to add translate in each party
 	// Because now we have two people, so we modify this value such such that s1+1/.2*translate + s2 + 1/2*translate = privatekey
 	halfTranslate := new(big.Int).ModInverse(big2, curveN)
 	halfTranslate.Mul(halfTranslate, translate)
@@ -99,20 +111,26 @@ func (sHolder *shareManager) ComputeHardenedChildShare(childIndex uint32, second
 	childPubKey := ecpointgrouplaw.ScalarBaseMult(curve, translate)
 	childPubKey, err := sHolder.publicKey.Add(childPubKey)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
+	}
+	if childPubKey.IsIdentity() {
+		return nil, ErrIdentityChildPublicKey
 	}
 
-	childShare := new(big.Int).Add(sHolder.share, halfTranslate)
-	childShare = childShare.Mod(childShare, curveN)
-	return translate, &shareManager{
-		share:     childShare,
-		chainCode: hashResult[32:],
-		depth:     sHolder.depth + 1,
-		publicKey: childPubKey,
+	cs := new(big.Int).Add(sHolder.share, halfTranslate)
+	cs = cs.Mod(cs, curveN)
+	return &childShare{
+		translate: translate,
+		shareManager: &shareManager{
+			share:     cs,
+			chainCode: hashResult[32:],
+			depth:     sHolder.depth + 1,
+			publicKey: childPubKey,
+		},
 	}, nil
 }
 
-func (sHolder *shareManager) ComputeNonHardenedChildShare(childIndex uint32) (*shareManager, error) {
+func (sHolder *shareManager) ComputeNonHardenedChildShare(childIndex uint32) (*childShare, error) {
 	if childIndex >= MinHardenKey {
 		return nil, ErrHardenedKey
 	}
@@ -127,13 +145,29 @@ func (sHolder *shareManager) ComputeNonHardenedChildShare(childIndex uint32) (*s
 	}
 	hashResult := hmac.Sum(nil)
 	translate := new(big.Int).SetBytes(hashResult[0:32])
-	childShare := new(big.Int).Add(sHolder.share, translate)
-	childShare = childShare.Mod(childShare, sHolder.publicKey.GetCurve().Params().N)
-	return &shareManager{
-		// TODO: Child pub key?
-		share:     childShare,
-		chainCode: hashResult[32:],
-		depth:     sHolder.depth + 1,
+	curveN := curve.Params().N
+	if translate.Cmp(curveN) > 0 {
+		return nil, ErrInvalidTranslation
+	}
+	childPubKey, err := sHolder.publicKey.Add(ecpointgrouplaw.ScalarBaseMult(curve, translate))
+	if err != nil {
+		return nil, err
+	}
+	if childPubKey.IsIdentity() {
+		return nil, ErrIdentityChildPublicKey
+	}
+
+	// TODO: need to define how to add translate in each party
+	cs := new(big.Int).Add(sHolder.share, translate)
+	cs = cs.Mod(cs, sHolder.publicKey.GetCurve().Params().N)
+	return &childShare{
+		translate: translate,
+		shareManager: &shareManager{
+			publicKey: childPubKey,
+			share:     cs,
+			chainCode: hashResult[32:],
+			depth:     sHolder.depth + 1,
+		},
 	}, nil
 }
 

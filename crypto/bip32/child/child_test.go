@@ -48,7 +48,7 @@ var _ = Describe("Child test", func() {
 		privateKey := new(big.Int).SetBytes(hashResult[0:32])
 		chaincode := hashResult[32:]
 		pubKey := ecpointgrouplaw.ScalarBaseMult(curve, privateKey)
-		// share1: x = 1 rank and & share2: x = 2 rank 0
+		// share1: x = 1 rank and share2: x = 2 rank 0
 		share1 := new(big.Int).Add(privateKey, big.NewInt(1))
 		share1.Mod(share1, curve.N)
 		share2 := new(big.Int).Add(privateKey, big.NewInt(2))
@@ -87,32 +87,32 @@ var _ = Describe("Child test", func() {
 		}
 
 		// m0'
-		var childShare *big.Int
-		var childSm []*shareManager
+		var childTranslate *big.Int
+		var childShares []*childShare
 		for _, s := range children {
 			h, ok := s.GetHandler().(*sh2Hash)
 			Expect(ok).Should(BeTrue())
-			if childShare == nil {
-				childShare = h.childShare
+			if childTranslate == nil {
+				childTranslate = h.childShare.translate
 			} else {
-				Expect(childShare).Should(Equal(h.childShare))
+				Expect(childTranslate).Should(Equal(h.childShare.translate))
 			}
-			childSm = append(childSm, h.childShareManager)
+			childShares = append(childShares, h.childShare)
 		}
 
-		childPrivateKey := new(big.Int).Add(childSm[0].share, childSm[1].share)
+		childPrivateKey := new(big.Int).Add(childShares[0].share, childShares[1].share)
 		childPrivateKey.Mod(childPrivateKey, curve.N)
-		anotherMethodChildParivateKey := new(big.Int).Add(privateKey, childShare)
+		anotherMethodChildParivateKey := new(big.Int).Add(privateKey, childTranslate)
 		anotherMethodChildParivateKey.Mod(anotherMethodChildParivateKey, curve.N)
 		Expect(anotherMethodChildParivateKey).Should(Equal(anotherMethodChildParivateKey))
 		Expect(hex.EncodeToString(childPrivateKey.Bytes())).Should(Equal(expectedPrivate1))
 		Expect(hex.EncodeToString(childPrivateKey.Bytes())).Should(Equal(expectedPrivate1))
-		Expect(hex.EncodeToString(childSm[0].chainCode)).Should(Equal(expectedChaincode1))
+		Expect(hex.EncodeToString(childShares[0].chainCode)).Should(Equal(expectedChaincode1))
 
 		// m0'/1
-		grandChildManager, err := childSm[0].ComputeNonHardenedChildShare(1)
+		grandChildManager, err := childShares[0].ComputeNonHardenedChildShare(1)
 		Expect(err).Should(BeNil())
-		grandChildPrivateKey := new(big.Int).Add(grandChildManager.share, childSm[1].share)
+		grandChildPrivateKey := new(big.Int).Add(grandChildManager.share, childShares[1].share)
 		grandChildPrivateKey.Mod(grandChildPrivateKey, curve.N)
 		Expect(hex.EncodeToString(grandChildPrivateKey.Bytes())).Should(Equal(expectedPrivate2))
 		Expect(hex.EncodeToString(grandChildManager.chainCode)).Should(Equal(expectedChaincode2))

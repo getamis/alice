@@ -107,7 +107,6 @@ func (s *otSendResponse) HandleMessage(logger log.Logger, message types.Message)
 		logger.Warn("Failed to encrypt h", "err", err)
 		return err
 	}
-
 	s.peerManager.MustSend(id, &Message{
 		Type: Type_EncH,
 		Id:   s.selfId,
