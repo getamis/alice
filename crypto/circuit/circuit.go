@@ -182,6 +182,10 @@ func (garcir *GarbleCircuit) EvaluateGarbleCircuit(garbledMsg *GarbleCircuitMess
 	return Y, nil
 }
 
+func (garcir *GarbleCircuit) GetOutputWire() [][][]byte {
+	return garcir.outputWire
+}
+
 // ----
 type Circuit struct {
 	countWires         int

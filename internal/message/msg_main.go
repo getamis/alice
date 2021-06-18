@@ -96,7 +96,9 @@ func (t *MsgMain) GetState() types.MainState {
 
 func (t *MsgMain) messageLoop(ctx context.Context) (err error) {
 	defer func() {
-		if err == nil {
+		panicErr := recover()
+
+		if err == nil && panicErr == nil {
 			_ = t.setState(types.StateDone)
 		} else {
 			_ = t.setState(types.StateFailed)
