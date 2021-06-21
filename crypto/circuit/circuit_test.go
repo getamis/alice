@@ -112,11 +112,12 @@ var _ = Describe("Bristol fashion evaluate", func() {
 
 		cir, err := LoadBristol("bristolFashion/ModAdd512.txt")
 		Expect(err).Should(BeNil())
-		_, garMsg, err := cir.Garbled(128, inputSereilize, EncryptFunc(0))
+		garcir, garMsg, err := cir.Garbled(128, inputSereilize, EncryptFunc(0))
 		Expect(err).Should(BeNil())
-		got, err := cir.EvaluateGarbleCircuit(garMsg, garMsg.X)
+		evaluation, err := garcir.EvaluateGarbleCircuit(garMsg, garMsg.X)
 		Expect(err).Should(BeNil())
-		gotInt := bitArrayToInt(got)
+		got, err := utils.BitsToBytes(utils.ReverseByte(Decrypt(garMsg.GetD(), evaluation)))
+		gotInt := new(big.Int).SetBytes(got)
 		expctedBig, _ := new(big.Int).SetString(expected, 10)
 		Expect(gotInt.Cmp(expctedBig) == 0).Should(BeTrue())
 	},
@@ -265,10 +266,11 @@ var _ = Describe("Bristol fashion evaluate", func() {
 
 		cir, err := LoadBristol("bristolFashion/sha256.txt")
 		Expect(err).Should(BeNil())
-		_, garMsg, err := cir.Garbled(128, inputSereilize, EncryptFunc(0))
+		garcir, garMsg, err := cir.Garbled(128, inputSereilize, EncryptFunc(0))
 		Expect(err).Should(BeNil())
-		got, err := cir.EvaluateGarbleCircuit(garMsg, garMsg.X)
+		evaluation, err := garcir.EvaluateGarbleCircuit(garMsg, garMsg.X)
 		Expect(err).Should(BeNil())
+		got := Decrypt(garMsg.GetD(), evaluation)
 		gotHex, err := DecodeBristolFashionOutput(got)
 		Expect(err).Should(BeNil())
 		Expect(gotHex == expected).Should(BeTrue())
@@ -290,10 +292,11 @@ var _ = Describe("Bristol fashion evaluate", func() {
 		// Parse circuit and evaluate it
 		cir, err := LoadBristol("bristolFashion/aes_256.txt")
 		Expect(err).Should(BeNil())
-		_, garMsg, err := cir.Garbled(128, inputSereilize, EncryptFunc(0))
+		garcir, garMsg, err := cir.Garbled(128, inputSereilize, EncryptFunc(0))
 		Expect(err).Should(BeNil())
-		got, err := cir.EvaluateGarbleCircuit(garMsg, garMsg.X)
+		evaluation, err := garcir.EvaluateGarbleCircuit(garMsg, garMsg.X)
 		Expect(err).Should(BeNil())
+		got := Decrypt(garMsg.GetD(), evaluation)
 		gotHex, err := DecodeBristolFashionOutput(got)
 		Expect(err).Should(BeNil())
 		Expect(gotHex == expected).Should(BeTrue())
@@ -310,6 +313,126 @@ var _ = Describe("Bristol fashion evaluate", func() {
 		// http://www.cryptogrium.com/aes-encryption-online-ecb.html
 		Entry("Count:None", "1000000000000000000000000000ABCD", "fffffffffffffffffffffffffffffffe00000000000000000000000000000000", "9ce3b13e4b3f8fe2ee85cec035fb5f0b"),
 	)
+
+	Context("ScalMulFieldElement()", func() {
+		It("LoadBristol(): Does not exist path", func() {
+			_, err := LoadBristol("MarkGOGO")
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("LoadBristol(): Nonimplement gate", func() {
+			_, err := LoadBristol("bristolFashion/test.txt")
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+
+	It("LoadBristol(): Nonimplement gate", func() {
+		abig, _ := new(big.Int).SetString("1", 10)
+		bbig, _ := new(big.Int).SetString("2", 10)
+		pbig, _ := new(big.Int).SetString("100", 10)
+		inputSereilize := make([]uint8, 1536)
+		for i := 0; i < 512; i++ {
+			inputSereilize[i] = uint8(abig.Bit(i))
+			inputSereilize[512+i] = uint8(bbig.Bit(i))
+			inputSereilize[1024+i] = uint8(pbig.Bit(i))
+		}
+		cir, err := LoadBristol("bristolFashion/ModAdd512.txt")
+		Expect(err).Should(BeNil())
+		garcir, garMsg, err := cir.Garbled(128, inputSereilize, EncryptFunc(0))
+		Expect(err).Should(BeNil())
+		garcir.circuit.gates[0].gate = "WOW"
+		_, err = garcir.EvaluateGarbleCircuit(garMsg, garMsg.X)
+		Expect(err).ShouldNot(BeNil())
+	})
+
+	It("GenerateGarbleWire()", func() {
+		abig, _ := new(big.Int).SetString("1", 10)
+		bbig, _ := new(big.Int).SetString("2", 10)
+		pbig, _ := new(big.Int).SetString("100", 10)
+		inputSereilize := make([]uint8, 1536)
+		for i := 0; i < 512; i++ {
+			inputSereilize[i] = uint8(abig.Bit(i))
+			inputSereilize[512+i] = uint8(bbig.Bit(i))
+			inputSereilize[1024+i] = uint8(pbig.Bit(i))
+		}
+		cir, err := LoadBristol("bristolFashion/ModAdd512.txt")
+		Expect(err).Should(BeNil())
+		garcir, _, err := cir.Garbled(128, inputSereilize, EncryptFunc(0))
+		Expect(err).Should(BeNil())
+		w1, w2 := garcir.GenerateGarbleWire(0, 10)
+		Expect(len(w1)).Should(BeNumerically("==", 10))
+		Expect(len(w2)).Should(BeNumerically("==", 10))
+	})
+
+	It("GetOutputWire()", func() {
+		input1 := []byte{1}
+		input2 := [][]byte{input1}
+		input := [][][]byte{input2}
+		garcir := &GarbleCircuit{
+			outputWire: input,
+		}
+		got := garcir.GetOutputWire()
+		Expect(got).ShouldNot(BeNil())
+	})
+
+	Context("Garbled()", func() {
+		It("kBit is a wrong type", func() {
+			cir, err := LoadBristol("bristolFashion/ModAdd512.txt")
+			Expect(err).Should(BeNil())
+			_, _, err = cir.Garbled(1, []byte{1}, EncryptFunc(0))
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("Nonimplement gate", func() {
+			cir, err := LoadBristol("bristolFashion/ModAdd512.txt")
+			Expect(err).Should(BeNil())
+			cir.gates[0].gate = "WOW"
+			_, _, err = cir.Garbled(128, []byte{1}, EncryptFunc(0))
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+
+	It("decrypt", func() {
+		d := []int32{10}
+		y := []byte{1}
+		Y := [][]byte{y}
+		got := decrypt(d, Y)
+		expected := []byte{11}
+		Expect(expected).Should(Equal(got))
+	})
+
+	It("SetShaStateBristolInput: the length is wrong", func() {
+		_, err := SetShaStateBristolInput([]uint64{8})
+		Expect(err).Should(Equal(ErrInputSize))
+	})
+
+	It("DecodeBristolFashionOutput: the length is wrong", func() {
+		_, err := DecodeBristolFashionOutput([]byte{8})
+		Expect(err).ShouldNot(BeNil())
+	})
+
+	It("h: the length of index is wrong", func() {
+		_, err := h([]byte{1}, big.NewInt(1))
+		Expect(err).ShouldNot(BeNil())
+	})
+
+	Context("gbAnd()", func() {
+		It("LoadBristol(): Does not exist path", func() {
+			Wa := []byte{1}
+			indexj := big.NewInt(1)
+			indexjpai := new(big.Int).Lsh(big1, 16)
+			_, _, _, err := gbAnd(Wa, Wa, Wa, Wa, Wa, indexj, indexjpai)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("LoadBristol(): Nonimplement gate", func() {
+			Wa := []byte{1}
+			indexj := new(big.Int).Lsh(big1, 16)
+			indexjpai := big.NewInt(1)
+			_, _, _, err := gbAnd(Wa, Wa, Wa, Wa, Wa, indexj, indexjpai)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
 })
 
 func bitArrayToInt(array []uint8) *big.Int {
@@ -336,16 +459,11 @@ func setHexToIntSlice(input string, exptected uint8) []uint8 {
 	return result
 }
 
-func TestCircuit(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Circuit Test")
-}
-
 // Just test use. To test the result of parsing is correct.
 func (cir *Circuit) evaluate(input [][]uint8) ([][]uint8, error) {
 	wires := make([]uint8, cir.countWires)
 	// for i := 0; i < len(wires); i++ {
-	// 	wires[i] = -1
+	//  wires[i] = -1
 	// }
 	// Set the input
 	count := 0
@@ -394,4 +512,9 @@ func (cir *Circuit) evaluate(input [][]uint8) ([][]uint8, error) {
 	}
 
 	return output, nil
+}
+
+func TestCircuit(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Circuit Test")
 }
