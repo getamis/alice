@@ -80,5 +80,5 @@ message BodyResult {
 }
 
 message BodyVerify {
-    zkproof.SchnorrProofMessage shareGGProofMsg = 1;
+    zkproof.SchnorrProofMessage shareGProofMsg = 1;
 }

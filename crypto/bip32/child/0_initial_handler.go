@@ -25,6 +25,7 @@ import (
 	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/ot"
+	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 	"golang.org/x/crypto/blake2b"
@@ -50,6 +51,7 @@ type initial struct {
 	garcircuit      *circuit.GarbleCircuit
 	otExtSender     *ot.OtExtSender
 	share           *big.Int
+	shareG          *ecpointgrouplaw.ECPoint
 	shareBits       []uint8
 	initialMessage  *Message
 	homoKey         *paillier.Paillier
@@ -165,6 +167,11 @@ func newChildKeyFunc(startIndex int, garbleStart int, garbleEnd int, parseResult
 			return nil, err
 		}
 
+		shareGProof, err := zkproof.NewBaseSchorrMessage(curve, share)
+		if err != nil {
+			return nil, err
+		}
+
 		peers := make(map[string]*peer, peerNum)
 		for _, id := range peerManager.PeerIDs() {
 			peers[id] = newPeer(id)
@@ -183,6 +190,7 @@ func newChildKeyFunc(startIndex int, garbleStart int, garbleEnd int, parseResult
 			garcircuit:  garcir,
 			otExtSender: otExtS,
 			share:       share,
+			shareG:      ecpointgrouplaw.ScalarBaseMult(curve, share),
 			shareBits:   shareBits,
 			homoKey:     homoKey,
 			initialMessage: &Message{
@@ -190,11 +198,12 @@ func newChildKeyFunc(startIndex int, garbleStart int, garbleEnd int, parseResult
 				Id:   peerManager.SelfID(),
 				Body: &Message_Initial{
 					Initial: &BodyInitial{
-						OtRecMsg:      otExtS.GetReceiverMessage(),
-						GarcirMsg:     garMsg,
-						OtherInfoWire: garcir.Encrypt(1024, otherInfoBit),
-						PubKey:        homoKey.ToPubKeyBytes(),
-						PubKeyN:       homoKey.GetN().Bytes(),
+						OtRecMsg:       otExtS.GetReceiverMessage(),
+						GarcirMsg:      garMsg,
+						OtherInfoWire:  garcir.Encrypt(1024, otherInfoBit),
+						PubKey:         homoKey.ToPubKeyBytes(),
+						PubKeyN:        homoKey.GetN().Bytes(),
+						ShareGProofMsg: shareGProof,
 					},
 				},
 			},
@@ -244,6 +253,26 @@ func (s *initial) HandleMessage(logger log.Logger, message types.Message) error 
 		return err
 	}
 	peer.otExtReceiver = otExtR
+	shareGMsg := body.GetShareGProofMsg()
+	err = shareGMsg.Verify(ecpointgrouplaw.NewBase(curve))
+	if err != nil {
+		logger.Warn("Failed to verify Schorr proof", "err", err)
+		return err
+	}
+	shareG, err := shareGMsg.V.ToPoint()
+	if err != nil {
+		logger.Warn("Failed to get ec point", "err", err)
+		return err
+	}
+	got, err := s.shareG.Add(shareG)
+	if err != nil {
+		logger.Warn("Failed to add points", "err", err)
+		return err
+	}
+	if !s.sm.publicKey.Equal(got) {
+		logger.Warn("Inconsistent public key", "got", got, "expected", s.sm.publicKey)
+		return ErrVerifyFailure
+	}
 	s.peerManager.MustSend(id, &Message{
 		Type: Type_OtReceiver,
 		Id:   s.selfId,
