@@ -249,15 +249,6 @@ func getMatrixD(sid []byte, p1 [][]byte, M [][]uint8, R [][]uint8, outputByteLen
 	return result, nil
 }
 
-func Paddingzero(input string, expectedLength uint) string {
-	diff := expectedLength - uint(len(input))
-	result := input
-	for i := uint(0); i < diff; i++ {
-		result = "0" + result
-	}
-	return result
-}
-
 // TODO: do not check equal length
 func computeUandV(chi []*binaryfield.FieldElement, M [][]uint8, R [][]uint8) ([]*binaryfield.FieldElement, []*binaryfield.FieldElement, error) {
 	ufieldelement := binaryfield.ScalMulFieldElement(chi[0], getRow(0, M))
@@ -286,6 +277,7 @@ func getRow(indexRow int, input [][]uint8) []uint8 {
 	return result
 }
 
+// TODO: We should check this implementation is secure
 func hashRO2(sid []byte, D [][]uint8) ([]*binaryfield.FieldElement, error) {
 	result := make([]*binaryfield.FieldElement, len(D[0]))
 	for i := 0; i < len(result); i++ {

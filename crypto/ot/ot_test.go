@@ -79,6 +79,112 @@ var _ = Describe("OT test", func() {
 		Entry("kappa:256, m: 768", []byte("adsfsdfs"), 128, 2048),
 	)
 
+	Context("NewReceiver()", func() {
+		It("kappa is negative", func() {
+			_, err := NewReceiver([]byte("123"), -122, 3)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+
+	Context("NewSender()", func() {
+		It("kappa is negative", func() {
+			_, err := NewReceiver([]byte("123"), -122, 3)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+
+	Context("Response()", func() {
+		It("empty OtSenderMessage", func() {
+			sid := []byte("123")
+			otr, err := NewReceiver(sid, 8, 3)
+			Expect(err).Should(BeNil())
+			otsend, err := NewSender(sid, otr.GetReceiverMessage())
+			Expect(err).Should(BeNil())
+			msg := otsend.GetOtSenderMessage()
+			msg.Gamma = []byte("bala")
+			_, _, err = otr.Response(msg)
+			Expect(err).Should(Equal(ErrFailedVerify))
+		})
+	})
+
+	It("Verify(): verify failure", func() {
+		sid := []byte("123")
+		otr, err := NewReceiver(sid, 8, 3)
+		Expect(err).Should(BeNil())
+		otsend, err := NewSender(sid, otr.GetReceiverMessage())
+		Expect(err).Should(BeNil())
+		msg := &OtReceiverVerifyMessage{
+			Ans: []byte{1},
+		}
+		err = otsend.Verify(msg)
+		Expect(err).ShouldNot(BeNil())
+	})
+
+	It("NewExtReceiver(): nil input", func() {
+		sid := []byte("123")
+		_, err := NewExtSender(sid, -3, nil, nil)
+		Expect(err).ShouldNot(BeNil())
+	})
+
+	It("GetA0()", func() {
+		send := &OtExtSender{
+			a0: [][]byte{},
+			a1: [][]byte{},
+		}
+		got := send.GetA0()
+		Expect(len(got)).Should(BeNumerically("==", 0))
+	})
+
+	It("GetA1()", func() {
+		send := &OtExtSender{
+			a0: [][]byte{},
+			a1: [][]byte{},
+		}
+		got := send.GetA1()
+		Expect(len(got)).Should(BeNumerically("==", 0))
+	})
+
+	It("NewExtSender(): different length", func() {
+		a0Input := []byte{}
+		a0 := [][]byte{a0Input}
+		_, err := NewExtSender(nil, 10, a0, [][]byte{})
+		Expect(err).Should(Equal(ErrWrongInput))
+	})
+
+	Context("getMatrixR()", func() {
+		It("The length r is wrong", func() {
+			_, err := getMatrixR(0, nil, []uint8{1}, 5)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("kappa is negative", func() {
+			_, err := getMatrixR(0, nil, []uint8{}, -5)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+
+	Context("NewExtReceiver()", func() {
+		It("The length r is wrong", func() {
+			_, err := NewExtReceiver(nil, []byte{}, nil)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+
+	It("GetOTFinalResult: verify failure", func() {
+		msg := &OtExtSendResponseMessage{
+			OtRecVerifyMsg: &OtReceiverVerifyMessage{
+				Ans: []byte{1},
+			},
+		}
+		otRec := &OtExtReceiver{
+			otSend: &OtSender{
+				ans: []byte{0, 0},
+			},
+		}
+		_, err := otRec.GetOTFinalResult(msg)
+		Expect(err).ShouldNot(BeNil())
+	})
+
 })
 
 func TestOT(t *testing.T) {

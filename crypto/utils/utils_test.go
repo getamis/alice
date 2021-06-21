@@ -25,6 +25,8 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+var bigFieldOrder, _ = new(big.Int).SetString("115792089237316195423570985008687907852837564279074904382605163141518161494337", 10)
+
 func TestUtils(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Utils Suite")
@@ -199,6 +201,29 @@ var _ = Describe("Utils", func() {
 			Expect(err).Should(Succeed())
 			Expect(result).ShouldNot(BeNil())
 		})
+
+		It("should not work", func() {
+			salt, err := GenRandomBytes(blake2b.Size256)
+			Expect(err).Should(Succeed())
+			_, err = HashProtosToInt(salt, nil)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+
+	Context("HashProtosRejectSampling()", func() {
+		It("should work", func() {
+			msg := &ecpointgrouplaw.EcPointMessage{}
+			got, salt, err := HashProtosRejectSampling(bigFieldOrder, msg)
+			Expect(err).Should(BeNil())
+			Expect(len(salt)).Should(BeNumerically("==", SaltSize))
+			Expect(InRange(got, big0, bigFieldOrder)).Should(BeNil())
+		})
+
+		It("Exceed maxGenNHashValue", func() {
+			msg := &ecpointgrouplaw.EcPointMessage{}
+			_, _, err := HashProtosRejectSampling(big0, msg)
+			Expect(err).ShouldNot(BeNil())
+		})
 	})
 
 	DescribeTable("BytesToBits()", func(input []byte, expected []uint8) {
@@ -223,4 +248,63 @@ var _ = Describe("Utils", func() {
 	},
 		Entry("should be ok", []uint8{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}, []byte{0, 3, 255}),
 	)
+
+	It("BitsToBytes(): the length is wrong", func() {
+		a := []byte{1, 3}
+		_, err := BitsToBytes(a)
+		Expect(err).Should(Equal(ErrInvalidInput))
+	})
+
+	Context("Xor()", func() {
+		It("equal length", func() {
+			a := []byte{1, 3}
+			b := []byte{1, 2}
+			got := Xor(a, b)
+			expected := []byte{0, 1}
+			Expect(got).Should(Equal(expected))
+		})
+
+		It("Not Equal Length", func() {
+			a := []byte{1}
+			b := []byte{1, 2}
+			got := Xor(a, b)
+			expected := []byte{0, 2}
+			Expect(got).Should(Equal(expected))
+		})
+
+		It("Not Equal Length:2", func() {
+			a := []byte{1, 2}
+			b := []byte{1}
+			got := Xor(a, b)
+			expected := []byte{0, 2}
+			Expect(got).Should(Equal(expected))
+		})
+	})
+
+	Context("BinaryMul()", func() {
+		It("It is OK: zero byte", func() {
+			c := uint8(0)
+			a := []byte{1, 2}
+			got := BinaryMul(c, a)
+			expected := []byte{0, 0}
+			Expect(got).Should(Equal(expected))
+		})
+
+		It("It is OK", func() {
+			c := uint8(1)
+			a := []byte{1, 2}
+			got := BinaryMul(c, a)
+			expected := a
+			Expect(got).Should(Equal(expected))
+		})
+	})
+
+	Context("ReverseByte()", func() {
+		It("It is OK: zero byte", func() {
+			a := []byte{1, 2}
+			got := ReverseByte(a)
+			expected := []byte{2, 1}
+			Expect(got).Should(Equal(expected))
+		})
+	})
 })
