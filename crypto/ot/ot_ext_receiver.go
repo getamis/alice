@@ -44,9 +44,6 @@ func NewExtReceiver(sid []byte, r []byte, otRMsg *OtReceiverMessage) (*OtExtRece
 		return nil, err
 	}
 	kappa := uint(len(otRMsg.GetBi()))
-	if err != nil {
-		return nil, err
-	}
 	// bitLength to byteLength
 	outputByteLength := int(m+kappa) >> 3
 	M, err := getMatrixM(sid, otSend.p0, outputByteLength)

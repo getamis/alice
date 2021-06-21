@@ -154,11 +154,6 @@ func Lcm(a, b *big.Int) (*big.Int, error) {
 		return nil, ErrInvalidInput
 	}
 	t := Gcd(a, b)
-	// avoid panic in Div function
-	if t.Cmp(big0) <= 0 {
-		return nil, ErrInvalidInput
-	}
-
 	t = t.Div(a, t)
 	t = t.Mul(t, b)
 	return t, nil
