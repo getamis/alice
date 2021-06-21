@@ -43,9 +43,9 @@ const (
 )
 
 /*
-	We implement a version of "garbled Circuit" according to paper: "Better Concrete Security for Half-Gates Garbling"
-	and "Two Halves Make a Whole Reducing data Transfer in Garbled Circuits using Half Gates".
-	We support the parse of Bristol fashion ref: https://homes.esat.kuleuven.be/~nsmart/MPC/
+   We implement a version of "garbled Circuit" according to paper: "Better Concrete Security for Half-Gates Garbling"
+   and "Two Halves Make a Whole Reducing data Transfer in Garbled Circuits using Half Gates".
+   We support the parse of Bristol fashion ref: https://homes.esat.kuleuven.be/~nsmart/MPC/
 */
 
 var (
@@ -405,64 +405,6 @@ func (cir *Circuit) Garbled(kBit int, input []uint8, f EncFunc) (*GarbleCircuit,
 	}, nil
 }
 
-// Encrytpion/Descrption directly?
-// Evaluate: procedure Ev
-func (cir *Circuit) EvaluateGarbleCircuit(garbledMsg *GarbleCircuitMessage, input [][]byte) ([]byte, error) {
-	count := new(big.Int).SetBytes(garbledMsg.StartCount)
-	// Set i in Inputs
-	W := make([][]byte, cir.countWires)
-	inputSize := cir.totalInputSize()
-	for i := 0; i < inputSize; i++ {
-		W[i] = input[i]
-	}
-
-	indexAndCount := 0
-	for i := 0; i < len(cir.gates); i++ {
-		g := cir.gates[i]
-		switch g.gate {
-		case XOR:
-			W[g.outputWire[0]] = utils.Xor(W[g.inputWire[0]], W[g.inputWire[1]])
-		case AND:
-			F := garbledMsg.F[indexAndCount]
-			Wa := W[g.inputWire[0]]
-			Wb := W[g.inputWire[1]]
-			sa := lsb(Wa)
-			sb := lsb(Wb)
-			tempCount := new(big.Int).Add(count, big1)
-			count.Add(count, big2)
-			saTGi := utils.BinaryMul(sa, F.TG)
-			WGi, _ := h(Wa, tempCount)
-			WGi = utils.Xor(WGi, saTGi)
-			sbTEiWa := utils.Xor(F.TE, Wa)
-			sbTEiWa = utils.BinaryMul(sb, sbTEiWa)
-			WEi, _ := h(Wb, count)
-			WEi = utils.Xor(WEi, sbTEiWa)
-			W[g.outputWire[0]] = utils.Xor(WGi, WEi)
-			indexAndCount++
-		case INV:
-			W[g.outputWire[0]] = W[g.inputWire[0]]
-		case EQ:
-			W[g.outputWire[0]] = W[g.inputWire[0]]
-		default:
-			return nil, ErrNONSUPPORTGATE
-		}
-	}
-
-	// Set the output of the evaluating result.
-	Y := make([][]byte, cir.totalOutputSize())
-	countIndex := 0
-	outputIndex := cir.countWires - cir.totalOutputSize()
-	for i := 0; i < len(cir.outputSize); i++ {
-		for j := 0; j < cir.outputSize[i]; j++ {
-			Y[countIndex] = W[outputIndex+countIndex]
-			countIndex++
-		}
-	}
-
-	// decrypt
-	return decrypt(garbledMsg.D, Y), nil
-}
-
 // Procedure De
 func decrypt(d []int32, Y [][]byte) []uint8 {
 	result := make([]uint8, len(d))
@@ -515,7 +457,7 @@ func gbAnd(Wa0, Wa1, Wb0, Wb1 []byte, R []byte, indexj, indexjpai *big.Int) ([]b
 }
 
 // Section 4.2: MMO(x,i):=E(i,sigma(x)) xor sigma(x), where sigma(x_L||x_R) := x_R xor x_L || x_R.
-// ref: garbled Circuit" according to paper: "Better Concrete Security for Half-Gates Garbling
+// ref: garbled Circuit" according to the paper: "Better Concrete Security for Half-Gates Garbling
 func h(message []byte, index *big.Int) ([]byte, error) {
 	informationByte := index.Bytes()
 	cipher, err := aes.NewCipher(informationByte)

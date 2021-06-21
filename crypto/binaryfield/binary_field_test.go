@@ -103,6 +103,12 @@ var _ = Describe("binary operation test", func() {
 			b := []*FieldElement{NewFieldElement(1, 1)}
 			Expect(EqualSlice(a, b)).Should(BeFalse())
 		})
+
+		It("Equal(): high not equal", func() {
+			a := NewFieldElement(6, 1)
+			b := NewFieldElement(6, 2)
+			Expect(a.Equal(b)).Should(BeFalse())
+		})
 	})
 })
 
