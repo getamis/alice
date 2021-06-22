@@ -90,7 +90,7 @@ func (s *resultHandler) HandleMessage(logger log.Logger, message types.Message) 
 		Id:   s.selfId,
 		Body: &Message_Verify{
 			Verify: &BodyVerify{
-				ShareGGProofMsg: shareGMsg,
+				ShareGProofMsg: shareGMsg,
 			},
 		},
 	})

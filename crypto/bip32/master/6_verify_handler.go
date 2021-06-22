@@ -56,7 +56,7 @@ func (s *verifyHandler) HandleMessage(logger log.Logger, message types.Message) 
 		return ErrPeerNotFound
 	}
 
-	shareGMsg := msg.GetVerify().GetShareGGProofMsg()
+	shareGMsg := msg.GetVerify().GetShareGProofMsg()
 	err := shareGMsg.Verify(ecpointgrouplaw.NewBase(curve))
 	if err != nil {
 		logger.Warn("Failed to verify Schorr proof", "err", err)

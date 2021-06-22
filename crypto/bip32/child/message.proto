@@ -20,6 +20,7 @@ option go_package = "github.com/getamis/alice/crypto/bip32/child";
 
 import "github.com/getamis/alice/crypto/ot/message.proto";
 import "github.com/getamis/alice/crypto/circuit/message.proto";
+import "github.com/getamis/alice/crypto/zkproof/message.proto";
 
 enum Type {
     Initial = 0;
@@ -47,6 +48,7 @@ message BodyInitial {
     repeated bytes otherInfoWire =3;
     bytes pubKey = 4;
     bytes pubKeyN = 5;
+    zkproof.SchnorrProofMessage shareGProofMsg = 6;
 }
 
 message BodyOtReceiver {
