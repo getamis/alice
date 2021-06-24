@@ -105,9 +105,11 @@ If you are interested in it, please see our tests:
 5. [Quid Pro Quo-tocols: Strengthening Semi-Honest Protocols with Dual Execution](https://www.cs.umd.edu/~jkatz/papers/SP12.pdf)
 6. [TinyGarble](https://github.com/esonghori/TinyGarble)
 7. [Secure multi-party computation](https://en.wikipedia.org/wiki/Secure_multi-party_computation)
+8. [JIGG](https://github.com/multiparty/jigg)
 
 
 <h2 id="Libraries">Other Libraries:</h2>
 
 1. [SPDZ-2](https://github.com/bristolcrypto/SPDZ-2)
 2. [Obliv-C](https://oblivc.org)
+3. [unboundsecurity](https://github.com/unboundsecurity/blockchain-crypto-mpc)
