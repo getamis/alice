@@ -22,8 +22,8 @@ For example, an important contract not only requires enough signatures, but also
 HTSS  has been developed by [Tassa](https://www.openu.ac.il/lists/mediaserver_documents/personalsites/tamirtassa/hss_conf.pdf) and other researchers many years ago. In our implementation, we setup up this theory on TSS(i.e. just replace Lagrange Interpolation to Birkhoff Interpolation).  Meanwhile, our protocol of sign (i.e. GG18 and CCLST20 ) can support two homomorphic encryptions which are Paillier and CL scheme. 
 
 Now, Alice supports two parts:
-1. [HTSS(A variant of GG18): ECDSA](https://github.com/getamis/alice/tree/master/crypto/tss/Readme.md). This part has been audited.
-2. [2-party Bip32](https://github.com/getamis/alice/tree/master/crypto/bip32/Readme.md). **WARN: This part has NOT been audited (Preparation).** 
+1. [HTSS(A variant of GG18): ECDSA](./crypto/tss/README.md). This part has been audited.
+2. [2-party Bip32](./crypto/bip32/README.md). **WARN: This part has NOT been audited (Preparation).** 
 
 
 
