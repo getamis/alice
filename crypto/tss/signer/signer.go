@@ -27,8 +27,36 @@ import (
 )
 
 type Result struct {
-	R *big.Int
+	R *pt.ECPoint
 	S *big.Int
+}
+
+// EthSignature returns the eth signature
+// Use github.com/ethereum/go-ethereum/core/types.Transaction.WithSignature(signer, signatures)
+// to get the signed transaction. Suggest to use types.Signer155.
+func (r *Result) EthSignature() []byte {
+	n := r.R.GetCurve().Params().N
+	s := new(big.Int).Set(r.S)
+
+	// 1. Modify s to 0 < s < N /2
+	// ref: condition 283 in https://ethereum.github.io/yellowpaper/paper.pdf
+	// 2. Calculate recovery id
+	// https://ethereum.stackexchange.com/questions/42455/during-ecdsa-signing-how-do-i-generate-the-recovery-id
+	id := r.R.GetY().Bit(0)
+	if s.Cmp(new(big.Int).Rsh(n, 1)) > 0 {
+		s = new(big.Int).Neg(s)
+		s = s.Add(n, s)
+		id = id ^ 1
+	}
+
+	// The signature is 65 bytes, [R (32 bytes)|S (32 bytes)|recovery id (1 byte)]
+	sig := make([]byte, 65)
+	rBytes := r.R.GetX().Bytes()
+	copy(sig[32-len(rBytes):32], rBytes)
+	sBytes := s.Bytes()
+	copy(sig[64-len(sBytes):64], sBytes)
+	sig[64] = byte(id)
+	return sig
 }
 
 type Signer struct {
@@ -84,7 +112,7 @@ func (s *Signer) GetResult() (*Result, error) {
 	}
 
 	return &Result{
-		R: new(big.Int).Set(rh.r.GetX()),
+		R: rh.r.Copy(),
 		S: new(big.Int).Set(rh.s),
 	}, nil
 }

@@ -75,10 +75,10 @@ var _ = Describe("Signer", func() {
 			Expect(err).Should(BeNil())
 			// All R and S should be the same
 			if r != nil {
-				Expect(r).Should(Equal(result.R))
+				Expect(r).Should(Equal(result.R.GetX()))
 				Expect(s).Should(Equal(result.S))
 			} else {
-				r = result.R
+				r = result.R.GetX()
 				s = result.S
 			}
 		}
