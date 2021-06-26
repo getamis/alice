@@ -95,7 +95,7 @@ Besides the common inputs, reshare will need another four inputs.
 3. `pubkey`: The public key generated from DKG.
 4. `bks`: The Birkhoff parameter of all peers.
 
-For example, in file `reahre/id-10001-input.yaml`, a complete reshare configuration is show below.
+For example, in file `reshare/id-10001-input.yaml`, a complete reshare configuration is show below.
 
 ```yaml
 port: 10001

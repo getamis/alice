@@ -85,7 +85,7 @@ Alice (resp. Bob) uses her(resp. his) private input(i.e. share) to compute the o
 
 
 Briefly describe idea:
-1. Two parties use the protocol Quid Pro Quo-tocols: Strengthening Semi-Honest Protocols with Dual Execution to lean the HMAC512(chain-cdoe, "private key").
+1. Two parties use the protocol Quid Pro Quo-tocols: Strengthening Semi-Honest Protocols with Dual Execution to lean the HMAC512(chain-code, "private key").
 The Quid Pro Quo-tocols can guarantee two parties learning the same output. 
 
 
