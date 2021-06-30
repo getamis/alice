@@ -40,6 +40,8 @@ var (
 	ErrEmptySlice = errors.New("slice is empty")
 	// ErrZero is returned if the integer is zero.
 	ErrZero = errors.New("the integer is zero")
+	// ErrDifferentLength is returned if two slices are different length.
+	ErrDifferentLength = errors.New("two slices are different length")
 )
 
 // In this library, we only consider positive definite quadratic forms
@@ -301,8 +303,13 @@ func (bqForm *BQuadraticForm) Exp(power *big.Int) (*BQuadraticForm, error) {
 	if power.Cmp(big0) == 0 {
 		return R, nil
 	}
+	abspower := new(big.Int).Abs(power)
+	if power.Cmp(big0) < 0 {
+		T = T.Inverse()
+
+	}
 	dbnsMentor := dbns.NewDBNS(deepTree)
-	expansion, err := dbnsMentor.ExpansionBase2And3(power)
+	expansion, err := dbnsMentor.ExpansionBase2And3(abspower)
 	if err != nil {
 		return nil, err
 	}
@@ -686,4 +693,35 @@ func computeroot4thOver4(value *big.Int) *big.Int {
 	pqVer4 = new(big.Int).Sqrt(pqVer4)
 	pqRoot4 := new(big.Int).Sqrt(pqVer4)
 	return pqRoot4
+}
+
+func LinearCombination(scalar []*big.Int, bqForms []*BQuadraticForm) (*BQuadraticForm, error) {
+	if len(scalar) != len(bqForms) {
+		return nil, ErrDifferentLength
+	}
+	startIndex := 0
+	for i := 0; i < len(scalar); i++ {
+		if scalar[i].Cmp(big0) != 0 {
+			startIndex = i
+			break
+		}
+	}
+	result, err := bqForms[startIndex].Exp(scalar[startIndex])
+	if err != nil {
+		return nil, err
+	}
+	for i := startIndex + 1; i < len(scalar); i++ {
+		if scalar[i].Cmp(big0) == 0 {
+			continue
+		}
+		temp, err := bqForms[i].Exp(scalar[i])
+		if err != nil {
+			return nil, err
+		}
+		result, err = result.Composition(temp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
 }

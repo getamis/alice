@@ -1,0 +1,72 @@
+// Copyright © 2020 AMIS Technologies
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package liss;
+
+option go_package = "github.com/getamis/alice/crypto/liss";
+
+import "github.com/getamis/alice/crypto/binaryquadraticform/message.proto";
+import "github.com/getamis/alice/crypto/homo/cl/message.proto";
+
+enum Type {
+    BqCommitment = 0;
+    BqDecommitment = 1;
+}
+
+message Message {
+    Type type = 1;
+    string id = 2;
+    oneof body {
+        BodyBqCommitment bqCommitment = 3;
+        BodyBqDecommitment bqDedemmitment = 4;
+    }
+}
+
+message BodyBqCommitment {
+    repeated bytes commitments = 1;
+}
+
+message BodyBqDecommitment {
+    repeated binaryquadraticform.BQForm expM =1;
+    repeated bqDecommit decommitments = 2;
+}
+
+message bqDecommit {
+    bytes salt = 1;
+    binaryquadraticform.BQForm bqform =2;
+}
+
+// message bqFormCommitmentMessage {
+//     bytes commitment = 1;
+// }
+
+
+// message partialShareMessage {
+//     repeated string markIndex = 1;
+//     repeated string partialShare = 2;
+// }
+
+// message shareCommitMessage {
+//     repeated string markIndex = 1;
+//     repeated binaryquadraticform.BQForm shareCommit = 2;
+// }
+
+// message shareMessage {
+//     partialShareMessage partailInfo = 1;
+//     shareCommitMessage shareCommitMsg = 2;
+//     cl.PubKeyMessage pubKeyMsg =3;
+//     int32 serialNumber =4;
+// }

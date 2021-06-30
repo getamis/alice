@@ -47,6 +47,8 @@ var (
 	ErrNotInvertableMatrix = errors.New("not invertable matrix")
 	// ErrMaximalSizeOfMatrice is returned if the number of column or row exceeds the given bound
 	ErrMaximalSizeOfMatrice = errors.New("the number of column or row exceeds the given bound")
+	// ErrNonImplement is returned if the matrix operation is not implemented
+	ErrNonImplement = errors.New("the matrix operation is not implemented")
 
 	big0 = big.NewInt(0)
 )
@@ -59,12 +61,10 @@ type Matrix struct {
 	matrix       [][]*big.Int
 }
 
+// If fieldOrder is nil, then the matrix is defined over integer ring Z.
 // NewMatrix checks the input matrix slices. It returns error if the
 // number of rows or columns is zero or the number of column is inconsistent.
 func NewMatrix(fieldOrder *big.Int, matrix [][]*big.Int) (*Matrix, error) {
-	if fieldOrder == nil || !fieldOrder.ProbablyPrime(1) {
-		return nil, ErrNonPrimeFieldOrder
-	}
 	numberRow := uint64(len(matrix))
 	if numberRow == 0 {
 		return nil, ErrZeroRows
@@ -86,6 +86,17 @@ func NewMatrix(fieldOrder *big.Int, matrix [][]*big.Int) (*Matrix, error) {
 			}
 		}
 	}
+	if fieldOrder == nil {
+		return &Matrix{
+			fieldOrder:   nil,
+			numberRow:    numberRow,
+			numberColumn: numberColumn,
+			matrix:       matrix,
+		}, nil
+	}
+	if !fieldOrder.ProbablyPrime(1) {
+		return nil, ErrNonPrimeFieldOrder
+	}
 	return &Matrix{
 		fieldOrder:   fieldOrder,
 		numberRow:    numberRow,
@@ -96,6 +107,14 @@ func NewMatrix(fieldOrder *big.Int, matrix [][]*big.Int) (*Matrix, error) {
 
 // Copy returns a copied matrix
 func (m *Matrix) Copy() *Matrix {
+	if m.fieldOrder == nil {
+		return &Matrix{
+			fieldOrder:   nil,
+			numberRow:    m.numberRow,
+			numberColumn: m.numberColumn,
+			matrix:       m.GetMatrix(),
+		}
+	}
 	return &Matrix{
 		fieldOrder:   new(big.Int).Set(m.fieldOrder),
 		numberRow:    m.numberRow,
@@ -164,6 +183,9 @@ func (m *Matrix) Get(i, j uint64) *big.Int {
 	if v == nil {
 		return nil
 	}
+	if m.fieldOrder == nil {
+		return new(big.Int).Set(v)
+	}
 	return new(big.Int).Mod(v, m.fieldOrder)
 }
 
@@ -178,9 +200,12 @@ func (m *Matrix) get(i, j uint64) *big.Int {
 	return m.matrix[i][j]
 }
 
-func (m *Matrix) modInverse(i, j uint64) *big.Int {
+func (m *Matrix) modInverse(i, j uint64) (*big.Int, error) {
 	v := m.get(i, j)
-	return new(big.Int).ModInverse(v, m.fieldOrder)
+	if m.fieldOrder == nil {
+		return nil, ErrNonPrimeFieldOrder
+	}
+	return new(big.Int).ModInverse(v, m.fieldOrder), nil
 }
 
 // Transpose transposes the matrix
@@ -215,10 +240,13 @@ func (m *Matrix) Add(matrix *Matrix) (*Matrix, error) {
 	for i := uint64(0); i < m.numberRow; i++ {
 		m.matrix[i] = addSlices(m.matrix[i], matrix.matrix[i])
 	}
+	if m.fieldOrder == nil {
+		return m, nil
+	}
 	return m.modulus(), nil
 }
 
-func (m *Matrix) multiply(matrix *Matrix) (*Matrix, error) {
+func (m *Matrix) Multiply(matrix *Matrix) (*Matrix, error) {
 	// check two matrices can do multiplication by checking their sizes
 	if m.numberColumn != matrix.numberRow {
 		return nil, ErrInconsistentNumber
@@ -236,7 +264,10 @@ func (m *Matrix) multiply(matrix *Matrix) (*Matrix, error) {
 		m.matrix[i] = tempSlice
 	}
 	m.numberColumn = matrix.numberColumn
-	return m, nil
+	if m.fieldOrder == nil {
+		return m, nil
+	}
+	return m.modulus(), nil
 }
 
 // All components of a matrix modulus a fieldOrder.
@@ -294,6 +325,10 @@ func (m *Matrix) Inverse() (*Matrix, error) {
 	if !m.IsSquare() {
 		return nil, ErrNotSquareMatrix
 	}
+	// Note: In fact, some special matrices over Z have invertible matrix. But we still do not implement it.
+	if m.fieldOrder == nil {
+		return nil, ErrNonImplement
+	}
 	// Get U, L^{-1}. Note that A= L*U
 	upperMatrix, lowerMatrix, _, err := m.getGaussElimination()
 	if err != nil {
@@ -316,7 +351,7 @@ func (m *Matrix) Inverse() (*Matrix, error) {
 	tempResult.Transpose()
 
 	// U^{-1}*L^{-1} = (L*U)^{-1} = A^{-1}
-	tempResult, err = tempResult.multiply(copyLowerMatrix)
+	tempResult, err = tempResult.Multiply(copyLowerMatrix)
 	if err != nil {
 		return nil, err
 	}
@@ -328,6 +363,9 @@ func (m *Matrix) Inverse() (*Matrix, error) {
 func (m *Matrix) Determinant() (*big.Int, error) {
 	if !m.IsSquare() {
 		return nil, ErrNotSquareMatrix
+	}
+	if m.fieldOrder == nil {
+		return nil, ErrNonImplement
 	}
 	m.modulus()
 	// We only use elementary matrix (i.e. its determine is 1), so det(upperMatrix)=det(A).
@@ -357,6 +395,9 @@ func (m *Matrix) getGaussElimination() (*Matrix, *Matrix, int, error) {
 	if !m.IsSquare() {
 		return nil, nil, 0, ErrNotSquareMatrix
 	}
+	if m.fieldOrder == nil {
+		return nil, nil, 0, ErrNonImplement
+	}
 	lower, err := newIdentityMatrix(m.numberRow, m.fieldOrder)
 	if err != nil {
 		return nil, nil, 0, err
@@ -381,9 +422,9 @@ func (m *Matrix) getGaussElimination() (*Matrix, *Matrix, int, error) {
 				return nil, nil, 0, err
 			}
 		}
-		inverse := upper.modInverse(i, i)
-		if inverse == nil {
-			return nil, nil, 0, ErrNotInvertableMatrix
+		inverse, err := upper.modInverse(i, i)
+		if err != nil {
+			return nil, nil, 0, err
 		}
 		for j := i + 1; j < m.numberRow; j++ {
 			tempValue := new(big.Int).Mul(upper.matrix[j][i], inverse)
@@ -430,6 +471,9 @@ func (m *Matrix) getNonZeroCoefficientByRow(columnIdx uint64, fromRowIndex uint6
 // GetMatrixRank returns the number of linearly independent column over finite field with order fieldOrder.
 // As give the index of rows of a matrix, this function will find nonzero value such that this value has the smallest index of rows.
 func (m *Matrix) GetMatrixRank(fieldOrder *big.Int) (uint64, error) {
+	if m.fieldOrder == nil {
+		return 0, ErrNonImplement
+	}
 	upper := m.Copy()
 	if upper.numberRow < upper.numberColumn {
 		upper = upper.Transpose()
@@ -449,9 +493,9 @@ func (m *Matrix) GetMatrixRank(fieldOrder *big.Int) (uint64, error) {
 				return 0, err
 			}
 		}
-		inverse := upper.modInverse(rank, i)
-		if inverse == nil {
-			return 0, ErrNotInvertableMatrix
+		inverse, err := upper.modInverse(rank, i)
+		if err != nil {
+			return 0, err
 		}
 		rowI, err := upper.GetRow(rank)
 		if err != nil {
@@ -478,9 +522,9 @@ func (m *Matrix) GetMatrixRank(fieldOrder *big.Int) (uint64, error) {
 func (m *Matrix) multiInverseDiagonal(diagonal *Matrix) (*Matrix, error) {
 	rank := m.numberRow
 	for i := uint64(0); i < rank; i++ {
-		inverse := diagonal.modInverse(i, i)
-		if inverse == nil {
-			return nil, ErrNotInvertableMatrix
+		inverse, err := diagonal.modInverse(i, i)
+		if err != nil {
+			return nil, err
 		}
 		for j := uint64(0); j < rank; j++ {
 			m.matrix[i][j].Mul(m.matrix[i][j], inverse)
@@ -553,7 +597,7 @@ func (m *Matrix) Pseudoinverse() (*Matrix, error) {
 	copyTranspose.Transpose()
 	copyTran := m.Copy()
 	copyTran.Transpose()
-	symmetricForm, err := copyTranspose.multiply(copy)
+	symmetricForm, err := copyTranspose.Multiply(copy)
 	if err != nil {
 		return nil, err
 	}
@@ -563,7 +607,7 @@ func (m *Matrix) Pseudoinverse() (*Matrix, error) {
 		return nil, err
 	}
 	// (m^t*m)^(-1)*m^t
-	result, err := inverseSymmetric.multiply(copyTran)
+	result, err := inverseSymmetric.Multiply(copyTran)
 	result.modulus()
 	if err != nil {
 		return nil, err
@@ -580,6 +624,16 @@ func (m *Matrix) Equal(m2 *Matrix) bool {
 	}
 	if m.numberColumn != m2.numberColumn {
 		return false
+	}
+	if m.fieldOrder == nil && m2.fieldOrder == nil {
+		for i, mm := range m.matrix {
+			for j := range mm {
+				if m.Get(uint64(i), uint64(j)).Cmp(m2.Get(uint64(i), uint64(j))) != 0 {
+					return false
+				}
+			}
+		}
+		return true
 	}
 	if m.fieldOrder.Cmp(m2.fieldOrder) != 0 {
 		return false
