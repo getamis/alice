@@ -39,7 +39,7 @@ coverage.txt:
 
 PHONY += unit-test
 unit-test: coverage.txt
-	@for d in $$(go list ./... | grep -v example | grep -v wasm); do		\
+	for d in $$(go list ./... | grep -v example | grep -v wasm | grep -v mocks | grep -v types); do		\
 		set -o pipefail;		\
 		go test -timeout $(GO_UNIT_TEST_TIMEOUT) -v -coverprofile=profile.out -covermode=$(GO_TEST_COVER_MODE) $$d 2>&1;	\
 		if [ $$? -eq 0 ]; then						\
