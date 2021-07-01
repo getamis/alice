@@ -20,8 +20,8 @@ import (
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/message"
-	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/internal/message"
+	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -54,7 +54,7 @@ func NewUserReshare(peerManager types.PeerManager, publicKey *ecpointgrouplaw.EC
 
 func (s *UserReshare) Start() {
 	s.MsgMain.Start()
-	tss.Broadcast(s.peerManager, s.ph.GetFirstMessage())
+	message.Broadcast(s.peerManager, s.ph.GetFirstMessage())
 }
 
 // GetResult returns the final result: public key, share, bks (including self bk)

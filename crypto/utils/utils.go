@@ -262,3 +262,14 @@ func HashProtos(salt []byte, msgs ...proto.Message) ([]byte, error) {
 	bs := blake2b.Sum256(inputData)
 	return bs[:], nil
 }
+
+// RandomInt generates a random number in [-n, n].
+func RandomAbsoluteRangeInt(n *big.Int) (*big.Int, error) {
+	nAdd1 := new(big.Int).Add(n, big1)
+	twicen := new(big.Int).Lsh(nAdd1, 1)
+	result, err := RandomPositiveInt(twicen)
+	if err != nil {
+		return nil, err
+	}
+	return result.Sub(result, n), nil
+}

@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tss
+package message
 
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/getamis/alice/crypto/tss/message/types"
-	"github.com/getamis/alice/crypto/tss/message/types/mocks"
+	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/internal/message/types/mocks"
 )
 
 var _ = Describe("Peer", func() {
@@ -59,6 +59,32 @@ var _ = Describe("Peer", func() {
 			mockMsg.On("GetId").Return(msgId).Once()
 			mockMsg.On("GetMessageType").Return(msgType).Once()
 			Expect(p.AddMessage(mockMsg)).Should(Equal(ErrDupMessage))
+		})
+	})
+
+	Context("Broadcast", func() {
+		var mockPeerManager *mocks.PeerManager
+
+		BeforeEach(func() {
+			mockPeerManager = new(mocks.PeerManager)
+		})
+
+		AfterEach(func() {
+			mockPeerManager.AssertExpectations(GinkgoT())
+		})
+
+		It("should be ok", func() {
+			peers := []string{
+				"peer-1",
+				"peer-2",
+				"peer-3",
+			}
+			msg := "message"
+			mockPeerManager.On("PeerIDs").Return(peers).Once()
+			for _, id := range peers {
+				mockPeerManager.On("MustSend", id, msg).Return(nil).Once()
+			}
+			Broadcast(mockPeerManager, msg)
 		})
 	})
 })

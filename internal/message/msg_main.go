@@ -17,9 +17,10 @@ package message
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 
-	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -94,7 +95,9 @@ func (t *MsgMain) GetFinalError() error {
 
 func (t *MsgMain) messageLoop(ctx context.Context) (err error) {
 	defer func() {
-		if err == nil {
+		if pErr := recover(); pErr != nil {
+			_ = t.setState(types.StateFailed, fmt.Errorf("panic: %v", pErr))
+		} else if err == nil {
 			_ = t.setState(types.StateDone, nil)
 		} else {
 			_ = t.setState(types.StateFailed, err)

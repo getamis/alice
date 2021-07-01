@@ -17,13 +17,8 @@ package tss
 import (
 	"errors"
 	"fmt"
-	"math/big"
 
-	"github.com/getamis/alice/crypto/birkhoffinterpolation"
-	"github.com/getamis/alice/crypto/commitment"
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/tss/message/types"
-	"github.com/getamis/sirius/log"
+	"github.com/getamis/alice/internal/message/types"
 )
 
 const (
@@ -47,61 +42,6 @@ var (
 	// ErrUnexpectedPublickey is returned if the public key is unexpected
 	ErrUnexpectedPublickey = errors.New("unexpected public key")
 )
-
-func NewCommitterByPoint(p *pt.ECPoint) (*commitment.HashCommitmenter, error) {
-	msg, err := p.ToEcPointMessage()
-	if err != nil {
-		log.Debug("Failed to convert to an ec point message", "err", err)
-		return nil, err
-	}
-
-	return commitment.NewProtoHashCommitmenter(msg)
-}
-
-func GetPointFromHashCommitment(logger log.Logger, commit *commitment.HashCommitmentMessage, decommit *commitment.HashDecommitmentMessage) (*pt.ECPoint, error) {
-	msg := &pt.EcPointMessage{}
-	err := commit.DecommitToProto(decommit, msg)
-	if err != nil {
-		logger.Debug("Failed to decommit message", "err", err)
-		return nil, err
-	}
-	point, err := msg.ToPoint()
-	if err != nil {
-		logger.Debug("Failed to convert to ec point", "err", err)
-		return nil, err
-	}
-	return point, nil
-}
-
-func ValidatePublicKey(logger log.Logger, bks birkhoffinterpolation.BkParameters, sgs []*pt.ECPoint, threshold uint32, pubkey *pt.ECPoint) error {
-	fieldOrder := pubkey.GetCurve().Params().N
-	scalars, err := bks.ComputeBkCoefficient(threshold, fieldOrder)
-	if err != nil {
-		logger.Debug("Failed to compute", "err", err)
-		return err
-	}
-	return ValidatePublicKeyWithBkCoefficients(logger, scalars, sgs, pubkey)
-}
-
-func ValidatePublicKeyWithBkCoefficients(logger log.Logger, scalars []*big.Int, sgs []*pt.ECPoint, pubkey *pt.ECPoint) error {
-	gotPub, err := pt.ComputeLinearCombinationPoint(scalars, sgs)
-	if err != nil {
-		logger.Debug("Failed to calculate public", "err", err)
-		return err
-	}
-	if !pubkey.Equal(gotPub) {
-		logger.Debug("Inconsistent public key", "got", gotPub, "expected", pubkey)
-		return ErrInconsistentPubKey
-	}
-	return nil
-}
-
-func Broadcast(peerManager types.PeerManager, message interface{}) {
-	peers := peerManager.PeerIDs()
-	for _, id := range peers {
-		peerManager.MustSend(id, message)
-	}
-}
 
 // ------------
 // Below funcs are for testing

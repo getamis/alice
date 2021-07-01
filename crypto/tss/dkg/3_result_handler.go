@@ -18,7 +18,7 @@ import (
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -95,5 +95,5 @@ func (p *resultHandler) Finalize(logger log.Logger) (types.Handler, error) {
 		sgs[i] = peer.result.result
 		i++
 	}
-	return nil, tss.ValidatePublicKey(logger, bks, sgs, p.threshold, p.publicKey)
+	return nil, bks.ValidatePublicKey(sgs, p.threshold, p.publicKey)
 }

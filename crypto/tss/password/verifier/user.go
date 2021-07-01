@@ -17,9 +17,8 @@ package verifier
 import (
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/message"
-	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/internal/message"
+	"github.com/getamis/alice/internal/message/types"
 )
 
 type UserVerifier struct {
@@ -45,5 +44,5 @@ func NewUserVerifier(peerManager types.PeerManager, publicKey *ecpointgrouplaw.E
 
 func (s *UserVerifier) Start() {
 	s.MsgMain.Start()
-	tss.Broadcast(s.peerManager, s.ph.GetFirstMessage())
+	message.Broadcast(s.peerManager, s.ph.GetFirstMessage())
 }

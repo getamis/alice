@@ -17,7 +17,7 @@ package verifier
 import (
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -61,7 +61,7 @@ func (p *userHandler1) HandleMessage(logger log.Logger, message types.Message) e
 	// Ensure public key consistent
 	sG := p.serverGVerifier.GetV()
 	self := p.peers[p.peerManager.SelfID()]
-	err := validatePubKey(logger, peer.bkCoefficient, sG, self.bkCoefficient, ecpointgrouplaw.ScalarBaseMult(p.curve, p.share), p.publicKey)
+	err := validatePubKey(peer.bkCoefficient, sG, self.bkCoefficient, ecpointgrouplaw.ScalarBaseMult(p.curve, p.share), p.publicKey)
 	if err != nil {
 		return tss.ErrUnexpectedPublickey
 	}

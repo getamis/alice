@@ -18,8 +18,9 @@ import (
 	"math/big"
 
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/zkproof"
+	"github.com/getamis/alice/internal/message"
+	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -95,7 +96,7 @@ func (p *verifyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 
 	msg := p.getResultMessage()
-	tss.Broadcast(p.peerManager, msg)
+	message.Broadcast(p.peerManager, msg)
 	return newResultHandler(p), nil
 }
 

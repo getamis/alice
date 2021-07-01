@@ -24,8 +24,8 @@ import (
 	"github.com/getamis/alice/crypto/oprf"
 	"github.com/getamis/alice/crypto/polynomial"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/zkproof"
+	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -220,8 +220,8 @@ func buildPeers(selfId string, fieldOrder *big.Int, bks map[string]*birkhoffinte
 	return peerMaps, nil
 }
 
-func validatePubKey(logger log.Logger, serverCo *big.Int, serverShareG *ecpointgrouplaw.ECPoint, userCo *big.Int, userShareG *ecpointgrouplaw.ECPoint, pubkey *ecpointgrouplaw.ECPoint) error {
-	return tss.ValidatePublicKeyWithBkCoefficients(logger, []*big.Int{
+func validatePubKey(serverCo *big.Int, serverShareG *ecpointgrouplaw.ECPoint, userCo *big.Int, userShareG *ecpointgrouplaw.ECPoint, pubkey *ecpointgrouplaw.ECPoint) error {
+	return birkhoffinterpolation.ValidatePublicKeyWithBkCoefficients([]*big.Int{
 		serverCo,
 		userCo,
 	}, []*ecpointgrouplaw.ECPoint{

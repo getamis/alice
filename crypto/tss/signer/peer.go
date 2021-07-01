@@ -15,11 +15,11 @@
 package signer
 
 import (
-	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/internal/message"
 )
 
 type peer struct {
-	*tss.Peer
+	*message.Peer
 	pubkey       *pubkeyData
 	enck         *encKData
 	mta          *mtaData
@@ -34,6 +34,6 @@ type peer struct {
 
 func newPeer(id string) *peer {
 	return &peer{
-		Peer: tss.NewPeer(id),
+		Peer: message.NewPeer(id),
 	}
 }

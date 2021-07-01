@@ -45,12 +45,6 @@ var _ = Describe("Matrix test", func() {
 			}
 		})
 
-		It("nil field order", func() {
-			m, err := NewMatrix(nil, ma)
-			Expect(err).Should(Equal(ErrNonPrimeFieldOrder))
-			Expect(m).Should(BeNil())
-		})
-
 		It("nil matrix", func() {
 			m, err := NewMatrix(fieldOrder, nil)
 			Expect(err).Should(Equal(ErrZeroRows))
@@ -177,7 +171,7 @@ var _ = Describe("Matrix test", func() {
 		})
 	})
 
-	Context("multiply()", func() {
+	Context("Multiply()", func() {
 		DescribeTable("should be ok", func(a [][]*big.Int, b [][]*big.Int, expected [][]*big.Int) {
 			matrixA, err := NewMatrix(fieldOrder, a)
 			Expect(err).Should(BeNil())
@@ -185,7 +179,7 @@ var _ = Describe("Matrix test", func() {
 			matrixB, err := NewMatrix(fieldOrder, b)
 			Expect(err).Should(BeNil())
 
-			got, err := matrixA.multiply(matrixB)
+			got, err := matrixA.Multiply(matrixB)
 			Expect(err).Should(BeNil())
 			Expect(got.GetMatrix()).Should(Equal(expected))
 		},
@@ -452,7 +446,7 @@ var _ = Describe("Matrix test", func() {
 			})
 			Expect(err).Should(BeNil())
 
-			expected, err := inverseDiagonal.multiply(original)
+			expected, err := inverseDiagonal.Multiply(original)
 			Expect(err).Should(BeNil())
 			Expect(got.Equal(expected)).Should(BeTrue())
 		})
@@ -467,7 +461,8 @@ var _ = Describe("Matrix test", func() {
 			})
 			Expect(err).Should(BeNil())
 			Expect(m).ShouldNot(BeNil())
-			got := m.modInverse(1, 2)
+			got, err := m.modInverse(1, 2)
+			Expect(err).Should(BeNil())
 			expected := new(big.Int).ModInverse(big.NewInt(5), bigFieldOrder)
 			Expect(got.Cmp(expected)).Should(BeZero())
 		})

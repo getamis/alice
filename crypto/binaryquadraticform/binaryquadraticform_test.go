@@ -238,6 +238,22 @@ var _ = Describe("binary quadratic", func() {
 		),
 	)
 
+	Context("Exp()", func() {
+		It("Neg power", func() {
+			bq, err := NewBQuadraticForm(big.NewInt(101), big.NewInt(38), big.NewInt(4898))
+			positivePower := big.NewInt(10)
+			negPower := big.NewInt(-10)
+			bqPositive, err := bq.Exp(positivePower)
+			Expect(err).Should(BeNil())
+			bqNegtive, err := bq.Exp(negPower)
+			Expect(err).Should(BeNil())
+			got, err := bqPositive.Composition(bqNegtive)
+			Expect(err).Should(BeNil())
+			expected := bq.Identity()
+			Expect(got).Should(Equal(expected))
+		})
+	})
+
 	Context("Get()", func() {
 		It("Geta", func() {
 			a := big.NewInt(101)

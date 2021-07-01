@@ -22,7 +22,8 @@ import (
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/oprf"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/internal/message"
+	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -118,7 +119,7 @@ func (p *passwordUserHandler) Finalize(logger log.Logger) (types.Handler, error)
 		logger.Debug("Failed to new pubkey handler", "err", err)
 		return nil, err
 	}
-	tss.Broadcast(p.peerManager, p.pubkeyHandler.GetFirstMessage())
+	message.Broadcast(p.peerManager, p.pubkeyHandler.GetFirstMessage())
 	return p.pubkeyHandler, nil
 }
 

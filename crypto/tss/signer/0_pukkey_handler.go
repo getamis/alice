@@ -25,7 +25,8 @@ import (
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/mta"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/internal/message"
+	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -72,7 +73,7 @@ func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo
 	// Build committer for ag
 	// bit length / 8(to bytes) * 2(x and y point)
 	p := aiMta.GetAG(curve)
-	agCommitmenter, err := tss.NewCommitterByPoint(p)
+	agCommitmenter, err := commitment.NewCommitterByPoint(p)
 	if err != nil {
 		log.Debug("Failed to new an ag hash commiter", "err", err)
 		return nil, err
@@ -142,7 +143,7 @@ func (p *pubkeyHandler) HandleMessage(logger log.Logger, message types.Message) 
 
 func (p *pubkeyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	msg := p.getEnckMessage()
-	tss.Broadcast(p.peerManager, msg)
+	message.Broadcast(p.peerManager, msg)
 	return newEncKHandler(p)
 }
 

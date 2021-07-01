@@ -21,9 +21,10 @@ import (
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/addshare"
-	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/crypto/zkproof"
+	"github.com/getamis/alice/internal/message"
+	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -103,7 +104,7 @@ func (r *resultHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	// sgs = old peer siG + new siG
 	bks := append(r.bks, r.bk)
 	sgs := append(r.sgs, siG)
-	err := tss.ValidatePublicKey(logger, bks, sgs, r.threshold, r.pubkey)
+	err := bks.ValidatePublicKey(sgs, r.threshold, r.pubkey)
 	if err != nil {
 		return nil, err
 	}
@@ -123,6 +124,6 @@ func (r *resultHandler) Finalize(logger log.Logger) (types.Handler, error) {
 			},
 		},
 	}
-	tss.Broadcast(r.peerManager, msg)
+	message.Broadcast(r.peerManager, msg)
 	return nil, nil
 }

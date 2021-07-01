@@ -21,7 +21,7 @@ import (
 	"github.com/getamis/alice/crypto/commitment"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -101,7 +101,7 @@ func (p *serverHandler3) HandleMessage(logger log.Logger, message types.Message)
 	p.newShare = new(big.Int).Mod(new(big.Int).Add(evaluation, p.newShare), n)
 
 	// Validate consistent public key
-	err = validatePubKey(logger, self.bkCoefficient, ecpointgrouplaw.ScalarBaseMult(p.curve, p.newShare), peer.bkCoefficient, p.newShareGVerifier.GetV(), p.publicKey)
+	err = validatePubKey(self.bkCoefficient, ecpointgrouplaw.ScalarBaseMult(p.curve, p.newShare), peer.bkCoefficient, p.newShareGVerifier.GetV(), p.publicKey)
 	if err != nil {
 		return err
 	}

@@ -19,8 +19,8 @@ import (
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/addshare"
-	"github.com/getamis/alice/crypto/tss/message/types"
 	"github.com/getamis/alice/crypto/zkproof"
+	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -105,5 +105,5 @@ func (p *verifyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	sgs[i] = p.newPeer.verify.siG
 	bks[i] = p.newPeer.peer.bk
 
-	return nil, tss.ValidatePublicKey(logger, bks, sgs, p.threshold, p.pubkey)
+	return nil, bks.ValidatePublicKey(sgs, p.threshold, p.pubkey)
 }

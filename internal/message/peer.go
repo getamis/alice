@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tss
+package message
 
 import (
 	"errors"
 
-	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/internal/message/types"
 )
 
 var (
@@ -52,4 +52,11 @@ func (p *Peer) AddMessage(msg types.Message) error {
 
 func (p *Peer) GetMessage(t types.MessageType) types.Message {
 	return p.Messages[t]
+}
+
+func Broadcast(peerManager types.PeerManager, message interface{}) {
+	peers := peerManager.PeerIDs()
+	for _, id := range peers {
+		peerManager.MustSend(id, message)
+	}
 }

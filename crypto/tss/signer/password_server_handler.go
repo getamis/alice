@@ -26,7 +26,8 @@ import (
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/oprf"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/internal/message"
+	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -137,7 +138,7 @@ func (p *passwordServerHandler) HandleMessage(logger log.Logger, message types.M
 }
 
 func (p *passwordServerHandler) Finalize(logger log.Logger) (types.Handler, error) {
-	tss.Broadcast(p.peerManager, p.pubkeyHandler.GetFirstMessage())
+	message.Broadcast(p.peerManager, p.pubkeyHandler.GetFirstMessage())
 	return p.pubkeyHandler, nil
 }
 

@@ -21,8 +21,8 @@ import (
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/message"
-	"github.com/getamis/alice/crypto/tss/message/types"
+	"github.com/getamis/alice/internal/message"
+	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
@@ -123,7 +123,7 @@ func (s *Signer) Start() {
 
 	msg := s.ph.GetFirstMessage()
 	if msg != nil {
-		tss.Broadcast(s.peerManager, msg)
+		message.Broadcast(s.peerManager, msg)
 	}
 }
 
