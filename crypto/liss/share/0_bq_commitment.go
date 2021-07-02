@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package liss
+package share
 
 import (
 	"errors"
@@ -20,6 +20,7 @@ import (
 
 	bqForm "github.com/getamis/alice/crypto/binaryquadraticform"
 	"github.com/getamis/alice/crypto/homo/cl"
+	"github.com/getamis/alice/crypto/liss"
 	"github.com/getamis/alice/crypto/matrix"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/utils"
@@ -33,20 +34,21 @@ const (
 	DISTRIBUTEDDISTANCE = 40
 	bigrange            = uint(2)
 	distanceDist        = uint(2)
+	safeParameter       = 1348
 )
 
 var (
 	secp256k1N, _  = new(big.Int).SetString("115792089237316195423570985008687907852837564279074904382605163141518161494337", 10)
-	safeParameter  = 1348
+	big1           = big.NewInt(1)
 	bit256         = new(big.Int).Lsh(big1, 256)
-	clParameter, _ = cl.NewCLBaseParameter(big.NewInt(1024), D, secp256k1N, safeParameter, DISTRIBUTEDDISTANCE)
+	ClParameter, _ = cl.NewCLBaseParameter(big.NewInt(1024), D, secp256k1N, safeParameter, DISTRIBUTEDDISTANCE)
 
 	//ErrFailedVerify is returned if we verify failed
 	ErrFailedVerify = errors.New("failed verify")
 )
 
 type bqCommitmentHandler struct {
-	configs          GroupConfigs
+	configs          liss.GroupConfigs
 	configsMatrix    *matrix.Matrix
 	salts            [][]byte
 	exponential      []*bqForm.BQuadraticForm
@@ -62,13 +64,13 @@ type bqCommitmentHandler struct {
 	peerNum uint32
 }
 
-func newBqCommitmentHandler(peerManager types.PeerManager, configs GroupConfigs) (*bqCommitmentHandler, error) {
+func newBqCommitmentHandler(peerManager types.PeerManager, configs liss.GroupConfigs) (*bqCommitmentHandler, error) {
 	// Randomly choose random value
-	randomValue, m, err := configs.generateRandomValue(bigrange, distanceDist)
+	randomValue, m, err := configs.GenerateRandomValue(bigrange, distanceDist)
 	if err != nil {
 		return nil, err
 	}
-	g := clParameter.GetG()
+	g := ClParameter.GetG()
 	exponential := make([]*bqForm.BQuadraticForm, randomValue.GetNumberRow())
 	for i := 0; i < len(exponential); i++ {
 		exponential[i], err = g.Exp(randomValue.Get(uint64(i), 0))

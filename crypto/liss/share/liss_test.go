@@ -11,12 +11,13 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package liss
+package share
 
 import (
 	"math/big"
 	"testing"
 
+	"github.com/getamis/alice/crypto/liss"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/alice/internal/message/types/mocks"
@@ -30,7 +31,7 @@ var _ = Describe("liss test", func() {
 		threshold := 2
 		totalParticipant := 3
 
-		lisses, listeners := newLiss([]*GroupConfig{
+		lisses, listeners := newLiss([]*liss.GroupConfig{
 			{
 				Users:     totalParticipant,
 				Threshold: threshold,
@@ -63,21 +64,6 @@ var _ = Describe("liss test", func() {
 			l.AssertExpectations(GinkgoT())
 		}
 
-		// Verification
-		// partialShare1 := make([]map[string]*big.Int, len(partialShareMsg1))
-		// commitmentM1 := make([]map[string]*bqForm.BQuadraticForm, len(partialShareMsg1))
-		// for i := 0; i < len(partialShare1); i++ {
-		// 	partialShare1[i] = partialShareMsg1[i].PartailInfo.ToMap()
-		// 	commitmentM1[i], err = partialShareMsg1[i].ShareCommitMsg.ToMap()
-		// 	Expect(err).Should(BeNil())
-		// }
-		// partialShare2 := make([]map[string]*big.Int, len(partialShareMsg2))
-		// commitmentM2 := make([]map[string]*bqForm.BQuadraticForm, len(partialShareMsg2))
-		// for i := 0; i < len(partialShare2); i++ {
-		// 	partialShare2[i] = partialShareMsg2[i].PartailInfo.ToMap()
-		// 	commitmentM2[i], err = partialShareMsg2[i].ShareCommitMsg.ToMap()
-		// 	Expect(err).Should(BeNil())
-		// }
 		r0, err := lisses["id-0"].GetResult()
 		Expect(err).Should(BeNil())
 		r1, err := lisses["id-1"].GetResult()
@@ -89,7 +75,7 @@ var _ = Describe("liss test", func() {
 					other := r1.Users[group][i][k]
 					Expect(v.Bq).Should(Equal(other.Bq))
 					s := new(big.Int).Add(v.Share, other.Share)
-					got, err := clParameter.GetG().Exp(s)
+					got, err := ClParameter.GetG().Exp(s)
 					Expect(err).Should(BeNil())
 					Expect(got).Should(Equal(v.Bq))
 				}
@@ -98,12 +84,12 @@ var _ = Describe("liss test", func() {
 	})
 })
 
-func TestLiss(t *testing.T) {
+func TestShare(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Liss Test")
+	RunSpecs(t, "Share Test")
 }
 
-func newLiss(configs GroupConfigs) (map[string]*Liss, map[string]*mocks.StateChangedListener) {
+func newLiss(configs liss.GroupConfigs) (map[string]*Liss, map[string]*mocks.StateChangedListener) {
 	lens := len(configs)
 	lisses := make(map[string]*Liss, lens)
 	lissesMain := make(map[string]types.MessageMain, lens)

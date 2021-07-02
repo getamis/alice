@@ -15,6 +15,7 @@ package liss
 
 import (
 	"math/big"
+	"testing"
 
 	"github.com/getamis/alice/crypto/matrix"
 	. "github.com/onsi/ginkgo"
@@ -159,3 +160,8 @@ var _ = Describe("group config test", func() {
 		}),
 	)
 })
+
+func TestLiss(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Liss Test")
+}

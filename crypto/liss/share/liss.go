@@ -12,14 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package liss
+package share
 
 import (
 	"errors"
-	"math/big"
 
-	bqForm "github.com/getamis/alice/crypto/binaryquadraticform"
-	"github.com/getamis/alice/crypto/homo/cl"
+	"github.com/getamis/alice/crypto/liss"
 	"github.com/getamis/alice/internal/message"
 	"github.com/getamis/alice/internal/message/types"
 )
@@ -33,24 +31,13 @@ var (
 	}
 )
 
-type Result struct {
-	PublicKey *cl.PublicKey
-	// Per group, per user
-	Users [][]map[string]*UserResult
-}
-
-type UserResult struct {
-	Bq    *bqForm.BQuadraticForm
-	Share *big.Int
-}
-
 type Liss struct {
 	*message.MsgMain
 
 	ih *bqCommitmentHandler
 }
 
-func NewLiss(peerManager types.PeerManager, configs GroupConfigs, listener types.StateChangedListener) (*Liss, error) {
+func NewLiss(peerManager types.PeerManager, configs liss.GroupConfigs, listener types.StateChangedListener) (*Liss, error) {
 	numPeers := peerManager.NumPeers()
 	ih, err := newBqCommitmentHandler(peerManager, configs)
 	if err != nil {
@@ -83,13 +70,13 @@ func (m *Liss) GetResult() (*Result, error) {
 		return nil, ErrNotReady
 	}
 
-	users := make([][]map[string]*UserResult, len(rh.configs))
+	users := make([][]map[string]*UserShare, len(rh.configs))
 	for i, config := range rh.configs {
-		users[i] = make([]map[string]*UserResult, config.Users)
+		users[i] = make([]map[string]*UserShare, config.Users)
 		for j := 0; j < config.Users; j++ {
-			users[i][j] = make(map[string]*UserResult)
+			users[i][j] = make(map[string]*UserShare)
 			for k := range rh.shares[i][j] {
-				users[i][j][k] = &UserResult{
+				users[i][j][k] = &UserShare{
 					Share: rh.shares[i][j][k],
 					Bq:    rh.shareCommitments[i][j][k],
 				}

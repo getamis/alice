@@ -16,6 +16,7 @@ package liss
 import (
 	"math/big"
 
+	"github.com/getamis/alice/crypto/homo/cl"
 	"github.com/getamis/alice/crypto/matrix"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -23,6 +24,10 @@ import (
 )
 
 var _ = Describe("group configs test", func() {
+	var (
+		secp256k1N, _  = new(big.Int).SetString("115792089237316195423570985008687907852837564279074904382605163141518161494337", 10)
+		clParameter, _ = cl.NewCLBaseParameter(big.NewInt(1024), 40, secp256k1N, 1348, 40)
+	)
 	DescribeTable("generateMatrix()", func(threshold int, totalParticipant int, exptected [][]*big.Int) {
 		var groups GroupConfigs = make([]*GroupConfig, 2)
 		var err error
@@ -51,7 +56,7 @@ var _ = Describe("group configs test", func() {
 		Expect(err).Should(BeNil())
 		groups[1], err = NewGroup(totalParticipant, threshold)
 		Expect(err).Should(BeNil())
-		randomValueMatrix, organizationMatrix, err := groups.generateRandomValue(2, 3)
+		randomValueMatrix, organizationMatrix, err := groups.GenerateRandomValue(2, 3)
 		Expect(err).Should(BeNil())
 		_, _, err = groups.GenerateShares(clParameter.GetG(), randomValueMatrix, organizationMatrix)
 		Expect(err).Should(BeNil())

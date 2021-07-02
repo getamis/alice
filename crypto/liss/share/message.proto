@@ -1,4 +1,4 @@
-// Copyright © 2020 AMIS Technologies
+// Copyright © 2021 AMIS Technologies
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,12 +14,11 @@
 
 syntax = "proto3";
 
-package liss;
+package share;
 
-option go_package = "github.com/getamis/alice/crypto/liss";
+option go_package = "github.com/getamis/alice/crypto/liss/share";
 
 import "github.com/getamis/alice/crypto/binaryquadraticform/message.proto";
-import "github.com/getamis/alice/crypto/homo/cl/message.proto";
 
 enum Type {
     BqCommitment = 0;
@@ -48,25 +47,3 @@ message bqDecommit {
     bytes salt = 1;
     binaryquadraticform.BQForm bqform =2;
 }
-
-// message bqFormCommitmentMessage {
-//     bytes commitment = 1;
-// }
-
-
-// message partialShareMessage {
-//     repeated string markIndex = 1;
-//     repeated string partialShare = 2;
-// }
-
-// message shareCommitMessage {
-//     repeated string markIndex = 1;
-//     repeated binaryquadraticform.BQForm shareCommit = 2;
-// }
-
-// message shareMessage {
-//     partialShareMessage partailInfo = 1;
-//     shareCommitMessage shareCommitMsg = 2;
-//     cl.PubKeyMessage pubKeyMsg =3;
-//     int32 serialNumber =4;
-// }
