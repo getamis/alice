@@ -123,13 +123,13 @@ var _ = Describe("liss test", func() {
 		}
 
 		// Aggregate shares
-		agg, err := NewAggregator(threshold, configs, tssPubKey, pubKey, Rx, message, proofs)
+		agg, err := NewAggregator(configs, tssPubKey, pubKey, Rx, message, proofs)
 		Expect(err).Should(BeNil())
 		users := make([][]*User, len(userResults))
 		for i := 0; i < len(userResults); i++ {
 			users[i] = make([]*User, len(userResults[i]))
 			for j := 0; j < len(userResults[i]); j++ {
-				users[i][j], err = NewUser(threshold, tssPubKey, pubKey, Rx, message, proofs, userResults[i][j])
+				users[i][j], err = NewUser(tssPubKey, pubKey, Rx, message, proofs, userResults[i][j])
 				Expect(err).Should(BeNil())
 				approve, err := users[i][j].Approve()
 				Expect(err).Should(BeNil())

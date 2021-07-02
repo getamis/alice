@@ -62,9 +62,9 @@ func (m *Result) GetUserResult(groupIndex int, userIndex int) *UserResult {
 	}
 }
 
-//When user got share messages, use the to combine them
+// ComineShares combines shares for users
 func ComineShares(config *liss.GroupConfig, userIndex int, shares []*UserResult) (*UserResult, error) {
-	// Ensure all keys exists
+	// Ensure all keys exist
 	for _, s := range shares {
 		if !config.CheckKeys(userIndex, s.Shares) {
 			return nil, ErrNotEnoughKeys

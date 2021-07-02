@@ -39,7 +39,6 @@ var (
 )
 
 type Aggregator struct {
-	signUsers    int
 	groups       []*Group
 	tssPublicKey *pt.ECPoint
 	clPubKey     *cl.PublicKey
@@ -49,7 +48,7 @@ type Aggregator struct {
 	c2           *bqForm.BQuadraticForm
 }
 
-func NewAggregator(signUsers int, configs liss.GroupConfigs, tssPublicKey *pt.ECPoint, clPubKey *cl.PublicKey, r *big.Int, m *big.Int, proofs []*cl.ConsistencyProofMessage) (*Aggregator, error) {
+func NewAggregator(configs liss.GroupConfigs, tssPublicKey *pt.ECPoint, clPubKey *cl.PublicKey, r *big.Int, m *big.Int, proofs []*cl.ConsistencyProofMessage) (*Aggregator, error) {
 	if err := verifyProof(clPubKey, r, proofs); err != nil {
 		return nil, err
 	}
@@ -61,7 +60,6 @@ func NewAggregator(signUsers int, configs liss.GroupConfigs, tssPublicKey *pt.EC
 		}
 	}
 	agg := &Aggregator{
-		signUsers:    signUsers,
 		groups:       groups,
 		tssPublicKey: tssPublicKey,
 		clPubKey:     clPubKey,
@@ -153,7 +151,7 @@ func (agg *Aggregator) GetS() (*big.Int, error) {
 	return result, nil
 }
 
-// check: r = Rx, check consistency proof and R is not trivial.
+// Check: r = Rx, consistency proof, and R is not trivial.
 func verifyProof(clPubKey *cl.PublicKey, r *big.Int, proofMsg []*cl.ConsistencyProofMessage) error {
 	var err error
 	for i := 0; i < len(proofMsg); i++ {

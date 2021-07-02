@@ -30,7 +30,6 @@ var (
 )
 
 type User struct {
-	signUsers    int
 	tssPublicKey *pt.ECPoint
 	clPubKey     *cl.PublicKey
 	r            *big.Int // signature: r
@@ -42,12 +41,11 @@ type User struct {
 
 // If you have the following data, then you can use the following constructor
 // shares = dealer's share + server's share
-func NewUser(signUsers int, tssPublicKey *pt.ECPoint, clPubKey *cl.PublicKey, r *big.Int, m *big.Int, proofs []*cl.ConsistencyProofMessage, shares *share.UserResult) (*User, error) {
+func NewUser(tssPublicKey *pt.ECPoint, clPubKey *cl.PublicKey, r *big.Int, m *big.Int, proofs []*cl.ConsistencyProofMessage, shares *share.UserResult) (*User, error) {
 	if err := verifyProof(clPubKey, r, proofs); err != nil {
 		return nil, err
 	}
 	u := &User{
-		signUsers:    signUsers,
 		tssPublicKey: tssPublicKey,
 		clPubKey:     clPubKey,
 		m:            m,

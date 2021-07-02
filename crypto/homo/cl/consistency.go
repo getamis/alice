@@ -39,7 +39,7 @@ import (
 	Step 1: The prover
 	- randomly chooses two integers r1 in [0, 2^{d}*A*C-1] and r2 in [0, p-1].
 	- computes t1=g^{r1}, t2=h^{r1}f^{r2} and T =r2*R.
-	- computes k:=H(t1, t2, g, f, h, p, T, Q, R, A, C) mod C. Here H is a cryptography hash function.
+	- computes k:=H(t1, t2, g, f, h, p, Q, R, T, A, C) mod C. Here H is a cryptography hash function.
 	- computes u1:=r1+kr in Z and u2:=r2+kx mod p. Here Z is the ring of integer. The resulting proof is (u1, u2, t1, t2, c1, c2, T, Q).
 	Step 2: The verifier verifies
 	- u1 in [0, (2^{d}+1)AC).
@@ -120,7 +120,7 @@ func (pubKey *PublicKey) buildProofWithPointQ(plainText *big.Int, r *big.Int, Q,
 		return nil, err
 	}
 
-	// k:=H(t1, t2, g, f, h, p, T, Q, G, A, C) mod C
+	// k:=H(t1, t2, g, f, h, p, Q, R, T, A, C) mod C
 	// In our application C = 2^40.
 	// The distribution E := { x| k mod C } is also the uniform distribution in [0,2^40-1]=[0,c-1].
 	k, salt, err := utils.HashProtosRejectSampling(big256bit, &HashConsistencyProof{
