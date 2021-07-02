@@ -455,6 +455,299 @@ func (x *Hash) GetC() []byte {
 	return nil
 }
 
+type HashConsistencyProof struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	T1 *binaryquadraticform.BQForm     `protobuf:"bytes,1,opt,name=t1,proto3" json:"t1,omitempty"`
+	T2 *binaryquadraticform.BQForm     `protobuf:"bytes,2,opt,name=t2,proto3" json:"t2,omitempty"`
+	G  *binaryquadraticform.BQForm     `protobuf:"bytes,3,opt,name=g,proto3" json:"g,omitempty"`
+	F  *binaryquadraticform.BQForm     `protobuf:"bytes,4,opt,name=f,proto3" json:"f,omitempty"`
+	H  *binaryquadraticform.BQForm     `protobuf:"bytes,5,opt,name=h,proto3" json:"h,omitempty"`
+	P  []byte                          `protobuf:"bytes,6,opt,name=p,proto3" json:"p,omitempty"`
+	Q  *ecpointgrouplaw.EcPointMessage `protobuf:"bytes,7,opt,name=q,proto3" json:"q,omitempty"`
+	R  *ecpointgrouplaw.EcPointMessage `protobuf:"bytes,8,opt,name=r,proto3" json:"r,omitempty"`
+	T  *ecpointgrouplaw.EcPointMessage `protobuf:"bytes,9,opt,name=t,proto3" json:"t,omitempty"`
+	A  []byte                          `protobuf:"bytes,10,opt,name=a,proto3" json:"a,omitempty"`
+	C  []byte                          `protobuf:"bytes,11,opt,name=c,proto3" json:"c,omitempty"`
+}
+
+func (x *HashConsistencyProof) Reset() {
+	*x = HashConsistencyProof{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_getamis_alice_crypto_homo_cl_message_proto_msgTypes[5]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *HashConsistencyProof) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HashConsistencyProof) ProtoMessage() {}
+
+func (x *HashConsistencyProof) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_getamis_alice_crypto_homo_cl_message_proto_msgTypes[5]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HashConsistencyProof.ProtoReflect.Descriptor instead.
+func (*HashConsistencyProof) Descriptor() ([]byte, []int) {
+	return file_github_com_getamis_alice_crypto_homo_cl_message_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *HashConsistencyProof) GetT1() *binaryquadraticform.BQForm {
+	if x != nil {
+		return x.T1
+	}
+	return nil
+}
+
+func (x *HashConsistencyProof) GetT2() *binaryquadraticform.BQForm {
+	if x != nil {
+		return x.T2
+	}
+	return nil
+}
+
+func (x *HashConsistencyProof) GetG() *binaryquadraticform.BQForm {
+	if x != nil {
+		return x.G
+	}
+	return nil
+}
+
+func (x *HashConsistencyProof) GetF() *binaryquadraticform.BQForm {
+	if x != nil {
+		return x.F
+	}
+	return nil
+}
+
+func (x *HashConsistencyProof) GetH() *binaryquadraticform.BQForm {
+	if x != nil {
+		return x.H
+	}
+	return nil
+}
+
+func (x *HashConsistencyProof) GetP() []byte {
+	if x != nil {
+		return x.P
+	}
+	return nil
+}
+
+func (x *HashConsistencyProof) GetQ() *ecpointgrouplaw.EcPointMessage {
+	if x != nil {
+		return x.Q
+	}
+	return nil
+}
+
+func (x *HashConsistencyProof) GetR() *ecpointgrouplaw.EcPointMessage {
+	if x != nil {
+		return x.R
+	}
+	return nil
+}
+
+func (x *HashConsistencyProof) GetT() *ecpointgrouplaw.EcPointMessage {
+	if x != nil {
+		return x.T
+	}
+	return nil
+}
+
+func (x *HashConsistencyProof) GetA() []byte {
+	if x != nil {
+		return x.A
+	}
+	return nil
+}
+
+func (x *HashConsistencyProof) GetC() []byte {
+	if x != nil {
+		return x.C
+	}
+	return nil
+}
+
+type VerifyHashConsistencyProof struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Salt []byte                          `protobuf:"bytes,1,opt,name=salt,proto3" json:"salt,omitempty"`
+	U1   []byte                          `protobuf:"bytes,2,opt,name=u1,proto3" json:"u1,omitempty"`
+	U2   []byte                          `protobuf:"bytes,3,opt,name=u2,proto3" json:"u2,omitempty"`
+	T1   *binaryquadraticform.BQForm     `protobuf:"bytes,4,opt,name=t1,proto3" json:"t1,omitempty"`
+	T2   *binaryquadraticform.BQForm     `protobuf:"bytes,5,opt,name=t2,proto3" json:"t2,omitempty"`
+	Q    *ecpointgrouplaw.EcPointMessage `protobuf:"bytes,6,opt,name=q,proto3" json:"q,omitempty"`
+	T    *ecpointgrouplaw.EcPointMessage `protobuf:"bytes,7,opt,name=t,proto3" json:"t,omitempty"`
+}
+
+func (x *VerifyHashConsistencyProof) Reset() {
+	*x = VerifyHashConsistencyProof{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_getamis_alice_crypto_homo_cl_message_proto_msgTypes[6]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *VerifyHashConsistencyProof) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifyHashConsistencyProof) ProtoMessage() {}
+
+func (x *VerifyHashConsistencyProof) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_getamis_alice_crypto_homo_cl_message_proto_msgTypes[6]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifyHashConsistencyProof.ProtoReflect.Descriptor instead.
+func (*VerifyHashConsistencyProof) Descriptor() ([]byte, []int) {
+	return file_github_com_getamis_alice_crypto_homo_cl_message_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *VerifyHashConsistencyProof) GetSalt() []byte {
+	if x != nil {
+		return x.Salt
+	}
+	return nil
+}
+
+func (x *VerifyHashConsistencyProof) GetU1() []byte {
+	if x != nil {
+		return x.U1
+	}
+	return nil
+}
+
+func (x *VerifyHashConsistencyProof) GetU2() []byte {
+	if x != nil {
+		return x.U2
+	}
+	return nil
+}
+
+func (x *VerifyHashConsistencyProof) GetT1() *binaryquadraticform.BQForm {
+	if x != nil {
+		return x.T1
+	}
+	return nil
+}
+
+func (x *VerifyHashConsistencyProof) GetT2() *binaryquadraticform.BQForm {
+	if x != nil {
+		return x.T2
+	}
+	return nil
+}
+
+func (x *VerifyHashConsistencyProof) GetQ() *ecpointgrouplaw.EcPointMessage {
+	if x != nil {
+		return x.Q
+	}
+	return nil
+}
+
+func (x *VerifyHashConsistencyProof) GetT() *ecpointgrouplaw.EcPointMessage {
+	if x != nil {
+		return x.T
+	}
+	return nil
+}
+
+type ConsistencyProofMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	C1    *binaryquadraticform.BQForm     `protobuf:"bytes,1,opt,name=c1,proto3" json:"c1,omitempty"`
+	C2    *binaryquadraticform.BQForm     `protobuf:"bytes,2,opt,name=c2,proto3" json:"c2,omitempty"`
+	Proof *VerifyHashConsistencyProof     `protobuf:"bytes,3,opt,name=proof,proto3" json:"proof,omitempty"`
+	R     *ecpointgrouplaw.EcPointMessage `protobuf:"bytes,4,opt,name=r,proto3" json:"r,omitempty"`
+}
+
+func (x *ConsistencyProofMessage) Reset() {
+	*x = ConsistencyProofMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_getamis_alice_crypto_homo_cl_message_proto_msgTypes[7]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ConsistencyProofMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConsistencyProofMessage) ProtoMessage() {}
+
+func (x *ConsistencyProofMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_getamis_alice_crypto_homo_cl_message_proto_msgTypes[7]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConsistencyProofMessage.ProtoReflect.Descriptor instead.
+func (*ConsistencyProofMessage) Descriptor() ([]byte, []int) {
+	return file_github_com_getamis_alice_crypto_homo_cl_message_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *ConsistencyProofMessage) GetC1() *binaryquadraticform.BQForm {
+	if x != nil {
+		return x.C1
+	}
+	return nil
+}
+
+func (x *ConsistencyProofMessage) GetC2() *binaryquadraticform.BQForm {
+	if x != nil {
+		return x.C2
+	}
+	return nil
+}
+
+func (x *ConsistencyProofMessage) GetProof() *VerifyHashConsistencyProof {
+	if x != nil {
+		return x.Proof
+	}
+	return nil
+}
+
+func (x *ConsistencyProofMessage) GetR() *ecpointgrouplaw.EcPointMessage {
+	if x != nil {
+		return x.R
+	}
+	return nil
+}
+
 var File_github_com_getamis_alice_crypto_homo_cl_message_proto protoreflect.FileDescriptor
 
 var file_github_com_getamis_alice_crypto_homo_cl_message_proto_rawDesc = []byte{
@@ -530,10 +823,67 @@ var file_github_com_getamis_alice_crypto_homo_cl_message_proto_rawDesc = []byte{
 	0x01, 0x68, 0x12, 0x0c, 0x0a, 0x01, 0x70, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x01, 0x70,
 	0x12, 0x0c, 0x0a, 0x01, 0x71, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x01, 0x71, 0x12, 0x0c,
 	0x0a, 0x01, 0x61, 0x18, 0x08, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x01, 0x61, 0x12, 0x0c, 0x0a, 0x01,
-	0x63, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x01, 0x63, 0x42, 0x29, 0x5a, 0x27, 0x67, 0x69,
-	0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x67, 0x65, 0x74, 0x61, 0x6d, 0x69, 0x73,
-	0x2f, 0x61, 0x6c, 0x69, 0x63, 0x65, 0x2f, 0x63, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x2f, 0x68, 0x6f,
-	0x6d, 0x6f, 0x2f, 0x63, 0x6c, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x63, 0x18, 0x09, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x01, 0x63, 0x22, 0xa8, 0x03, 0x0a, 0x14, 0x48,
+	0x61, 0x73, 0x68, 0x43, 0x6f, 0x6e, 0x73, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x63, 0x79, 0x50, 0x72,
+	0x6f, 0x6f, 0x66, 0x12, 0x2b, 0x0a, 0x02, 0x74, 0x31, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32,
+	0x1b, 0x2e, 0x62, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x71, 0x75, 0x61, 0x64, 0x72, 0x61, 0x74, 0x69,
+	0x63, 0x66, 0x6f, 0x72, 0x6d, 0x2e, 0x42, 0x51, 0x46, 0x6f, 0x72, 0x6d, 0x52, 0x02, 0x74, 0x31,
+	0x12, 0x2b, 0x0a, 0x02, 0x74, 0x32, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x62,
+	0x69, 0x6e, 0x61, 0x72, 0x79, 0x71, 0x75, 0x61, 0x64, 0x72, 0x61, 0x74, 0x69, 0x63, 0x66, 0x6f,
+	0x72, 0x6d, 0x2e, 0x42, 0x51, 0x46, 0x6f, 0x72, 0x6d, 0x52, 0x02, 0x74, 0x32, 0x12, 0x29, 0x0a,
+	0x01, 0x67, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x62, 0x69, 0x6e, 0x61, 0x72,
+	0x79, 0x71, 0x75, 0x61, 0x64, 0x72, 0x61, 0x74, 0x69, 0x63, 0x66, 0x6f, 0x72, 0x6d, 0x2e, 0x42,
+	0x51, 0x46, 0x6f, 0x72, 0x6d, 0x52, 0x01, 0x67, 0x12, 0x29, 0x0a, 0x01, 0x66, 0x18, 0x04, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x62, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x71, 0x75, 0x61, 0x64,
+	0x72, 0x61, 0x74, 0x69, 0x63, 0x66, 0x6f, 0x72, 0x6d, 0x2e, 0x42, 0x51, 0x46, 0x6f, 0x72, 0x6d,
+	0x52, 0x01, 0x66, 0x12, 0x29, 0x0a, 0x01, 0x68, 0x18, 0x05, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b,
+	0x2e, 0x62, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x71, 0x75, 0x61, 0x64, 0x72, 0x61, 0x74, 0x69, 0x63,
+	0x66, 0x6f, 0x72, 0x6d, 0x2e, 0x42, 0x51, 0x46, 0x6f, 0x72, 0x6d, 0x52, 0x01, 0x68, 0x12, 0x0c,
+	0x0a, 0x01, 0x70, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x01, 0x70, 0x12, 0x2d, 0x0a, 0x01,
+	0x71, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x65, 0x63, 0x70, 0x6f, 0x69, 0x6e,
+	0x74, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x6c, 0x61, 0x77, 0x2e, 0x45, 0x63, 0x50, 0x6f, 0x69, 0x6e,
+	0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x01, 0x71, 0x12, 0x2d, 0x0a, 0x01, 0x72,
+	0x18, 0x08, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x65, 0x63, 0x70, 0x6f, 0x69, 0x6e, 0x74,
+	0x67, 0x72, 0x6f, 0x75, 0x70, 0x6c, 0x61, 0x77, 0x2e, 0x45, 0x63, 0x50, 0x6f, 0x69, 0x6e, 0x74,
+	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x01, 0x72, 0x12, 0x2d, 0x0a, 0x01, 0x74, 0x18,
+	0x09, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x65, 0x63, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x67,
+	0x72, 0x6f, 0x75, 0x70, 0x6c, 0x61, 0x77, 0x2e, 0x45, 0x63, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x4d,
+	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x01, 0x74, 0x12, 0x0c, 0x0a, 0x01, 0x61, 0x18, 0x0a,
+	0x20, 0x01, 0x28, 0x0c, 0x52, 0x01, 0x61, 0x12, 0x0c, 0x0a, 0x01, 0x63, 0x18, 0x0b, 0x20, 0x01,
+	0x28, 0x0c, 0x52, 0x01, 0x63, 0x22, 0x88, 0x02, 0x0a, 0x1a, 0x56, 0x65, 0x72, 0x69, 0x66, 0x79,
+	0x48, 0x61, 0x73, 0x68, 0x43, 0x6f, 0x6e, 0x73, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x63, 0x79, 0x50,
+	0x72, 0x6f, 0x6f, 0x66, 0x12, 0x12, 0x0a, 0x04, 0x73, 0x61, 0x6c, 0x74, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x0c, 0x52, 0x04, 0x73, 0x61, 0x6c, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x75, 0x31, 0x18, 0x02,
+	0x20, 0x01, 0x28, 0x0c, 0x52, 0x02, 0x75, 0x31, 0x12, 0x0e, 0x0a, 0x02, 0x75, 0x32, 0x18, 0x03,
+	0x20, 0x01, 0x28, 0x0c, 0x52, 0x02, 0x75, 0x32, 0x12, 0x2b, 0x0a, 0x02, 0x74, 0x31, 0x18, 0x04,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x62, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x71, 0x75, 0x61,
+	0x64, 0x72, 0x61, 0x74, 0x69, 0x63, 0x66, 0x6f, 0x72, 0x6d, 0x2e, 0x42, 0x51, 0x46, 0x6f, 0x72,
+	0x6d, 0x52, 0x02, 0x74, 0x31, 0x12, 0x2b, 0x0a, 0x02, 0x74, 0x32, 0x18, 0x05, 0x20, 0x01, 0x28,
+	0x0b, 0x32, 0x1b, 0x2e, 0x62, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x71, 0x75, 0x61, 0x64, 0x72, 0x61,
+	0x74, 0x69, 0x63, 0x66, 0x6f, 0x72, 0x6d, 0x2e, 0x42, 0x51, 0x46, 0x6f, 0x72, 0x6d, 0x52, 0x02,
+	0x74, 0x32, 0x12, 0x2d, 0x0a, 0x01, 0x71, 0x18, 0x06, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e,
+	0x65, 0x63, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x6c, 0x61, 0x77, 0x2e,
+	0x45, 0x63, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x01,
+	0x71, 0x12, 0x2d, 0x0a, 0x01, 0x74, 0x18, 0x07, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x65,
+	0x63, 0x70, 0x6f, 0x69, 0x6e, 0x74, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x6c, 0x61, 0x77, 0x2e, 0x45,
+	0x63, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x01, 0x74,
+	0x22, 0xd8, 0x01, 0x0a, 0x17, 0x43, 0x6f, 0x6e, 0x73, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x63, 0x79,
+	0x50, 0x72, 0x6f, 0x6f, 0x66, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x2b, 0x0a, 0x02,
+	0x63, 0x31, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x62, 0x69, 0x6e, 0x61, 0x72,
+	0x79, 0x71, 0x75, 0x61, 0x64, 0x72, 0x61, 0x74, 0x69, 0x63, 0x66, 0x6f, 0x72, 0x6d, 0x2e, 0x42,
+	0x51, 0x46, 0x6f, 0x72, 0x6d, 0x52, 0x02, 0x63, 0x31, 0x12, 0x2b, 0x0a, 0x02, 0x63, 0x32, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1b, 0x2e, 0x62, 0x69, 0x6e, 0x61, 0x72, 0x79, 0x71, 0x75,
+	0x61, 0x64, 0x72, 0x61, 0x74, 0x69, 0x63, 0x66, 0x6f, 0x72, 0x6d, 0x2e, 0x42, 0x51, 0x46, 0x6f,
+	0x72, 0x6d, 0x52, 0x02, 0x63, 0x32, 0x12, 0x34, 0x0a, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x18,
+	0x03, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1e, 0x2e, 0x63, 0x6c, 0x2e, 0x56, 0x65, 0x72, 0x69, 0x66,
+	0x79, 0x48, 0x61, 0x73, 0x68, 0x43, 0x6f, 0x6e, 0x73, 0x69, 0x73, 0x74, 0x65, 0x6e, 0x63, 0x79,
+	0x50, 0x72, 0x6f, 0x6f, 0x66, 0x52, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x12, 0x2d, 0x0a, 0x01,
+	0x72, 0x18, 0x04, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1f, 0x2e, 0x65, 0x63, 0x70, 0x6f, 0x69, 0x6e,
+	0x74, 0x67, 0x72, 0x6f, 0x75, 0x70, 0x6c, 0x61, 0x77, 0x2e, 0x45, 0x63, 0x50, 0x6f, 0x69, 0x6e,
+	0x74, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x01, 0x72, 0x42, 0x29, 0x5a, 0x27, 0x67,
+	0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x67, 0x65, 0x74, 0x61, 0x6d, 0x69,
+	0x73, 0x2f, 0x61, 0x6c, 0x69, 0x63, 0x65, 0x2f, 0x63, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x2f, 0x68,
+	0x6f, 0x6d, 0x6f, 0x2f, 0x63, 0x6c, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -548,38 +898,57 @@ func file_github_com_getamis_alice_crypto_homo_cl_message_proto_rawDescGZIP() []
 	return file_github_com_getamis_alice_crypto_homo_cl_message_proto_rawDescData
 }
 
-var file_github_com_getamis_alice_crypto_homo_cl_message_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_github_com_getamis_alice_crypto_homo_cl_message_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_github_com_getamis_alice_crypto_homo_cl_message_proto_goTypes = []interface{}{
 	(*PubKeyMessage)(nil),                  // 0: cl.PubKeyMessage
 	(*EncryptedMessage)(nil),               // 1: cl.EncryptedMessage
 	(*ProofMessage)(nil),                   // 2: cl.ProofMessage
 	(*VerifyMtaMessage)(nil),               // 3: cl.VerifyMtaMessage
 	(*Hash)(nil),                           // 4: cl.Hash
-	(*binaryquadraticform.BQForm)(nil),     // 5: binaryquadraticform.BQForm
-	(*ecpointgrouplaw.EcPointMessage)(nil), // 6: ecpointgrouplaw.EcPointMessage
+	(*HashConsistencyProof)(nil),           // 5: cl.HashConsistencyProof
+	(*VerifyHashConsistencyProof)(nil),     // 6: cl.VerifyHashConsistencyProof
+	(*ConsistencyProofMessage)(nil),        // 7: cl.ConsistencyProofMessage
+	(*binaryquadraticform.BQForm)(nil),     // 8: binaryquadraticform.BQForm
+	(*ecpointgrouplaw.EcPointMessage)(nil), // 9: ecpointgrouplaw.EcPointMessage
 }
 var file_github_com_getamis_alice_crypto_homo_cl_message_proto_depIdxs = []int32{
-	5,  // 0: cl.PubKeyMessage.g:type_name -> binaryquadraticform.BQForm
-	5,  // 1: cl.PubKeyMessage.f:type_name -> binaryquadraticform.BQForm
-	5,  // 2: cl.PubKeyMessage.h:type_name -> binaryquadraticform.BQForm
+	8,  // 0: cl.PubKeyMessage.g:type_name -> binaryquadraticform.BQForm
+	8,  // 1: cl.PubKeyMessage.f:type_name -> binaryquadraticform.BQForm
+	8,  // 2: cl.PubKeyMessage.h:type_name -> binaryquadraticform.BQForm
 	2,  // 3: cl.PubKeyMessage.proof:type_name -> cl.ProofMessage
-	5,  // 4: cl.EncryptedMessage.m1:type_name -> binaryquadraticform.BQForm
-	5,  // 5: cl.EncryptedMessage.m2:type_name -> binaryquadraticform.BQForm
+	8,  // 4: cl.EncryptedMessage.m1:type_name -> binaryquadraticform.BQForm
+	8,  // 5: cl.EncryptedMessage.m2:type_name -> binaryquadraticform.BQForm
 	2,  // 6: cl.EncryptedMessage.proof:type_name -> cl.ProofMessage
-	5,  // 7: cl.ProofMessage.t1:type_name -> binaryquadraticform.BQForm
-	5,  // 8: cl.ProofMessage.t2:type_name -> binaryquadraticform.BQForm
-	6,  // 9: cl.VerifyMtaMessage.betaG:type_name -> ecpointgrouplaw.EcPointMessage
-	6,  // 10: cl.VerifyMtaMessage.bG:type_name -> ecpointgrouplaw.EcPointMessage
-	5,  // 11: cl.Hash.t1:type_name -> binaryquadraticform.BQForm
-	5,  // 12: cl.Hash.t2:type_name -> binaryquadraticform.BQForm
-	5,  // 13: cl.Hash.g:type_name -> binaryquadraticform.BQForm
-	5,  // 14: cl.Hash.f:type_name -> binaryquadraticform.BQForm
-	5,  // 15: cl.Hash.h:type_name -> binaryquadraticform.BQForm
-	16, // [16:16] is the sub-list for method output_type
-	16, // [16:16] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	8,  // 7: cl.ProofMessage.t1:type_name -> binaryquadraticform.BQForm
+	8,  // 8: cl.ProofMessage.t2:type_name -> binaryquadraticform.BQForm
+	9,  // 9: cl.VerifyMtaMessage.betaG:type_name -> ecpointgrouplaw.EcPointMessage
+	9,  // 10: cl.VerifyMtaMessage.bG:type_name -> ecpointgrouplaw.EcPointMessage
+	8,  // 11: cl.Hash.t1:type_name -> binaryquadraticform.BQForm
+	8,  // 12: cl.Hash.t2:type_name -> binaryquadraticform.BQForm
+	8,  // 13: cl.Hash.g:type_name -> binaryquadraticform.BQForm
+	8,  // 14: cl.Hash.f:type_name -> binaryquadraticform.BQForm
+	8,  // 15: cl.Hash.h:type_name -> binaryquadraticform.BQForm
+	8,  // 16: cl.HashConsistencyProof.t1:type_name -> binaryquadraticform.BQForm
+	8,  // 17: cl.HashConsistencyProof.t2:type_name -> binaryquadraticform.BQForm
+	8,  // 18: cl.HashConsistencyProof.g:type_name -> binaryquadraticform.BQForm
+	8,  // 19: cl.HashConsistencyProof.f:type_name -> binaryquadraticform.BQForm
+	8,  // 20: cl.HashConsistencyProof.h:type_name -> binaryquadraticform.BQForm
+	9,  // 21: cl.HashConsistencyProof.q:type_name -> ecpointgrouplaw.EcPointMessage
+	9,  // 22: cl.HashConsistencyProof.r:type_name -> ecpointgrouplaw.EcPointMessage
+	9,  // 23: cl.HashConsistencyProof.t:type_name -> ecpointgrouplaw.EcPointMessage
+	8,  // 24: cl.VerifyHashConsistencyProof.t1:type_name -> binaryquadraticform.BQForm
+	8,  // 25: cl.VerifyHashConsistencyProof.t2:type_name -> binaryquadraticform.BQForm
+	9,  // 26: cl.VerifyHashConsistencyProof.q:type_name -> ecpointgrouplaw.EcPointMessage
+	9,  // 27: cl.VerifyHashConsistencyProof.t:type_name -> ecpointgrouplaw.EcPointMessage
+	8,  // 28: cl.ConsistencyProofMessage.c1:type_name -> binaryquadraticform.BQForm
+	8,  // 29: cl.ConsistencyProofMessage.c2:type_name -> binaryquadraticform.BQForm
+	6,  // 30: cl.ConsistencyProofMessage.proof:type_name -> cl.VerifyHashConsistencyProof
+	9,  // 31: cl.ConsistencyProofMessage.r:type_name -> ecpointgrouplaw.EcPointMessage
+	32, // [32:32] is the sub-list for method output_type
+	32, // [32:32] is the sub-list for method input_type
+	32, // [32:32] is the sub-list for extension type_name
+	32, // [32:32] is the sub-list for extension extendee
+	0,  // [0:32] is the sub-list for field type_name
 }
 
 func init() { file_github_com_getamis_alice_crypto_homo_cl_message_proto_init() }
@@ -648,6 +1017,42 @@ func file_github_com_getamis_alice_crypto_homo_cl_message_proto_init() {
 				return nil
 			}
 		}
+		file_github_com_getamis_alice_crypto_homo_cl_message_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*HashConsistencyProof); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_github_com_getamis_alice_crypto_homo_cl_message_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*VerifyHashConsistencyProof); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_github_com_getamis_alice_crypto_homo_cl_message_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ConsistencyProofMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -655,7 +1060,7 @@ func file_github_com_getamis_alice_crypto_homo_cl_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_github_com_getamis_alice_crypto_homo_cl_message_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

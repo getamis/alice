@@ -17,9 +17,8 @@ package cl
 import (
 	"math/big"
 
-	"github.com/golang/protobuf/proto"
-
 	binaryquadraticform "github.com/getamis/alice/crypto/binaryquadraticform"
+	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

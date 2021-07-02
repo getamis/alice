@@ -63,3 +63,34 @@ message Hash {
     bytes a = 8;
     bytes c = 9;
 }
+
+message HashConsistencyProof {
+    binaryquadraticform.BQForm t1 = 1;
+    binaryquadraticform.BQForm t2 = 2;
+    binaryquadraticform.BQForm g = 3;
+	binaryquadraticform.BQForm f = 4;
+    binaryquadraticform.BQForm h = 5;
+    bytes p = 6;
+    ecpointgrouplaw.EcPointMessage q = 7;
+    ecpointgrouplaw.EcPointMessage r = 8;
+    ecpointgrouplaw.EcPointMessage t = 9;
+    bytes a = 10;
+    bytes c = 11;
+}
+
+message VerifyHashConsistencyProof {
+    bytes salt = 1;
+    bytes u1 = 2;
+    bytes u2 = 3;
+    binaryquadraticform.BQForm t1 = 4;
+	binaryquadraticform.BQForm t2 = 5;
+    ecpointgrouplaw.EcPointMessage q = 6;
+    ecpointgrouplaw.EcPointMessage t = 7;
+}
+
+message ConsistencyProofMessage {
+    binaryquadraticform.BQForm c1 = 1;
+	binaryquadraticform.BQForm c2 = 2;
+    VerifyHashConsistencyProof proof = 3;
+    ecpointgrouplaw.EcPointMessage r = 4;
+}

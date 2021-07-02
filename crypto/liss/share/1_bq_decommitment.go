@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package liss
+package share
 
 import (
 	bqForm "github.com/getamis/alice/crypto/binaryquadraticform"
@@ -149,14 +149,14 @@ func (p *bqDecommitmentHandler) HandleMessage(logger log.Logger, message types.M
 	}
 
 	// Set public Key:
-	p.publicKey, err = clParameter.GeneratePublicKey(sumExponential[0])
+	p.publicKey, err = ClParameter.GeneratePublicKey(sumExponential[0])
 	if err != nil {
 		logger.Debug("Failed to GeneratePublicKey", "err", err)
 		return err
 	}
 
 	// Set shareCommit
-	p.shareCommitments = p.configs.getCommitmentOrderBySerialNumber(sumExponentialM)
+	p.shareCommitments = p.configs.GetCommitmentOrderBySerialNumber(sumExponentialM)
 	return peer.AddMessage(msg)
 }
 

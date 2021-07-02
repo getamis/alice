@@ -22,6 +22,11 @@ import (
 	"gonum.org/v1/gonum/stat/combin"
 )
 
+type Mapper interface {
+	Has(key string) bool
+	Len() int
+}
+
 var (
 	ErrInvalidUsersOrThreshold = errors.New("invalid users or threshold")
 )
@@ -57,6 +62,30 @@ func (g *GroupConfig) GenerateMatrix() (*matrix.Matrix, error) {
 		}
 	}
 	return result, nil
+}
+
+func (g *GroupConfig) Combinations() [][]int {
+	return combin.Combinations(g.Users, g.Threshold)
+}
+
+func (g *GroupConfig) CheckKeys(userIndex int, m Mapper) bool {
+	if g.Threshold > m.Len() {
+		return false
+	}
+	combination := g.Combinations()
+	for _, value := range combination {
+		key := ShareKey(value)
+		for j := 0; j < g.Threshold; j++ {
+			if value[j] != userIndex {
+				continue
+			}
+			// Cannot find key
+			if !m.Has(key) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func generateThresholdMatrix(threshold int) (*matrix.Matrix, error) {

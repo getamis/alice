@@ -22,7 +22,6 @@ import (
 	bqForm "github.com/getamis/alice/crypto/binaryquadraticform"
 	"github.com/getamis/alice/crypto/matrix"
 	"github.com/getamis/alice/crypto/utils"
-	"gonum.org/v1/gonum/stat/combin"
 )
 
 var (
@@ -48,7 +47,7 @@ func (gc GroupConfigs) GenerateShares(g bqForm.Exper, randomM *matrix.Matrix, or
 		for j := 0; j < gc[i].Users; j++ {
 			shares[i][j] = make(map[string]*big.Int)
 		}
-		combination := combin.Combinations(gc[i].Users, gc[i].Threshold)
+		combination := gc[i].Combinations()
 		for _, value := range combination {
 			key := ShareKey(value)
 			for j := 0; j < gc[i].Threshold; j++ {
@@ -69,7 +68,7 @@ func (gc GroupConfigs) GenerateShares(g bqForm.Exper, randomM *matrix.Matrix, or
 	return shares, exponentialM, nil
 }
 
-func (gc GroupConfigs) getCommitmentOrderBySerialNumber(expM []*bqForm.BQuadraticForm) [][]map[string]*bqForm.BQuadraticForm {
+func (gc GroupConfigs) GetCommitmentOrderBySerialNumber(expM []*bqForm.BQuadraticForm) [][]map[string]*bqForm.BQuadraticForm {
 	commitments := make([][]map[string]*bqForm.BQuadraticForm, len(gc))
 	index := 0
 	for i := 0; i < len(gc); i++ {
@@ -77,7 +76,7 @@ func (gc GroupConfigs) getCommitmentOrderBySerialNumber(expM []*bqForm.BQuadrati
 		for j := 0; j < gc[i].Users; j++ {
 			commitments[i][j] = make(map[string]*bqForm.BQuadraticForm)
 		}
-		combination := combin.Combinations(gc[i].Users, gc[i].Threshold)
+		combination := gc[i].Combinations()
 		for _, value := range combination {
 			key := ShareKey(value)
 			for j := 0; j < gc[i].Threshold; j++ {
@@ -102,7 +101,7 @@ func ShareKey(input sort.IntSlice) string {
 	return result
 }
 
-func (gc GroupConfigs) generateRandomValue(bigrange uint, distanceDist uint) (*matrix.Matrix, *matrix.Matrix, error) {
+func (gc GroupConfigs) GenerateRandomValue(bigrange uint, distanceDist uint) (*matrix.Matrix, *matrix.Matrix, error) {
 	m, err := gc.generateMatrix()
 	if err != nil {
 		return nil, nil, err
