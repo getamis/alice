@@ -102,3 +102,52 @@ func (m *PubKeyMessage) ToPubkey() (*PublicKey, error) {
 	}
 	return publicKey, nil
 }
+
+func (m *PubKeyMessage) ToPubkeyWithoutProof() (*PublicKey, error) {
+	p := new(big.Int).SetBytes(m.P)
+	a := new(big.Int).SetBytes(m.A)
+	q := new(big.Int).SetBytes(m.Q)
+	c := new(big.Int).SetBytes(m.C)
+	if p.Cmp(big0) < 1 {
+		return nil, ErrInvalidMessage
+	}
+	if a.Cmp(big0) < 1 {
+		return nil, ErrInvalidMessage
+	}
+	if q.Cmp(big0) < 1 {
+		return nil, ErrInvalidMessage
+	}
+	if c.Cmp(big0) < 1 {
+		return nil, ErrInvalidMessage
+	}
+	g, err := m.G.ToBQuadraticForm()
+	if err != nil {
+		return nil, err
+	}
+	f, err := m.F.ToBQuadraticForm()
+	if err != nil {
+		return nil, err
+	}
+	h, err := m.H.ToBQuadraticForm()
+	if err != nil {
+		return nil, err
+	}
+
+	// build cache value
+	absDiscriminantK := new(big.Int).Mul(p, q)
+	pSquare := new(big.Int).Mul(p, p)
+	discriminantOrderP := new(big.Int).Mul(absDiscriminantK, pSquare)
+	discriminantOrderP = discriminantOrderP.Neg(discriminantOrderP)
+	return &PublicKey{
+		p:                  p,
+		q:                  q,
+		a:                  a,
+		g:                  g,
+		f:                  f,
+		h:                  h,
+		d:                  m.D,
+		c:                  c,
+		proof:              nil,
+		discriminantOrderP: discriminantOrderP,
+	}, nil
+}

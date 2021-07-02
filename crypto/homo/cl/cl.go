@@ -194,37 +194,108 @@ func NewCL(c *big.Int, d uint32, p *big.Int, safeParameter int, distributionDist
 	}, nil
 }
 
-// Encrypt is used to encrypt message
-func (publicKey *PublicKey) Encrypt(data []byte) ([]byte, error) {
+func (pub *PublicKey) GetG() bqForm.Exper {
+	return pub.g
+}
+
+func (pub *PublicKey) GetH() bqForm.Exper {
+	return pub.h
+}
+
+func (pub1 *PublicKey) EqualWithoutProof(pub2 *PublicKey) bool {
+	if pub1.a.Cmp(pub2.a) != 0 {
+		return false
+	}
+	if pub1.d != pub2.d {
+		return false
+	}
+	if pub1.c.Cmp(pub2.c) != 0 {
+		return false
+	}
+	if pub1.discriminantOrderP.Cmp(pub2.discriminantOrderP) != 0 {
+		return false
+	}
+	if pub1.p.Cmp(pub2.p) != 0 {
+		return false
+	}
+	pub1f, err := pub1.f.Exp(big1)
+	if err != nil {
+		return false
+	}
+	pub2f, err := pub2.f.Exp(big1)
+	if err != nil {
+		return false
+	}
+	if !pub1f.Equal(pub2f) {
+		return false
+	}
+	pub1g, err := pub1.g.Exp(big1)
+	if err != nil {
+		return false
+	}
+	pub2g, err := pub2.g.Exp(big1)
+	if err != nil {
+		return false
+	}
+	if !pub1g.Equal(pub2g) {
+		return false
+	}
+	pub1h, err := pub1.h.Exp(big1)
+	if err != nil {
+		return false
+	}
+	pub2h, err := pub2.h.Exp(big1)
+	if err != nil {
+		return false
+	}
+	if !pub1h.Equal(pub2h) {
+		return false
+	}
+	if pub1.proof != nil || pub2.proof != nil {
+		return false
+	}
+	return true
+}
+
+func (publicKey *PublicKey) encrypt(message *big.Int) (*bqForm.BQForm, *bqForm.BQForm, *big.Int, error) {
 	// Pick r in {0, ..., A-1} randomly
 	r, err := utils.RandomInt(publicKey.a)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	// Compute c1 = g^r
 	c1, err := publicKey.g.Exp(r)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	// Compute c2 = f^m*h^r
-	message := new(big.Int).SetBytes(data)
 	// Check message in [0,p-1]
 	err = utils.InRange(message, big0, publicKey.p)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	c2, err := publicKey.f.Exp(message)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
 	// h^r
 	hPower, err := publicKey.h.Exp(r)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 	c2, err = c2.Composition(hPower)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return c1.ToMessage(), c2.ToMessage(), r, nil
+}
+
+// Encrypt is used to encrypt message
+func (publicKey *PublicKey) Encrypt(data []byte) ([]byte, error) {
+	message := new(big.Int).SetBytes(data)
+	c1, c2, r, err := publicKey.encrypt(message)
 	if err != nil {
 		return nil, err
 	}
@@ -234,12 +305,11 @@ func (publicKey *PublicKey) Encrypt(data []byte) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	msg := &EncryptedMessage{
-		M1:    c1.ToMessage(),
-		M2:    c2.ToMessage(),
+	return proto.Marshal(&EncryptedMessage{
+		M1:    c1,
+		M2:    c2,
 		Proof: proof,
-	}
-	return proto.Marshal(msg)
+	})
 }
 
 // Add represents homomorphic addition
@@ -358,6 +428,17 @@ func (publicKey *PublicKey) ToPubKeyMessage() *PubKeyMessage {
 func (publicKey *PublicKey) ToPubKeyBytes() []byte {
 	bs, _ := proto.Marshal(publicKey.ToPubKeyMessage())
 	return bs
+}
+
+func PartialDecrypt(secret *big.Int, c1 *bqForm.BQuadraticForm, c2 *bqForm.BQuadraticForm) ([]byte, error) {
+	c1power, err := c1.Exp(secret)
+	if err != nil {
+		return nil, err
+	}
+	return proto.Marshal(&EncryptedMessage{
+		M1: c1power.ToMessage(),
+		M2: c2.ToMessage(),
+	})
 }
 
 // Decrypt computes the plaintext from the ciphertext
