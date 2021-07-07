@@ -71,7 +71,7 @@ func newPasswordUserHandler(publicKey *pt.ECPoint, peerManager types.PeerManager
 		oprfRequester: requester,
 		peers:         peers,
 		newPubkeyHandlerFunc: func(secret *big.Int) (*pubkeyHandler, error) {
-			return newPubkeyHandler(publicKey, peerManager, homo, secret, bks, msg)
+			return newPubkeyHandler(publicKey, peerManager, homo, secret, bks, msg, true)
 		},
 	}, nil
 }

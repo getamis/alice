@@ -48,13 +48,14 @@ type pubkeyHandler struct {
 	aiMta          mta.Mta
 	homo           homo.Crypto
 	agCommitmenter *commitment.HashCommitmenter
+	sendOutSi      bool
 
 	peerManager types.PeerManager
 	peerNum     uint32
 	peers       map[string]*peer
 }
 
-func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo homo.Crypto, secret *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte) (*pubkeyHandler, error) {
+func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo homo.Crypto, secret *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, sendOutSi bool) (*pubkeyHandler, error) {
 	numPeers := peerManager.NumPeers()
 	lenBks := len(bks)
 	if lenBks != int(numPeers+1) {
@@ -93,6 +94,7 @@ func newPubkeyHandler(publicKey *pt.ECPoint, peerManager types.PeerManager, homo
 		aiMta:          aiMta,
 		agCommitmenter: agCommitmenter,
 		homo:           homo,
+		sendOutSi:      sendOutSi,
 
 		peerManager: peerManager,
 		peerNum:     numPeers,
