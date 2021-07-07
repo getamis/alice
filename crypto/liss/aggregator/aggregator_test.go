@@ -77,10 +77,6 @@ var _ = Describe("liss test", func() {
 				for k, v := range m {
 					other := r1.Users[group][i][k]
 					Expect(v.Bq).Should(Equal(other.Bq))
-					s := new(big.Int).Add(v.Share, other.Share)
-					got, err := share.ClParameter.GetG().Exp(s)
-					Expect(err).Should(BeNil())
-					Expect(got).Should(Equal(v.Bq))
 				}
 			}
 		}
@@ -162,7 +158,11 @@ func newLiss(configs liss.GroupConfigs) (map[string]*share.Liss, map[string]*moc
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
 		var err error
-		lisses[id], err = share.NewLiss(peerManagers[i], configs, listeners[id])
+		if i == 0 {
+			lisses[id], err = share.NewServerLiss(peerManagers[i], configs, listeners[id])
+		} else {
+			lisses[id], err = share.NewUserLiss(peerManagers[i], configs, listeners[id])
+		}
 		Expect(err).Should(BeNil())
 
 		lissesMain[id] = lisses[id]

@@ -149,7 +149,7 @@ func (p *bqDecommitmentHandler) HandleMessage(logger log.Logger, message types.M
 	}
 
 	// Set public Key:
-	p.publicKey, err = ClParameter.GeneratePublicKey(sumExponential[0])
+	p.publicKey, err = p.clParameter.GeneratePublicKey(sumExponential[0])
 	if err != nil {
 		logger.Debug("Failed to GeneratePublicKey", "err", err)
 		return err

@@ -66,6 +66,9 @@ var _ = Describe("liss test", func() {
 
 		r0, err := lisses["id-0"].GetResult()
 		Expect(err).Should(BeNil())
+		h, ok := lisses["id-0"].GetHandler().(*bqDecommitmentHandler)
+		Expect(ok).Should(BeTrue())
+		clParameter := h.clParameter
 		r1, err := lisses["id-1"].GetResult()
 		Expect(err).Should(BeNil())
 		Expect(r0.PublicKey).Should(Equal(r1.PublicKey))
@@ -75,7 +78,7 @@ var _ = Describe("liss test", func() {
 					other := r1.Users[group][i][k]
 					Expect(v.Bq).Should(Equal(other.Bq))
 					s := new(big.Int).Add(v.Share, other.Share)
-					got, err := ClParameter.GetG().Exp(s)
+					got, err := clParameter.GetG().Exp(s)
 					Expect(err).Should(BeNil())
 					Expect(got).Should(Equal(v.Bq))
 				}
@@ -103,7 +106,11 @@ func newLiss(configs liss.GroupConfigs) (map[string]*Liss, map[string]*mocks.Sta
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
 		var err error
-		lisses[id], err = NewLiss(peerManagers[i], configs, listeners[id])
+		if i == 0 {
+			lisses[id], err = NewServerLiss(peerManagers[i], configs, listeners[id])
+		} else {
+			lisses[id], err = NewUserLiss(peerManagers[i], configs, listeners[id])
+		}
 		Expect(err).Should(BeNil())
 
 		lissesMain[id] = lisses[id]
