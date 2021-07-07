@@ -145,3 +145,62 @@ func (basePara *CLBaseParameter) GeneratePublicKey(h *bqForm.BQuadraticForm) (*P
 func (basePara *CLBaseParameter) GetG() bqForm.Exper {
 	return basePara.g
 }
+
+func (basePara *CLBaseParameter) ToMessage() *ClBaseParameterMessage {
+	return &ClBaseParameterMessage{
+		Q: basePara.q.Bytes(),
+		G: basePara.g.ToMessage(),
+	}
+}
+
+func (basePara *ClBaseParameterMessage) ToBase(c *big.Int, d uint32, p *big.Int, safeParameter int, distributionDistance uint) (*CLBaseParameter, error) {
+	// Validate message
+	q := new(big.Int).SetBytes(basePara.Q)
+	if !q.ProbablyPrime(10) {
+		return nil, ErrNotBigPrime
+	}
+	if !(big.Jacobi(p, q) == -1) {
+		return nil, ErrFailedVerify
+	}
+
+	g, err := basePara.G.ToBQuadraticForm()
+	if err != nil {
+		return nil, err
+	}
+	if g.Equal(g.Identity()) {
+		return nil, ErrInvalidMessage
+	}
+
+	discriminantK := new(big.Int).Mul(p, q)
+	discriminantK = discriminantK.Neg(discriminantK)
+	if discriminantK.BitLen() < safeParameter {
+		return nil, ErrFailedVerify
+	}
+	if new(big.Int).Mod(discriminantK, big4).Cmp(big1) != 0 {
+		return nil, ErrFailedVerify
+	}
+
+	p2 := new(big.Int).Mul(p, p)
+	discirminantP := new(big.Int).Mul(p2, discriminantK)
+
+	fa := new(big.Int).Set(p2)
+	fb := new(big.Int).Set(p)
+	f, err := bqForm.NewBQuadraticFormByDiscriminant(fa, fb, discirminantP)
+	if err != nil {
+		return nil, err
+	}
+	s := getUpperBoundClassGroupMaximalOrder(discriminantK)
+	// Build a private key
+	// a = 2^(distributionDistance)*s
+	a := new(big.Int).Lsh(s, distributionDistance)
+	return &CLBaseParameter{
+		p:                  p,
+		q:                  q,
+		a:                  a,
+		g:                  g,
+		d:                  d,
+		c:                  c,
+		f:                  f,
+		discriminantOrderP: discirminantP,
+	}, nil
+}

@@ -31,13 +31,18 @@ var (
 	}
 )
 
+type FirstHandler interface {
+	GetFirstMessage() *Message
+}
+
 type Liss struct {
 	*message.MsgMain
 
-	ih *bqCommitmentHandler
+	ih FirstHandler
+	pm types.PeerManager
 }
 
-func NewLiss(peerManager types.PeerManager, configs liss.GroupConfigs, listener types.StateChangedListener) (*Liss, error) {
+func NewServerLiss(peerManager types.PeerManager, configs liss.GroupConfigs, listener types.StateChangedListener) (*Liss, error) {
 	numPeers := peerManager.NumPeers()
 	ih, err := newBqCommitmentHandler(peerManager, configs)
 	if err != nil {
@@ -45,6 +50,25 @@ func NewLiss(peerManager types.PeerManager, configs liss.GroupConfigs, listener 
 	}
 	return &Liss{
 		ih: ih,
+		pm: peerManager,
+		MsgMain: message.NewMsgMain(peerManager.SelfID(),
+			numPeers,
+			listener,
+			ih,
+			msgTypes...,
+		),
+	}, nil
+}
+
+func NewUserLiss(peerManager types.PeerManager, configs liss.GroupConfigs, listener types.StateChangedListener) (*Liss, error) {
+	numPeers := peerManager.NumPeers()
+	ih, err := newbqCommitmentUserHandler(peerManager, configs)
+	if err != nil {
+		return nil, err
+	}
+	return &Liss{
+		ih: ih,
+		pm: peerManager,
 		MsgMain: message.NewMsgMain(peerManager.SelfID(),
 			numPeers,
 			listener,
@@ -56,7 +80,10 @@ func NewLiss(peerManager types.PeerManager, configs liss.GroupConfigs, listener 
 
 func (m *Liss) Start() {
 	m.MsgMain.Start()
-	m.ih.broadcast(m.ih.bqMsg)
+	msg := m.ih.GetFirstMessage()
+	if msg != nil {
+		message.Broadcast(m.pm, msg)
+	}
 }
 
 func (m *Liss) GetResult() (*Result, error) {

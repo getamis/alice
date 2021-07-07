@@ -19,6 +19,7 @@ package share;
 option go_package = "github.com/getamis/alice/crypto/liss/share";
 
 import "github.com/getamis/alice/crypto/binaryquadraticform/message.proto";
+import "github.com/getamis/alice/crypto/homo/cl/message.proto";
 
 enum Type {
     BqCommitment = 0;
@@ -35,7 +36,8 @@ message Message {
 }
 
 message BodyBqCommitment {
-    repeated bytes commitments = 1;
+    cl.ClBaseParameterMessage clBase = 1;
+    repeated bytes commitments = 2;
 }
 
 message BodyBqDecommitment {
