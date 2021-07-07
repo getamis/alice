@@ -159,14 +159,24 @@ func (basePara *ClBaseParameterMessage) ToBase(c *big.Int, d uint32, p *big.Int,
 	if !q.ProbablyPrime(10) {
 		return nil, ErrNotBigPrime
 	}
+	if !(big.Jacobi(p, q) == -1) {
+		return nil, ErrFailedVerify
+	}
+
 	g, err := basePara.G.ToBQuadraticForm()
 	if err != nil {
 		return nil, err
+	}
+	if g.Equal(g.Identity()) {
+		return nil, ErrInvalidMessage
 	}
 
 	discriminantK := new(big.Int).Mul(p, q)
 	discriminantK = discriminantK.Neg(discriminantK)
 	if discriminantK.BitLen() < safeParameter {
+		return nil, ErrFailedVerify
+	}
+	if new(big.Int).Mod(discriminantK, big4).Cmp(big1) != 0 {
 		return nil, ErrFailedVerify
 	}
 
