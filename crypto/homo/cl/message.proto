@@ -94,3 +94,8 @@ message ConsistencyProofMessage {
     VerifyHashConsistencyProof proof = 3;
     ecpointgrouplaw.EcPointMessage r = 4;
 }
+
+message ClBaseParameterMessage {
+    bytes q = 1;
+	binaryquadraticform.BQForm g = 2;
+}
