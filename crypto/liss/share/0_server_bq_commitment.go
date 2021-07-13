@@ -33,8 +33,8 @@ import (
 const (
 	d                   = 40
 	distributedDistance = 40
-	bigrange            = uint(2)
-	distanceDist        = uint(2)
+	bigrange            = uint(15)
+	distanceDist        = uint(10)
 	safeParameter       = 1348
 )
 
