@@ -15,6 +15,7 @@
 package liss
 
 import (
+	"math"
 	"math/big"
 	"sort"
 	"strconv"
@@ -106,9 +107,17 @@ func (gc GroupConfigs) GenerateRandomValue(bigrange uint, distanceDist uint) (*m
 	if err != nil {
 		return nil, nil, err
 	}
-	upBd := new(big.Int).Lsh(big1, bigrange+distanceDist)
+	// upBd = bigrange + \ceil log2(e-1) \ceil + 1 + distanceDist
+	rankBound := math.Ceil(math.Log2(float64(m.GetNumberColumn()))) + 1
+	upBd := new(big.Int).Lsh(big1, bigrange+distanceDist+uint(rankBound))
 	randomValueMatrix := make([][]*big.Int, m.GetNumberColumn())
-	for i := 0; i < len(randomValueMatrix); i++ {
+	secretSlice := make([]*big.Int, 1)
+	secretSlice[0], err = utils.RandomAbsoluteRangeInt(new(big.Int).Lsh(big1, bigrange))
+	if err != nil {
+		return nil, nil, err
+	}
+	randomValueMatrix[0] = secretSlice
+	for i := 1; i < len(randomValueMatrix); i++ {
 		tempSlice := make([]*big.Int, 1)
 		tempSlice[0], err = utils.RandomAbsoluteRangeInt(upBd)
 		if err != nil {
