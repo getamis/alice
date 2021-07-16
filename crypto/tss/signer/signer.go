@@ -73,12 +73,12 @@ type Signer struct {
 }
 
 func NewSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo homo.Crypto, secret *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, listener types.StateChangedListener) (*Signer, error) {
-	ph, err := newPubkeyHandler(expectedPubkey, peerManager, homo, secret, bks, msg)
+	ph, err := newPubkeyHandler(expectedPubkey, peerManager, homo, secret, bks, msg, true)
 	if err != nil {
 		log.Debug("Failed to new a public key handler", "err", err)
 		return nil, err
 	}
-	return newSigner(peerManager, listener, ph)
+	return newSigner(peerManager, listener, ph, types.MessageType(Type_Si))
 }
 
 func NewPasswordUserSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo homo.Crypto, password []byte, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, listener types.StateChangedListener) (*Signer, error) {
@@ -87,7 +87,7 @@ func NewPasswordUserSigner(peerManager types.PeerManager, expectedPubkey *pt.ECP
 		log.Debug("Failed to new a public key handler", "err", err)
 		return nil, err
 	}
-	return newSigner(peerManager, listener, ph, types.MessageType(Type_OPRFResponse))
+	return newSigner(peerManager, listener, ph, types.MessageType(Type_Si), types.MessageType(Type_OPRFResponse))
 }
 
 func NewPasswordServerSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo homo.Crypto, k *big.Int, secret *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, listener types.StateChangedListener) (*Signer, error) {
@@ -96,7 +96,7 @@ func NewPasswordServerSigner(peerManager types.PeerManager, expectedPubkey *pt.E
 		log.Debug("Failed to new a public key handler", "err", err)
 		return nil, err
 	}
-	return newSigner(peerManager, listener, ph, types.MessageType(Type_OPRFRequest))
+	return newSigner(peerManager, listener, ph, types.MessageType(Type_Si), types.MessageType(Type_OPRFRequest))
 }
 
 func newSigner(peerManager types.PeerManager, listener types.StateChangedListener, ph FirstHandler, msgs ...types.MessageType) (*Signer, error) {
@@ -110,8 +110,7 @@ func newSigner(peerManager types.PeerManager, listener types.StateChangedListene
 		types.MessageType(Type_CommitViAi),
 		types.MessageType(Type_DecommitViAi),
 		types.MessageType(Type_CommitUiTi),
-		types.MessageType(Type_DecommitUiTi),
-		types.MessageType(Type_Si))
+		types.MessageType(Type_DecommitUiTi))
 	return &Signer{
 		ph:          ph,
 		peerManager: peerManager,

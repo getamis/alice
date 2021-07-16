@@ -77,7 +77,7 @@ func newPasswordServerHandler(publicKey *pt.ECPoint, peerManager types.PeerManag
 	for _, peerID := range peerManager.PeerIDs() {
 		peers[peerID] = &oprfServerData{}
 	}
-	pubkeyHandler, err := newPubkeyHandler(publicKey, peerManager, homo, secret, bks, msg)
+	pubkeyHandler, err := newPubkeyHandler(publicKey, peerManager, homo, secret, bks, msg, true)
 	if err != nil {
 		return nil, err
 	}

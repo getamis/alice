@@ -71,7 +71,7 @@ var _ = Describe("pubkey handler, negative cases", func() {
 
 		It("inconsistent peer number and bks", func() {
 			mockPeerManager.On("NumPeers").Return(uint32(3)).Once()
-			got, err := newPubkeyHandler(expPublic, mockPeerManager, mockHomo, nil, bks, nil)
+			got, err := newPubkeyHandler(expPublic, mockPeerManager, mockHomo, nil, bks, nil, true)
 			Expect(got).Should(BeNil())
 			Expect(err).Should(Equal(tss.ErrInconsistentPeerNumAndBks))
 		})
@@ -79,7 +79,7 @@ var _ = Describe("pubkey handler, negative cases", func() {
 		It("failed to do homo encryption", func() {
 			mockPeerManager.On("NumPeers").Return(uint32(2)).Once()
 			mockHomo.On("Encrypt", mock.Anything).Return(nil, unknownErr).Once()
-			got, err := newPubkeyHandler(expPublic, mockPeerManager, mockHomo, nil, bks, nil)
+			got, err := newPubkeyHandler(expPublic, mockPeerManager, mockHomo, nil, bks, nil, true)
 			Expect(got).Should(BeNil())
 			Expect(err).Should(Equal(unknownErr))
 		})
@@ -88,7 +88,7 @@ var _ = Describe("pubkey handler, negative cases", func() {
 			mockPeerManager.On("NumPeers").Return(uint32(2)).Once()
 			mockHomo.On("Encrypt", mock.Anything).Return([]byte("enc k"), nil).Once()
 			mockPeerManager.On("SelfID").Return("not found").Once()
-			got, err := newPubkeyHandler(expPublic, mockPeerManager, mockHomo, nil, bks, nil)
+			got, err := newPubkeyHandler(expPublic, mockPeerManager, mockHomo, nil, bks, nil, true)
 			Expect(got).Should(BeNil())
 			Expect(err).Should(Equal(tss.ErrSelfBKNotFound))
 		})
@@ -102,7 +102,7 @@ var _ = Describe("pubkey handler, negative cases", func() {
 			mockPeerManager.On("NumPeers").Return(uint32(2)).Once()
 			mockHomo.On("Encrypt", mock.Anything).Return([]byte("enc k"), nil).Once()
 			mockPeerManager.On("SelfID").Return("1").Once()
-			got, err := newPubkeyHandler(expPublic, mockPeerManager, mockHomo, nil, dupBks, nil)
+			got, err := newPubkeyHandler(expPublic, mockPeerManager, mockHomo, nil, dupBks, nil, true)
 			Expect(got).Should(BeNil())
 			Expect(err).Should(Equal(matrix.ErrNotInvertableMatrix))
 		})

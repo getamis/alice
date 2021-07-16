@@ -102,6 +102,9 @@ func (p *decommitUiTiHandler) Finalize(logger log.Logger) (types.Handler, error)
 		return nil, ErrInconsistentUT
 	}
 
+	if !p.sendOutSi {
+		return nil, nil
+	}
 	// Send out the si message
 	msg := p.getSiMessage()
 	message.Broadcast(p.peerManager, msg)
