@@ -20,21 +20,24 @@ import (
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo"
+	"github.com/getamis/alice/crypto/homo/cl"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 
 type SiResult struct {
-	R  *pt.ECPoint
-	Si *big.Int
+	R     *pt.ECPoint
+	Proof *cl.ConsistencyProofMessage
 }
 
 type SiSigner struct {
+	clPubKey *cl.PublicKey
+
 	*Signer
 }
 
-func NewSiSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo homo.Crypto, secret *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, listener types.StateChangedListener) (*SiSigner, error) {
+func NewSiSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo homo.Crypto, secret *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, clPubKey *cl.PublicKey, listener types.StateChangedListener) (*SiSigner, error) {
 	ph, err := newPubkeyHandler(expectedPubkey, peerManager, homo, secret, bks, msg, false)
 	if err != nil {
 		log.Debug("Failed to new a public key handler", "err", err)
@@ -62,8 +65,13 @@ func (s *SiSigner) GetResult() (*SiResult, error) {
 		return nil, tss.ErrNotReady
 	}
 
+	r := rh.r.Copy()
+	proof, err := s.clPubKey.BuildConsistencyProof(rh.si.Bytes(), r)
+	if err != nil {
+		return nil, err
+	}
 	return &SiResult{
-		R:  rh.r.Copy(),
-		Si: new(big.Int).Set(rh.si),
+		R:     r,
+		Proof: proof,
 	}, nil
 }
