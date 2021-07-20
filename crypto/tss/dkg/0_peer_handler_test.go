@@ -19,7 +19,7 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/internal/message/types/mocks"
+	"github.com/getamis/alice/libs/message/types/mocks"
 	"github.com/getamis/sirius/log"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

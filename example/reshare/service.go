@@ -18,7 +18,7 @@ import (
 
 	"github.com/getamis/alice/crypto/tss/reshare"
 	"github.com/getamis/alice/example/utils"
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/libs/message/types"
 	"github.com/getamis/sirius/log"
 	"github.com/golang/protobuf/proto"
 	"github.com/libp2p/go-libp2p-core/network"

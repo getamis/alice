@@ -24,8 +24,8 @@ import (
 	"github.com/getamis/alice/crypto/matrix"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/utils"
-	"github.com/getamis/alice/internal/message"
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/libs/message"
+	"github.com/getamis/alice/libs/message/types"
 	"github.com/getamis/sirius/log"
 	"google.golang.org/protobuf/proto"
 )

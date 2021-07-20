@@ -18,8 +18,8 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/getamis/alice/internal/message/types"
-	"github.com/getamis/alice/internal/message/types/mocks"
+	"github.com/getamis/alice/libs/message/types"
+	"github.com/getamis/alice/libs/message/types/mocks"
 )
 
 var _ = Describe("Peer", func() {

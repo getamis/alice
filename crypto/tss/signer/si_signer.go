@@ -22,7 +22,7 @@ import (
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/homo/cl"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/libs/message/types"
 	"github.com/getamis/sirius/log"
 )
 
