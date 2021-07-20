@@ -18,7 +18,7 @@ import (
 	"math/big"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
-	"github.com/getamis/alice/internal/message"
+	"github.com/getamis/alice/libs/message"
 )
 
 type peer struct {

@@ -19,8 +19,8 @@ import (
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/internal/message"
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/libs/message"
+	"github.com/getamis/alice/libs/message/types"
 )
 
 type ServerVerifier struct {

@@ -15,7 +15,7 @@
 package share
 
 import (
-	"github.com/getamis/alice/internal/message"
+	"github.com/getamis/alice/libs/message"
 )
 
 type peer struct {

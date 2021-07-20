@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/libs/message/types"
 	"github.com/getamis/sirius/log"
 )
 

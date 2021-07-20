@@ -20,7 +20,7 @@ import (
 	"github.com/getamis/alice/crypto/oprf"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/utils"
-	"github.com/getamis/alice/internal/message/types/mocks"
+	"github.com/getamis/alice/libs/message/types/mocks"
 	"github.com/getamis/sirius/log"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

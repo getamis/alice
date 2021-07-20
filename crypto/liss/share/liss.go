@@ -18,8 +18,8 @@ import (
 	"errors"
 
 	"github.com/getamis/alice/crypto/liss"
-	"github.com/getamis/alice/internal/message"
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/libs/message"
+	"github.com/getamis/alice/libs/message/types"
 )
 
 var (
