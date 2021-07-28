@@ -240,9 +240,6 @@ func (m *Matrix) Add(matrix *Matrix) (*Matrix, error) {
 	for i := uint64(0); i < m.numberRow; i++ {
 		m.matrix[i] = addSlices(m.matrix[i], matrix.matrix[i])
 	}
-	if m.fieldOrder == nil {
-		return m, nil
-	}
 	return m.modulus(), nil
 }
 
@@ -264,9 +261,6 @@ func (m *Matrix) Multiply(matrix *Matrix) (*Matrix, error) {
 		m.matrix[i] = tempSlice
 	}
 	m.numberColumn = matrix.numberColumn
-	if m.fieldOrder == nil {
-		return m, nil
-	}
 	return m.modulus(), nil
 }
 
@@ -276,6 +270,9 @@ func (m *Matrix) Multiply(matrix *Matrix) (*Matrix, error) {
 // Then output is [3, 2]
 //                [2, 0]
 func (m *Matrix) modulus() *Matrix {
+	if m.fieldOrder == nil {
+		return m
+	}
 	for i := uint64(0); i < m.numberRow; i++ {
 		for j := uint64(0); j < m.numberColumn; j++ {
 			m.matrix[i][j].Mod(m.matrix[i][j], m.fieldOrder)
