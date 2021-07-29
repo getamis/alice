@@ -20,8 +20,10 @@ import (
 )
 
 const (
-	// maxNumberColumnAndRow defines the max permitted number of columns and rows
-	maxNumberColumnAndRow = 100
+	// maxNumberColumn defines the max permitted number of columns
+	maxNumberColumn = 100
+	// maxNumberColumn defines the max permitted number of rows
+	maxNumberRow = 20000
 )
 
 var (
@@ -73,7 +75,7 @@ func NewMatrix(fieldOrder *big.Int, matrix [][]*big.Int) (*Matrix, error) {
 	if numberColumn == 0 {
 		return nil, ErrZeroColumns
 	}
-	if numberRow >= maxNumberColumnAndRow || numberColumn >= maxNumberColumnAndRow {
+	if numberRow >= maxNumberRow || numberColumn >= maxNumberColumn {
 		return nil, ErrMaximalSizeOfMatrice
 	}
 	for i := uint64(0); i < numberRow; i++ {
@@ -467,7 +469,7 @@ func (m *Matrix) getNonZeroCoefficientByRow(columnIdx uint64, fromRowIndex uint6
 
 // GetMatrixRank returns the number of linearly independent column over finite field with order fieldOrder.
 // As give the index of rows of a matrix, this function will find nonzero value such that this value has the smallest index of rows.
-func (m *Matrix) GetMatrixRank(fieldOrder *big.Int) (uint64, error) {
+func (m *Matrix) GetMatrixRank() (uint64, error) {
 	if m.fieldOrder == nil {
 		return 0, ErrNonImplement
 	}

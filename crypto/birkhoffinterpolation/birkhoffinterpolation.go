@@ -148,7 +148,7 @@ func (bks BkParameters) CheckValid(threshold uint32, fieldOrder *big.Int) error 
 		if err != nil {
 			return err
 		}
-		rankBirkhoffMatrix, err := birkhoffMatrix.GetMatrixRank(fieldOrder)
+		rankBirkhoffMatrix, err := birkhoffMatrix.GetMatrixRank()
 		if err != nil {
 			return err
 		}
