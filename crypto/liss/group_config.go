@@ -48,7 +48,7 @@ func NewGroup(users int, threshold int) (*GroupConfig, error) {
 	}, nil
 }
 
-func (g *GroupConfig) GenerateMatrix() (*matrix.Matrix, error) {
+func (g *GroupConfig) GenerateMatrix() (*matrix.CSR, error) {
 	thresholdMatrix, err := generateThresholdMatrix(g.Threshold)
 	if err != nil {
 		return nil, err
@@ -56,10 +56,7 @@ func (g *GroupConfig) GenerateMatrix() (*matrix.Matrix, error) {
 	combination := combin.Binomial(g.Users, g.Threshold)
 	result := thresholdMatrix.Copy()
 	for i := 1; i < combination; i++ {
-		result, err = orMatrix(result, thresholdMatrix.Copy())
-		if err != nil {
-			return nil, err
-		}
+		result = orMatrixCSR(result, thresholdMatrix.Copy())
 	}
 	return result, nil
 }
@@ -88,7 +85,8 @@ func (g *GroupConfig) CheckKeys(userIndex int, m Mapper) bool {
 	return true
 }
 
-func generateThresholdMatrix(threshold int) (*matrix.Matrix, error) {
+// To Do: Directly generate CSR form
+func generateThresholdMatrix(threshold int) (*matrix.CSR, error) {
 	result := make([][]*big.Int, threshold)
 	firstRow := make([]*big.Int, threshold)
 	for j := 0; j < len(firstRow); j++ {
@@ -108,63 +106,110 @@ func generateThresholdMatrix(threshold int) (*matrix.Matrix, error) {
 		nonVanishPosition -= 1
 		result[i] = temp
 	}
-	return matrix.NewMatrix(nil, result)
+	m, err := matrix.NewMatrix(nil, result)
+	if err != nil {
+		return nil, err
+	}
+	return m.ToCSR(), nil
 }
 
-func orMatrix(m1 *matrix.Matrix, m2 *matrix.Matrix) (*matrix.Matrix, error) {
-	result := make([][]*big.Int, m1.GetNumberRow()+m2.GetNumberRow())
-	numberColumn := int(m1.GetNumberColumn() + m2.GetNumberColumn() - 1)
-	m1NumberColumn := int(m1.GetNumberColumn())
-	for i := 0; i < int(m1.GetNumberRow()); i++ {
-		temp := make([]*big.Int, numberColumn)
-		for j := 0; j < int(m1.GetNumberColumn()); j++ {
-			temp[j] = m1.Get(uint64(i), uint64(j))
+func orMatrixCSR(m1 *matrix.CSR, m2 *matrix.CSR) *matrix.CSR {
+	m1ColumnIdx := m1.GetColumnIdx()
+	numberNonZero := len(m1.GetValue()) + len(m2.GetValue())
+	value := make([]*big.Int, numberNonZero)
+	columnIdx := make([]uint64, numberNonZero)
+	rowIdx := make([]uint64, m1.GetNumberRow()+m2.GetNumberRow()+1)
+	rowIdx[0] = 0
+	m1Value := m1.GetValue()
+	m1RowIdx := m1.GetRowIdx()
+	index := uint64(0)
+	for i := uint64(0); i < m1.GetNumberRow(); i++ {
+		for k := m1RowIdx[i]; k < m1RowIdx[i+1]; k++ {
+			if m1ColumnIdx[k] == 0 {
+				value[index] = m1Value[k]
+				columnIdx[index] = 0
+				index++
+			} else {
+				value[index] = m1Value[k]
+				columnIdx[index] = m1ColumnIdx[k]
+				index++
+			}
 		}
-		for j := int(m1.GetNumberColumn()); j < numberColumn; j++ {
-			temp[j] = big.NewInt(0)
-		}
-		result[i] = temp
+		rowIdx[i+1] = index
 	}
-	for i := 0; i < int(m2.GetNumberRow()); i++ {
-		temp := make([]*big.Int, numberColumn)
-		temp[0] = m2.Get(uint64(i), 0)
-		for j := 1; j < int(m1.GetNumberColumn()); j++ {
-			temp[j] = big.NewInt(0)
+	m2Value := m2.GetValue()
+	m2RowIdx := m2.GetRowIdx()
+	m2ColumnIdx := m2.GetColumnIdx()
+	translate := m1.GetNumberColumn() - 1
+	translateIndex := m1.GetNumberRow() + 1
+	for i := uint64(0); i < m2.GetNumberRow(); i++ {
+		for k := m2RowIdx[i]; k < m2RowIdx[i+1]; k++ {
+			if m2ColumnIdx[k] == 0 {
+				value[index] = m2Value[k]
+				columnIdx[index] = 0
+				index++
+			} else {
+				value[index] = m2Value[k]
+				columnIdx[index] = m2ColumnIdx[k] + translate
+				index++
+			}
 		}
-		for j := 1; j < int(m2.GetNumberColumn()); j++ {
-			temp[j+m1NumberColumn-1] = m2.Get(uint64(i), uint64(j))
-		}
-		result[i+int(m1.GetNumberRow())] = temp
+		rowIdx[translateIndex+i] = index
 	}
-	return matrix.NewMatrix(nil, result)
+	return matrix.NewCSR(m1.GetNumberRow()+m2.GetNumberRow(), m1.GetNumberColumn()+m2.GetNumberColumn()-1, nil, value, columnIdx, rowIdx)
 }
 
-func andMatrix(m1 *matrix.Matrix, m2 *matrix.Matrix) (*matrix.Matrix, error) {
-	result := make([][]*big.Int, m1.GetNumberRow()+m2.GetNumberRow())
-	numberColumn := int(m1.GetNumberColumn() + m2.GetNumberColumn())
-	m1NumberColumn := int(m1.GetNumberColumn())
-	for i := 0; i < int(m1.GetNumberRow()); i++ {
-		temp := make([]*big.Int, numberColumn)
-		temp[0] = m1.Get(uint64(i), 0)
-		for j := 0; j < int(m1.GetNumberColumn()); j++ {
-			temp[j+1] = m1.Get(uint64(i), uint64(j))
+func andMatrixCSR(m1 *matrix.CSR, m2 *matrix.CSR) *matrix.CSR {
+	nonzeroIndex0 := 0
+	m1ColumnIdx := m1.GetColumnIdx()
+	for i := 0; i < len(m1ColumnIdx); i++ {
+		if m1ColumnIdx[i] == 0 {
+			nonzeroIndex0++
 		}
-		for j := int(m1.GetNumberColumn()) + 1; j < numberColumn; j++ {
-			temp[j] = big.NewInt(0)
-		}
-		result[i] = temp
 	}
-	for i := 0; i < int(m2.GetNumberRow()); i++ {
-		temp := make([]*big.Int, numberColumn)
-		temp[0] = big.NewInt(0)
-		temp[1] = m2.Get(uint64(i), 0)
-		for j := 1; j < int(m1.GetNumberColumn()); j++ {
-			temp[j+1] = big.NewInt(0)
+	numberNonZero := nonzeroIndex0 + len(m1.GetValue()) + len(m2.GetValue())
+	value := make([]*big.Int, numberNonZero)
+	columnIdx := make([]uint64, numberNonZero)
+	rowIdx := make([]uint64, m1.GetNumberRow()+m2.GetNumberRow()+1)
+	rowIdx[0] = 0
+	m1Value := m1.GetValue()
+	m1RowIdx := m1.GetRowIdx()
+	index := uint64(0)
+	for i := uint64(0); i < m1.GetNumberRow(); i++ {
+		for k := m1RowIdx[i]; k < m1RowIdx[i+1]; k++ {
+			if m1ColumnIdx[k] == 0 {
+				value[index] = m1Value[k]
+				columnIdx[index] = 0
+				index++
+				value[index] = m1Value[k]
+				columnIdx[index] = 1
+				index++
+			} else {
+				value[index] = m1Value[k]
+				columnIdx[index] = m1ColumnIdx[k] + 1
+				index++
+			}
 		}
-		for j := 1; j < int(m2.GetNumberColumn()); j++ {
-			temp[j+m1NumberColumn] = m2.Get(uint64(i), uint64(j))
-		}
-		result[i+int(m1.GetNumberRow())] = temp
+		rowIdx[i+1] = index
 	}
-	return matrix.NewMatrix(nil, result)
+	m2Value := m2.GetValue()
+	m2RowIdx := m2.GetRowIdx()
+	m2ColumnIdx := m2.GetColumnIdx()
+	translate := m1.GetNumberColumn()
+	translateIndex := m1.GetNumberRow() + 1
+	for i := uint64(0); i < m2.GetNumberRow(); i++ {
+		for k := m2RowIdx[i]; k < m2RowIdx[i+1]; k++ {
+			if m2ColumnIdx[k] == 0 {
+				value[index] = m2Value[k]
+				columnIdx[index] = 1
+				index++
+			} else {
+				value[index] = m2Value[k]
+				columnIdx[index] = m2ColumnIdx[k] + translate
+				index++
+			}
+		}
+		rowIdx[translateIndex+i] = index
+	}
+	return matrix.NewCSR(m1.GetNumberRow()+m2.GetNumberRow(), m1.GetNumberColumn()+m2.GetNumberColumn(), nil, value, columnIdx, rowIdx)
 }

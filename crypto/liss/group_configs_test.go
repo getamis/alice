@@ -38,7 +38,7 @@ var _ = Describe("group configs test", func() {
 		got, err := groups.generateMatrix()
 		Expect(err).Should(BeNil())
 		e, err := matrix.NewMatrix(nil, exptected)
-		Expect(got).Should(Equal(e))
+		Expect(got).Should(Equal(e.ToCSR()))
 		Expect(err).Should(BeNil())
 	},
 		Entry("normal case", 2, 2, [][]*big.Int{

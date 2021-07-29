@@ -79,16 +79,43 @@ var _ = Describe("Matrix test", func() {
 		})
 
 		It("over size of the number of column or row", func() {
-			identity, err := newIdentityMatrix(150, bigFieldOrder)
+			identity, err := newIdentityMatrix(101, bigFieldOrder)
 			Expect(err).Should(BeNil())
 			m, err := NewMatrix(fieldOrder, identity.GetMatrix())
 			Expect(err).Should(Equal(ErrMaximalSizeOfMatrice))
 			Expect(m).Should(BeNil())
 		})
+
+		It("not over prime", func() {
+			m, err := NewMatrix(big.NewInt(4), [][]*big.Int{
+				{big.NewInt(11), big.NewInt(18), big.NewInt(19)},
+				{big.NewInt(45), big.NewInt(74), big.NewInt(81)},
+			})
+			Expect(err).Should(Equal(ErrNonPrimeFieldOrder))
+			Expect(m).Should(BeNil())
+		})
+
+		It("should be ok", func() {
+			m, err := NewMatrix(nil, [][]*big.Int{
+				{big.NewInt(11), big.NewInt(18), big.NewInt(19)},
+				{big.NewInt(45), big.NewInt(74), big.NewInt(81)},
+			})
+			Expect(m.Equal(m.Copy())).Should(BeTrue())
+			Expect(err).Should(BeNil())
+		})
 	})
 
 	It("Copy()", func() {
 		Expect(m.Copy()).Should(Equal(m))
+	})
+
+	It("Copy()", func() {
+		c, err := NewMatrix(nil, [][]*big.Int{
+			{big.NewInt(1), big.NewInt(2)},
+			{big.NewInt(1), big.NewInt(1)},
+		})
+		Expect(err).Should(BeNil())
+		Expect(c.Copy()).Should(Equal(c))
 	})
 
 	It("GetMatrix()", func() {
@@ -169,6 +196,20 @@ var _ = Describe("Matrix test", func() {
 			Expect(err).Should(BeNil())
 			Expect(got).Should(Equal(expected))
 		})
+
+		It("should be ok", func() {
+			matrixA, err := NewMatrix(fieldOrder, [][]*big.Int{
+				{big.NewInt(11)},
+			})
+			Expect(err).Should(BeNil())
+			matrixB, err := NewMatrix(fieldOrder, [][]*big.Int{
+				{big.NewInt(10), big.NewInt(1), big.NewInt(1)},
+			})
+			Expect(err).Should(BeNil())
+			got, err := matrixA.Add(matrixB)
+			Expect(got).Should(BeNil())
+			Expect(err).Should(Equal(ErrInconsistentNumber))
+		})
 	})
 
 	Context("Multiply()", func() {
@@ -209,6 +250,21 @@ var _ = Describe("Matrix test", func() {
 				{big.NewInt(3), big.NewInt(6), big.NewInt(15)},
 			}),
 		)
+	})
+
+	It("Multiply(): ErrInconsistentNumber", func() {
+		matrixA, err := NewMatrix(fieldOrder, [][]*big.Int{
+			{big.NewInt(11), big.NewInt(18), big.NewInt(19)},
+			{big.NewInt(45), big.NewInt(74), big.NewInt(81)},
+		})
+		Expect(err).Should(BeNil())
+		matrixB, err := NewMatrix(fieldOrder, [][]*big.Int{
+			{big.NewInt(10), big.NewInt(1), big.NewInt(1)},
+			{big.NewInt(4), big.NewInt(7), big.NewInt(80)},
+		})
+		got, err := matrixA.Multiply(matrixB)
+		Expect(err).Should(Equal(ErrInconsistentNumber))
+		Expect(got).Should(BeNil())
 	})
 
 	Context("swapRow()", func() {
@@ -321,6 +377,20 @@ var _ = Describe("Matrix test", func() {
 			Expect(err).Should(BeNil())
 			Expect(gotLower.modulus().Equal(expectLower)).Should(BeTrue())
 		})
+
+		It("ErrNonImplement", func() {
+			mat, err := NewMatrix(nil, [][]*big.Int{
+				{big.NewInt(0), big.NewInt(1), big.NewInt(4)},
+				{big.NewInt(0), big.NewInt(3), big.NewInt(5)},
+				{big.NewInt(0), big.NewInt(0), big.NewInt(2)},
+			})
+			Expect(err).Should(BeNil())
+			gotUpper, gotLower, _, err := mat.getGaussElimination()
+			Expect(gotUpper).Should(BeNil())
+			Expect(gotLower).Should(BeNil())
+			Expect(err).Should(Equal(ErrNonImplement))
+		})
+
 	})
 
 	Context("Inverse()", func() {
@@ -332,6 +402,26 @@ var _ = Describe("Matrix test", func() {
 				{big.NewInt(41), big.NewInt(54), big.NewInt(85)},
 				{big.NewInt(42), big.NewInt(87), big.NewInt(29)},
 			}))
+		})
+
+		It("ErrNotSquareMatrix", func() {
+			mat, err := NewMatrix(fieldOrder, [][]*big.Int{
+				{big.NewInt(1), big.NewInt(3)},
+			})
+			Expect(err).Should(BeNil())
+			got, err := mat.Inverse()
+			Expect(err).Should(Equal(ErrNotSquareMatrix))
+			Expect(got).Should(BeNil())
+		})
+
+		It("ErrNonImplement", func() {
+			mat, err := NewMatrix(nil, [][]*big.Int{
+				{big.NewInt(1)},
+			})
+			Expect(err).Should(BeNil())
+			got, err := mat.Inverse()
+			Expect(err).Should(Equal(ErrNonImplement))
+			Expect(got).Should(BeNil())
 		})
 
 		DescribeTable("should be ok for big number", func(a [][]*big.Int, expectedIntStrs [][]string) {
@@ -450,6 +540,20 @@ var _ = Describe("Matrix test", func() {
 			Expect(err).Should(BeNil())
 			Expect(got.Equal(expected)).Should(BeTrue())
 		})
+
+		It("ErrNonPrimeFieldOrder", func() {
+			m1, err := NewMatrix(nil, [][]*big.Int{
+				{big.NewInt(1)},
+			})
+			Expect(err).Should(BeNil())
+			m2, err := NewMatrix(nil, [][]*big.Int{
+				{big.NewInt(1)},
+			})
+			Expect(err).Should(BeNil())
+			got, err := m1.multiInverseDiagonal(m2)
+			Expect(err).Should(Equal(ErrNonPrimeFieldOrder))
+			Expect(got).Should(BeNil())
+		})
 	})
 
 	Context("modInverse()", func() {
@@ -465,6 +569,19 @@ var _ = Describe("Matrix test", func() {
 			Expect(err).Should(BeNil())
 			expected := new(big.Int).ModInverse(big.NewInt(5), bigFieldOrder)
 			Expect(got.Cmp(expected)).Should(BeZero())
+		})
+
+		It("ErrNonPrimeFieldOrder", func() {
+			m, err := NewMatrix(nil, [][]*big.Int{
+				{big.NewInt(0), big.NewInt(1), big.NewInt(4)},
+				{big.NewInt(0), big.NewInt(3), big.NewInt(5)},
+				{big.NewInt(0), big.NewInt(0), big.NewInt(2)},
+			})
+			Expect(err).Should(BeNil())
+			Expect(m).ShouldNot(BeNil())
+			got, err := m.modInverse(1, 2)
+			Expect(err).Should(Equal(ErrNonPrimeFieldOrder))
+			Expect(got).Should(BeNil())
 		})
 	})
 
@@ -509,13 +626,23 @@ var _ = Describe("Matrix test", func() {
 				{big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0)},
 			}, "0"),
 		)
+
+		It("ErrNonImplement", func() {
+			mat, err := NewMatrix(nil, [][]*big.Int{
+				{big.NewInt(0)},
+			})
+			Expect(err).Should(BeNil())
+			got, err := mat.Determinant()
+			Expect(got).Should(BeNil())
+			Expect(err).Should(Equal(ErrNonImplement))
+		})
 	})
 
 	Context("GetMatrixRank()", func() {
 		DescribeTable("should be ok", func(a [][]*big.Int, expected uint64) {
 			m, err := NewMatrix(bigFieldOrder, a)
 			Expect(err).Should(BeNil())
-			got, err := m.GetMatrixRank(bigFieldOrder)
+			got, err := m.GetMatrixRank()
 			Expect(got).Should(Equal(expected))
 			Expect(err).Should(BeNil())
 		},
@@ -584,6 +711,16 @@ var _ = Describe("Matrix test", func() {
 				{big.NewInt(3), big.NewInt(3), big.NewInt(81), big.NewInt(3)},
 			}, uint64(3)),
 		)
+
+		It("ErrNonImplement", func() {
+			mat, err := NewMatrix(nil, [][]*big.Int{
+				{big.NewInt(0)},
+			})
+			Expect(err).Should(BeNil())
+			got, err := mat.GetMatrixRank()
+			Expect(got).Should(Equal(uint64(0)))
+			Expect(err).Should(Equal(ErrNonImplement))
+		})
 	})
 
 	Context("DeleteRow()", func() {
@@ -676,6 +813,11 @@ var _ = Describe("Matrix test", func() {
 			}),
 		)
 
+		It("from is larger than to", func() {
+			got, err := m.DeleteColumn(0, 100)
+			Expect(err).Should(Equal(ErrOutOfRange))
+			Expect(got).Should(BeNil())
+		})
 	})
 
 	Context("Pseudoinverse()", func() {

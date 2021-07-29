@@ -32,9 +32,9 @@ var (
 type GroupConfigs []*GroupConfig
 
 // The output is randomValueMatrix, organizationMatrix
-func (gc GroupConfigs) GenerateShares(g bqForm.Exper, randomM *matrix.Matrix, orgMatrix *matrix.Matrix) ([][]map[string]*big.Int, []*bqForm.BQuadraticForm, error) {
+func (gc GroupConfigs) GenerateShares(g bqForm.Exper, randomM *matrix.Matrix, orgMatrix *matrix.CSR) ([][]map[string]*big.Int, []*bqForm.BQuadraticForm, error) {
 	copyOrg := orgMatrix.Copy()
-	sharesMatrix, err := copyOrg.Multiply(randomM)
+	sharesMatrix, err := copyOrg.MultiplyVector(randomM)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -102,7 +102,7 @@ func ShareKey(input sort.IntSlice) string {
 	return result
 }
 
-func (gc GroupConfigs) GenerateRandomValue(bigrange uint, distanceDist uint) (*matrix.Matrix, *matrix.Matrix, error) {
+func (gc GroupConfigs) GenerateRandomValue(bigrange uint, distanceDist uint) (*matrix.Matrix, *matrix.CSR, error) {
 	m, err := gc.generateMatrix()
 	if err != nil {
 		return nil, nil, err
@@ -132,7 +132,7 @@ func (gc GroupConfigs) GenerateRandomValue(bigrange uint, distanceDist uint) (*m
 	return result, m, nil
 }
 
-func (gc GroupConfigs) generateMatrix() (*matrix.Matrix, error) {
+func (gc GroupConfigs) generateMatrix() (*matrix.CSR, error) {
 	result, err := gc[0].GenerateMatrix()
 	if err != nil {
 		return nil, err
@@ -142,10 +142,7 @@ func (gc GroupConfigs) generateMatrix() (*matrix.Matrix, error) {
 		if err != nil {
 			return nil, err
 		}
-		result, err = andMatrix(result, temp)
-		if err != nil {
-			return nil, err
-		}
+		result = andMatrixCSR(result, temp)
 	}
 	return result, nil
 }

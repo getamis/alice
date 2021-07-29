@@ -94,4 +94,133 @@ var _ = Describe("Sparse matrix", func() {
 		Expect(err).Should(Equal(ErrNotVector))
 		Expect(got).Should(BeNil())
 	})
+
+	DescribeTable("GetRow()", func(matrix [][]*big.Int, expectedValue []*big.Int, order *big.Int, indexRow uint64) {
+		m, err := NewMatrix(order, matrix)
+		Expect(err).Should(BeNil())
+		c := m.ToCSR()
+		got, err := c.GetRow(indexRow)
+		Expect(err).Should(BeNil())
+		Expect(got).Should(Equal(expectedValue))
+	},
+		Entry("case 1", [][]*big.Int{
+			{big.NewInt(0), big.NewInt(74), big.NewInt(0)},
+			{big.NewInt(3), big.NewInt(0), big.NewInt(15)},
+		}, []*big.Int{
+			big.NewInt(3), big.NewInt(0), big.NewInt(15),
+		}, fieldOrder, uint64(1)),
+
+		Entry("case 2", [][]*big.Int{
+			{big.NewInt(0), big.NewInt(74), big.NewInt(0)},
+			{big.NewInt(3), big.NewInt(0), big.NewInt(15)},
+		}, []*big.Int{
+			big.NewInt(0), big.NewInt(74), big.NewInt(0),
+		}, fieldOrder, uint64(0)),
+
+		Entry("case 3", [][]*big.Int{
+			{big.NewInt(0), big.NewInt(74), big.NewInt(0)},
+			{big.NewInt(3), big.NewInt(0), big.NewInt(15)},
+			{big.NewInt(3), big.NewInt(5), big.NewInt(15)},
+			{big.NewInt(5), big.NewInt(0), big.NewInt(15)},
+		}, []*big.Int{
+			big.NewInt(5), big.NewInt(0), big.NewInt(15),
+		}, fieldOrder, uint64(3)),
+
+		Entry("case 4", [][]*big.Int{
+			{big.NewInt(0), big.NewInt(74), big.NewInt(0)},
+			{big.NewInt(3), big.NewInt(0), big.NewInt(15)},
+			{big.NewInt(3), big.NewInt(5), big.NewInt(15)},
+			{big.NewInt(5), big.NewInt(0), big.NewInt(15)},
+		}, []*big.Int{
+			big.NewInt(3), big.NewInt(5), big.NewInt(15),
+		}, fieldOrder, uint64(2)),
+	)
+
+	It("GetRow: ErrOutOfRange", func() {
+		m, err := newIdentityMatrix(1, fieldOrder)
+		Expect(err).Should(BeNil())
+		c := m.ToCSR()
+		got, err := c.GetRow(2)
+		Expect(got).Should(BeNil())
+		Expect(err).Should(Equal(ErrOutOfRange))
+	})
+
+	It("GetValue", func() {
+		m, err := newIdentityMatrix(1, fieldOrder)
+		Expect(err).Should(BeNil())
+		c := m.ToCSR()
+		got := c.GetValue()
+		Expect(got).Should(Equal([]*big.Int{big.NewInt(1)}))
+	})
+
+	It("GetcolumnIdx", func() {
+		m, err := newIdentityMatrix(1, fieldOrder)
+		Expect(err).Should(BeNil())
+		c := m.ToCSR()
+		got := c.GetColumnIdx()
+		Expect(got).Should(Equal([]uint64{0}))
+	})
+
+	It("GetRowIdx", func() {
+		m, err := newIdentityMatrix(1, fieldOrder)
+		Expect(err).Should(BeNil())
+		c := m.ToCSR()
+		got := c.GetRowIdx()
+		Expect(got).Should(Equal([]uint64{0, 1}))
+	})
+
+	It("GetNumberRow", func() {
+		m, err := newIdentityMatrix(1, fieldOrder)
+		Expect(err).Should(BeNil())
+		c := m.ToCSR()
+		got := c.GetNumberRow()
+		Expect(got).Should(Equal(m.GetNumberRow()))
+	})
+
+	It("GetNumberColumn", func() {
+		m, err := newIdentityMatrix(1, fieldOrder)
+		Expect(err).Should(BeNil())
+		c := m.ToCSR()
+		got := c.GetNumberColumn()
+		Expect(got).Should(Equal(m.GetNumberColumn()))
+	})
+
+	It("GetFieldOrder: over field", func() {
+		m, err := newIdentityMatrix(1, fieldOrder)
+		Expect(err).Should(BeNil())
+		c := m.ToCSR()
+		got := c.GetFieldOrder()
+		Expect(got).Should(Equal(fieldOrder))
+	})
+
+	It("GetFieldOrder: over finite field", func() {
+		m, err := NewMatrix(nil, [][]*big.Int{
+			{big.NewInt(0), big.NewInt(74), big.NewInt(0)},
+			{big.NewInt(3), big.NewInt(0), big.NewInt(15)},
+		})
+		Expect(err).Should(BeNil())
+		c := m.ToCSR()
+		got := c.GetFieldOrder()
+		Expect(got).Should(BeNil())
+	})
+
+	It("Copy: over Z", func() {
+		m, err := NewMatrix(nil, [][]*big.Int{
+			{big.NewInt(0), big.NewInt(74), big.NewInt(0)},
+			{big.NewInt(3), big.NewInt(0), big.NewInt(15)},
+		})
+		Expect(err).Should(BeNil())
+		got := m.ToCSR()
+		Expect(got).Should(Equal(got.Copy()))
+	})
+
+	It("Copy: over finite field", func() {
+		m, err := NewMatrix(fieldOrder, [][]*big.Int{
+			{big.NewInt(0), big.NewInt(74), big.NewInt(0)},
+			{big.NewInt(3), big.NewInt(0), big.NewInt(15)},
+		})
+		Expect(err).Should(BeNil())
+		got := m.ToCSR()
+		Expect(got).Should(Equal(got.Copy()))
+	})
 })
