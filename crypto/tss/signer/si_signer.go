@@ -48,7 +48,8 @@ func NewSiSigner(peerManager types.PeerManager, expectedPubkey *pt.ECPoint, homo
 		log.Debug("Failed to new signers", "err", err)
 	}
 	return &SiSigner{
-		Signer: s,
+		clPubKey: clPubKey,
+		Signer:   s,
 	}, nil
 }
 
