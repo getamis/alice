@@ -110,16 +110,19 @@ func (gc GroupConfigs) GenerateRandomValue(bigrange uint, distanceDist uint) (*m
 	// upBd = bigrange + \ceil log2(e-1) \ceil + 1 + distanceDist
 	rankBound := math.Ceil(math.Log2(float64(m.GetNumberColumn()))) + 1
 	upBd := new(big.Int).Lsh(big1, bigrange+distanceDist+uint(rankBound))
+	upBd.Add(upBd, big1)
+	zeroRange := new(big.Int).Lsh(big1, bigrange)
+	zeroRange.Add(zeroRange, big1)
 	randomValueMatrix := make([][]*big.Int, m.GetNumberColumn())
 	secretSlice := make([]*big.Int, 1)
-	secretSlice[0], err = utils.RandomAbsoluteRangeInt(new(big.Int).Lsh(big1, bigrange))
+	secretSlice[0], err = utils.RandomInt(zeroRange)
 	if err != nil {
 		return nil, nil, err
 	}
 	randomValueMatrix[0] = secretSlice
 	for i := 1; i < len(randomValueMatrix); i++ {
 		tempSlice := make([]*big.Int, 1)
-		tempSlice[0], err = utils.RandomAbsoluteRangeInt(upBd)
+		tempSlice[0], err = utils.RandomInt(upBd)
 		if err != nil {
 			return nil, nil, err
 		}
