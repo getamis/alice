@@ -50,7 +50,7 @@ var (
 
 type bqCommitmentHandler struct {
 	configs          liss.GroupConfigs
-	configsMatrix    *matrix.Matrix
+	configsMatrix    *matrix.CSR
 	salts            [][]byte
 	exponential      []*bqForm.BQuadraticForm
 	bqMsg            *Message

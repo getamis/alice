@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/btcsuite/btcd v0.20.1-beta
+	github.com/coreos/etcd v3.3.10+incompatible
 	github.com/getamis/sirius v1.1.7
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gogo/protobuf v1.3.1
