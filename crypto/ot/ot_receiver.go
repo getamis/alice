@@ -17,6 +17,7 @@ package ot
 import (
 	"crypto/subtle"
 	"math/big"
+	"strconv"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
@@ -104,8 +105,14 @@ func (otR *OtReceiver) Response(otSenderMsg *OtSenderMessage) (*OtReceiverVerify
 		if err != nil {
 			return nil, nil, err
 		}
-		// compute pibi := RO2(sid, z^alphai)
-		pib[i], err = utils.HashProtos(otR.sid, zalphaiMSg)
+		// compute pibi := if bi = 0, then RO2(sid, z^alphai, i). If bi == 1, then compute RO2(sid, z^alphai). Ref: ref: Batching Base Oblivious Transfers https://eprint.iacr.org/2021/682.pdf.
+		if otR.b[i] == 0 {
+			pib[i], err = utils.HashProtos(otR.sid, zalphaiMSg, &any.Any{
+				Value: []byte(strconv.Itoa(i)),
+			})
+		} else {
+			pib[i], err = utils.HashProtos(otR.sid, zalphaiMSg)
+		}
 		if err != nil {
 			return nil, nil, err
 		}

@@ -18,6 +18,7 @@ import (
 	"crypto/subtle"
 	"errors"
 	"math/big"
+	"strconv"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/oprf/hasher"
@@ -82,7 +83,11 @@ func NewSender(sid []byte, otReceiverMsg *OtReceiverMessage) (*OtSender, error) 
 		if err != nil {
 			return nil, err
 		}
-		p0[i], err = utils.HashProtos(sid, msgbir)
+		// Instead of p0 = H(sid, g^ab), use p0 = H(sid,g^ab,i) in Section 3.3 ref: Batching Base Oblivious Transfers https://eprint.iacr.org/2021/682.pdf.
+		p0[i], err = utils.HashProtos(sid, msgbir,
+			&any.Any{
+				Value: []byte(strconv.Itoa(i)),
+			})
 		if err != nil {
 			return nil, err
 		}
