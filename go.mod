@@ -3,7 +3,10 @@ module github.com/getamis/alice
 go 1.13
 
 require (
+	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412
 	github.com/btcsuite/btcd v0.20.1-beta
+	github.com/decred/dcrd/dcrec/edwards v1.0.0
+	github.com/decred/dcrd/dcrec/edwards/v2 v2.0.1
 	github.com/getamis/sirius v1.1.7
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gogo/protobuf v1.3.1

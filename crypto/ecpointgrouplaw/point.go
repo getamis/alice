@@ -22,6 +22,7 @@ import (
 	"reflect"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/decred/dcrd/dcrec/edwards"
 )
 
 var (
@@ -103,13 +104,10 @@ func (p *ECPoint) Add(p1 *ECPoint) (*ECPoint, error) {
 		return p.Copy(), nil
 	}
 
-	// The case : aG+(-a)G. Assume that the coordinate of aG = (x,y). Then (-a)G = (x,-y). Then aG + (-a)G = identity = (nil, nil).
-	if p1.x.Cmp(p.x) == 0 {
-		tempNegative := new(big.Int).Neg(p1.y)
-		tempNegative.Mod(tempNegative, p.curve.Params().P)
-		if tempNegative.Cmp(p.y) == 0 {
-			return NewIdentity(p.curve), nil
-		}
+	// The case : aG+(-a)G.
+	minusP1 := p1.Neg()
+	if minusP1.Equal(p) {
+		return NewIdentity(p.curve), nil
 	}
 	// The case : aG + aG = 2aG.
 	if p1.x.Cmp(p.x) == 0 && p1.y.Cmp(p.y) == 0 {
@@ -137,6 +135,17 @@ func (p *ECPoint) ScalarMult(k *big.Int) *ECPoint {
 func (p *ECPoint) Neg() *ECPoint {
 	if p.IsIdentity() {
 		return NewIdentity(p.curve)
+	}
+
+	// TODO: Not compare cofactor terms
+	if isSameCurve(p.curve, edwards.Edwards()) {
+		negativeX := new(big.Int).Neg(p.x)
+		negativeX = negativeX.Mod(negativeX, p.curve.Params().P)
+		return &ECPoint{
+			curve: p.curve,
+			x:     negativeX,
+			y:     new(big.Int).Set(p.y),
+		}
 	}
 	negativeY := new(big.Int).Neg(p.y)
 	negativeY = negativeY.Mod(negativeY, p.curve.Params().P)
@@ -233,7 +242,10 @@ func isIdentity(x *big.Int, y *big.Int) bool {
 }
 
 func isSameCurve(curve1 elliptic.Curve, curve2 elliptic.Curve) bool {
-	return reflect.DeepEqual(curve1, curve2)
+	if curve1 == nil || curve2 == nil {
+		return false
+	}
+	return reflect.DeepEqual(curve1.Params(), curve2.Params())
 }
 
 func isOnCurve(curve elliptic.Curve, x, y *big.Int) bool {
@@ -257,6 +269,8 @@ func (c EcPointMessage_Curve) GetEllipticCurve() (elliptic.Curve, error) {
 		return elliptic.P384(), nil
 	case EcPointMessage_S256:
 		return btcec.S256(), nil
+	case EcPointMessage_EDWARD25519:
+		return edwards.Edwards(), nil
 	}
 	return nil, ErrInvalidCurve
 }
@@ -271,6 +285,10 @@ func ToCurve(c elliptic.Curve) (EcPointMessage_Curve, error) {
 		return EcPointMessage_P384, nil
 	case btcec.S256():
 		return EcPointMessage_S256, nil
+	}
+	// TODO: Rewrite it to be a switch case.
+	if isSameCurve(c, edwards.Edwards()) {
+		return EcPointMessage_EDWARD25519, nil
 	}
 	return 0, ErrInvalidCurve
 }

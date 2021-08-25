@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/btcsuite/btcd/btcec"
+	"github.com/decred/dcrd/dcrec/edwards/v2"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -30,7 +31,7 @@ func TestEllipticcurve(t *testing.T) {
 }
 
 var (
-	curveList = []elliptic.Curve{elliptic.P224(), elliptic.P256(), elliptic.P384(), btcec.S256()}
+	curveList = []elliptic.Curve{elliptic.P224(), elliptic.P256(), elliptic.P384(), btcec.S256(), edwards.Edwards()}
 )
 
 var _ = Describe("Elliptic curves", func() {

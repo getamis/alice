@@ -457,7 +457,7 @@ var _ = Describe("Point", func() {
 			})
 
 			It("ToPoint()", func() {
-				const UnSupportedEcPointMessage EcPointMessage_Curve = 4
+				const UnSupportedEcPointMessage EcPointMessage_Curve = 100
 				msg := &EcPointMessage{
 					Curve: UnSupportedEcPointMessage,
 				}

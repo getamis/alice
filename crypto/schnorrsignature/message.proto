@@ -1,4 +1,4 @@
-// Copyright © 2020 AMIS Technologies
+// Copyright © 2021 AMIS Technologies
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,20 +14,21 @@
 
 syntax = "proto3";
 
-package ecpointgrouplaw;
+package schnorrsignature;
 
-option go_package = "github.com/getamis/alice/crypto/ecpointgrouplaw";
+option go_package = "github.com/getamis/alice/crypto/schnorrsignature";
 
-message EcPointMessage {
-  enum Curve {
-    P224 = 0;
-    P256 = 1;
-    P384 = 2;
-    S256 = 3;
-    EDWARD25519 = 4;
-  }
-  Curve curve = 1;
-  bytes x = 2;
-  bytes y = 3;
+import "github.com/getamis/alice/crypto/zkproof/message.proto";
+import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
+
+message CommitmentMsg {
+	bytes x = 1;
+	ecpointgrouplaw.EcPointMessage D = 2;
+	ecpointgrouplaw.EcPointMessage E = 3;
+	zkproof.SchnorrProofMessage sG = 4;
 }
- 
+
+message PartialSignatureMsg {
+	bytes x = 1;
+	bytes si = 2;
+}
