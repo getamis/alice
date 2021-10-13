@@ -24,12 +24,12 @@ import (
 )
 
 type ReshareConfig struct {
-	Port      int64                `yaml:"port"`
-	Threshold uint32               `yaml:"threshold"`
-	Share     string               `yaml:"share"`
-	Pubkey    config.Pubkey        `yaml:"pubkey"`
-	BKs       map[string]config.BK `yaml:"bks"`
-	Peers     []int64              `yaml:"peers"`
+	Peer      config.Peer            `yaml:"peer"`
+	Threshold uint32                 `yaml:"threshold"`
+	Share     string                 `yaml:"share"`
+	Pubkey    config.Pubkey          `yaml:"pubkey"`
+	BKs       map[string]config.BK   `yaml:"bks"`
+	Peers     map[string]config.Peer `yaml:"peers"`
 }
 
 type ReshareResult struct {

@@ -29,6 +29,12 @@ type BK struct {
 	Rank uint32 `yaml:"rank"`
 }
 
+type Peer struct {
+	ID   string `yaml:"id"`
+	Ip   string `yaml:"ip"`
+	Port int64  `yaml:"port"`
+}
+
 func WriteYamlFile(yamlData interface{}, filePath string) error {
 	data, err := yaml.Marshal(yamlData)
 	if err != nil {

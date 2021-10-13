@@ -24,12 +24,12 @@ import (
 )
 
 type SignerConfig struct {
-	Port    int64                `yaml:"port"`
-	Share   string               `yaml:"share"`
-	Pubkey  config.Pubkey        `yaml:"pubkey"`
-	BKs     map[string]config.BK `yaml:"bks"`
-	Message string               `yaml:"msg"`
-	Peers   []int64              `yaml:"peers"`
+	Peer    config.Peer            `yaml:"peer"`
+	Share   string                 `yaml:"share"`
+	Pubkey  config.Pubkey          `yaml:"pubkey"`
+	BKs     map[string]config.BK   `yaml:"bks"`
+	Message string                 `yaml:"msg"`
+	Peers   map[string]config.Peer `yaml:"peers"`
 }
 
 type SignerResult struct {

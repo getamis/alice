@@ -1,6 +1,15 @@
-port: 10002
+peer:
+  id: s1002
+  ip: 10.10.8.46
+  port: 10002
 rank: 0
-threshold: 3
+threshold: 2
 peers:
-  - 10001
-  - 10003
+  s1001:
+    id: s1001
+    ip: 10.10.8.46
+    port: 10001
+  s1003:
+    id: s1003
+    ip: 10.10.8.46
+    port: 10003

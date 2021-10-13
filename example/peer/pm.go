@@ -15,10 +15,10 @@ package peer
 
 import (
 	"context"
+	"github.com/getamis/alice/example/config"
 	"sync"
 	"time"
 
-	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -74,12 +74,12 @@ func (p *peerManager) EnsureAllConnected() {
 }
 
 // AddPeers adds peers to peer list.
-func (p *peerManager) AddPeers(peerPorts []int64) error {
-	for _, peerPort := range peerPorts {
-		peerID := utils.GetPeerIDFromPort(peerPort)
-		peerAddr, err := getPeerAddr(peerPort)
+func (p *peerManager) AddPeers(peers map[string]config.Peer) error {
+	for _, peer := range peers {
+		peerID := peer.ID
+		peerAddr, err := getPeerAddr(peer.Ip, peer.Port)
 		if err != nil {
-			log.Warn("Cannot get peer address", "peerPort", peerPort, "peerID", peerID, "err", err)
+			log.Warn("Cannot get peer address", "peerIp", peer.Ip, "peerPort", peer.Port, "peerID", peerID, "err", err)
 			return err
 		}
 		p.peers[peerID] = peerAddr

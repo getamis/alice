@@ -15,7 +15,6 @@ package signer
 
 import (
 	"github.com/getamis/alice/example/peer"
-	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/spf13/cobra"
@@ -42,13 +41,13 @@ var Cmd = &cobra.Command{
 		}
 
 		// Make a host that listens on the given multiaddress.
-		host, err := peer.MakeBasicHost(c.Port)
+		host, err := peer.MakeBasicHost(c.Peer)
 		if err != nil {
 			log.Crit("Failed to create a basic host", "err", err)
 		}
 
 		// Create a new peer manager.
-		pm := peer.NewPeerManager(utils.GetPeerIDFromPort(c.Port), host, signerProtocol)
+		pm := peer.NewPeerManager(c.Peer.ID, host, signerProtocol)
 		err = pm.AddPeers(c.Peers)
 		if err != nil {
 			log.Crit("Failed to add peers", "err", err)

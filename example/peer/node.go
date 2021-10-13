@@ -17,6 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/getamis/alice/example/config"
 	"math/rand"
 
 	"github.com/getamis/sirius/log"
@@ -31,13 +32,13 @@ import (
 )
 
 // MakeBasicHost creates a LibP2P host.
-func MakeBasicHost(port int64) (host.Host, error) {
-	sourceMultiAddr, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/127.0.0.1/tcp/%d", port))
+func MakeBasicHost(peer config.Peer) (host.Host, error) {
+	sourceMultiAddr, err := multiaddr.NewMultiaddr(fmt.Sprintf("/ip4/%s/tcp/%d", peer.Ip, peer.Port))
 	if err != nil {
 		return nil, err
 	}
 
-	priv, err := generateIdentity(port)
+	priv, err := generateIdentity(peer.Port)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +57,7 @@ func MakeBasicHost(port int64) (host.Host, error) {
 }
 
 // getPeerAddr gets peer full address from port.
-func getPeerAddr(port int64) (string, error) {
+func getPeerAddr(ip string, port int64) (string, error) {
 	priv, err := generateIdentity(port)
 	if err != nil {
 		return "", err
@@ -66,7 +67,7 @@ func getPeerAddr(port int64) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("/ip4/127.0.0.1/tcp/%d/p2p/%s", port, pid), nil
+	return fmt.Sprintf("/ip4/%s/tcp/%d/p2p/%s", ip, port, pid), nil
 }
 
 // generateIdentity generates a fixed key pair by using port as random source.

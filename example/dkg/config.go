@@ -24,10 +24,10 @@ import (
 )
 
 type DKGConfig struct {
-	Port      int64   `yaml:"port"`
-	Rank      uint32  `yaml:"rank"`
-	Threshold uint32  `yaml:"threshold"`
-	Peers     []int64 `yaml:"peers"`
+	Peer      config.Peer            `yaml:"peer"`
+	Rank      uint32                 `yaml:"rank"`
+	Threshold uint32                 `yaml:"threshold"`
+	Peers     map[string]config.Peer `yaml:"peers"`
 }
 
 type DKGResult struct {
