@@ -20,7 +20,6 @@ import (
 	"math/rand"
 
 	"github.com/getamis/sirius/log"
-	ggio "github.com/gogo/protobuf/io"
 	"github.com/golang/protobuf/proto"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -109,12 +108,20 @@ func send(ctx context.Context, host host.Host, target string, data interface{}, 
 		log.Warn("Cannot create a new stream", "from", host.ID(), "to", target, "err", err)
 		return err
 	}
-	writer := ggio.NewFullWriter(s)
-	err = writer.WriteMsg(msg)
+
+	// writer := bufio.NewWriter(s)
+	bs, err := proto.Marshal(msg)
+	if err != nil {
+		log.Warn("Cannot marshal message", "err", err)
+		return err
+	}
+
+	_, err = s.Write(bs)
 	if err != nil {
 		log.Warn("Cannot write message to IO", "err", err)
 		return err
 	}
+	// s.Write(bs)
 	err = helpers.FullClose(s)
 	if err != nil {
 		log.Warn("Cannot close the stream", "err", err)
