@@ -15,11 +15,11 @@
 package hasher
 
 import (
-	"crypto/elliptic"
 	"crypto/sha256"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
+
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
 	"golang.org/x/crypto/blake2b"
@@ -56,7 +56,7 @@ type secp256k1 struct {
 
 func NewSECP256k1() Hasher {
 	return &secp256k1{
-		curve: btcec.S256(),
+		curve: elliptic.NewSecp256k1(),
 	}
 }
 

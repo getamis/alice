@@ -17,8 +17,8 @@ package oldpeer
 import (
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/addshare"
 	"github.com/getamis/alice/crypto/utils"
@@ -68,9 +68,9 @@ var _ = Describe("compute handler, negative cases", func() {
 		)
 
 		BeforeEach(func() {
-			siGProofMsg, err = zkproof.NewBaseSchorrMessage(btcec.S256(), big.NewInt(5))
+			siGProofMsg, err = zkproof.NewBaseSchorrMessage(elliptic.NewSecp256k1(), big.NewInt(5))
 			Expect(err).Should(BeNil())
-			pubkey = ecpointgrouplaw.NewBase(btcec.S256()).ScalarMult(big.NewInt(2))
+			pubkey = ecpointgrouplaw.NewBase(elliptic.NewSecp256k1()).ScalarMult(big.NewInt(2))
 
 			ch.pubkey = pubkey
 			ch.fieldOrder = pubkey.GetCurve().Params().N
@@ -126,7 +126,7 @@ var _ = Describe("compute handler, negative cases", func() {
 		})
 
 		It("fails to verify Schorr proof", func() {
-			v, err := ecpointgrouplaw.NewIdentity(btcec.S256()).ToEcPointMessage()
+			v, err := ecpointgrouplaw.NewIdentity(elliptic.NewEd25519()).ToEcPointMessage()
 			Expect(err).Should(BeNil())
 			invalidSiGProofMsg := &zkproof.SchnorrProofMessage{
 				V: v,

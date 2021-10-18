@@ -17,9 +17,9 @@ package oldpeer
 import (
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/addshare"
 	"github.com/getamis/alice/crypto/utils"
@@ -70,15 +70,15 @@ var _ = Describe("verify handler, negative cases", func() {
 		)
 
 		BeforeEach(func() {
-			curve := btcec.S256()
-			pubkey = ecpointgrouplaw.NewBase(btcec.S256()).ScalarMult(big.NewInt(2))
+			curve := elliptic.NewEd25519()
+			pubkey = ecpointgrouplaw.NewBase(curve).ScalarMult(big.NewInt(2))
 
 			// self information
 			selfRank := uint32(0)
 			x, err := utils.RandomPositiveInt(curve.Params().N)
 			Expect(err).Should(BeNil())
 			selfBk = birkhoffinterpolation.NewBkParameter(x, selfRank)
-			selfSiGProofMsg, err := zkproof.NewBaseSchorrMessage(btcec.S256(), big.NewInt(4))
+			selfSiGProofMsg, err := zkproof.NewBaseSchorrMessage(curve, big.NewInt(4))
 			Expect(err).Should(BeNil())
 
 			// new peer information
@@ -86,7 +86,7 @@ var _ = Describe("verify handler, negative cases", func() {
 			x, err = utils.RandomPositiveInt(curve.Params().N)
 			Expect(err).Should(BeNil())
 			newBk = birkhoffinterpolation.NewBkParameter(x, newPeerRank)
-			siGProofMsg, err = zkproof.NewBaseSchorrMessage(btcec.S256(), big.NewInt(5))
+			siGProofMsg, err = zkproof.NewBaseSchorrMessage(curve, big.NewInt(5))
 			Expect(err).Should(BeNil())
 			siG, err := siGProofMsg.V.ToPoint()
 			Expect(err).Should(BeNil())
@@ -136,7 +136,7 @@ var _ = Describe("verify handler, negative cases", func() {
 		})
 
 		It("fails to verify Schorr proof", func() {
-			v, err := ecpointgrouplaw.NewIdentity(btcec.S256()).ToEcPointMessage()
+			v, err := ecpointgrouplaw.NewIdentity(elliptic.NewSecp256k1()).ToEcPointMessage()
 			Expect(err).Should(BeNil())
 			invalidSiGProofMsg := &zkproof.SchnorrProofMessage{
 				V: v,

@@ -15,13 +15,13 @@
 package cl
 
 import (
-	"crypto/elliptic"
 	"errors"
 	"math"
 	"math/big"
 
 	bqForm "github.com/getamis/alice/crypto/binaryquadraticform"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/golang/protobuf/proto"

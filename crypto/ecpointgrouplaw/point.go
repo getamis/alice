@@ -15,14 +15,12 @@
 package ecpointgrouplaw
 
 import (
-	"crypto/elliptic"
 	"errors"
 	"fmt"
 	"math/big"
 	"reflect"
 
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/decred/dcrd/dcrec/edwards"
+	"github.com/getamis/alice/crypto/elliptic"
 )
 
 var (
@@ -32,6 +30,9 @@ var (
 	ErrDifferentCurve = errors.New("different elliptic curves")
 	// ErrInvalidCurve is returned if the curve is invalid.
 	ErrInvalidCurve = errors.New("invalid curve")
+
+	Ed25519   = elliptic.NewEd25519()
+	Secp256k1 = elliptic.NewSecp256k1()
 )
 
 // ECPoint is the struct for an elliptic curve point.
@@ -136,23 +137,11 @@ func (p *ECPoint) Neg() *ECPoint {
 	if p.IsIdentity() {
 		return NewIdentity(p.curve)
 	}
-
-	// TODO: Not compare cofactor terms
-	if isSameCurve(p.curve, edwards.Edwards()) {
-		negativeX := new(big.Int).Neg(p.x)
-		negativeX = negativeX.Mod(negativeX, p.curve.Params().P)
-		return &ECPoint{
-			curve: p.curve,
-			x:     negativeX,
-			y:     new(big.Int).Set(p.y),
-		}
-	}
-	negativeY := new(big.Int).Neg(p.y)
-	negativeY = negativeY.Mod(negativeY, p.curve.Params().P)
+	negX, negY := p.curve.Neg(p.x, p.y)
 	return &ECPoint{
 		curve: p.curve,
-		x:     new(big.Int).Set(p.x),
-		y:     negativeY,
+		x:     negX,
+		y:     negY,
 	}
 }
 
@@ -261,33 +250,25 @@ func isOnCurve(curve elliptic.Curve, x, y *big.Int) bool {
 
 func (c EcPointMessage_Curve) GetEllipticCurve() (elliptic.Curve, error) {
 	switch c {
-	case EcPointMessage_P224:
-		return elliptic.P224(), nil
-	case EcPointMessage_P256:
-		return elliptic.P256(), nil
-	case EcPointMessage_P384:
-		return elliptic.P384(), nil
+	// case EcPointMessage_P224:
+	// 	return elliptic.P224(), nil
+	// case EcPointMessage_P256:
+	// 	return elliptic.P256(), nil
+	// case EcPointMessage_P384:
+	// 	return elliptic.P384(), nil
 	case EcPointMessage_S256:
-		return btcec.S256(), nil
+		return Secp256k1, nil
 	case EcPointMessage_EDWARD25519:
-		return edwards.Edwards(), nil
+		return Ed25519, nil
 	}
 	return nil, ErrInvalidCurve
 }
 
 func ToCurve(c elliptic.Curve) (EcPointMessage_Curve, error) {
-	switch c {
-	case elliptic.P224():
-		return EcPointMessage_P224, nil
-	case elliptic.P256():
-		return EcPointMessage_P256, nil
-	case elliptic.P384():
-		return EcPointMessage_P384, nil
-	case btcec.S256():
+	if isSameCurve(c, Secp256k1) {
 		return EcPointMessage_S256, nil
 	}
-	// TODO: Rewrite it to be a switch case.
-	if isSameCurve(c, edwards.Edwards()) {
+	if isSameCurve(c, Ed25519) {
 		return EcPointMessage_EDWARD25519, nil
 	}
 	return 0, ErrInvalidCurve

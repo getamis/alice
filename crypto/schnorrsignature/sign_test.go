@@ -23,12 +23,17 @@ import (
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
 
+	"github.com/getamis/alice/crypto/elliptic"
 	edwards "github.com/decred/dcrd/dcrec/edwards"
 
 	. "github.com/onsi/ginkgo"
 
 	//. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+)
+
+var (
+	edd25519 = elliptic.NewEd25519()
 )
 
 var _ = Describe("Sign test", func() {
@@ -41,7 +46,7 @@ var _ = Describe("Sign test", func() {
 		share1 := big.NewInt(102)
 		share2 := big.NewInt(104)
 		message := []byte("8077818")
-		pubKey := ecpointgrouplaw.ScalarBaseMult(edwards.Edwards(), privateKey)
+		pubKey := ecpointgrouplaw.ScalarBaseMult(edd25519, privateKey)
 
 		p1 := NewParticipant(nthreshold, share1, message, bk1, pubKey, allbk)
 		p2 := NewParticipant(nthreshold, share2, message, bk2, pubKey, allbk)

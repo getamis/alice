@@ -15,14 +15,13 @@
 package oldpeer
 
 import (
-	"crypto/elliptic"
 	"math/big"
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/polynomial"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/addshare"
@@ -42,7 +41,7 @@ func TestAddShare(t *testing.T) {
 }
 
 var _ = Describe("AddShare", func() {
-	curve := btcec.S256()
+	curve := elliptic.NewSecp256k1()
 	newPeerID := "new-peer"
 
 	DescribeTable("NewAddShare", func(threshold uint32, bks []*birkhoffinterpolation.BkParameter, newPeerRank uint32) {

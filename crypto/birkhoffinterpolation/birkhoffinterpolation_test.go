@@ -14,11 +14,10 @@
 package birkhoffinterpolation
 
 import (
-	"crypto/elliptic"
 	"math/big"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/matrix"
@@ -27,6 +26,10 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+)
+
+var (
+	secp256k1 = elliptic.NewSecp256k1()
 )
 
 func TestBirkhoffinterpolation(t *testing.T) {
@@ -274,7 +277,7 @@ var _ = Describe("Birkhoff Interpolation", func() {
 		)
 
 		BeforeEach(func() {
-			curve = btcec.S256()
+			curve = secp256k1
 			fieldOrder := curve.Params().N
 			threshold = uint32(3)
 			poly, err = polynomial.RandomPolynomial(fieldOrder, threshold-1)

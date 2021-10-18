@@ -14,10 +14,9 @@
 package dkg
 
 import (
-	"crypto/elliptic"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/commitment"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
@@ -64,7 +63,7 @@ var _ = Describe("verify handler, negative cases", func() {
 
 	Context("HandleMessage/Finalize", func() {
 		var (
-			curve     = btcec.S256()
+			curve     = elliptic.NewEd25519()
 			threshold = uint32(3)
 			ranks     = []uint32{0, 0, 0, 0, 0}
 
@@ -134,7 +133,7 @@ var _ = Describe("verify handler, negative cases", func() {
 				vh, ok := d.GetHandler().(*verifyHandler)
 				Expect(ok).Should(BeTrue())
 
-				vh.u0g = ecpointgrouplaw.NewBase(elliptic.P224())
+				vh.u0g = ecpointgrouplaw.NewBase(elliptic.NewEd25519())
 				h, err := vh.Finalize(log.Discard())
 				Expect(err).Should(Equal(ecpointgrouplaw.ErrDifferentCurve))
 				Expect(h).Should(BeNil())
