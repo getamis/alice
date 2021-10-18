@@ -17,9 +17,9 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/matrix"
 	"github.com/getamis/alice/crypto/polynomial"
 	"github.com/getamis/alice/crypto/utils"

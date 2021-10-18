@@ -31,4 +31,3 @@ var _ = Describe("ed25519", func() {
 		})
 	})
 })
-
