@@ -24,7 +24,7 @@ import (
 var _ = Describe("secp256k1", func() {
 	Context("Negative Point", func() {
 		It("It is OK", func() {
-			secp256k1 := new(Secp256k1)
+			secp256k1 := NewSecp256k1()
 			negX, negY := secp256k1.Neg(secp256k1.Params().Gx, secp256k1.Params().Gy)
 			scalX, scalY := secp256k1.ScalarBaseMult(new(big.Int).Sub(secp256k1.Params().N, big.NewInt(1)).Bytes())
 			Expect(negX.Cmp(scalX) == 0).Should(BeTrue())
