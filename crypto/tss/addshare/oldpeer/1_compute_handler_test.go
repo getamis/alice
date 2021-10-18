@@ -142,7 +142,7 @@ var _ = Describe("compute handler, negative cases", func() {
 				},
 			}
 			err = ch.HandleMessage(log.Discard(), msg)
-			Expect(err).Should(Equal(ecpointgrouplaw.ErrInvalidPoint))
+			Expect(err).Should(Equal(zkproof.ErrDifferentCurves))
 		})
 	})
 })
