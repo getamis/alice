@@ -14,9 +14,10 @@
 package ecpointgrouplaw
 
 import (
-	"github.com/getamis/alice/crypto/elliptic"
 	"fmt"
 	"math/big"
+
+	"github.com/getamis/alice/crypto/elliptic"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"

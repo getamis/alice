@@ -133,7 +133,7 @@ var _ = Describe("verify handler, negative cases", func() {
 				vh, ok := d.GetHandler().(*verifyHandler)
 				Expect(ok).Should(BeTrue())
 
-				vh.u0g = ecpointgrouplaw.NewBase(elliptic.NewEd25519())
+				vh.u0g = ecpointgrouplaw.NewBase(elliptic.NewSecp256k1())
 				h, err := vh.Finalize(log.Discard())
 				Expect(err).Should(Equal(ecpointgrouplaw.ErrDifferentCurve))
 				Expect(h).Should(BeNil())
