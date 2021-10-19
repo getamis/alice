@@ -109,7 +109,6 @@ func send(ctx context.Context, host host.Host, target string, data interface{}, 
 		return err
 	}
 
-	// writer := bufio.NewWriter(s)
 	bs, err := proto.Marshal(msg)
 	if err != nil {
 		log.Warn("Cannot marshal message", "err", err)
@@ -121,7 +120,6 @@ func send(ctx context.Context, host host.Host, target string, data interface{}, 
 		log.Warn("Cannot write message to IO", "err", err)
 		return err
 	}
-	// s.Write(bs)
 	err = helpers.FullClose(s)
 	if err != nil {
 		log.Warn("Cannot close the stream", "err", err)
