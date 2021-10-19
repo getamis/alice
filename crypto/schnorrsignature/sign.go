@@ -66,6 +66,7 @@ type Participant struct {
 	c *big.Int
 }
 
+// TODO: should check all values
 func NewParticipant(threshold uint32, share *big.Int, message []byte, ownbk *birkhoffinterpolation.BkParameter, pubKey *ecpointgrouplaw.ECPoint, allbks birkhoffinterpolation.BkParameters) *Participant {
 	return &Participant{
 		threshold: threshold,

@@ -25,7 +25,7 @@ import (
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 )
 
-var(
+var (
 	secp256k1 = elliptic.NewSecp256k1()
 )
 

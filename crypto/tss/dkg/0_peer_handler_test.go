@@ -16,8 +16,8 @@ package dkg
 import (
 	"math/big"
 
-	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/internal/message/types/mocks"
 	"github.com/getamis/sirius/log"

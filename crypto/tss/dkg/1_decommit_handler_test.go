@@ -16,8 +16,8 @@ package dkg
 import (
 	"time"
 
-	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/commitment"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/alice/internal/message/types/mocks"

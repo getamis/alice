@@ -16,8 +16,8 @@ package dkg
 import (
 	"time"
 
-	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/matrix"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/zkproof"
@@ -66,7 +66,7 @@ var _ = Describe("result handler, negative cases", func() {
 
 	Context("HandleMessage/Finalize", func() {
 		var (
-			curve     =elliptic.NewSecp256k1()
+			curve     = elliptic.NewSecp256k1()
 			threshold = uint32(3)
 			ranks     = []uint32{0, 0, 0, 0, 0}
 
