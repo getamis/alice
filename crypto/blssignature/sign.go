@@ -46,7 +46,7 @@ var (
 	ErrThresholdOne = errors.New("the threshold is 1")
 )
 
-// ECPoint is the struct for an elliptic curve point.
+// PubKey: G1, Signature: G2 (i.e. longer signature and shorter public key)
 type Participant struct {
 	threshold uint32
 	message   []byte
@@ -59,9 +59,8 @@ type Participant struct {
 	pubKey       *bls12381.PointG1
 }
 
-// TODO: What is domain?
-func (par *Participant) Sign() (*bls12381.PointG2, error) {
-	signPoint, err := bls12381.NewG2().MapToCurve(par.message)
+func (par *Participant) Sign() ([]byte, error) {
+	signPoint, err := g2.MapToCurve(par.message)
 	par.messagePoint = signPoint
 	if err != nil {
 		return nil, err
@@ -75,18 +74,21 @@ func (par *Participant) Sign() (*bls12381.PointG2, error) {
 	bkShare := new(big.Int).Mul(allBkCoefficient[par.bk.GetX()], par.share)
 	bkShare.Mod(bkShare, g1.Q())
 	R := g2.MulScalarBig(blsEngine.G2.New(), signPoint, new(big.Int).Mul(allBkCoefficient[par.bk.GetX()], par.share))
-	// g2.ToCompressed(R)
-	return R, nil
+	return g2.ToCompressed(R), nil
 }
 
 // Or Aggregator
-func computeSignature(partialSignature []*bls12381.PointG2) (*bls12381.PointG2, error) {
-	result := blsEngine.G2.New().Zero()
+func computeSignature(partialSignature [][]byte) (*bls12381.PointG2, error) {
+	result := g2.Zero()
 	for i := 0; i < len(partialSignature); i++ {
-		if !g2.IsOnCurve(partialSignature[i]) {
+		partialSig, err := g2.FromCompressed(partialSignature[i])
+		if err != nil {
+			return nil, err
+		}
+		if !g2.IsOnCurve(partialSig) {
 			return nil, ErrVerifyFailure
 		}
-		result = g2.Add(result, result, partialSignature[i])
+		result = g2.Add(result, result, partialSig)
 	}
 	return result, nil
 }
@@ -96,9 +98,9 @@ func verifySignature(sig *bls12381.PointG2, pubkey *bls12381.PointG1, msg *bls12
 	if !g2.IsOnCurve(sig) {
 		return ErrVerifyFailure
 	}
-	C1 := blsEngine.Reset().AddPair(pubkey, msg)
+	C1 := blsEngine.AddPair(pubkey, msg)
 	result1 := C1.Result()
-	C2 := blsEngine.Reset().AddPair(blsEngine.G1.One(), sig)
+	C2 := blsEngine.AddPair(blsEngine.G1.One(), sig)
 	result2 := C2.Result()
 	if !result1.Equal(result2) {
 		return ErrVerifyFailure
@@ -106,7 +108,7 @@ func verifySignature(sig *bls12381.PointG2, pubkey *bls12381.PointG1, msg *bls12
 	return nil
 }
 
-func (par *Participant) GetSignature(partialSignature []*bls12381.PointG2) (*bls12381.PointG2, error) {
+func (par *Participant) GetSignature(partialSignature [][]byte) ([]byte, error) {
 	result, err := computeSignature(partialSignature)
 	if err != nil {
 		return nil, err
@@ -115,7 +117,7 @@ func (par *Participant) GetSignature(partialSignature []*bls12381.PointG2) (*bls
 	if err != nil {
 		return nil, err
 	}
-	return result, nil
+	return g2.ToCompressed(result), nil
 }
 
 func verifyPubKey(pubKey *bls12381.PointG1) error {

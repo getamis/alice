@@ -15,13 +15,10 @@
 package blssignature
 
 import (
-	//"fmt"
-
 	"math/big"
 	"testing"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
-	bls12381 "github.com/kilic/bls12-381"
 
 	. "github.com/onsi/ginkgo"
 	//. "github.com/onsi/ginkgo/extensions/table"
@@ -35,9 +32,6 @@ func TestBlsSignature(t *testing.T) {
 
 var _ = Describe("Sign test", func() {
 	It("Correct case", func() {
-		// message := make([]byte, 2*48)
-		// p,_ :=  bls12381.NewG2().MapToCurve(message)
-		// fmt.Println(bls12381.NewG2().ToBytes(p))
 		nthreshold := uint32(2)
 		bk1 := birkhoffinterpolation.NewBkParameter(big.NewInt(1), 0)
 		bk2 := birkhoffinterpolation.NewBkParameter(big.NewInt(2), 0)
@@ -58,13 +52,15 @@ var _ = Describe("Sign test", func() {
 		partialSig2, err := p2.Sign()
 		Expect(err).Should(BeNil())
 
-		partialSigs := []*bls12381.PointG2{partialSig1, partialSig2}
+		partialSigs := [][]byte{partialSig1, partialSig2}
 		sig1, err := p1.GetSignature(partialSigs)
 		Expect(err).Should(BeNil())
 		sig2, err := p2.GetSignature(partialSigs)
 		Expect(err).Should(BeNil())
-		Expect(g2.Equal(sig1, sig2)).Should(BeTrue())
-		err = verifySignature(sig1, pubKey, p1.messagePoint)
+		Expect(sig1).Should(Equal(sig2))
+		got, err := g2.FromCompressed(sig1)
+		Expect(err).Should(BeNil())
+		err = verifySignature(got, pubKey, p1.messagePoint)
 		Expect(err).Should(BeNil())
 	})
 })
