@@ -30,7 +30,8 @@ const (
 )
 
 var (
-	domain    = []byte("BLS12381G2_XMD:SHA-256_SSWU_RO_TESTGEN")
+	DST_G1    = []byte("BLS_SIG_BLS12381G1_XMD:SHA-256_SSWU_RO_NUL_")
+	DST_G2    = []byte("BLS_SIG_BLS12381G2_XMD:SHA-256_SSWU_RO_NUL_")
 	blsEngine = bls12381.NewEngine()
 	g1        = bls12381.NewG1()
 	g2        = bls12381.NewG2()
@@ -60,7 +61,7 @@ type Participant struct {
 }
 
 func (par *Participant) Sign() ([]byte, error) {
-	signPoint, err := g2.MapToCurve(par.message)
+	signPoint, err := g2.HashToCurve(par.message, DST_G1)
 	par.messagePoint = signPoint
 	if err != nil {
 		return nil, err
