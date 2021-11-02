@@ -14,9 +14,10 @@
 package ecpointgrouplaw
 
 import (
-	"github.com/getamis/alice/crypto/elliptic"
 	"math/big"
 	"testing"
+
+	"github.com/getamis/alice/crypto/elliptic"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -36,8 +37,8 @@ var _ = Describe("Elliptic curves", func() {
 		It("Verify 0*G is x = nil, y = nil(i.e. the identity element)", func() {
 			for i := 0; i < len(curveList); i++ {
 				result := ScalarBaseMult(curveList[i], big.NewInt(0))
-				Expect(result.x).To(BeNil())
-				Expect(result.y).To(BeNil())
+				expected := NewIdentity(curveList[i])
+				Expect(result.Equal(expected)).Should(BeTrue())
 			}
 		})
 	})

@@ -16,9 +16,15 @@ package elliptic
 
 import (
 	"crypto/elliptic"
+	"errors"
 	"math/big"
 
 	"github.com/btcsuite/btcd/btcec"
+)
+
+var (
+	// ErrInvalidPoint is returned if the point is invalid.
+	ErrInvalidPoint = errors.New("invalid point")
 )
 
 type Secp256k1 struct {
@@ -55,6 +61,40 @@ func (sep *Secp256k1) ScalarBaseMult(k []byte) (x, y *big.Int) {
 func (sep *Secp256k1) Neg(x, y *big.Int) (*big.Int, *big.Int) {
 	NegY := new(big.Int).Neg(y)
 	return new(big.Int).Set(x), NegY.Mod(NegY, sep.ellipticCurve.P)
+}
+
+func (sep *Secp256k1) Equal(x1, y1, x2, y2 *big.Int) bool {
+	isOnCurve1 := sep.IsOnCurve(x1, y1)
+	isOnCurve2 := sep.IsOnCurve(x2, y2)
+	if !isOnCurve1 || !isOnCurve2 {
+		return false
+	}
+	if x1.Cmp(x2) == 0 && y1.Cmp(y2) == 0 {
+		return true
+	}
+	return false
+}
+
+func (sep *Secp256k1) IsIdentity(x, y *big.Int) bool {
+	return x.Cmp(big0) == 0 && y.Cmp(big0) == 0
+}
+
+func (sep *Secp256k1) NewIdentity() (*big.Int, *big.Int) {
+	return big.NewInt(0), big.NewInt(0)
+}
+
+func (sep *Secp256k1) Encode(x *big.Int, y *big.Int) []byte {
+	xByte := x.FillBytes(make([]byte, 32))
+	yByte := y.FillBytes(make([]byte, 32))
+	return append(xByte, yByte...)
+}
+
+func (sep *Secp256k1) Decode(input []byte) (*big.Int, *big.Int, error) {
+	if len(input) != 64 {
+		return nil, nil, ErrInvalidPoint
+	}
+
+	return new(big.Int).SetBytes(input[0:32]), new(big.Int).SetBytes(input[32:]), nil
 }
 
 func NewSecp256k1() *Secp256k1 {

@@ -19,8 +19,19 @@ import (
 	"math/big"
 )
 
+var (
+	big0 = big.NewInt(0)
+	big1 = big.NewInt(1)
+)
+
 type Curve interface {
 	elliptic.Curve
 
 	Neg(x1, y1 *big.Int) (x, y *big.Int)
+	Equal(x1, y1 *big.Int, x2, y2 *big.Int) bool
+	IsIdentity(x, y *big.Int) bool
+	NewIdentity() (x, y *big.Int)
+	Encode(x1, y1 *big.Int) []byte
+	Decode([]byte) (*big.Int, *big.Int, error)
+	// HashToCurve()
 }

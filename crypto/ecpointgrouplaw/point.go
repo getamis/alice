@@ -45,11 +45,11 @@ type ECPoint struct {
 // NewECPoint creates an EC-Point and verifies that it should locate on the given elliptic curve.
 // Note: when x = nil, y =nil, we set it to be the identity element in the elliptic curve group.
 func NewECPoint(curve elliptic.Curve, x *big.Int, y *big.Int) (*ECPoint, error) {
+	if curve.IsIdentity(x, y) {
+		return NewIdentity(curve), nil
+	}
 	if !isOnCurve(curve, x, y) {
 		return nil, ErrInvalidPoint
-	}
-	if isIdentity(x, y) {
-		return NewIdentity(curve), nil
 	}
 	return &ECPoint{
 		curve: curve,
@@ -60,10 +60,11 @@ func NewECPoint(curve elliptic.Curve, x *big.Int, y *big.Int) (*ECPoint, error) 
 
 // NewIdentity returns the identity element of the given elliptic curve.
 func NewIdentity(curve elliptic.Curve) *ECPoint {
+	x, y := curve.NewIdentity()
 	return &ECPoint{
 		curve: curve,
-		x:     nil,
-		y:     nil,
+		x:     x,
+		y:     y,
 	}
 }
 
@@ -79,7 +80,7 @@ func NewBase(curve elliptic.Curve) *ECPoint {
 
 // IsIdentity checks if the point is the identity element.
 func (p *ECPoint) IsIdentity() bool {
-	return isIdentity(p.x, p.y)
+	return p.curve.IsIdentity(p.x, p.y)
 }
 
 // String returns the string format of the point.
@@ -92,24 +93,30 @@ func (p *ECPoint) Add(p1 *ECPoint) (*ECPoint, error) {
 	if !isSameCurve(p.curve, p1.curve) {
 		return nil, ErrDifferentCurve
 	}
-	if !isOnCurve(p.curve, p.x, p.y) {
-		return nil, ErrInvalidPoint
-	}
-	if !isOnCurve(p1.curve, p1.x, p1.y) {
-		return nil, ErrInvalidPoint
-	}
 	if p.IsIdentity() {
 		return p1.Copy(), nil
 	}
 	if p1.IsIdentity() {
 		return p.Copy(), nil
 	}
+	if !isOnCurve(p.curve, p.x, p.y) {
+		return nil, ErrInvalidPoint
+	}
+	if !isOnCurve(p1.curve, p1.x, p1.y) {
+		return nil, ErrInvalidPoint
+	}
 
 	// The case : aG+(-a)G.
-	minusP1 := p1.Neg()
-	if minusP1.Equal(p) {
-		return NewIdentity(p.curve), nil
-	}
+	// minusP1 := p1.Neg()
+	// if minusP1.Equal(p) {
+	// 	x1 := big.NewInt(0)
+	// 	y1 := big.NewInt(1)
+	// 	x, y := p.curve.Add(x1, y1, x1, y1)
+	// 	return NewECPoint(p.curve, x, y)
+	// 	// x, y := p.curve.ScalarBaseMult(big0.Bytes())
+	// 	// return NewECPoint(p.curve, x, y)
+	// 	// return NewIdentity(p.curve), nil
+	// }
 	// The case : aG + aG = 2aG.
 	if p1.x.Cmp(p.x) == 0 && p1.y.Cmp(p.y) == 0 {
 		return p1.ScalarMult(big2), nil
@@ -194,15 +201,10 @@ func (p *ECPoint) ToEcPointMessage() (*EcPointMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	if p.IsIdentity() {
-		return &EcPointMessage{
-			Curve: curveType,
-		}, nil
-	}
+	pointByte := p.curve.Encode(p.x, p.y)
 	return &EcPointMessage{
 		Curve: curveType,
-		X:     p.x.Bytes(),
-		Y:     p.y.Bytes(),
+		Point: pointByte,
 	}, nil
 }
 
@@ -215,12 +217,14 @@ func (p *EcPointMessage) ToPoint() (*ECPoint, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	if len(p.X) == 0 && len(p.Y) == 0 {
+	px, py, err := curve.Decode(p.Point)
+	if err != nil {
+		return nil, err
+	}
+	if curve.IsIdentity(px, py) {
 		return NewIdentity(curve), nil
 	}
-
-	return NewECPoint(curve, new(big.Int).SetBytes(p.X), new(big.Int).SetBytes(p.Y))
+	return NewECPoint(curve, px, py)
 }
 
 func isIdentity(x *big.Int, y *big.Int) bool {
@@ -238,13 +242,6 @@ func isSameCurve(curve1 elliptic.Curve, curve2 elliptic.Curve) bool {
 }
 
 func isOnCurve(curve elliptic.Curve, x, y *big.Int) bool {
-	// The identity element belongs to the elliptic curve group.
-	if x == nil && y == nil {
-		return true
-	}
-	if x == nil || y == nil {
-		return false
-	}
 	return curve.IsOnCurve(x, y)
 }
 

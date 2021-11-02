@@ -153,7 +153,7 @@ var _ = Describe("Paillier test", func() {
 
 		It("invalid message bytes", func() {
 			msg := &pt.EcPointMessage{
-				X: []byte("X"),
+				Point: []byte("X"),
 			}
 			bs, err := proto.Marshal(msg)
 			Expect(err).Should(BeNil())

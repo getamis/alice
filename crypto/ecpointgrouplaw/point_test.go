@@ -28,11 +28,8 @@ var _ = Describe("Point", func() {
 	Context("NewECPoint()", func() {
 		It("Creates a new identity element", func() {
 			for i := 0; i < len(curveList); i++ {
-				identity, err := NewECPoint(curveList[i], nil, nil)
-				Expect(err).To(Succeed())
+				identity := NewIdentity(curveList[i])
 				Expect(identity.curve).To(Equal(curveList[i]))
-				Expect(identity.x).To(BeNil())
-				Expect(identity.y).To(BeNil())
 			}
 		})
 
@@ -59,8 +56,8 @@ var _ = Describe("Point", func() {
 		It("Creates a new identity element", func() {
 			for i := 0; i < len(curveList); i++ {
 				identity := NewIdentity(curveList[i])
-				Expect(identity.x).To(BeNil())
-				Expect(identity.y).To(BeNil())
+				expected := NewIdentity(curveList[i])
+				Expect(identity.Equal(expected)).Should(BeTrue())
 			}
 		})
 	})
@@ -125,9 +122,7 @@ var _ = Describe("Point", func() {
 				minus2 := big.NewInt(-2)
 				ECPoint1 := ScalarBaseMult(curveList[i], new(big.Int).Mod(minus2, curveList[i].Params().N))
 				ECPoint2 := ScalarBaseMult(curveList[i], big.NewInt(2))
-				expected, err := NewECPoint(curveList[i], nil, nil)
-				Expect(err).To(BeNil())
-
+				expected := NewIdentity(ECPoint1.curve)
 				result, err := ECPoint1.Add(ECPoint2)
 				Expect(err).To(BeNil())
 				Expect(result).To(Equal(expected))
@@ -189,10 +184,7 @@ var _ = Describe("Point", func() {
 				expected := ScalarBaseMult(curveList[i], big.NewInt(0))
 				result, err := identity1.Add(identity2)
 				Expect(err).To(BeNil())
-				Expect(result.x).Should(BeNil())
-				Expect(result.y).Should(BeNil())
-				Expect(expected.x).Should(BeNil())
-				Expect(expected.y).Should(BeNil())
+				Expect(result.Equal(expected)).Should(BeTrue())
 			}
 		})
 
@@ -243,16 +235,16 @@ var _ = Describe("Point", func() {
 			for i := 0; i < len(curveList); i++ {
 				identity := NewIdentity(curveList[i])
 				result := identity.ScalarMult(big.NewInt(-3))
-				Expect(result.x).To(BeNil())
-				Expect(result.y).To(BeNil())
+				expected := NewIdentity(curveList[i])
+				Expect(result.Equal(expected)).To(BeTrue())
 			}
 		})
 		It("Verify 0*(0*G))", func() {
 			for i := 0; i < len(curveList); i++ {
 				identity := NewIdentity(curveList[i])
 				result := identity.ScalarMult(big.NewInt(0))
-				Expect(result.x).To(BeNil())
-				Expect(result.y).To(BeNil())
+				expected := NewIdentity(curveList[i])
+				Expect(result.Equal(expected)).To(BeTrue())
 			}
 		})
 	})
@@ -417,8 +409,7 @@ var _ = Describe("Point", func() {
 			Expect(err).Should(BeNil())
 			Expect(gotP).Should(Equal(&EcPointMessage{
 				Curve: curveType,
-				X:     x.Bytes(),
-				Y:     y.Bytes(),
+				Point: curve.Encode(x, y),
 			}))
 			gotPt, err := gotP.ToPoint()
 			Expect(err).Should(BeNil())
@@ -435,8 +426,10 @@ var _ = Describe("Point", func() {
 			p := NewIdentity(curve)
 			gotP, err := p.ToEcPointMessage()
 			Expect(err).Should(BeNil())
+			pointZero := p.curve.Encode(p.x, p.y)
 			Expect(gotP).Should(Equal(&EcPointMessage{
 				Curve: curveType,
+				Point: pointZero,
 			}))
 			gotPt, err := gotP.ToPoint()
 			Expect(err).Should(BeNil())

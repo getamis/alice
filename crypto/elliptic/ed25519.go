@@ -57,6 +57,44 @@ func (ed *Ed25519) Neg(x, y *big.Int) (*big.Int, *big.Int) {
 	return negativeX.Mod(negativeX, ed.ellipticCurve.Params().P), new(big.Int).Set(y)
 }
 
+func (ed *Ed25519) Equal(x1, y1, x2, y2 *big.Int) bool {
+	isOnCurve1 := ed.IsOnCurve(x1, y1)
+	isOnCurve2 := ed.IsOnCurve(x2, y2)
+	if !isOnCurve1 || !isOnCurve2 {
+		return false
+	}
+	if x1.Cmp(x2) == 0 && y1.Cmp(y2) == 0 {
+		return true
+	}
+	return false
+}
+
+func (ed *Ed25519) IsIdentity(x, y *big.Int) bool {
+	return x.Cmp(big0) == 0 && y.Cmp(big1) == 0
+}
+
+func (ed *Ed25519) NewIdentity() (*big.Int, *big.Int) {
+	return big.NewInt(0), big.NewInt(1)
+}
+
+func (ed *Ed25519) Encode(x *big.Int, y *big.Int) []byte {
+	xByte := x.Bytes()
+	yByte := y.Bytes()
+	zero := make([]byte, 32-len(xByte))
+	xByte = append(zero, xByte...)
+	zero = make([]byte, 32-len(yByte))
+	yByte = append(zero, yByte...)
+	return append(xByte, yByte...)
+}
+
+func (ed *Ed25519) Decode(input []byte) (*big.Int, *big.Int, error) {
+	if len(input) != 64 {
+		return nil, nil, ErrInvalidPoint
+	}
+
+	return new(big.Int).SetBytes(input[0:32]), new(big.Int).SetBytes(input[32:]), nil
+}
+
 func NewEd25519() *Ed25519 {
 	return &Ed25519{
 		ellipticCurve: edwards.Edwards(),

@@ -14,7 +14,10 @@
 package elliptic
 
 import (
+	"fmt"
 	"math/big"
+
+	"github.com/getamis/ristretto255"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -22,12 +25,22 @@ import (
 
 var _ = Describe("ed25519", func() {
 	Context("Negative Point", func() {
-		It("It is OK", func() {
+		FIt("It is OK", func() {
 			ed25519 := NewEd25519()
 			negX, negY := ed25519.Neg(ed25519.Params().Gx, ed25519.Params().Gy)
 			scalX, scalY := ed25519.ScalarBaseMult(new(big.Int).Sub(ed25519.Params().N, big.NewInt(1)).Bytes())
 			Expect(negX.Cmp(scalX) == 0).Should(BeTrue())
 			Expect(negY.Cmp(scalY) == 0).Should(BeTrue())
+
+			fmt.Println(ed25519.ScalarBaseMult(big.NewInt(10).Bytes()))
+			scalar := ristretto255.NewScalar()
+			zero := make([]byte, 32-len(big.NewInt(10).Bytes()))
+			xByte := append(zero, big.NewInt(1).Bytes()...)
+			scalar.Decode(xByte)
+			result := ristretto255.NewElement()
+			result.ScalarBaseMult(scalar)
+			fmt.Println(result)
+
 		})
 	})
 })
