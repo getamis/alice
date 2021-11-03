@@ -64,6 +64,12 @@ func (sep *Secp256k1) Neg(x, y *big.Int) (*big.Int, *big.Int) {
 }
 
 func (sep *Secp256k1) Equal(x1, y1, x2, y2 *big.Int) bool {
+	if x1 == nil || x2 == nil || y1 == nil || y2 == nil {
+		return false
+	}
+	if sep.IsIdentity(x1, y1) && sep.IsIdentity(x2, y2) {
+		return true
+	}
 	isOnCurve1 := sep.IsOnCurve(x1, y1)
 	isOnCurve2 := sep.IsOnCurve(x2, y2)
 	if !isOnCurve1 || !isOnCurve2 {
@@ -83,10 +89,18 @@ func (sep *Secp256k1) NewIdentity() (*big.Int, *big.Int) {
 	return big.NewInt(0), big.NewInt(0)
 }
 
-func (sep *Secp256k1) Encode(x *big.Int, y *big.Int) []byte {
+func (sep *Secp256k1) Encode(x *big.Int, y *big.Int) ([]byte, error) {
+	if x.Cmp(sep.ellipticCurve.P) > 0 || y.Cmp(sep.ellipticCurve.P) > 0 {
+		return nil, ErrInvalidPoint
+	}
+
 	xByte := x.FillBytes(make([]byte, 32))
 	yByte := y.FillBytes(make([]byte, 32))
-	return append(xByte, yByte...)
+	return append(xByte, yByte...), nil
+}
+
+func (sep *Secp256k1) Cofactor() int {
+	return sep.ellipticCurve.H
 }
 
 func (sep *Secp256k1) Decode(input []byte) (*big.Int, *big.Int, error) {

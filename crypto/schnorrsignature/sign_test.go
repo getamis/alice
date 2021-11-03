@@ -15,7 +15,6 @@
 package schnorrsignature
 
 import (
-	"fmt"
 	"math/big"
 	"testing"
 
@@ -23,8 +22,8 @@ import (
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
 
-	"github.com/getamis/alice/crypto/elliptic"
 	edwards "github.com/decred/dcrd/dcrec/edwards"
+	"github.com/getamis/alice/crypto/elliptic"
 
 	. "github.com/onsi/ginkgo"
 
@@ -34,6 +33,7 @@ import (
 
 var (
 	edd25519 = elliptic.NewEd25519()
+	// TODO: Replace to SR25519: Only need to adjust the signature verify function
 )
 
 var _ = Describe("Sign test", func() {
@@ -73,7 +73,6 @@ var _ = Describe("Sign test", func() {
 		test1 := ecpointEncoding(R1)
 		test2 := *test1
 		r := new(big.Int).SetBytes(utils.ReverseByte(test2[:]))
-		fmt.Println("tse", ecpointEncoding(R1))
 
 		//edward25519.Verify()
 		got := edwards.Verify(edwardPubKey, message, r, s1)

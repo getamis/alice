@@ -11,6 +11,7 @@ require (
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.5.0
+	github.com/gtank/ristretto255 v0.1.2
 	github.com/hpcloud/tail v1.0.1-0.20180514194441-a1dbeea552b7 // indirect
 	github.com/kilic/bls12-381 v0.1.0 // indirect
 	github.com/libp2p/go-libp2p v0.7.0
@@ -33,3 +34,5 @@ require (
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v2 v2.2.4
 )
+
+replace github.com/gtank/ristretto255 v0.1.2 => github.com/getamis/ristretto255 v0.1.4 

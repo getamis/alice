@@ -31,7 +31,8 @@ type Curve interface {
 	Equal(x1, y1 *big.Int, x2, y2 *big.Int) bool
 	IsIdentity(x, y *big.Int) bool
 	NewIdentity() (x, y *big.Int)
-	Encode(x1, y1 *big.Int) []byte
+	Encode(x1, y1 *big.Int) ([]byte, error)
 	Decode([]byte) (*big.Int, *big.Int, error)
+	Cofactor() int
 	// HashToCurve()
 }

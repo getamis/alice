@@ -33,6 +33,7 @@ var (
 
 	Ed25519   = elliptic.NewEd25519()
 	Secp256k1 = elliptic.NewSecp256k1()
+	SR25519   = elliptic.NewSR25519()
 )
 
 // ECPoint is the struct for an elliptic curve point.
@@ -192,7 +193,7 @@ func (p *ECPoint) Copy() *ECPoint {
 
 // Equal checks if the point is the same with the given point.
 func (p *ECPoint) Equal(p1 *ECPoint) bool {
-	return reflect.DeepEqual(p, p1)
+	return p.curve.Equal(p.x, p.y, p1.x, p1.y) && isSameCurve(p.curve, p1.curve)
 }
 
 // ToEcPointMessage converts the point to proto message.
@@ -201,7 +202,10 @@ func (p *ECPoint) ToEcPointMessage() (*EcPointMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	pointByte := p.curve.Encode(p.x, p.y)
+	pointByte, err := p.curve.Encode(p.x, p.y)
+	if err != nil {
+		return nil, err
+	}
 	return &EcPointMessage{
 		Curve: curveType,
 		Point: pointByte,
@@ -227,18 +231,11 @@ func (p *EcPointMessage) ToPoint() (*ECPoint, error) {
 	return NewECPoint(curve, px, py)
 }
 
-func isIdentity(x *big.Int, y *big.Int) bool {
-	if x == nil && y == nil {
-		return true
-	}
-	return false
-}
-
 func isSameCurve(curve1 elliptic.Curve, curve2 elliptic.Curve) bool {
 	if curve1 == nil || curve2 == nil {
 		return false
 	}
-	return reflect.DeepEqual(curve1.Params(), curve2.Params())
+	return reflect.DeepEqual(curve1.Params(), curve2.Params()) && (curve1.Cofactor() == curve2.Cofactor())
 }
 
 func isOnCurve(curve elliptic.Curve, x, y *big.Int) bool {
@@ -257,7 +254,10 @@ func (c EcPointMessage_Curve) GetEllipticCurve() (elliptic.Curve, error) {
 		return Secp256k1, nil
 	case EcPointMessage_EDWARD25519:
 		return Ed25519, nil
+	case EcPointMessage_SR25519:
+		return SR25519, nil
 	}
+
 	return nil, ErrInvalidCurve
 }
 
@@ -267,6 +267,9 @@ func ToCurve(c elliptic.Curve) (EcPointMessage_Curve, error) {
 	}
 	if isSameCurve(c, Ed25519) {
 		return EcPointMessage_EDWARD25519, nil
+	}
+	if isSameCurve(c, SR25519) {
+		return EcPointMessage_SR25519, nil
 	}
 	return 0, ErrInvalidCurve
 }

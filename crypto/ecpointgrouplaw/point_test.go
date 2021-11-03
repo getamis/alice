@@ -407,9 +407,11 @@ var _ = Describe("Point", func() {
 			Expect(err).Should(BeNil())
 			gotP, err := p.ToEcPointMessage()
 			Expect(err).Should(BeNil())
+			encode, err := curve.Encode(x, y)
+			Expect(err).Should(BeNil())
 			Expect(gotP).Should(Equal(&EcPointMessage{
 				Curve: curveType,
-				Point: curve.Encode(x, y),
+				Point: encode,
 			}))
 			gotPt, err := gotP.ToPoint()
 			Expect(err).Should(BeNil())
@@ -426,7 +428,8 @@ var _ = Describe("Point", func() {
 			p := NewIdentity(curve)
 			gotP, err := p.ToEcPointMessage()
 			Expect(err).Should(BeNil())
-			pointZero := p.curve.Encode(p.x, p.y)
+			pointZero, err := p.curve.Encode(p.x, p.y)
+			Expect(err).Should(BeNil())
 			Expect(gotP).Should(Equal(&EcPointMessage{
 				Curve: curveType,
 				Point: pointZero,
@@ -443,14 +446,6 @@ var _ = Describe("Point", func() {
 		)
 
 		Context("Invalid curve", func() {
-			// It("ToEcPointMessage()", func() {
-			// 	// We don't support P521
-			// 	p := NewIdentity(elliptic.P521())
-			// 	gotP, err := p.ToEcPointMessage()
-			// 	Expect(err).Should(Equal(ErrInvalidCurve))
-			// 	Expect(gotP).Should(BeNil())
-			// })
-
 			It("ToPoint()", func() {
 				const UnSupportedEcPointMessage EcPointMessage_Curve = 100
 				msg := &EcPointMessage{

@@ -73,18 +73,21 @@ func (ed *Ed25519) IsIdentity(x, y *big.Int) bool {
 	return x.Cmp(big0) == 0 && y.Cmp(big1) == 0
 }
 
+func (ed *Ed25519) Cofactor() int {
+	return ed.ellipticCurve.H
+}
+
 func (ed *Ed25519) NewIdentity() (*big.Int, *big.Int) {
 	return big.NewInt(0), big.NewInt(1)
 }
 
-func (ed *Ed25519) Encode(x *big.Int, y *big.Int) []byte {
-	xByte := x.Bytes()
-	yByte := y.Bytes()
-	zero := make([]byte, 32-len(xByte))
-	xByte = append(zero, xByte...)
-	zero = make([]byte, 32-len(yByte))
-	yByte = append(zero, yByte...)
-	return append(xByte, yByte...)
+func (ed *Ed25519) Encode(x *big.Int, y *big.Int) ([]byte, error) {
+	if x.Cmp(ed.ellipticCurve.P) > 0 || y.Cmp(ed.ellipticCurve.P) > 0 {
+		return nil, ErrInvalidPoint
+	}
+	xByte := x.FillBytes(make([]byte, 32))
+	yByte := y.FillBytes(make([]byte, 32))
+	return append(xByte, yByte...), nil
 }
 
 func (ed *Ed25519) Decode(input []byte) (*big.Int, *big.Int, error) {
