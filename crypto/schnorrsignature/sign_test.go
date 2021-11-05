@@ -15,7 +15,6 @@
 package schnorrsignature
 
 import (
-	"crypto/rsa"
 	"math/big"
 	"testing"
 
@@ -39,7 +38,6 @@ var (
 
 var _ = Describe("Sign test", func() {
 	It("Correct case", func() {
-		rsa.GenerateKey()
 		nthreshold := uint32(2)
 		bk1 := birkhoffinterpolation.NewBkParameter(big.NewInt(1), 0)
 		bk2 := birkhoffinterpolation.NewBkParameter(big.NewInt(2), 0)
