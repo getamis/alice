@@ -417,9 +417,8 @@ var _ = Describe("Point", func() {
 			Expect(err).Should(BeNil())
 			Expect(p).Should(Equal(gotPt))
 		},
-			// Entry("P224", EcPointMessage_P224, elliptic.P224()),
-			// Entry("P256", EcPointMessage_P256, elliptic.P256()),
-			// Entry("P384", EcPointMessage_P384, elliptic.P384()),
+			Entry("P256", EcPointMessage_P256, P256),
+			Entry("P384", EcPointMessage_P384, P384),
 			Entry("S256", EcPointMessage_S256, Secp256k1),
 			Entry("ed25519", EcPointMessage_EDWARD25519, Ed25519),
 		)
@@ -438,9 +437,8 @@ var _ = Describe("Point", func() {
 			Expect(err).Should(BeNil())
 			Expect(p).Should(Equal(gotPt))
 		},
-			// Entry("P224", EcPointMessage_P224, elliptic.P224()),
-			// Entry("P256", EcPointMessage_P256, elliptic.P256()),
-			// Entry("P384", EcPointMessage_P384, elliptic.P384()),
+			Entry("P256", EcPointMessage_P256, P256),
+			Entry("P384", EcPointMessage_P384, P384),
 			Entry("S256", EcPointMessage_S256, Secp256k1),
 			Entry("ed25519", EcPointMessage_EDWARD25519, Ed25519),
 		)

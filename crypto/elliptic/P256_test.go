@@ -14,21 +14,18 @@
 package elliptic
 
 import (
-	"fmt"
 	"math/big"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("P256", func() {
+var _ = Describe("ed25519", func() {
 	Context("Negative Point", func() {
-		FIt("It is OK", func() {
-			P256 := NewP256()
-			negX, negY := P256.Neg(P256.Params().Gx, P256.Params().Gy)
-			scalX, scalY := P256.ScalarBaseMult(new(big.Int).Sub(P256.Params().N, big.NewInt(1)).Bytes())
-			fmt.Println( P256.Add(P256.Params().Gx, P256.Params().Gy, scalX, scalY ) )
-
+		It("It is OK", func() {
+			ed25519 := NewEd25519()
+			negX, negY := ed25519.Neg(ed25519.Params().Gx, ed25519.Params().Gy)
+			scalX, scalY := ed25519.ScalarBaseMult(new(big.Int).Sub(ed25519.Params().N, big.NewInt(1)).Bytes())
 			Expect(negX.Cmp(scalX) == 0).Should(BeTrue())
 			Expect(negY.Cmp(scalY) == 0).Should(BeTrue())
 		})

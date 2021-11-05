@@ -34,6 +34,8 @@ var (
 	Ed25519   = elliptic.NewEd25519()
 	Secp256k1 = elliptic.NewSecp256k1()
 	SR25519   = elliptic.NewSR25519()
+	P256      = elliptic.NewP256()
+	P384      = elliptic.NewP384()
 )
 
 // ECPoint is the struct for an elliptic curve point.
@@ -106,18 +108,6 @@ func (p *ECPoint) Add(p1 *ECPoint) (*ECPoint, error) {
 	if !isOnCurve(p1.curve, p1.x, p1.y) {
 		return nil, ErrInvalidPoint
 	}
-
-	// The case : aG+(-a)G.
-	// minusP1 := p1.Neg()
-	// if minusP1.Equal(p) {
-	// 	x1 := big.NewInt(0)
-	// 	y1 := big.NewInt(1)
-	// 	x, y := p.curve.Add(x1, y1, x1, y1)
-	// 	return NewECPoint(p.curve, x, y)
-	// 	// x, y := p.curve.ScalarBaseMult(big0.Bytes())
-	// 	// return NewECPoint(p.curve, x, y)
-	// 	// return NewIdentity(p.curve), nil
-	// }
 	// The case : aG + aG = 2aG.
 	if p1.x.Cmp(p.x) == 0 && p1.y.Cmp(p.y) == 0 {
 		return p1.ScalarMult(big2), nil
@@ -244,12 +234,10 @@ func isOnCurve(curve elliptic.Curve, x, y *big.Int) bool {
 
 func (c EcPointMessage_Curve) GetEllipticCurve() (elliptic.Curve, error) {
 	switch c {
-	// case EcPointMessage_P224:
-	// 	return elliptic.P224(), nil
-	// case EcPointMessage_P256:
-	// 	return elliptic.P256(), nil
-	// case EcPointMessage_P384:
-	// 	return elliptic.P384(), nil
+	case EcPointMessage_P256:
+		return P256, nil
+	case EcPointMessage_P384:
+		return P384, nil
 	case EcPointMessage_S256:
 		return Secp256k1, nil
 	case EcPointMessage_EDWARD25519:
@@ -270,6 +258,12 @@ func ToCurve(c elliptic.Curve) (EcPointMessage_Curve, error) {
 	}
 	if isSameCurve(c, SR25519) {
 		return EcPointMessage_SR25519, nil
+	}
+	if isSameCurve(c, P256) {
+		return EcPointMessage_P256, nil
+	}
+	if isSameCurve(c, P384) {
+		return EcPointMessage_P384, nil
 	}
 	return 0, ErrInvalidCurve
 }
