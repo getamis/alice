@@ -695,7 +695,7 @@ func computeroot4thOver4(value *big.Int) *big.Int {
 	return pqRoot4
 }
 
-func LinearCombination(scalar []*big.Int, bqForms []*BQuadraticForm) (*BQuadraticForm, error) {
+func LinearCombination(scalar []*big.Int, bqForms []Exper) (*BQuadraticForm, error) {
 	if len(scalar) != len(bqForms) {
 		return nil, ErrDifferentLength
 	}
