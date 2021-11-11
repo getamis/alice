@@ -71,11 +71,12 @@ message HashConsistencyProof {
 	binaryquadraticform.BQForm f = 4;
     binaryquadraticform.BQForm h = 5;
     bytes p = 6;
-    ecpointgrouplaw.EcPointMessage q = 7;
-    ecpointgrouplaw.EcPointMessage r = 8;
-    ecpointgrouplaw.EcPointMessage t = 9;
-    bytes a = 10;
-    bytes c = 11;
+    bytes q = 7;
+    ecpointgrouplaw.EcPointMessage s = 8;
+    ecpointgrouplaw.EcPointMessage r = 9;
+    ecpointgrouplaw.EcPointMessage t = 10;
+    bytes a = 11;
+    bytes c = 12;
 }
 
 message VerifyHashConsistencyProof {
@@ -84,7 +85,7 @@ message VerifyHashConsistencyProof {
     bytes u2 = 3;
     binaryquadraticform.BQForm t1 = 4;
 	binaryquadraticform.BQForm t2 = 5;
-    ecpointgrouplaw.EcPointMessage q = 6;
+    ecpointgrouplaw.EcPointMessage s = 6;
     ecpointgrouplaw.EcPointMessage t = 7;
 }
 
