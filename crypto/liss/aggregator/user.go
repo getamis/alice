@@ -61,16 +61,16 @@ func NewUser(tssPublicKey *pt.ECPoint, clPubKey *cl.PublicKey, r *big.Int, m *bi
 }
 
 func (u *User) Approve() (map[string]*bqForm.BQuadraticForm, error) {
-    result := make(map[string]*bqForm.BQuadraticForm)
-    var err error
-    c1 := bqForm.NewCacheExp(u.c1)
-    for k, v := range u.shares.Shares {
-        result[k], err = c1.Exp(v.Share)
-        if err != nil {
-            return nil, err
-        }
-    }
-    return result, nil
+	result := make(map[string]*bqForm.BQuadraticForm)
+	var err error
+	c := bqForm.NewCacheExp(u.c1)
+	for k, v := range u.shares.Shares {
+		result[k], err = c.Exp(v.Share)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
 }
 
 func (u *User) computeC1() error {
