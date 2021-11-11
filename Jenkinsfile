@@ -10,7 +10,7 @@ import jenkins.model.CauseOfInterruption.UserInterruption
 
 @Library("jenkins-library@v0.21") _
 
-@Field def packageName = "github.com/amis/alice"
+@Field def packageName = "github.com/maiami/alice"
 @Field def packagePath = "src/${packageName}"
 
 @Field def coverageGoal = "0.76"
@@ -140,7 +140,7 @@ pipeline {
                                     //
                                     // In order to update status on HEAD commit for PR status check, commit id of HEAD is needed.
                                     // However, env.GIT_COMMIT actually equals to MERGE commit, not HEAD. So can't be used directly in this situation.
-                                    env.ghprbGhRepository = "amis/alice"
+                                    env.ghprbGhRepository = "maiami/alice"
                                     env.ghprbActualCommit = getOriginalHeadCommit()
 
                                     // if we are in a PR
