@@ -33,20 +33,20 @@ import (
 	- C : 2^40
 	- C’: [0, 2^40-1]
 	- d : 40
-	Alice(i.e. Prover) chooses the message x and a nonce r to get the CL ciphertext (c1 = g^r, c2=h^r*f^x) and the point Q = x*R.
+	Alice(i.e. Prover) chooses the message x and a nonce r to get the CL ciphertext (c1 = g^r, c2=h^r*f^x) and the point S = x*R.
 	Through the following protocol, Bob(i.e. Verifier) can be convinced that Alice knows x and encrypted message and the point
 	are consistency. But Bob does not learn x, r in this protocol. We use Fiat–Shamir heuristic to get the following protocol.
 	Step 1: The prover
 	- randomly chooses two integers r1 in [0, 2^{d}*A*C-1] and r2 in [0, p-1].
 	- computes t1=g^{r1}, t2=h^{r1}f^{r2} and T =r2*R.
-	- computes k:=H(t1, t2, g, f, h, p, Q, R, T, A, C) mod C. Here H is a cryptography hash function.
-	- computes u1:=r1+kr in Z and u2:=r2+kx mod p. Here Z is the ring of integer. The resulting proof is (u1, u2, t1, t2, c1, c2, T, Q).
+	- computes k:=H(t1, t2, g, f, h, p, q, S, R, T, A, C) mod C. Here H is a cryptography hash function.
+	- computes u1:=r1+kr in Z and u2:=r2+kx mod p. Here Z is the ring of integer. The resulting proof is (u1, u2, t1, t2, c1, c2, T, S).
 	Step 2: The verifier verifies
 	- u1 in [0, (2^{d}+1)AC).
 	- u2 in [0, p-1].
 	- g^{u1}=t1*c1^k.
 	- h^{u1}*f^{u2}=t2*(c2)^k
-	- T+k*Q=u2*R
+	- T+k*S=u2*R
 */
 
 func (publicKey *PublicKey) BuildConsistencyProof(data []byte, R *pt.ECPoint) (*ConsistencyProofMessage, error) {
@@ -55,8 +55,8 @@ func (publicKey *PublicKey) BuildConsistencyProof(data []byte, R *pt.ECPoint) (*
 	if err != nil {
 		return nil, err
 	}
-	Q := R.ScalarMult(message)
-	proof, err := publicKey.buildProofWithPointQ(message, r, Q, R)
+	S := R.ScalarMult(message)
+	proof, err := publicKey.buildProofWithPointQ(message, r, S, R)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (publicKey *PublicKey) BuildConsistencyProof(data []byte, R *pt.ECPoint) (*
 	}, nil
 }
 
-func (pubKey *PublicKey) buildProofWithPointQ(plainText *big.Int, r *big.Int, Q, R *pt.ECPoint) (*VerifyHashConsistencyProof, error) {
+func (pubKey *PublicKey) buildProofWithPointQ(plainText *big.Int, r *big.Int, S, R *pt.ECPoint) (*VerifyHashConsistencyProof, error) {
 	// Compute 2^{d}ac + 1
 	upperBound1 := new(big.Int).Mul(pubKey.a, pubKey.c)
 	upperBound1 = upperBound1.Lsh(upperBound1, uint(pubKey.d))
@@ -115,12 +115,12 @@ func (pubKey *PublicKey) buildProofWithPointQ(plainText *big.Int, r *big.Int, Q,
 	if err != nil {
 		return nil, err
 	}
-	msgQ, err := Q.ToEcPointMessage()
+	msgS, err := S.ToEcPointMessage()
 	if err != nil {
 		return nil, err
 	}
 
-	// k:=H(t1, t2, g, f, h, p, Q, R, T, A, C) mod C
+	// k:=H(t1, t2, g, f, h, p, q, S, R, T, A, C) mod C
 	// In our application C = 2^40.
 	// The distribution E := { x| k mod C } is also the uniform distribution in [0,2^40-1]=[0,c-1].
 	k, salt, err := utils.HashProtosRejectSampling(big256bit, &HashConsistencyProof{
@@ -130,7 +130,8 @@ func (pubKey *PublicKey) buildProofWithPointQ(plainText *big.Int, r *big.Int, Q,
 		F:  pubKey.f.ToMessage(),
 		H:  pubKey.h.ToMessage(),
 		P:  pubKey.p.Bytes(),
-		Q:  msgQ,
+		Q:  pubKey.q.Bytes(),
+		S:  msgS,
 		R:  msgR,
 		T:  msgT,
 		A:  pubKey.a.Bytes(),
@@ -153,7 +154,7 @@ func (pubKey *PublicKey) buildProofWithPointQ(plainText *big.Int, r *big.Int, Q,
 		U2:   u2.Bytes(),
 		T1:   t1.ToMessage(),
 		T2:   t2.ToMessage(),
-		Q:    msgQ,
+		S:    msgS,
 		T:    msgT,
 	}
 	return proof, nil
@@ -173,7 +174,7 @@ func (pubKey *PublicKey) VerifyConsistencyProof(msgProof *ConsistencyProofMessag
 	if err != nil {
 		return ErrInvalidMessage
 	}
-	Q, err := msg.Q.ToPoint()
+	S, err := msg.S.ToPoint()
 	if err != nil {
 		return ErrInvalidMessage
 	}
@@ -203,7 +204,7 @@ func (pubKey *PublicKey) VerifyConsistencyProof(msgProof *ConsistencyProofMessag
 	}
 
 	// Check g^{u1}=t1*c1^k
-	// k:=H(t1, t2, g, f, h, p, T, Q, R, A, C) mod C
+	// k:=H(t1, t2, g, f, h, p, q, S, T, R, A, C) mod C
 	k, err := utils.HashProtosToInt(msg.Salt, &HashConsistencyProof{
 		T1: t1.ToMessage(),
 		T2: t2.ToMessage(),
@@ -211,7 +212,8 @@ func (pubKey *PublicKey) VerifyConsistencyProof(msgProof *ConsistencyProofMessag
 		F:  pubKey.f.ToMessage(),
 		H:  pubKey.h.ToMessage(),
 		P:  pubKey.p.Bytes(),
-		Q:  msg.Q,
+		Q:  pubKey.q.Bytes(),
+		S:  msg.S,
 		R:  msgProof.R,
 		T:  msg.T,
 		A:  pubKey.a.Bytes(),
@@ -274,14 +276,14 @@ func (pubKey *PublicKey) VerifyConsistencyProof(msgProof *ConsistencyProofMessag
 		return ErrDifferentBQForms
 	}
 
-	// T+kQ=u2*R
-	taddkQ := Q.ScalarMult(k)
-	taddkQ, err = taddkQ.Add(T)
+	// T+kS=u2*R
+	taddkS := S.ScalarMult(k)
+	taddkS, err = taddkS.Add(T)
 	if err != nil {
 		return err
 	}
 	u2R := R.ScalarMult(u2)
-	if !u2R.Equal(taddkQ) {
+	if !u2R.Equal(taddkS) {
 		return ErrFailedVerify
 	}
 	return nil
