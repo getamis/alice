@@ -90,7 +90,7 @@ func (p *bqDecommitmentHandler) HandleMessage(logger log.Logger, message types.M
 	}
 
 	// Compute all sums
-	sumExponential := make([]*bqForm.BQuadraticForm, len(p.exponential))
+	sumExponential := make([]bqForm.Exper, len(p.exponential))
 	for i := 0; i < len(sumExponential); i++ {
 		temp, err := decommitMsg[0][i].Bqform.ToBQuadraticForm()
 		if err != nil {
@@ -109,7 +109,7 @@ func (p *bqDecommitmentHandler) HandleMessage(logger log.Logger, message types.M
 				return err
 			}
 		}
-		sumExponential[i] = temp
+		sumExponential[i] = bqForm.NewCacheExp(temp)
 	}
 	sumExponentialM := make([]*bqForm.BQuadraticForm, p.configsMatrix.GetNumberRow())
 	for i := 0; i < len(sumExponentialM); i++ {
@@ -123,6 +123,11 @@ func (p *bqDecommitmentHandler) HandleMessage(logger log.Logger, message types.M
 		}
 		sumExponentialM[i] = temp
 	}
+
+	// sumExponentialCache := make([]bqForm.Exper, len(sumExponential))
+	// for i:=0; i < len(sumExponential); i++ {
+	// 	sumExponentialCache[i] = bqForm.NewCacheExp(sumExponential[i])
+	// }
 
 	// Computing matrix acts on sumExponential vectors.
 	computeSumExponentialM := make([]*bqForm.BQuadraticForm, p.configsMatrix.GetNumberRow())
@@ -148,8 +153,12 @@ func (p *bqDecommitmentHandler) HandleMessage(logger log.Logger, message types.M
 		}
 	}
 
+	pubKey, err := sumExponential[0].Exp(big1)
+	if err != nil {
+		return err
+	}
 	// Set public Key:
-	p.publicKey, err = p.clParameter.GeneratePublicKey(sumExponential[0])
+	p.publicKey, err = p.clParameter.GeneratePublicKey(pubKey)
 	if err != nil {
 		logger.Debug("Failed to GeneratePublicKey", "err", err)
 		return err
