@@ -251,9 +251,6 @@ func (pub1 *PublicKey) EqualWithoutProof(pub2 *PublicKey) bool {
 	if !pub1h.Equal(pub2h) {
 		return false
 	}
-	if pub1.proof != nil || pub2.proof != nil {
-		return false
-	}
 	return true
 }
 

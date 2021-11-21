@@ -72,16 +72,9 @@ func ComineShares(config *liss.GroupConfig, userIndex int, shares []*UserResult)
 	}
 
 	// Check public key consistent
-	pubKey, err := shares[0].PublicKey.ToPubKeyMessage().ToPubkeyWithoutProof()
-	if err != nil {
-		return nil, err
-	}
+	pubKey := shares[0].PublicKey
 	for i := 1; i < len(shares); i++ {
-		otherPub, err := shares[i].PublicKey.ToPubKeyMessage().ToPubkeyWithoutProof()
-		if err != nil {
-			return nil, err
-		}
-		if !pubKey.EqualWithoutProof(otherPub) {
+		if !pubKey.EqualWithoutProof(shares[i].PublicKey) {
 			return nil, ErrFailedVerify
 		}
 	}
