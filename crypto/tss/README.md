@@ -16,7 +16,7 @@ Alice has been audited by [Kudelski Security](https://www.kudelskisecurity.com).
 *	[Implementations](#implementation)
 	*	[DKG](#DKG)
     *	[Signer](#Signer)
-		*	[GG18](#GG18)
+		*	[GG18(Insecure)](#GG18)
 		*	[CCLST](#CCLST)
     *	[Reshare](#Reshare)
 *	[Usage](#usage)

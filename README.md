@@ -22,7 +22,7 @@ For example, an important contract not only requires enough signatures, but also
 HTSS  has been developed by [Tassa](https://www.openu.ac.il/lists/mediaserver_documents/personalsites/tamirtassa/hss_conf.pdf) and other researchers many years ago. In our implementation, we setup up this theory on TSS(i.e. just replace Lagrange Interpolation to Birkhoff Interpolation).  Meanwhile, our protocol of sign (i.e. GG18 and CCLST20 ) can support two homomorphic encryptions which are Paillier and CL scheme. 
 
 Now, Alice supports two parts:
-1. [HTSS(A variant of GG18): ECDSA](./crypto/tss/README.md). This part has been audited.
+1. [HTSS(A variant of GG18 and CCLST): ECDSA](./crypto/tss/README.md). This part has been audited.
 2. [2-party Bip32](./crypto/bip32/README.md). **WARN: This part has NOT been audited (Preparation).** 
 
 
@@ -31,6 +31,8 @@ Now, Alice supports two parts:
 Although the fist part of Alice has been audited, you should still be careful to use it. 
 1. Using end-to-end encryption to transfer messages between two parties is necessary. 
 2. If any error messages occur during execution Alice, you should stop and restart it. **Never restart in the middle flow.**
+3. **Important** Now, GG18 is insecure, so you should replace Paillier homomorphic encryption into CL homomorphic encryption (i.e. USE CCLST protocol). Our version is the fast version of GG18 (i.e. without range proof). The merit of CL homomorphic encryption does not any range proofs.
+
 
 If you have more questions, you can connect [us](https://www.am.is/) directly without any hesitation.
 
