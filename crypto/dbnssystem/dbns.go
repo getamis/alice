@@ -17,18 +17,19 @@ package dbnssystem
 import (
 	"errors"
 	"math/big"
-
-	"github.com/getamis/alice/crypto/utils"
 )
 
 var (
 	big1 = big.NewInt(1)
 	big3 = big.NewInt(3)
+	big9 = big.NewInt(9)
 
 	// ErrDBNSBase2And3 is returned if the integer can not represented by any linear combination 2^a3^b.
 	ErrDBNSBase2And3 = errors.New("not represented by any linear combination 2^a3^b")
 	// ErrPositiveInteger is returned if the integer is negative.
 	ErrPositiveInteger = errors.New("not a negative integer")
+
+	mod3Lsist = [9]int{0, 1, 2, 0, 1, 2, 0, 1, 2}
 )
 
 /* This algorithm comes from: A Tree-Based Approach for Computing Double-Base Chains: Algorithm 1. Tree-based DB-chain search.
@@ -74,29 +75,6 @@ func (expan *expansion23) GetExp3() int {
 }
 func (expan *expansion23) GetSign() int {
 	return expan.sign
-}
-
-// This is a algorithm to get number % 3. The velocity of this function is faster than new(bigInt).mod(number, 3).
-func fastMod3(number *big.Int) int {
-	numberOne, numberTwo := 0, 0
-	for i := 0; i < number.BitLen(); i = i + 2 {
-		if number.Bit(i) != 0 {
-			numberOne++
-		}
-	}
-	for i := 1; i < number.BitLen(); i = i + 2 {
-		if number.Bit(i) != 0 {
-			numberTwo++
-		}
-	}
-	result := 0
-	if numberOne > numberTwo {
-		result = numberOne - numberTwo
-	} else {
-		result = numberTwo - numberOne
-		result = result << 1
-	}
-	return result % 3
 }
 
 func (dbns *dbnsMentor) ExpansionBase2And3(number *big.Int) ([]*expansion23, error) {
@@ -226,8 +204,7 @@ func getMax2Factor(number *big.Int) (*big.Int, int) {
 	bitLength := number.BitLen()
 	for i := 0; i < bitLength; i++ {
 		if number.Bit(i) != 0 {
-			number.Rsh(number, uint(i))
-			return number, i
+			return number.Rsh(number, uint(i)), i
 		}
 	}
 	return big.NewInt(0), 0
@@ -236,14 +213,48 @@ func getMax2Factor(number *big.Int) (*big.Int, int) {
 func getMax3Factor(number *big.Int) (*big.Int, int) {
 	bitLength := number.BitLen()
 	for i := 0; i < bitLength; i++ {
-		residue := utils.FastMod3(number)
+		residue := fastMod9(number)
 		if residue == 0 {
-			number.Div(number, big3)
+			number.Div(number, big9)
 			continue
 		}
-		return number, i
+		if mod3Lsist[residue] == 0 {
+			return number.Div(number, big3), (i << 1) + 1
+		}
+		return number, (i << 1)
 	}
 	return nil, 0
+}
+
+func fastMod9(input *big.Int) int {
+	up := (input.BitLen() >> 6) + 1
+	s := uint64(0)
+	var temp uint64
+	copy := new(big.Int).Set(input)
+	for i := 0; i < up; i++ {
+		index := i % 3
+		if index == 0 {
+			temp = copy.Uint64()
+			s += ((temp >> 32) << 2) + (temp & 4294967295)
+			copy.Rsh(copy, 64)
+			continue
+		}
+		if index == 1 {
+			temp = copy.Uint64()
+			s += (temp >> 32) + (temp&4294967295)*7
+			copy.Rsh(copy, 64)
+			continue
+		}
+		temp = copy.Uint64()
+		s += ((temp >> 32) * 7) + ((temp & 4294967295) << 2)
+		copy.Rsh(copy, 64)
+		s = ((s >> 32) << 2) + (s & 4294967295)
+	}
+	s = ((s >> 32) << 2) + (s & 4294967295)
+	s = (s>>16)*7 + (s & 65535)
+	s = (s>>16)*7 + (s & 65535)
+	s = ((s >> 8) << 2) + (s & 255)
+	return int(s % 9)
 }
 
 // example: The input of the struct is like: 841232 = 2^4(2^5(2^2*3^1(2^3(2^4+1)+1)−1)+1)
