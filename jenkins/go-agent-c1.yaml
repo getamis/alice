@@ -4,6 +4,24 @@ kind: Pod
 metadata:
   namespace: jenkins-slave
 spec:
+  tolerations:
+  - effect: NoExecute
+    key: jenkins
+    operator: Equal
+    value: none
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/jenkins
+    operator: Exists
+  affinity:
+    nodeAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        preference:
+          matchExpressions:
+          - key: node-role.kubernetes.io/jenkins
+            operator: In
+            values:
+            - ""
   containers:
   - name: builder
     image: "066141165427.dkr.ecr.ap-southeast-1.amazonaws.com/jenkins/go-agent:1.13"
