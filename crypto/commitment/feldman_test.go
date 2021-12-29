@@ -15,10 +15,10 @@
 package commitment
 
 import (
-	"crypto/elliptic"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
+
 	bkhoff "github.com/getamis/alice/crypto/birkhoffinterpolation"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/polynomial"
@@ -42,10 +42,10 @@ var _ = Describe("Feldman commitment test", func() {
 		expected.Points[2], _ = pt.ScalarBaseMult(curve, big.NewInt(100)).ToEcPointMessage()
 		Expect(got).Should(Equal(expected))
 	},
-		Entry("P224", elliptic.P224()),
-		Entry("P256", elliptic.P256()),
-		Entry("P384", elliptic.P384()),
-		Entry("S256", btcec.S256()),
+		// Entry("P224", elliptic.P224()),
+		// Entry("P256", elliptic.P256()),
+		// Entry("P384", elliptic.P384()),
+		Entry("S256", secp256k1),
 	)
 
 	DescribeTable("should be ok", func(x *big.Int, rank, threshold uint32, curve elliptic.Curve) {
@@ -65,13 +65,13 @@ var _ = Describe("Feldman commitment test", func() {
 		Expect(err).Should(BeNil())
 	},
 		Entry("should be OK",
-			big.NewInt(225), uint32(1), uint32(3), elliptic.P224()),
+			big.NewInt(225), uint32(1), uint32(3), secp256k1),
 		Entry("should be OK",
-			big.NewInt(2290), uint32(0), uint32(2), elliptic.P256()),
+			big.NewInt(2290), uint32(0), uint32(2), secp256k1),
 		Entry("zero point case",
-			big.NewInt(2290), uint32(2), uint32(2), elliptic.P224()),
+			big.NewInt(2290), uint32(2), uint32(2), secp256k1),
 		Entry("should be OK",
-			big.NewInt(2291), uint32(2), uint32(5), elliptic.P256()),
+			big.NewInt(2291), uint32(2), uint32(5), secp256k1),
 	)
 
 	DescribeTable("failed to verify due to wrong rank", func(x *big.Int, rank, threshold uint32, curve elliptic.Curve) {
@@ -92,11 +92,11 @@ var _ = Describe("Feldman commitment test", func() {
 		Expect(err).Should(Equal(ErrFailedVerify))
 	},
 		Entry("case #0",
-			big.NewInt(225), uint32(1), uint32(3), elliptic.P224()),
+			big.NewInt(225), uint32(1), uint32(3), secp256k1),
 		Entry("case #1",
-			big.NewInt(2290), uint32(0), uint32(2), elliptic.P256()),
+			big.NewInt(2290), uint32(0), uint32(2), secp256k1),
 		Entry("case #2",
-			big.NewInt(2291), uint32(2), uint32(5), elliptic.P256()),
+			big.NewInt(2291), uint32(2), uint32(5), secp256k1),
 	)
 
 	DescribeTable("failed to verify due to wrong x", func(x *big.Int, rank, threshold uint32, curve elliptic.Curve) {
@@ -117,11 +117,11 @@ var _ = Describe("Feldman commitment test", func() {
 		Expect(err).Should(Equal(ErrFailedVerify))
 	},
 		Entry("case #0",
-			big.NewInt(225), uint32(1), uint32(3), elliptic.P224()),
+			big.NewInt(225), uint32(1), uint32(3), secp256k1),
 		Entry("case #1",
-			big.NewInt(2290), uint32(0), uint32(2), elliptic.P256()),
+			big.NewInt(2290), uint32(0), uint32(2), secp256k1),
 		Entry("case #2",
-			big.NewInt(2291), uint32(2), uint32(5), elliptic.P256()),
+			big.NewInt(2291), uint32(2), uint32(5), secp256k1),
 	)
 
 	DescribeTable("invalid commitment message", func(x *big.Int, rank, threshold uint32, curve elliptic.Curve) {
@@ -147,13 +147,13 @@ var _ = Describe("Feldman commitment test", func() {
 		Expect(err).Should(Equal(pt.ErrDifferentLength))
 	},
 		Entry("should be OK",
-			big.NewInt(225), uint32(1), uint32(3), elliptic.P224()),
+			big.NewInt(225), uint32(1), uint32(3), secp256k1),
 		Entry("should be OK",
-			big.NewInt(2290), uint32(0), uint32(2), elliptic.P256()),
+			big.NewInt(2290), uint32(0), uint32(2), secp256k1),
 		Entry("zero point case",
-			big.NewInt(2290), uint32(2), uint32(2), elliptic.P224()),
+			big.NewInt(2290), uint32(2), uint32(2), secp256k1),
 		Entry("should be OK",
-			big.NewInt(2291), uint32(2), uint32(5), elliptic.P256()),
+			big.NewInt(2291), uint32(2), uint32(5), secp256k1),
 	)
 
 	DescribeTable("empty points in commitment message", func(x *big.Int, rank, threshold uint32, curve elliptic.Curve) {
@@ -175,12 +175,12 @@ var _ = Describe("Feldman commitment test", func() {
 		Expect(err).Should(Equal(pt.ErrDifferentLength))
 	},
 		Entry("should be OK",
-			big.NewInt(225), uint32(1), uint32(3), elliptic.P224()),
+			big.NewInt(225), uint32(1), uint32(3), secp256k1),
 		Entry("should be OK",
-			big.NewInt(2290), uint32(0), uint32(2), elliptic.P256()),
+			big.NewInt(2290), uint32(0), uint32(2), secp256k1),
 		Entry("zero point case",
-			big.NewInt(2290), uint32(2), uint32(2), elliptic.P224()),
+			big.NewInt(2290), uint32(2), uint32(2), secp256k1),
 		Entry("should be OK",
-			big.NewInt(2291), uint32(2), uint32(5), elliptic.P256()),
+			big.NewInt(2291), uint32(2), uint32(5), secp256k1),
 	)
 })

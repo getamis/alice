@@ -14,10 +14,9 @@
 package dkg
 
 import (
-	"crypto/elliptic"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/matrix"
 	"github.com/getamis/alice/crypto/tss"
@@ -67,7 +66,7 @@ var _ = Describe("result handler, negative cases", func() {
 
 	Context("HandleMessage/Finalize", func() {
 		var (
-			curve     = btcec.S256()
+			curve     =elliptic.NewSecp256k1()
 			threshold = uint32(3)
 			ranks     = []uint32{0, 0, 0, 0, 0}
 
@@ -132,7 +131,7 @@ var _ = Describe("result handler, negative cases", func() {
 				}
 				msg = rh.getResultMessage()
 				r := msg.GetResult()
-				r.SiGProofMsg.V.X = []byte("invalid X")
+				r.SiGProofMsg.V.Point = []byte("invalid X")
 				msg.Body = &Message_Result{
 					Result: r,
 				}
@@ -162,7 +161,7 @@ var _ = Describe("result handler, negative cases", func() {
 				rh, ok := d.GetHandler().(*resultHandler)
 				Expect(ok).Should(BeTrue())
 
-				rh.siGProofMsg.V.X = []byte("invalid X")
+				rh.siGProofMsg.V.Point = []byte("invalid X")
 				h, err := rh.Finalize(log.Discard())
 				Expect(err).Should(Equal(ecpointgrouplaw.ErrInvalidPoint))
 				Expect(h).Should(BeNil())
@@ -192,7 +191,7 @@ var _ = Describe("result handler, negative cases", func() {
 
 				for _, peer := range rh.peers {
 					peer.result = &resultData{
-						result: ecpointgrouplaw.NewBase(elliptic.P384()),
+						result: ecpointgrouplaw.NewBase(elliptic.NewEd25519()),
 					}
 				}
 				h, err := rh.Finalize(log.Discard())
@@ -208,7 +207,7 @@ var _ = Describe("result handler, negative cases", func() {
 
 				for _, peer := range rh.peers {
 					peer.result = &resultData{
-						result: ecpointgrouplaw.NewBase(btcec.S256()),
+						result: ecpointgrouplaw.NewBase(elliptic.NewSecp256k1()),
 					}
 				}
 				h, err := rh.Finalize(log.Discard())

@@ -17,9 +17,9 @@ package newpeer
 import (
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/addshare"
 	"github.com/getamis/alice/crypto/utils"
@@ -70,10 +70,10 @@ var _ = Describe("peer handler, negative cases", func() {
 		BeforeEach(func() {
 			threshold = uint32(0)
 			oldPeerBk = birkhoffinterpolation.NewBkParameter(big.NewInt(10), uint32(0))
-			pubkey := ecpointgrouplaw.NewBase(btcec.S256()).ScalarMult(big.NewInt(2))
+			pubkey := ecpointgrouplaw.NewBase(elliptic.NewSecp256k1()).ScalarMult(big.NewInt(2))
 			pubkeyMsg, err = pubkey.ToEcPointMessage()
 			Expect(err).Should(BeNil())
-			siGProofMsg, err = zkproof.NewBaseSchorrMessage(btcec.S256(), big.NewInt(5))
+			siGProofMsg, err = zkproof.NewBaseSchorrMessage(elliptic.NewSecp256k1(), big.NewInt(5))
 			Expect(err).Should(BeNil())
 
 			ph.fieldOrder = pubkey.GetCurve().Params().N
@@ -135,7 +135,7 @@ var _ = Describe("peer handler, negative cases", func() {
 		})
 
 		It("inconsistent public key", func() {
-			invalidPubkey := ecpointgrouplaw.NewBase(btcec.S256()).ScalarMult(big.NewInt(3))
+			invalidPubkey := ecpointgrouplaw.NewBase(elliptic.NewSecp256k1()).ScalarMult(big.NewInt(3))
 			invalidPubkeyMsg, err := invalidPubkey.ToEcPointMessage()
 			Expect(err).Should(BeNil())
 			msg := &addshare.Message{
@@ -173,7 +173,7 @@ var _ = Describe("peer handler, negative cases", func() {
 		})
 
 		It("fails to verify siG", func() {
-			v, err := ecpointgrouplaw.NewIdentity(btcec.S256()).ToEcPointMessage()
+			v, err := ecpointgrouplaw.NewIdentity(elliptic.NewSecp256k1()).ToEcPointMessage()
 			Expect(err).Should(BeNil())
 			invalidSiGProofMsg := &zkproof.SchnorrProofMessage{
 				V: v,

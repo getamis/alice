@@ -24,9 +24,10 @@ message EcPointMessage {
     P256 = 1;
     P384 = 2;
     S256 = 3;
+    EDWARD25519 = 4;
+    SR25519 = 5;
   }
   Curve curve = 1;
-  bytes x = 2;
-  bytes y = 3;
+  bytes point = 2;
 }
  

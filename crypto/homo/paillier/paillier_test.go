@@ -18,8 +18,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/utils"
 	zkproof "github.com/getamis/alice/crypto/zkproof"
@@ -124,7 +124,7 @@ var _ = Describe("Paillier test", func() {
 	})
 
 	Context("GetMtaProof()/VerifyMtaProof()", func() {
-		curve := btcec.S256()
+		curve := elliptic.NewSecp256k1()
 		beta := big.NewInt(2)
 		alpha := big.NewInt(8)
 		b := big.NewInt(2)
@@ -153,7 +153,7 @@ var _ = Describe("Paillier test", func() {
 
 		It("invalid message bytes", func() {
 			msg := &pt.EcPointMessage{
-				X: []byte("X"),
+				Point: []byte("X"),
 			}
 			bs, err := proto.Marshal(msg)
 			Expect(err).Should(BeNil())

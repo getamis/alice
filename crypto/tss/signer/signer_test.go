@@ -15,11 +15,10 @@ package signer
 
 import (
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"math/big"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo/paillier"
@@ -39,7 +38,7 @@ func TestSigner(t *testing.T) {
 
 var _ = Describe("Signer", func() {
 	var (
-		curve = btcec.S256()
+		curve = elliptic.NewSecp256k1()
 		msg   = []byte{1, 2, 3}
 	)
 

@@ -15,9 +15,10 @@
 package ecpointgrouplaw
 
 import (
-	"crypto/elliptic"
 	"errors"
 	"math/big"
+
+	"github.com/getamis/alice/crypto/elliptic"
 )
 
 var (

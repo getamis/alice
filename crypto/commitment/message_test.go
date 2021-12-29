@@ -15,15 +15,18 @@
 package commitment
 
 import (
-	"crypto/elliptic"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+)
+
+var(
+	secp256k1 = elliptic.NewSecp256k1()
 )
 
 var _ = Describe("message test", func() {
@@ -45,10 +48,10 @@ var _ = Describe("message test", func() {
 			Expect(p).Should(Equal(expected[i]))
 		}
 	},
-		Entry("P224", pt.EcPointMessage_P224, elliptic.P224()),
-		Entry("P256", pt.EcPointMessage_P256, elliptic.P256()),
-		Entry("P384", pt.EcPointMessage_P384, elliptic.P384()),
-		Entry("S256", pt.EcPointMessage_S256, btcec.S256()),
+		// Entry("P224", pt.EcPointMessage_P224, elliptic.P224()),
+		// Entry("P256", pt.EcPointMessage_P256, elliptic.P256()),
+		// Entry("P384", pt.EcPointMessage_P384, elliptic.P384()),
+		Entry("S256", pt.EcPointMessage_S256, secp256k1),
 	)
 
 	It("invalid point", func() {

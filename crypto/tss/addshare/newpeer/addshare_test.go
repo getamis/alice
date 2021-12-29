@@ -19,7 +19,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/polynomial"
@@ -40,7 +40,7 @@ func TestAddShare(t *testing.T) {
 
 var _ = Describe("AddShare", func() {
 	It("NewAddShare", func() {
-		curve := btcec.S256()
+		curve := elliptic.NewSecp256k1()
 		fieldOrder := curve.Params().N
 		threshold := uint32(1)
 
