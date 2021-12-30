@@ -14,7 +14,7 @@
 
 package commitment
 
-import pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+import pt "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
 
 func (p *PointCommitmentMessage) EcPoints() ([]*pt.ECPoint, error) {
 	pts := make([]*pt.ECPoint, len(p.Points))

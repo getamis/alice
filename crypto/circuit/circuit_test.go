@@ -19,7 +19,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/getamis/alice/crypto/utils"
+	"github.com/aisuosuo/alice/crypto/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"

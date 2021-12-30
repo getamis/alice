@@ -16,14 +16,14 @@ syntax = "proto3";
 
 package master;
 
-option go_package = "github.com/getamis/alice/crypto/bip32/master";
+option go_package = "github.com/aisuosuo/alice/crypto/bip32/master";
 
-import "github.com/getamis/alice/crypto/ot/message.proto";
-import "github.com/getamis/alice/crypto/circuit/message.proto";
-import "github.com/getamis/alice/crypto/birkhoffinterpolation/bk.proto";
-import "github.com/getamis/alice/crypto/commitment/message.proto";
-import "github.com/getamis/alice/crypto/zkproof/message.proto";
-import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
+import "github.com/aisuosuo/alice/crypto/ot/message.proto";
+import "github.com/aisuosuo/alice/crypto/circuit/message.proto";
+import "github.com/aisuosuo/alice/crypto/birkhoffinterpolation/bk.proto";
+import "github.com/aisuosuo/alice/crypto/commitment/message.proto";
+import "github.com/aisuosuo/alice/crypto/zkproof/message.proto";
+import "github.com/aisuosuo/alice/crypto/ecpointgrouplaw/point.proto";
 
 enum Type {
     Initial = 0;

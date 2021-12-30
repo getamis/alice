@@ -19,7 +19,7 @@ import (
 	"math/big"
 	"reflect"
 
-	dbns "github.com/getamis/alice/crypto/dbnssystem"
+	dbns "github.com/aisuosuo/alice/crypto/dbnssystem"
 )
 
 var (

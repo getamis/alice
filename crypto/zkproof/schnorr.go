@@ -19,8 +19,8 @@ import (
 	"errors"
 	"math/big"
 
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/utils"
+	pt "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
+	"github.com/aisuosuo/alice/crypto/utils"
 )
 
 var (

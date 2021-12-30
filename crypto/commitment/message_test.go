@@ -23,7 +23,7 @@ import (
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	pt "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
 )
 
 var _ = Describe("message test", func() {

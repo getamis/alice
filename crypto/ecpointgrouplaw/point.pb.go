@@ -16,7 +16,7 @@
 // versions:
 // 	protoc-gen-go v1.26.0
 // 	protoc        v3.6.1
-// source: github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto
+// source: github.com/aisuosuo/alice/crypto/ecpointgrouplaw/point.proto
 
 package ecpointgrouplaw
 

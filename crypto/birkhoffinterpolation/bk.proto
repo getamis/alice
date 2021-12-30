@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package birkhoffinterpolation;
 
-option go_package = "github.com/getamis/alice/crypto/birkhoffinterpolation";
+option go_package = "github.com/aisuosuo/alice/crypto/birkhoffinterpolation";
 
 message BkParameterMessage {
     bytes x = 1;

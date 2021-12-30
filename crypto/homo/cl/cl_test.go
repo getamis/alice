@@ -18,10 +18,10 @@ import (
 	"math/big"
 	"testing"
 
+	pt "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
+	"github.com/aisuosuo/alice/crypto/homo"
+	"github.com/aisuosuo/alice/crypto/utils"
 	"github.com/btcsuite/btcd/btcec"
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/homo"
-	"github.com/getamis/alice/crypto/utils"
 	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"

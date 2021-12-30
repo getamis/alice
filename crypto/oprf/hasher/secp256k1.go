@@ -19,9 +19,9 @@ import (
 	"crypto/sha256"
 	"math/big"
 
+	pt "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
+	"github.com/aisuosuo/alice/crypto/utils"
 	"github.com/btcsuite/btcd/btcec"
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/utils"
 	"golang.org/x/crypto/blake2b"
 )
 

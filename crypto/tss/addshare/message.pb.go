@@ -16,14 +16,14 @@
 // versions:
 // 	protoc-gen-go v1.26.0
 // 	protoc        v3.6.1
-// source: github.com/getamis/alice/crypto/tss/addshare/message.proto
+// source: github.com/aisuosuo/alice/crypto/tss/addshare/message.proto
 
 package addshare
 
 import (
-	birkhoffinterpolation "github.com/getamis/alice/crypto/birkhoffinterpolation"
-	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	zkproof "github.com/getamis/alice/crypto/zkproof"
+	birkhoffinterpolation "github.com/aisuosuo/alice/crypto/birkhoffinterpolation"
+	ecpointgrouplaw "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
+	zkproof "github.com/aisuosuo/alice/crypto/zkproof"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

@@ -16,14 +16,14 @@
 // versions:
 // 	protoc-gen-go v1.26.0
 // 	protoc        v3.6.1
-// source: github.com/getamis/alice/crypto/bip32/child/message.proto
+// source: github.com/aisuosuo/alice/crypto/bip32/child/message.proto
 
 package child
 
 import (
-	circuit "github.com/getamis/alice/crypto/circuit"
-	ot "github.com/getamis/alice/crypto/ot"
-	zkproof "github.com/getamis/alice/crypto/zkproof"
+	circuit "github.com/aisuosuo/alice/crypto/circuit"
+	ot "github.com/aisuosuo/alice/crypto/ot"
+	zkproof "github.com/aisuosuo/alice/crypto/zkproof"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

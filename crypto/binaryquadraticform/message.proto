@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package binaryquadraticform;
 
-option go_package = "github.com/getamis/alice/crypto/binaryquadraticform";
+option go_package = "github.com/aisuosuo/alice/crypto/binaryquadraticform";
 
 message BQForm {
 	// a, b, c may be negative, so we use string type.

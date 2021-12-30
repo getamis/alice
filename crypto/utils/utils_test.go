@@ -17,7 +17,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
 	"golang.org/x/crypto/blake2b"
 
 	. "github.com/onsi/ginkgo"

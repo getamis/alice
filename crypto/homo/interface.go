@@ -18,7 +18,7 @@ import (
 	"crypto/elliptic"
 	"math/big"
 
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	pt "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
 )
 
 //go:generate mockery -name Pubkey

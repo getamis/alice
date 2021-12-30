@@ -16,7 +16,7 @@
 // versions:
 // 	protoc-gen-go v1.26.0
 // 	protoc        v3.6.1
-// source: github.com/getamis/alice/crypto/binaryquadraticform/message.proto
+// source: github.com/aisuosuo/alice/crypto/binaryquadraticform/message.proto
 
 package binaryquadraticform
 

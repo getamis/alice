@@ -17,7 +17,7 @@ package signer
 import (
 	"math/big"
 
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/aisuosuo/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 

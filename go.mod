@@ -1,4 +1,4 @@
-module github.com/getamis/alice
+module github.com/aisuosuo/alice
 
 go 1.13
 

@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package binaryfield;
 
-option go_package = "github.com/getamis/alice/crypto/binaryfield";
+option go_package = "github.com/aisuosuo/alice/crypto/binaryfield";
 
 message binaryMessage {
     uint64 low = 1;

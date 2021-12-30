@@ -17,8 +17,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/getamis/alice/internal/message/types"
-	"github.com/getamis/alice/internal/message/types/mocks"
+	"github.com/aisuosuo/alice/internal/message/types"
+	"github.com/aisuosuo/alice/internal/message/types/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"

@@ -16,11 +16,11 @@ syntax = "proto3";
 
 package child;
 
-option go_package = "github.com/getamis/alice/crypto/bip32/child";
+option go_package = "github.com/aisuosuo/alice/crypto/bip32/child";
 
-import "github.com/getamis/alice/crypto/ot/message.proto";
-import "github.com/getamis/alice/crypto/circuit/message.proto";
-import "github.com/getamis/alice/crypto/zkproof/message.proto";
+import "github.com/aisuosuo/alice/crypto/ot/message.proto";
+import "github.com/aisuosuo/alice/crypto/circuit/message.proto";
+import "github.com/aisuosuo/alice/crypto/zkproof/message.proto";
 
 enum Type {
     Initial = 0;

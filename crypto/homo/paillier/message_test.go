@@ -17,7 +17,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/getamis/alice/crypto/utils"
+	"github.com/aisuosuo/alice/crypto/utils"
 )
 
 var _ = Describe("Message test", func() {

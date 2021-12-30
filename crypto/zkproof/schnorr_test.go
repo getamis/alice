@@ -17,8 +17,8 @@ import (
 	"crypto/elliptic"
 	"math/big"
 
+	pt "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
 	"github.com/btcsuite/btcd/btcec"
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"

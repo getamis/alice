@@ -16,11 +16,11 @@ syntax = "proto3";
 
 package addshare;
 
-option go_package = "github.com/getamis/alice/crypto/tss/addshare";
+option go_package = "github.com/aisuosuo/alice/crypto/tss/addshare";
 
-import "github.com/getamis/alice/crypto/birkhoffinterpolation/bk.proto";
-import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
-import "github.com/getamis/alice/crypto/zkproof/message.proto";
+import "github.com/aisuosuo/alice/crypto/birkhoffinterpolation/bk.proto";
+import "github.com/aisuosuo/alice/crypto/ecpointgrouplaw/point.proto";
+import "github.com/aisuosuo/alice/crypto/zkproof/message.proto";
 
 enum Type {
     OldPeer = 0;

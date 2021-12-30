@@ -16,9 +16,9 @@ syntax = "proto3";
 
 package paillier;
 
-option go_package = "github.com/getamis/alice/crypto/homo/paillier";
+option go_package = "github.com/aisuosuo/alice/crypto/homo/paillier";
 
-import "github.com/getamis/alice/crypto/zkproof/message.proto";
+import "github.com/aisuosuo/alice/crypto/zkproof/message.proto";
 
 message PubKeyMessage {
     zkproof.IntegerFactorizationProofMessage proof = 1;

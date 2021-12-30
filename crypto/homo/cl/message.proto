@@ -16,10 +16,10 @@ syntax = "proto3";
 
 package cl;
 
-option go_package = "github.com/getamis/alice/crypto/homo/cl";
+option go_package = "github.com/aisuosuo/alice/crypto/homo/cl";
 
-import "github.com/getamis/alice/crypto/binaryquadraticform/message.proto";
-import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
+import "github.com/aisuosuo/alice/crypto/binaryquadraticform/message.proto";
+import "github.com/aisuosuo/alice/crypto/ecpointgrouplaw/point.proto";
 
 message PubKeyMessage {
     bytes p = 1;

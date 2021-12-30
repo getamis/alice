@@ -16,14 +16,14 @@
 // versions:
 // 	protoc-gen-go v1.26.0
 // 	protoc        v3.6.1
-// source: github.com/getamis/alice/crypto/tss/dkg/message.proto
+// source: github.com/aisuosuo/alice/crypto/tss/dkg/message.proto
 
 package dkg
 
 import (
-	birkhoffinterpolation "github.com/getamis/alice/crypto/birkhoffinterpolation"
-	commitment "github.com/getamis/alice/crypto/commitment"
-	zkproof "github.com/getamis/alice/crypto/zkproof"
+	birkhoffinterpolation "github.com/aisuosuo/alice/crypto/birkhoffinterpolation"
+	commitment "github.com/aisuosuo/alice/crypto/commitment"
+	zkproof "github.com/aisuosuo/alice/crypto/zkproof"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

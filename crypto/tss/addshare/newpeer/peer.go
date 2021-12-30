@@ -15,7 +15,7 @@
 package newpeer
 
 import (
-	"github.com/getamis/alice/internal/message"
+	"github.com/aisuosuo/alice/internal/message"
 )
 
 type peer struct {

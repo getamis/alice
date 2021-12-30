@@ -20,10 +20,10 @@ import (
 	"math"
 	"math/big"
 
-	bqForm "github.com/getamis/alice/crypto/binaryquadraticform"
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/homo"
-	"github.com/getamis/alice/crypto/utils"
+	bqForm "github.com/aisuosuo/alice/crypto/binaryquadraticform"
+	pt "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
+	"github.com/aisuosuo/alice/crypto/homo"
+	"github.com/aisuosuo/alice/crypto/utils"
 	"github.com/golang/protobuf/proto"
 )
 

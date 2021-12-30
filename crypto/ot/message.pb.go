@@ -16,13 +16,13 @@
 // versions:
 // 	protoc-gen-go v1.26.0
 // 	protoc        v3.6.1
-// source: github.com/getamis/alice/crypto/ot/message.proto
+// source: github.com/aisuosuo/alice/crypto/ot/message.proto
 
 package ot
 
 import (
-	binaryfield "github.com/getamis/alice/crypto/binaryfield"
-	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	binaryfield "github.com/aisuosuo/alice/crypto/binaryfield"
+	ecpointgrouplaw "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

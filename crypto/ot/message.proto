@@ -16,10 +16,10 @@ syntax = "proto3";
 
 package ot;
 
-option go_package = "github.com/getamis/alice/crypto/ot";
+option go_package = "github.com/aisuosuo/alice/crypto/ot";
 
-import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
-import "github.com/getamis/alice/crypto/binaryfield/message.proto";
+import "github.com/aisuosuo/alice/crypto/ecpointgrouplaw/point.proto";
+import "github.com/aisuosuo/alice/crypto/binaryfield/message.proto";
 
 message OtChallengeMessage {
     repeated bytes challenge = 1;

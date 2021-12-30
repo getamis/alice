@@ -15,7 +15,7 @@
 package child
 
 import (
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/aisuosuo/alice/internal/message/types"
 )
 
 func (m *Message) IsValid() bool {

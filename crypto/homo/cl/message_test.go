@@ -19,7 +19,7 @@ import (
 
 	"github.com/golang/protobuf/proto"
 
-	binaryquadraticform "github.com/getamis/alice/crypto/binaryquadraticform"
+	binaryquadraticform "github.com/aisuosuo/alice/crypto/binaryquadraticform"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )

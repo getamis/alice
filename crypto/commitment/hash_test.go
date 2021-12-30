@@ -17,9 +17,9 @@ import (
 	"bytes"
 	"testing"
 
+	pt "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
+	"github.com/aisuosuo/alice/crypto/utils"
 	"github.com/btcsuite/btcd/btcec"
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"golang.org/x/crypto/blake2b"

@@ -17,7 +17,7 @@ package birkhoffinterpolation
 import (
 	"math/big"
 
-	"github.com/getamis/alice/crypto/utils"
+	"github.com/aisuosuo/alice/crypto/utils"
 )
 
 var (

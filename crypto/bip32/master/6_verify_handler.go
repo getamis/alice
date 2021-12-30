@@ -15,9 +15,9 @@
 package master
 
 import (
-	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/internal/message/types"
+	ecpointgrouplaw "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
+	pt "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
+	"github.com/aisuosuo/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 

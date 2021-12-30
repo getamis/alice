@@ -18,7 +18,7 @@ import (
 	"errors"
 	"math/big"
 
-	binaryquadraticform "github.com/getamis/alice/crypto/binaryquadraticform"
+	binaryquadraticform "github.com/aisuosuo/alice/crypto/binaryquadraticform"
 	"github.com/golang/protobuf/proto"
 )
 

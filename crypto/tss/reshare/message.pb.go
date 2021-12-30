@@ -16,13 +16,13 @@
 // versions:
 // 	protoc-gen-go v1.26.0
 // 	protoc        v3.6.1
-// source: github.com/getamis/alice/crypto/tss/reshare/message.proto
+// source: github.com/aisuosuo/alice/crypto/tss/reshare/message.proto
 
 package reshare
 
 import (
-	commitment "github.com/getamis/alice/crypto/commitment"
-	zkproof "github.com/getamis/alice/crypto/zkproof"
+	commitment "github.com/aisuosuo/alice/crypto/commitment"
+	zkproof "github.com/aisuosuo/alice/crypto/zkproof"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

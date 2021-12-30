@@ -17,11 +17,11 @@ package master
 import (
 	"math/big"
 
-	"github.com/getamis/alice/crypto/circuit"
-	"github.com/getamis/alice/crypto/commitment"
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/utils"
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/aisuosuo/alice/crypto/circuit"
+	"github.com/aisuosuo/alice/crypto/commitment"
+	pt "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
+	"github.com/aisuosuo/alice/crypto/utils"
+	"github.com/aisuosuo/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 

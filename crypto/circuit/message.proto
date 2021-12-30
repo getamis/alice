@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package circuit;
 
-option go_package = "github.com/getamis/alice/crypto/circuit";
+option go_package = "github.com/aisuosuo/alice/crypto/circuit";
 
 message halfGateMessage {
     bytes tG = 1;

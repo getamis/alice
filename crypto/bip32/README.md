@@ -37,8 +37,8 @@ We implement the "Garbled Circuit" according to the paper: [Two Halves Make a Wh
 The used boolean circuit is [Bristol fashion](https://homes.esat.kuleuven.be/~nsmart/MPC/).
 
 In this library, we construct two special boolean circuits:
-1. [MPCSEED](https://github.com/getamis/alice/tree/master/crypto/circuit/bristolFashion/MPCSEED.txt)
-2. [MPCHMAC](https://github.com/getamis/alice/tree/master/crypto/circuit/bristolFashion/MPCHMAC.txt)
+1. [MPCSEED](https://github.com/aisuosuo/alice/tree/master/crypto/circuit/bristolFashion/MPCSEED.txt)
+2. [MPCHMAC](https://github.com/aisuosuo/alice/tree/master/crypto/circuit/bristolFashion/MPCHMAC.txt)
 
 
 <h3 id="OT">OT:</h3>
@@ -68,7 +68,7 @@ N is the order of the elliptic curve group of secp256k1.
 3. Applying hash commitments can fix the values m_A * G , m_B * G, r_B * G and r_A *G. These data can determine the public key P := m_A * G - r_B * G = m_B * G - r_A *G.
 (Note that: P = parse_256(I_L)).
 
-More details can be found in [here](https://github.com/getamis/alice/tree/master/Bip32SimpleFlow.pdf).
+More details can be found in [here](https://github.com/aisuosuo/alice/tree/master/Bip32SimpleFlow.pdf).
 
 **Remark:**
 
@@ -93,8 +93,8 @@ The Quid Pro Quo-tocols can guarantee two parties learning the same output.
 <h2 id="Examples">Examples:</h2>
 If you are interested in it, please see our tests:
 
-1. [Seed Part](https://github.com/getamis/alice/tree/master/crypto/bip32/master/master_test.go).
-2. [Child share Part](https://github.com/getamis/alice/tree/master/crypto/bip32/child/child_test.go).
+1. [Seed Part](https://github.com/aisuosuo/alice/tree/master/crypto/bip32/master/master_test.go).
+2. [Child share Part](https://github.com/aisuosuo/alice/tree/master/crypto/bip32/child/child_test.go).
 
 <h2 id="reference">References:</h2>
 

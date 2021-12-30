@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	types "github.com/getamis/alice/internal/message/types"
+	types "github.com/aisuosuo/alice/internal/message/types"
 	mock "github.com/stretchr/testify/mock"
 )
 

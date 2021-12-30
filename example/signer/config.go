@@ -17,8 +17,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/getamis/alice/crypto/tss/signer"
-	"github.com/getamis/alice/example/config"
+	"github.com/aisuosuo/alice/crypto/tss/signer"
+	"github.com/aisuosuo/alice/example/config"
 	"github.com/getamis/sirius/log"
 	"gopkg.in/yaml.v2"
 )

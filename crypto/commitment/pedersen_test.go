@@ -18,10 +18,10 @@ import (
 	"crypto/elliptic"
 	"math/big"
 
+	bkhoff "github.com/aisuosuo/alice/crypto/birkhoffinterpolation"
+	pt "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
+	"github.com/aisuosuo/alice/crypto/polynomial"
 	"github.com/btcsuite/btcd/btcec"
-	bkhoff "github.com/getamis/alice/crypto/birkhoffinterpolation"
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/polynomial"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"

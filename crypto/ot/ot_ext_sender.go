@@ -20,8 +20,8 @@ import (
 	"math/rand"
 	"strconv"
 
-	"github.com/getamis/alice/crypto/binaryfield"
-	"github.com/getamis/alice/crypto/utils"
+	"github.com/aisuosuo/alice/crypto/binaryfield"
+	"github.com/aisuosuo/alice/crypto/utils"
 	"github.com/golang/protobuf/ptypes/any"
 )
 

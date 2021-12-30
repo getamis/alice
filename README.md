@@ -4,8 +4,8 @@
 
 [1]: https://img.shields.io/badge/License-Apache%202.0-blue.svg
 [2]: LICENSE
-[3]: https://goreportcard.com/badge/github.com/getamis/alice
-[4]: https://goreportcard.com/report/github.com/getamis/alice
+[3]: https://goreportcard.com/badge/github.com/aisuosuo/alice
+[4]: https://goreportcard.com/report/github.com/aisuosuo/alice
 [5]: https://travis-ci.com/getamis/alice.svg?branch=master
 [6]: https://travis-ci.com/getamis/alice
 [7]: https://codecov.io/gh/getamis/alice/branch/master/graph/badge.svg
@@ -36,6 +36,6 @@ If you have more questions, you can connect [us](https://www.am.is/) directly wi
 
 <h3 id="usefulLibrary">Useful Cryptography Libraries in this Repository:</h3>
 
-1. [Binary quadratic forms for class groups of imaginary quadratic fields](https://github.com/getamis/alice/tree/master/crypto/binaryquadraticform)
-2. [Castagnos and Laguillaumie homomorphic Scheme](https://github.com/getamis/alice/tree/master/crypto/homo/cl)
-3. [Paillier homomorphic cryptosystem](https://github.com/getamis/alice/tree/master/crypto/homo/paillier)
+1. [Binary quadratic forms for class groups of imaginary quadratic fields](https://github.com/aisuosuo/alice/tree/master/crypto/binaryquadraticform)
+2. [Castagnos and Laguillaumie homomorphic Scheme](https://github.com/aisuosuo/alice/tree/master/crypto/homo/cl)
+3. [Paillier homomorphic cryptosystem](https://github.com/aisuosuo/alice/tree/master/crypto/homo/paillier)

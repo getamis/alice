@@ -16,12 +16,12 @@
 // versions:
 // 	protoc-gen-go v1.26.0
 // 	protoc        v3.6.1
-// source: github.com/getamis/alice/crypto/commitment/message.proto
+// source: github.com/aisuosuo/alice/crypto/commitment/message.proto
 
 package commitment
 
 import (
-	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	ecpointgrouplaw "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"

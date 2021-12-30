@@ -18,11 +18,11 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/getamis/alice/crypto/commitment"
-	"github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/zkproof"
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/aisuosuo/alice/crypto/commitment"
+	"github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
+	"github.com/aisuosuo/alice/crypto/tss"
+	"github.com/aisuosuo/alice/crypto/zkproof"
+	"github.com/aisuosuo/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
 

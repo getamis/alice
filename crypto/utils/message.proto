@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package utils;
 
-option go_package = "github.com/getamis/alice/crypto/utils";
+option go_package = "github.com/aisuosuo/alice/crypto/utils";
 
 import "google/protobuf/any.proto";
 

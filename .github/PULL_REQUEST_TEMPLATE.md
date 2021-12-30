@@ -4,7 +4,7 @@
 
 ### Checklist
 
-- [ ] Fork [the repository](https://github.com/getamis/alice) and create your new branch from `master`.
+- [ ] Fork [the repository](https://github.com/aisuosuo/alice) and create your new branch from `master`.
 - [ ] Please mention the name of community in Pull Request title.
 - [ ] Git Commit Messages
     - [ ] Use the present tense (Also in Pull Request title): "Add feature" not "Added feature"

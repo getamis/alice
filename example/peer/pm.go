@@ -15,7 +15,7 @@ package peer
 
 import (
 	"context"
-	"github.com/getamis/alice/example/config"
+	"github.com/aisuosuo/alice/example/config"
 	"sync"
 	"time"
 

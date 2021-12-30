@@ -17,7 +17,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/getamis/alice/example/config"
+	"github.com/aisuosuo/alice/example/config"
 	"math/rand"
 
 	"github.com/getamis/sirius/log"

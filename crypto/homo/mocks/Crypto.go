@@ -6,9 +6,9 @@ import (
 	elliptic "crypto/elliptic"
 	big "math/big"
 
-	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	ecpointgrouplaw "github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
 
-	homo "github.com/getamis/alice/crypto/homo"
+	homo "github.com/aisuosuo/alice/crypto/homo"
 
 	mock "github.com/stretchr/testify/mock"
 )

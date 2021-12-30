@@ -16,9 +16,9 @@ package signer
 import (
 	"time"
 
-	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/internal/message/types"
-	"github.com/getamis/alice/internal/message/types/mocks"
+	"github.com/aisuosuo/alice/crypto/tss"
+	"github.com/aisuosuo/alice/internal/message/types"
+	"github.com/aisuosuo/alice/internal/message/types/mocks"
 	"github.com/getamis/sirius/log"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

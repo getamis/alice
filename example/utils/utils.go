@@ -19,11 +19,11 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/aisuosuo/alice/crypto/birkhoffinterpolation"
+	"github.com/aisuosuo/alice/crypto/ecpointgrouplaw"
+	"github.com/aisuosuo/alice/crypto/tss/dkg"
+	"github.com/aisuosuo/alice/example/config"
 	"github.com/btcsuite/btcd/btcec"
-	"github.com/getamis/alice/crypto/birkhoffinterpolation"
-	"github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/tss/dkg"
-	"github.com/getamis/alice/example/config"
 	"github.com/getamis/sirius/log"
 )
 
