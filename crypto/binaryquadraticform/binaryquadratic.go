@@ -30,7 +30,7 @@ var (
 	gmbLimbBits = 64
 
 	// Recommend 4.
-	deepTree = 7
+	deepTree = 3
 
 	// ErrPositiveDiscriminant is returned if the discriminant is negative.
 	ErrPositiveDiscriminant = errors.New("not a negative discriminant")
