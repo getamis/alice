@@ -21,6 +21,7 @@ import (
 	"math/big"
 	"math/bits"
 	mRand "math/rand"
+	"strconv"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
@@ -375,4 +376,23 @@ func ReverseByte(s []byte) []byte {
 		result[i] = s[upBd-i]
 	}
 	return result
+}
+
+// Let n := outputBitLength / 256. The hash result is Hash(salt + "," + message +"," + "0") | Hash(salt + "," + message + "," + "1") | .... | Hash(salt + "," + message + "," + "n").
+func ExtnedHashOuput(salt, message []byte, outputBitLength int) ([]byte, error) {
+	if outputBitLength%blake2b.Size256 != 0 {
+		return nil, ErrInvalidInput
+	}
+	separation := []byte(",")
+	result := make([]byte, 0)
+	count := outputBitLength >> 8
+	for i := 0; i < count; i++ {
+		input := append(salt, separation...)
+		input = append(input, message...)
+		input = append(input, separation...)
+		input = append(input, []byte(strconv.Itoa(i))...)
+		temp := blake2b.Sum256(input)
+		result = append(result, temp[:]...)
+	}
+	return result, nil
 }

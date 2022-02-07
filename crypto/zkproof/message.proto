@@ -25,7 +25,6 @@ message IntegerFactorizationProofMessage {
   bytes publicKey = 2;
   bytes x = 3;
   bytes y = 4;
-  bytes z = 5;
 }
 
 message SchnorrProofMessage {
