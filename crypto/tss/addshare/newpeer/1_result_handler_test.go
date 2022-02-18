@@ -17,8 +17,8 @@ package newpeer
 import (
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/addshare"
 	"github.com/getamis/alice/crypto/utils"
@@ -67,7 +67,7 @@ var _ = Describe("result handler, negative cases", func() {
 
 		BeforeEach(func() {
 			threshold = uint32(0)
-			pubkey = ecpointgrouplaw.NewBase(btcec.S256()).ScalarMult(big.NewInt(2))
+			pubkey = ecpointgrouplaw.NewBase(elliptic.NewSecp256k1()).ScalarMult(big.NewInt(2))
 
 			rh.threshold = threshold
 			rh.pubkey = pubkey

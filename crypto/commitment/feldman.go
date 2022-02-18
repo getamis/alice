@@ -15,13 +15,13 @@
 package commitment
 
 import (
-	"crypto/elliptic"
 	"errors"
 	"math/big"
 
 	bkhoff "github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/polynomial"
 )
 
@@ -59,8 +59,8 @@ func buildFeldmanCommitMessage(curve elliptic.Curve, secrets *polynomial.Polynom
 		Points: make([]*ecpointgrouplaw.EcPointMessage, lens),
 	}
 	for i := 0; i < lens; i++ {
-		var err error
 		pt := ecpointgrouplaw.ScalarBaseMult(curve, secrets.Get(i))
+		var err error
 		msg.Points[i], err = pt.ToEcPointMessage()
 		if err != nil {
 			return nil, err

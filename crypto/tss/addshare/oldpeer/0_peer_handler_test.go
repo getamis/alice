@@ -15,12 +15,11 @@
 package oldpeer
 
 import (
-	"crypto/elliptic"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/addshare"
 	"github.com/getamis/alice/crypto/utils"
@@ -65,10 +64,10 @@ var _ = Describe("peer handler, negative cases", func() {
 		)
 
 		BeforeEach(func() {
-			curve = btcec.S256()
+			curve = elliptic.NewSecp256k1()
 			newPeerRank = uint32(0)
 			selfRank := uint32(0)
-			pubkey := ecpointgrouplaw.NewBase(btcec.S256()).ScalarMult(big.NewInt(2))
+			pubkey := ecpointgrouplaw.NewBase(curve).ScalarMult(big.NewInt(2))
 			x, err := utils.RandomPositiveInt(curve.Params().N)
 			Expect(err).Should(BeNil())
 			newBk = birkhoffinterpolation.NewBkParameter(x, newPeerRank)

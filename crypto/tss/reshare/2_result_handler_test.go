@@ -14,11 +14,10 @@
 package reshare
 
 import (
-	"crypto/elliptic"
 	"math/big"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
 
 	"github.com/getamis/alice/crypto/matrix"
 
@@ -146,7 +145,7 @@ var _ = Describe("result handler, negative cases", func() {
 				},
 			}
 			err := toH.HandleMessage(log.New(), invalidMessage)
-			Expect(err).Should(Equal(zkproof.ErrDifferentCurves))
+			Expect(err).Should(Equal(ecpointgrouplaw.ErrInvalidCurve))
 		})
 	})
 
@@ -188,7 +187,7 @@ var _ = Describe("result handler, negative cases", func() {
 
 		It("failed to compute linear combinations", func() {
 			var err error
-			toH.siGProofMsg.V, err = ecpointgrouplaw.NewBase(elliptic.P256()).ToEcPointMessage()
+			toH.siGProofMsg.V, err = ecpointgrouplaw.NewBase(elliptic.NewEd25519()).ToEcPointMessage()
 			Expect(err).Should(BeNil())
 			got, err := toH.Finalize(log.Discard())
 			Expect(got).Should(BeNil())
@@ -197,7 +196,7 @@ var _ = Describe("result handler, negative cases", func() {
 
 		It("inconsistent public key", func() {
 			var err error
-			toH.siGProofMsg.V, err = ecpointgrouplaw.NewBase(btcec.S256()).ToEcPointMessage()
+			toH.siGProofMsg.V, err = ecpointgrouplaw.NewBase(elliptic.NewSecp256k1()).ToEcPointMessage()
 			Expect(err).Should(BeNil())
 			got, err := toH.Finalize(log.Discard())
 			Expect(got).Should(BeNil())

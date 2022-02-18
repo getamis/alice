@@ -14,11 +14,11 @@
 package ecpointgrouplaw
 
 import (
-	"crypto/elliptic"
 	"fmt"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -424,10 +424,11 @@ var _ = Describe("Point", func() {
 			Expect(err).Should(BeNil())
 			Expect(p).Should(Equal(gotPt))
 		},
-			Entry("P224", EcPointMessage_P224, elliptic.P224()),
-			Entry("P256", EcPointMessage_P256, elliptic.P256()),
-			Entry("P384", EcPointMessage_P384, elliptic.P384()),
-			Entry("S256", EcPointMessage_S256, btcec.S256()),
+			// Entry("P224", EcPointMessage_P224, elliptic.P224()),
+			// Entry("P256", EcPointMessage_P256, elliptic.P256()),
+			// Entry("P384", EcPointMessage_P384, elliptic.P384()),
+			Entry("S256", EcPointMessage_S256, Secp256k1),
+			Entry("ed25519", EcPointMessage_EDWARD25519, Ed25519),
 		)
 
 		DescribeTable("Point is the identity element", func(curveType EcPointMessage_Curve, curve elliptic.Curve) {
@@ -441,23 +442,24 @@ var _ = Describe("Point", func() {
 			Expect(err).Should(BeNil())
 			Expect(p).Should(Equal(gotPt))
 		},
-			Entry("P224", EcPointMessage_P224, elliptic.P224()),
-			Entry("P256", EcPointMessage_P256, elliptic.P256()),
-			Entry("P384", EcPointMessage_P384, elliptic.P384()),
-			Entry("S256", EcPointMessage_S256, btcec.S256()),
+			// Entry("P224", EcPointMessage_P224, elliptic.P224()),
+			// Entry("P256", EcPointMessage_P256, elliptic.P256()),
+			// Entry("P384", EcPointMessage_P384, elliptic.P384()),
+			Entry("S256", EcPointMessage_S256, Secp256k1),
+			Entry("ed25519", EcPointMessage_EDWARD25519, Ed25519),
 		)
 
 		Context("Invalid curve", func() {
-			It("ToEcPointMessage()", func() {
-				// We don't support P521
-				p := NewIdentity(elliptic.P521())
-				gotP, err := p.ToEcPointMessage()
-				Expect(err).Should(Equal(ErrInvalidCurve))
-				Expect(gotP).Should(BeNil())
-			})
+			// It("ToEcPointMessage()", func() {
+			// 	// We don't support P521
+			// 	p := NewIdentity(elliptic.P521())
+			// 	gotP, err := p.ToEcPointMessage()
+			// 	Expect(err).Should(Equal(ErrInvalidCurve))
+			// 	Expect(gotP).Should(BeNil())
+			// })
 
 			It("ToPoint()", func() {
-				const UnSupportedEcPointMessage EcPointMessage_Curve = 4
+				const UnSupportedEcPointMessage EcPointMessage_Curve = 100
 				msg := &EcPointMessage{
 					Curve: UnSupportedEcPointMessage,
 				}

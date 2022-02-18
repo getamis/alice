@@ -14,10 +14,9 @@
 package signer
 
 import (
-	"crypto/elliptic"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
 
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
@@ -193,7 +192,7 @@ var _ = Describe("proof ai handler, negative cases", func() {
 		})
 
 		It("failed to sum up ag (different curve)", func() {
-			toH.publicKey = pt.NewBase(elliptic.P256())
+			toH.publicKey = pt.NewBase(elliptic.NewEd25519())
 			got, err := toH.Finalize(log.Discard())
 			Expect(got).Should(BeNil())
 			Expect(err).Should(Equal(pt.ErrDifferentCurve))
@@ -201,12 +200,12 @@ var _ = Describe("proof ai handler, negative cases", func() {
 
 		It("identity R", func() {
 			// overide all aiG to 0G
-			g0 := pt.ScalarBaseMult(btcec.S256(), big0)
+			g0 := pt.ScalarBaseMult(elliptic.NewSecp256k1(), big0)
 			for _, peer := range toH.peers {
 				peer.proofAi.aiG = g0
 			}
 			toH.aiMta = mockMta
-			mockMta.On("GetAG", btcec.S256()).Return(g0).Once()
+			mockMta.On("GetAG", elliptic.NewSecp256k1()).Return(g0).Once()
 
 			got, err := toH.Finalize(log.Discard())
 			Expect(got).Should(BeNil())

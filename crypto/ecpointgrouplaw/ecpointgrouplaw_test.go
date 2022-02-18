@@ -14,11 +14,9 @@
 package ecpointgrouplaw
 
 import (
-	"crypto/elliptic"
+	"github.com/getamis/alice/crypto/elliptic"
 	"math/big"
 	"testing"
-
-	"github.com/btcsuite/btcd/btcec"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -30,7 +28,7 @@ func TestEllipticcurve(t *testing.T) {
 }
 
 var (
-	curveList = []elliptic.Curve{elliptic.P224(), elliptic.P256(), elliptic.P384(), btcec.S256()}
+	curveList = []elliptic.Curve{Ed25519, Secp256k1}
 )
 
 var _ = Describe("Elliptic curves", func() {

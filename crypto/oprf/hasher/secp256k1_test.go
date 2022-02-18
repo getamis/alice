@@ -17,7 +17,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -43,7 +43,7 @@ var _ = Describe("harsher test", func() {
 		u, _ := new(big.Int).SetString(ustring, 10)
 		x, _ := new(big.Int).SetString(xstring, 10)
 		y, _ := new(big.Int).SetString(ystring, 10)
-		point, err := hash(u, btcec.S256())
+		point, err := hash(u, elliptic.NewSecp256k1())
 
 		Expect(err).Should(BeNil())
 		Expect(point.GetX().Cmp(x) == 0).Should(BeTrue())
@@ -68,7 +68,7 @@ var _ = Describe("harsher test", func() {
 
 	Context("Special case", func() {
 		It("u=0", func() {
-			_, err := hash(big.NewInt(0), btcec.S256())
+			_, err := hash(big.NewInt(0), elliptic.NewSecp256k1())
 			Expect(err).Should(BeNil())
 		})
 	})

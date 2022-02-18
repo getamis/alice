@@ -14,12 +14,11 @@
 package signer
 
 import (
-	"crypto/elliptic"
 	"errors"
 	"math/big"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	mtaMocks "github.com/getamis/alice/crypto/mta/mocks"
 	"github.com/getamis/alice/crypto/tss"
@@ -182,14 +181,14 @@ var _ = Describe("mta handler, negative cases", func() {
 		})
 
 		It("failed to sum up wiG (different curve)", func() {
-			toH.wiG = pt.NewBase(elliptic.P256())
+			toH.wiG = pt.NewBase(elliptic.NewEd25519())
 			got, err := toH.Finalize(log.Discard())
 			Expect(got).Should(BeNil())
 			Expect(err).Should(Equal(pt.ErrDifferentCurve))
 		})
 
 		It("unexpected public key", func() {
-			toH.wiG = pt.NewBase(btcec.S256())
+			toH.wiG = pt.NewBase(elliptic.NewSecp256k1())
 			got, err := toH.Finalize(log.Discard())
 			Expect(got).Should(BeNil())
 			Expect(err).Should(Equal(ErrUnexpectedPublickey))

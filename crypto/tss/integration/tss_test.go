@@ -15,12 +15,11 @@ package integration
 
 import (
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"math/big"
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo"
@@ -227,10 +226,10 @@ var _ = Describe("TSS", func() {
 			sign(homoFunc, int(threshold), lens, r, listener)
 		}
 	},
-		Entry("P256 curve, 3 of (0,0,0)", elliptic.P256(), uint32(3), []uint32{0, 0, 0}),
-		Entry("S256 curve, 3 of (0,0,0,0,0)", btcec.S256(), uint32(3), []uint32{0, 0, 0, 0, 0}),
-		Entry("S256 curve, 3 of (0,0,0,1,1)", btcec.S256(), uint32(3), []uint32{0, 0, 0, 1, 1}),
-		Entry("S256 curve, 3 of (0,0,0)", btcec.S256(), uint32(3), []uint32{0, 0, 0}),
+		// Entry("P256 curve, 3 of (0,0,0)", elliptic.P256(), uint32(3), []uint32{0, 0, 0}),
+		Entry("S256 curve, 3 of (0,0,0,0,0)", elliptic.NewSecp256k1(), uint32(3), []uint32{0, 0, 0, 0, 0}),
+		Entry("S256 curve, 3 of (0,0,0,1,1)", elliptic.NewSecp256k1(), uint32(3), []uint32{0, 0, 0, 1, 1}),
+		Entry("S256 curve, 3 of (0,0,0)", elliptic.NewSecp256k1(), uint32(3), []uint32{0, 0, 0}),
 	)
 })
 
