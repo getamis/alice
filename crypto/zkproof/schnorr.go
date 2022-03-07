@@ -21,6 +21,8 @@ import (
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes/any"
 )
 
 var (
@@ -47,12 +49,12 @@ var (
 	Remark: If R is the identity element(i.e. R = (nil,nil)) and t = 0, then the above protocol reduces to the standard Schnorr protocol.
 */
 
-func NewBaseSchorrMessage(curve elliptic.Curve, a1 *big.Int) (*SchnorrProofMessage, error) {
+func NewBaseSchorrMessage(curve elliptic.Curve, a1 *big.Int, seedInfo ...[]byte) (*SchnorrProofMessage, error) {
 	base := pt.NewBase(curve)
-	return NewSchorrMessage(a1, big0, base)
+	return NewSchorrMessage(a1, big0, base, seedInfo...)
 }
 
-func NewSchorrMessage(a1 *big.Int, a2 *big.Int, R *pt.ECPoint) (*SchnorrProofMessage, error) {
+func NewSchorrMessage(a1 *big.Int, a2 *big.Int, R *pt.ECPoint, seedInfo ...[]byte) (*SchnorrProofMessage, error) {
 	msgR, err := R.ToEcPointMessage()
 	if err != nil {
 		return nil, err
@@ -108,7 +110,15 @@ func NewSchorrMessage(a1 *big.Int, a2 *big.Int, R *pt.ECPoint) (*SchnorrProofMes
 	}
 
 	// Compute c
-	c, salt, err := utils.HashProtosRejectSampling(fieldOrder, msgG, msgV, msgR, msgAlpha)
+	msgs := []proto.Message{
+		msgG, msgV, msgR, msgAlpha,
+	}
+	for i := range seedInfo {
+		msgs = append(msgs, &any.Any{
+			Value: seedInfo[i],
+		})
+	}
+	c, salt, err := utils.HashProtosRejectSampling(fieldOrder, msgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -130,14 +140,14 @@ func NewSchorrMessage(a1 *big.Int, a2 *big.Int, R *pt.ECPoint) (*SchnorrProofMes
 		U:     u.Bytes(),
 		T:     t.Bytes(),
 	}
-	err = msg.Verify(R)
+	err = msg.Verify(R, seedInfo...)
 	if err != nil {
 		return nil, err
 	}
 	return msg, nil
 }
 
-func (s *SchnorrProofMessage) Verify(R *pt.ECPoint) error {
+func (s *SchnorrProofMessage) Verify(R *pt.ECPoint, seedInfo ...[]byte) error {
 	curve := R.GetCurve()
 	fieldOrder := curve.Params().N
 
@@ -188,7 +198,15 @@ func (s *SchnorrProofMessage) Verify(R *pt.ECPoint) error {
 	}
 
 	// Calculate alpha + c*V
-	c, err := utils.HashProtosToInt(s.Salt, msgG, s.V, msgR, s.Alpha)
+	msgs := []proto.Message{
+		msgG, s.V, msgR, s.Alpha,
+	}
+	for i := range seedInfo {
+		msgs = append(msgs, &any.Any{
+			Value: seedInfo[i],
+		})
+	}
+	c, err := utils.HashProtosToInt(s.Salt, msgs...)
 	if err != nil {
 		return err
 	}
