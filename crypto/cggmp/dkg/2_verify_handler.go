@@ -1,4 +1,4 @@
-// Copyright © 2020 AMIS Technologies
+// Copyright © 2022 AMIS Technologies
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/getamis/alice/crypto/cggmp"
 	"github.com/getamis/alice/crypto/commitment"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
@@ -115,7 +116,7 @@ func (p *verifyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	p.share = new(big.Int).Mod(p.share, p.fieldOrder)
 
 	// Build and send out the result message
-	p.siGProofMsg, err = zkproof.NewBaseSchorrMessage(p.curve, p.share, p.rid)
+	p.siGProofMsg, err = zkproof.NewBaseSchorrMessage(p.curve, p.share, cggmp.ComputeSSID(p.rid))
 	if err != nil {
 		log.Warn("Failed to new si schorr proof", "err", err)
 		return nil, err

@@ -1,4 +1,4 @@
-// Copyright © 2020 AMIS Technologies
+// Copyright © 2022 AMIS Technologies
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ package dkg
 
 import (
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
+	"github.com/getamis/alice/crypto/cggmp"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/internal/message/types"
@@ -68,7 +69,7 @@ func (p *resultHandler) HandleMessage(logger log.Logger, message types.Message) 
 		logger.Warn("Failed to get point", "err", err)
 		return err
 	}
-	err = siGProofMsg.Verify(ecpointgrouplaw.NewBase(p.publicKey.GetCurve()), p.rid)
+	err = siGProofMsg.Verify(ecpointgrouplaw.NewBase(p.publicKey.GetCurve()), cggmp.ComputeSSID(p.rid))
 	if err != nil {
 		logger.Warn("Failed to verify Schorr proof", "err", err)
 		return err

@@ -12,22 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dkg
+package cggmp
 
-import (
-	"github.com/getamis/alice/internal/message"
-)
-
-type peer struct {
-	*message.Peer
-	peer     *peerData
-	decommit *decommitData
-	verify   *verifyData
-	result   *resultData
-}
-
-func newPeer(id string) *peer {
-	return &peer{
-		Peer: message.NewPeer(id),
-	}
+func ComputeSSID(rid []byte) []byte {
+	return rid
 }
