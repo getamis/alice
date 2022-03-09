@@ -19,7 +19,6 @@ import (
 	"math/big"
 
 	"github.com/getamis/alice/crypto/utils"
-	"github.com/golang/protobuf/ptypes/any"
 )
 
 const (
@@ -92,13 +91,7 @@ func NewIntegerFactorizationProofMessage(primeFactor []*big.Int, publicKey *big.
 		// Compute e := H(x, z, N)
 		// In our application c = 1024. If the field order is 2^32, we will get the uniform distribution D in [0,2^32-1].
 		// If we consider the distribution E := { x in D| x mod c } is also the uniform distribution in [0,1023]=[0,c-1].
-		e, salt, err := utils.HashProtosRejectSampling(big256bit, &any.Any{
-			Value: x.Bytes(),
-		}, &any.Any{
-			Value: z.Bytes(),
-		}, &any.Any{
-			Value: publicKey.Bytes(),
-		})
+		e, salt, err := utils.HashProtosRejectSampling(big256bit, utils.GetAnyMsg(x.Bytes(), z.Bytes(), publicKey.Bytes())...)
 		if err != nil {
 			return nil, err
 		}
@@ -159,13 +152,7 @@ func (msg *IntegerFactorizationProofMessage) Verify() error {
 
 	// Compute e := H(x, z, N)
 	salt := msg.GetSalt()
-	e, err := utils.HashProtosToInt(salt, &any.Any{
-		Value: x.Bytes(),
-	}, &any.Any{
-		Value: z.Bytes(),
-	}, &any.Any{
-		Value: publicKey.Bytes(),
-	})
+	e, err := utils.HashProtosToInt(salt, utils.GetAnyMsg(x.Bytes(), z.Bytes(), publicKey.Bytes())...)
 	if err != nil {
 		return err
 	}
