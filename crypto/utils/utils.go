@@ -17,8 +17,10 @@ package utils
 import (
 	"crypto/rand"
 	"errors"
+	"math"
 	"math/big"
 	"math/bits"
+	mRand "math/rand"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
@@ -214,6 +216,20 @@ func HashProtosToInt(salt []byte, msgs ...proto.Message) (*big.Int, error) {
 	return c, nil
 }
 
+func GetAnyMsg(bs ...[]byte) []proto.Message {
+	msgs := make([]proto.Message, len(bs))
+	for i, b := range bs {
+		msgs[i] = &any.Any{
+			Value: b,
+		}
+	}
+	return msgs
+}
+
+func HashBytesToInt(salt []byte, bs ...[]byte) (*big.Int, error) {
+	return HashProtosToInt(salt, GetAnyMsg(bs...)...)
+}
+
 func HashProtosRejectSampling(fieldOrder *big.Int, msgs ...proto.Message) (*big.Int, []byte, error) {
 	for i := 0; i < maxGenNHashValue; i++ {
 		salt, err := GenRandomBytes(SaltSize)
@@ -255,6 +271,34 @@ func HashProtos(salt []byte, msgs ...proto.Message) ([]byte, error) {
 	}
 	bs := blake2b.Sum256(inputData)
 	return bs[:], nil
+}
+
+// RandomInt generates a random number in [-n, n].
+func RandomAbsoluteRangeInt(n *big.Int) (*big.Int, error) {
+	nAdd1 := new(big.Int).Add(n, big1)
+	twicen := new(big.Int).Lsh(nAdd1, 1)
+	result, err := RandomPositiveInt(twicen)
+	if err != nil {
+		return nil, err
+	}
+	return result.Sub(result, n), nil
+}
+
+// RandomAbsoluteRangeIntBySeed generates a random number in [-q, q] with seed.
+// TODO: Find more nice implement method. should belong [-q, q]
+func RandomAbsoluteRangeIntBySeed(seed []byte, q *big.Int) *big.Int {
+	desiredByteLength := uint64(math.Ceil(float64(q.BitLen()) / 8))
+	seedInt := new(big.Int).SetBytes(seed).Int64()
+	r := mRand.New(mRand.NewSource(seedInt))
+	randomValue := make([]byte, desiredByteLength)
+	for i := 0; i < len(randomValue); i++ {
+		randomValue[i] = byte(r.Intn(256))
+	}
+	result := new(big.Int).SetBytes(randomValue)
+	if r.Intn(2) == 1 {
+		result.Add(result, new(big.Int).Lsh(big1, 256))
+	}
+	return result.Sub(result, q)
 }
 
 func Xor(bigArray, smallArray []byte) []byte {

@@ -1,0 +1,178 @@
+// Copyright © 2020 AMIS Technologies
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package paillier;
+
+option go_package = "github.com/getamis/alice/crypto/zkproof/paillier";
+
+import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
+
+// https://eprint.iacr.org/2021/060.pdf
+// Section 2.2
+message RingPederssenParameterMessage {
+    repeated bytes z = 1;
+    repeated bytes a = 2;
+    bytes n = 3;
+    bytes s = 4;
+    bytes t = 5;
+    bytes salt = 6;
+}
+
+message PaillierBlumMessage {
+    repeated bytes a = 1;
+    repeated bytes b= 2;
+    repeated bytes w = 3;
+    repeated bytes x = 4;
+    repeated bytes z = 5;
+    repeated bytes salt = 6;
+}
+
+message EncryptRangeMessage {
+    bytes salt = 1;
+    bytes S = 2;
+    bytes A = 3;
+    bytes C = 4;
+    string z1 = 5;
+    bytes z2 = 6;
+    string z3 = 7;
+}
+
+message PaillierAffAndGroupRangeMessage {
+    bytes salt = 1;
+    bytes S = 2;
+    bytes T = 3;
+    bytes A = 4;
+    ecpointgrouplaw.EcPointMessage Bx = 5;
+    bytes By = 6;
+    bytes E = 7;
+    bytes F = 8; 
+    string z1 = 9;
+    string z2 = 10;
+    string z3 = 11;
+    string z4 = 12;
+    bytes w = 13;
+    bytes wy = 14;
+}
+
+message PaillierOperationAndCommitmentMessage {
+    bytes salt = 1;
+    bytes S = 2;
+    bytes T = 3;
+    bytes A = 4;
+    bytes Bx = 5;
+    bytes By = 6;
+    bytes E = 7;
+    bytes F = 8; 
+    string z1 = 9;
+    string z2 = 10;
+    string z3 = 11;
+    string z4 = 12;
+    bytes w = 13;
+    bytes wx =14;
+    bytes wy = 15;
+}
+
+message LogStarMessage {
+    bytes salt = 1;
+    bytes S = 2;
+    bytes A = 3;
+    ecpointgrouplaw.EcPointMessage Y = 4;
+    bytes D = 5;
+    string z1 = 6;
+    bytes z2 = 7;
+    string z3 = 8;
+}
+
+message NoSmallFactorMessage {
+    bytes salt = 1;
+    bytes P = 2;
+    bytes Q = 3;
+    bytes A = 4;
+    bytes B = 5;
+    bytes T = 6;
+    string sigma = 7;
+    string z1 = 8;
+    string z2 = 9;
+    string w1 = 10;
+    string w2 = 11;
+    string vletter = 12;
+}
+
+message MulMessage {
+    bytes salt = 1;
+    bytes A = 2;
+    bytes B = 3;
+    string z = 4;
+    bytes u = 5;
+    bytes v = 6;
+}
+
+message DecryMessage {
+    bytes salt = 1;
+    bytes S = 2;
+    bytes T = 3;
+    bytes A = 4;
+    bytes gamma = 5;
+    string z1 = 6;
+    string z2 = 7;
+    bytes w = 8;
+}
+
+message MulStarMessage {
+    bytes salt = 1;
+    bytes E = 2;
+    bytes S = 3;
+    bytes A = 4;
+    ecpointgrouplaw.EcPointMessage B = 5;
+    string z1 = 6;
+    string z2 = 7;
+    bytes w = 8;
+}
+
+message EncElgMessage {
+    bytes salt = 1;
+    bytes S = 2;
+    bytes T = 3;
+    bytes D = 4;
+    ecpointgrouplaw.EcPointMessage Y = 5;
+    ecpointgrouplaw.EcPointMessage Z = 6;
+    string z1 = 7;
+    bytes z2 = 8;
+    bytes w = 9;
+    string z3 = 10;
+}
+
+message ELogMessage {
+    bytes salt = 1;
+    ecpointgrouplaw.EcPointMessage A = 2;
+    ecpointgrouplaw.EcPointMessage B = 3;
+    ecpointgrouplaw.EcPointMessage N = 4;
+    bytes z = 5;
+    bytes u = 6;
+}
+
+message NthRootMessage {
+    bytes salt = 1;
+    bytes A = 2;
+    bytes z1 = 3;
+}
+
+message LogMessage {
+    bytes salt = 1;
+    ecpointgrouplaw.EcPointMessage A = 2;
+    ecpointgrouplaw.EcPointMessage B = 3;
+    bytes z = 4;
+} 
