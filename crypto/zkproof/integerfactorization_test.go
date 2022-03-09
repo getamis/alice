@@ -93,14 +93,15 @@ var _ = Describe("Integerfactorization flow", func() {
 			Expect(msg.Verify()).ShouldNot(BeNil())
 		})
 
-		It("Z and Public Key are not coprime", func() {
-			msg.Z = new(big.Int).Add(publicKey, big0).Bytes()
-			Expect(msg.Verify()).Should(Equal(ErrNotCoprime))
-		})
-
 		It("wrong case", func() {
 			msg.X = new(big.Int).Sub(publicKey, big2).Bytes()
 			Expect(msg.Verify()).Should(Equal(ErrVerifyFailure))
+		})
+
+		It("exceed maxRetry", func() {
+			result, err := generateZ(big.NewInt(101*103), big1, 0)
+			Expect(result).To(BeNil())
+			Expect(err).Should(Equal(ErrExceedMaxRetry))
 		})
 	})
 })

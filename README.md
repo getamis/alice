@@ -31,7 +31,7 @@ Now, Alice supports two parts:
 Although the fist part of Alice has been audited, you should still be careful to use it. 
 1. Using end-to-end encryption to transfer messages between two parties is necessary. 
 2. If any error messages occur during execution Alice, you should stop and restart it. **Never restart in the middle flow.**
-3. **Important** Now, GG18 is insecure, so you should replace Paillier homomorphic encryption into CL homomorphic encryption (i.e. USE CCLST protocol). Our version is the fast version of GG18 (i.e. without range proof). The merit of CL homomorphic encryption does not any range proofs.
+3. **(IMPORTANT)** Now, GG18 is insecure, so you SHOULD replace Paillier homomorphic encryption into CL homomorphic encryption (i.e. USE CCLST protocol). Our version is the fast version of GG18 (i.e. without range proofs). The merit of CL homomorphic encryption does not any range proofs.
 
 
 If you have more questions, you can connect [us](https://www.am.is/) directly without any hesitation.
@@ -41,3 +41,7 @@ If you have more questions, you can connect [us](https://www.am.is/) directly wi
 1. [Binary quadratic forms for class groups of imaginary quadratic fields](https://github.com/getamis/alice/tree/master/crypto/binaryquadraticform)
 2. [Castagnos and Laguillaumie homomorphic Scheme](https://github.com/getamis/alice/tree/master/crypto/homo/cl)
 3. [Paillier homomorphic cryptosystem](https://github.com/getamis/alice/tree/master/crypto/homo/paillier)
+
+
+## Acknowledgments:
+Thanks to [Filipe Casal from Trail of Bits](https://www.trailofbits.com) for indicating the potential issues of integer factorization proof.

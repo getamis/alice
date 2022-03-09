@@ -25,6 +25,9 @@ const (
 	// safePubKeySize is the permitted lowest size of Public Key.
 	safePubKeySize = 2048
 
+	// securityParemeter is 80
+	securityParemeter = 80
+
 	// maxRetry defines the max retries to generate proof
 	maxRetry = 100
 )
@@ -46,8 +49,8 @@ var (
 	big2      = big.NewInt(2)
 	big256bit = new(big.Int).Lsh(big1, 256)
 
-	// B
-	challengeSize = big.NewInt(1024)
+	// B = 2^80
+	challengeSize = new(big.Int).Lsh(big1, securityParemeter)
 )
 
 /*
@@ -57,7 +60,7 @@ var (
    The following interactive protocol comes from the paper: "Short Proofs of Knowledge for Factoring".
    In our case, N is the public key
    Step 1: A prover generates
-   - The prover randomly chooses an integer r in [1,A-1] and z != 1 in Z_N^\ast.
+   - The prover randomly chooses an integer r in [1,A-1] and z in [2,N-2] in Z_N^ast with z = Hash(big1, publicKey). If z = 0,1, or -1, we interate it by z = Hash( Hash(big1, publicKey), publicKey).
    - The prover computes x = z^r mod N.
    - The prover computes e := H(x, z, N) mod B
    - The prover computes y:= r+(N-phi(N))*e. The resulting proof is the (x, y, z)
@@ -81,8 +84,8 @@ func NewIntegerFactorizationProofMessage(primeFactor []*big.Int, publicKey *big.
 			return nil, err
 		}
 
-		// Get z != 1 in Z_N^\ast
-		z, err := utils.RandomCoprimeInt(publicKey)
+		// Get z in z in [2,N-2] in Z_N^ast with z = Hash(big1, publicKey). If z = 0,1, or -1, we interate it by z = Hash( Hash(big1, publicKey), publicKey).
+		z, err := generateZ(publicKey, big1, maxRetry)
 		if err != nil {
 			return nil, err
 		}
@@ -111,7 +114,6 @@ func NewIntegerFactorizationProofMessage(primeFactor []*big.Int, publicKey *big.
 			PublicKey: publicKey.Bytes(),
 			X:         x.Bytes(),
 			Y:         y.Bytes(),
-			Z:         z.Bytes(),
 		}
 
 		// Ensure it's a valid message
@@ -141,13 +143,10 @@ func (msg *IntegerFactorizationProofMessage) Verify() error {
 		return err
 	}
 
-	// z != 1 in Z_N^ast
-	z := new(big.Int).SetBytes(msg.GetZ())
-	if !utils.IsRelativePrime(z, publicKey) {
-		return ErrNotCoprime
-	}
-	if z.Cmp(big1) == 0 {
-		return ErrTrivialCase
+	// z in [2,N-2] in Z_N^ast.
+	z, err := generateZ(publicKey, big1, maxRetry)
+	if err != nil {
+		return err
 	}
 
 	// Compute e := H(x, z, N)
@@ -167,4 +166,25 @@ func (msg *IntegerFactorizationProofMessage) Verify() error {
 		return ErrVerifyFailure
 	}
 	return nil
+}
+
+func generateZ(N *big.Int, index *big.Int, maxTry int) (*big.Int, error) {
+	var result *big.Int
+	for i := 0; i < maxTry; i++ {
+		for j := 0; j < maxTry; j++ {
+			inputData, err := utils.ExtnedHashOuput(index.Bytes(), N.Bytes(), N.BitLen())
+			if err != nil {
+				return nil, err
+			}
+			result = new(big.Int).SetBytes(inputData)
+			err = utils.InRange(result, big2, new(big.Int).Sub(N, big1))
+			if err == nil {
+				break
+			}
+		}
+		if utils.IsRelativePrime(result, N) {
+			return result, nil
+		}
+	}
+	return nil, ErrExceedMaxRetry
 }

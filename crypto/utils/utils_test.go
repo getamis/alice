@@ -307,4 +307,22 @@ var _ = Describe("Utils", func() {
 			Expect(got).Should(Equal(expected))
 		})
 	})
+
+	Context("ExtnedHashOuput()", func() {
+		It("It is OK", func() {
+			ExpectOutputBitLength := 512
+			N := big.NewInt(101 * 103)
+			got, err := ExtnedHashOuput([]byte("1"), N.Bytes(), ExpectOutputBitLength)
+			Expect(err).Should(BeNil())
+			Expect(len(got)).Should(Equal(ExpectOutputBitLength >> 3))
+		})
+
+		It("Wrong ExpectOutputBitLength", func() {
+			ExpectOutputBitLength := 511
+			N := big.NewInt(101 * 103)
+			got, err := ExtnedHashOuput([]byte("1"), N.Bytes(), ExpectOutputBitLength)
+			Expect(got).Should(BeNil())
+			Expect(err).Should(Equal(ErrInvalidInput))
+		})
+	})
 })
