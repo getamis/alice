@@ -14,6 +14,21 @@
 
 package cggmp
 
+import (
+	"github.com/getamis/alice/internal/message/types"
+	"google.golang.org/protobuf/proto"
+)
+
 func ComputeSSID(rid []byte) []byte {
 	return rid
+}
+
+// func ComputeZK(ssid []byte, bk *birkhoffinterpolation.BkParameter) []byte {
+// 	return ssid
+// }
+
+func Broadcast(pm types.PeerManager, msg proto.Message) {
+	for _, id := range pm.PeerIDs() {
+		pm.MustSend(id, msg)
+	}
 }

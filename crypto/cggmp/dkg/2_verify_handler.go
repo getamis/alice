@@ -122,7 +122,7 @@ func (p *verifyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 		return nil, err
 	}
 	msg := p.getResultMessage()
-	p.broadcast(msg)
+	cggmp.Broadcast(p.peerManager, msg)
 	return newResultHandler(p), nil
 }
 
