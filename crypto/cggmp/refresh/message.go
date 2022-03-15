@@ -12,24 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cggmp
+package refresh
 
 import (
-	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/internal/message/types"
-	"google.golang.org/protobuf/proto"
 )
 
-func ComputeSSID(rid []byte) []byte {
-	return rid
-}
-
-func ComputeZKSsid(ssid []byte, bk *birkhoffinterpolation.BkParameter) []byte {
-	return append(bk.GetX().Bytes(), ssid...)
-}
-
-func Broadcast(pm types.PeerManager, msg proto.Message) {
-	for _, id := range pm.PeerIDs() {
-		pm.MustSend(id, msg)
+func (m *Message) IsValid() bool {
+	switch m.Type {
+	case Type_Round1:
+		return m.GetRound1() != nil
+	case Type_Round2:
+		return m.GetRound2() != nil
+	case Type_Round3:
+		return m.GetRound3() != nil
 	}
+	return false
+}
+
+func (m *Message) GetMessageType() types.MessageType {
+	return types.MessageType(m.Type)
 }
