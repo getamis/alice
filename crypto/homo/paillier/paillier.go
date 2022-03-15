@@ -35,6 +35,11 @@ const (
 	maxGenN = 100
 	// maxGenG defines the max retries to generate G
 	maxGenG = 100
+	// maxRetry defines the max retries
+	maxRetry = 100
+
+	// set the min number of zk proofs
+	numberZkProof = 80
 )
 
 var (
@@ -54,8 +59,9 @@ var (
 
 // publicKey is (n, g)
 type publicKey struct {
-	n   *big.Int
-	g   *big.Int
+	n *big.Int
+	g *big.Int
+
 	msg *PubKeyMessage
 
 	// cache value
@@ -85,11 +91,20 @@ func (pub *publicKey) Encrypt(mBytes []byte) ([]byte, error) {
 	if m.Cmp(pub.n) >= 0 {
 		return nil, ErrInvalidMessage
 	}
+	c, _, err := pub.EncryptWithOutputSalt(m)
+	if err != nil {
+		return nil, err
+	}
+	//c.Mod(c, pub.nSquare)
+	return c.Bytes(), nil
+}
 
+// TODO: maybe chack the range of m
+func (pub *publicKey) EncryptWithOutputSalt(m *big.Int) (*big.Int, *big.Int, error) {
 	// gcd(r, n)=1
 	r, err := utils.RandomCoprimeInt(pub.n)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// c = (g^m * r^n) mod n^2
@@ -97,7 +112,7 @@ func (pub *publicKey) Encrypt(mBytes []byte) ([]byte, error) {
 	rn := new(big.Int).Exp(r, pub.n, pub.nSquare) // r^n
 	c := new(big.Int).Mul(gm, rn)
 	c = c.Mod(c, pub.nSquare)
-	return c.Bytes(), nil
+	return c, r, nil
 }
 
 // In paillier, we cannot verify enc message. Therefore, we always return nil.
@@ -112,6 +127,8 @@ func (p *Paillier) GetPubKey() homo.Pubkey {
 // Refer: https://en.wikipedia.org/wiki/Paillier_cryptosystem
 // privateKey is (λ, μ)
 type privateKey struct {
+	p      *big.Int
+	q      *big.Int
 	lambda *big.Int // λ=lcm(p−1, q−1)
 	mu     *big.Int // μ=(L(g^λ mod n^2))^-1 mod n
 }
@@ -125,16 +142,23 @@ func NewPaillier(keySize int) (*Paillier, error) {
 	if keySize < safePubKeySize {
 		return nil, ErrSmallPublicKeySize
 	}
-	return NewPaillierUnSafe(keySize)
+	return NewPaillierUnSafe(keySize, false)
+}
+
+func NewPaillierSafePrime(keySize int) (*Paillier, error) {
+	if keySize < safePubKeySize {
+		return nil, ErrSmallPublicKeySize
+	}
+	return NewPaillierUnSafe(keySize, true)
 }
 
 // Warning: No check the size of public key. This function is only used in Test.
-func NewPaillierUnSafe(keySize int) (*Paillier, error) {
-	p, q, n, lambda, err := getNAndLambda(keySize)
+func NewPaillierUnSafe(keySize int, isSafe bool) (*Paillier, error) {
+	p, q, n, lambda, err := getNAndLambda(keySize, isSafe)
 	if err != nil {
 		return nil, err
 	}
-	g, mu, err := getGAndMu(lambda, n)
+	g, mu, err := getGAndMuWithSpecialG(lambda, n)
 	if err != nil {
 		return nil, err
 	}
@@ -153,10 +177,23 @@ func NewPaillierUnSafe(keySize int) (*Paillier, error) {
 	return &Paillier{
 		publicKey: pub,
 		privateKey: &privateKey{
+			p:      p,
+			q:      q,
 			lambda: lambda,
 			mu:     mu,
 		},
 	}, nil
+}
+
+func (p *Paillier) GetSalt(plaintext, ciphertext *big.Int) (*big.Int, error) {
+	nroot, err := p.GetNthRoot()
+	if err != nil {
+		return nil, err
+	}
+	mainPart := new(big.Int).Add(big1, p.n)
+	mainPart.Exp(mainPart, new(big.Int).Neg(plaintext), p.nSquare)
+	saltPart := new(big.Int).Mul(ciphertext, mainPart)
+	return saltPart.Exp(saltPart, nroot, p.nSquare), nil
 }
 
 // Decrypt computes the plaintext from the ciphertext
@@ -214,23 +251,13 @@ func (p *Paillier) VerifyMtaProof(bs []byte, curve elliptic.Curve, _ *big.Int, _
 
 // getNAndLambda returns N and lambda.
 // n = pq and lambda = lcm(p-1, q-1)
-func getNAndLambda(keySize int) (*big.Int, *big.Int, *big.Int, *big.Int, error) {
+func getNAndLambda(keySize int, isSafe bool) (*big.Int, *big.Int, *big.Int, *big.Int, error) {
 	pqSize := keySize / 2
 	for i := 0; i < maxGenN; i++ {
-		// random two primes p and q
-		p, err := rand.Prime(rand.Reader, pqSize)
+		p, q, err := generatePrime(isSafe, pqSize)
 		if err != nil {
 			return nil, nil, nil, nil, err
 		}
-		q, err := rand.Prime(rand.Reader, pqSize)
-		if err != nil {
-			return nil, nil, nil, nil, err
-		}
-		// Because the bit length of p and q are the same and p!= q, GCD(p, q)=1.
-		if p.Cmp(q) == 0 {
-			continue
-		}
-
 		pMinus1 := new(big.Int).Sub(p, big1)    // p-1
 		qMinus1 := new(big.Int).Sub(q, big1)    // q-1
 		n := new(big.Int).Mul(p, q)             // n=p*q
@@ -244,6 +271,47 @@ func getNAndLambda(keySize int) (*big.Int, *big.Int, *big.Int, *big.Int, error) 
 		}
 	}
 	return nil, nil, nil, nil, ErrExceedMaxRetry
+}
+
+func generatePrime(isSafe bool, primeSize int) (*big.Int, *big.Int, error) {
+	if isSafe {
+		for i := 0; i < maxRetry; i++ {
+			safeP, err := utils.GenerateRandomSafePrime(rand.Reader, primeSize)
+			if err != nil {
+				return nil, nil, err
+			}
+			safeQ, err := utils.GenerateRandomSafePrime(rand.Reader, primeSize)
+			if err != nil {
+				return nil, nil, err
+			}
+			p := new(big.Int).Set(safeP.P)
+			q := new(big.Int).Set(safeQ.P)
+
+			// Because the bit length of p and q are the same and p!= q, GCD(p, q)=1.
+			if p.Cmp(q) == 0 {
+				continue
+			}
+			return p, q, nil
+		}
+		return nil, nil, ErrExceedMaxRetry
+	}
+	for i := 0; i < maxRetry; i++ {
+		p, err := rand.Prime(rand.Reader, primeSize)
+		if err != nil {
+			return nil, nil, err
+		}
+		q, err := rand.Prime(rand.Reader, primeSize)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// Because the bit length of p and q are the same and p!= q, GCD(p, q)=1.
+		if p.Cmp(q) == 0 {
+			continue
+		}
+		return p, q, nil
+	}
+	return nil, nil, ErrExceedMaxRetry
 }
 
 func isCorrectCiphertext(c *big.Int, pubKey *publicKey) error {
@@ -267,6 +335,27 @@ func getGAndMu(lambda *big.Int, n *big.Int) (*big.Int, *big.Int, error) {
 		if err != nil {
 			return nil, nil, err
 		}
+		x := new(big.Int).Exp(g, lambda, nSquare) // x
+		u, err := lFunction(x, n)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		mu := new(big.Int).ModInverse(u, n)
+		// if mu is nil, it means u and n are not relatively prime. We need to try again
+		if mu == nil {
+			continue
+		}
+		return g, mu, nil
+	}
+	return nil, nil, ErrExceedMaxRetry
+}
+
+// getGAndMu returns G and mu.
+func getGAndMuWithSpecialG(lambda *big.Int, n *big.Int) (*big.Int, *big.Int, error) {
+	nSquare := new(big.Int).Mul(n, n) // n^2
+	for i := 0; i < maxGenG; i++ {
+		g := new(big.Int).Add(big1, n)            // g
 		x := new(big.Int).Exp(g, lambda, nSquare) // x
 		u, err := lFunction(x, n)
 		if err != nil {
@@ -360,4 +449,12 @@ func computeStatisticalClosedRange(n *big.Int) *big.Int {
 	nMinus := new(big.Int).Sub(n, big1)
 	nMinusSquare := new(big.Int).Exp(nMinus, big2, nil)
 	return nMinusSquare
+}
+
+func (p *Paillier) GetNthRoot() (*big.Int, error) {
+	eulerValue, err := utils.EulerFunction([]*big.Int{p.privateKey.p, p.privateKey.q})
+	if err != nil {
+		return nil, err
+	}
+	return new(big.Int).ModInverse(p.n, eulerValue), nil
 }

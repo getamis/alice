@@ -1,4 +1,4 @@
-// Copyright © 2020 AMIS Technologies
+// Copyright © 2022 AMIS Technologies
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -59,6 +59,8 @@ var (
 	ErrEmptySlice = errors.New("empty slice")
 	// ErrSmallThreshold is returned if the threshold < 2.
 	ErrSmallThreshold = errors.New("threshold < 2")
+	// ErrSmallSafePrime is returned if the safePrime < 2^10.
+	ErrSmallSafePrime = errors.New("safe-prime size must be at least 10-bit")
 
 	// maxGenPrimeInt defines the max retries to generate a prime int
 	maxGenPrimeInt = 100
@@ -66,6 +68,8 @@ var (
 	big0 = big.NewInt(0)
 	big1 = big.NewInt(1)
 	big2 = big.NewInt(2)
+	big3 = big.NewInt(3)
+	big4 = big.NewInt(4)
 )
 
 // EnsureFieldOrder ensures the field order should be more than 2.
@@ -157,6 +161,11 @@ func Lcm(a, b *big.Int) (*big.Int, error) {
 		return nil, ErrInvalidInput
 	}
 	t := Gcd(a, b)
+	// avoid panic in Div function
+	if t.Cmp(big0) <= 0 {
+		return nil, ErrInvalidInput
+	}
+
 	t = t.Div(a, t)
 	t = t.Mul(t, b)
 	return t, nil
