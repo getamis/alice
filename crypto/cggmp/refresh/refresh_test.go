@@ -39,7 +39,7 @@ var (
 )
 
 var _ = Describe("Refresh", func() {
-	FIt("should be ok", func() {
+	It("should be ok", func() {
 		// new peer managers and dkgs
 		refreshes, bks, listeners := newRefreshes()
 		for _, l := range listeners {
@@ -64,7 +64,7 @@ var _ = Describe("Refresh", func() {
 		afterShareB := new(big.Int).Add(r.refreshShare, shareB)
 
 		allBks := birkhoffinterpolation.BkParameters{bks[tss.GetTestID(0)], bks[tss.GetTestID(1)]}
-		bkcoefficient, err := allBks.ComputeBkCoefficient(uint32(threshold), publicKey.GetCurve().Params().N)
+		bkcoefficient, err := allBks.ComputeBkCoefficient(threshold, publicKey.GetCurve().Params().N)
 		Expect(err).Should(BeNil())
 		gotSecret := new(big.Int).Add(new(big.Int).Mul(afterShareA, bkcoefficient[0]), new(big.Int).Mul(afterShareB, bkcoefficient[1]))
 		gotSecret.Mod(gotSecret, publicKey.GetCurve().Params().N)

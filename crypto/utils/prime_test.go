@@ -15,7 +15,6 @@ package utils
 
 import (
 	"crypto/rand"
-	"math/big"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -40,23 +39,4 @@ var _ = Describe("Prime", func() {
 			Expect(err).Should(Equal(ErrSmallSafePrime))
 		})
 	})
-
-	DescribeTable("BlumPrime()", func(size int) {
-		BlumPrime, err := GenerateRandomPrime3Mod4(rand.Reader, size)
-		Expect(err).Should(BeNil())
-		Expect(BlumPrime.ProbablyPrime(1)).Should(BeTrue())
-		Expect(new(big.Int).Mod(BlumPrime, big4).Cmp(big3) == 0).Should(BeTrue())
-	},
-		Entry("size = 37", 33),
-		Entry("size = 1024", 1024),
-	)
-
-	Context("BlumPrime()", func() {
-		It("it does not work", func() {
-			blumPrime, err := GenerateRandomPrime3Mod4(rand.Reader, 2)
-			Expect(blumPrime).Should(BeNil())
-			Expect(err).Should(Equal(ErrSmallSafePrime))
-		})
-	})
-
 })
