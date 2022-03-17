@@ -20,6 +20,7 @@ import (
 	"math/big"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
+	"github.com/getamis/alice/crypto/cggmp"
 	"github.com/getamis/alice/crypto/commitment"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/polynomial"
@@ -27,7 +28,6 @@ import (
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 )
 
 const (
@@ -179,7 +179,7 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 
 	// Send out Feldman commit message and decommit message to all peers
 	msg := p.getDecommitMessage()
-	p.broadcast(msg)
+	cggmp.Broadcast(p.peerManager, msg)
 	return newDecommitHandler(p), nil
 }
 
@@ -207,12 +207,6 @@ func (p *peerHandler) getDecommitMessage() *Message {
 				Ridi:             p.ridi,
 			},
 		},
-	}
-}
-
-func (p *peerHandler) broadcast(msg proto.Message) {
-	for id := range p.peers {
-		p.peerManager.MustSend(id, msg)
 	}
 }
 

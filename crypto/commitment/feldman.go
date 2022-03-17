@@ -95,12 +95,24 @@ func (vMsg *FeldmanVerifyMessage) Verify(cMsg *PointCommitmentMessage, bk *bkhof
 	if err != nil {
 		return err
 	}
-	return vMsg.VerifyByPoints(curve, pts, bk, degree)
+	return FeldmanVerify(curve, bk, pts, degree, new(big.Int).SetBytes(vMsg.Evaluation))
 }
 
 func (vMsg *FeldmanVerifyMessage) VerifyByPoints(curve elliptic.Curve, pts []*pt.ECPoint, bk *bkhoff.BkParameter, degree uint32) error {
+	return FeldmanVerify(curve, bk, pts, degree, new(big.Int).SetBytes(vMsg.Evaluation))
+}
+
+func (cMsg *PointCommitmentMessage) getEllipticCurve(degree uint32) (elliptic.Curve, error) {
+	if len(cMsg.Points) != int(degree+1) {
+		return nil, ErrDifferentLength
+	}
+	return cMsg.Points[0].Curve.GetEllipticCurve()
+}
+
+// FeldmanVerify verifies the commitment.
+func FeldmanVerify(curve elliptic.Curve, bk *bkhoff.BkParameter, pts []*ecpointgrouplaw.ECPoint, degree uint32, evaluation *big.Int) error {
 	fieldOrder := curve.Params().N
-	expectPoint := ecpointgrouplaw.ScalarBaseMult(curve, new(big.Int).SetBytes(vMsg.Evaluation))
+	expectPoint := ecpointgrouplaw.ScalarBaseMult(curve, evaluation)
 	scalars := bk.GetLinearEquationCoefficient(fieldOrder, degree)
 	tempResult, err := pt.ComputeLinearCombinationPoint(scalars, pts)
 	if err != nil {
@@ -110,11 +122,4 @@ func (vMsg *FeldmanVerifyMessage) VerifyByPoints(curve elliptic.Curve, pts []*pt
 		return ErrFailedVerify
 	}
 	return nil
-}
-
-func (cMsg *PointCommitmentMessage) getEllipticCurve(degree uint32) (elliptic.Curve, error) {
-	if len(cMsg.Points) != int(degree+1) {
-		return nil, ErrDifferentLength
-	}
-	return cMsg.Points[0].Curve.GetEllipticCurve()
 }

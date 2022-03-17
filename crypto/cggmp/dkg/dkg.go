@@ -19,6 +19,7 @@ import (
 	"math/big"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
+	"github.com/getamis/alice/crypto/cggmp"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/utils"
@@ -107,5 +108,5 @@ func (d *DKG) Start() {
 	d.MsgMain.Start()
 
 	// Send the first message to new peer
-	d.ph.broadcast(d.ph.getPeerMessage())
+	cggmp.Broadcast(d.ph.peerManager, d.ph.getPeerMessage())
 }

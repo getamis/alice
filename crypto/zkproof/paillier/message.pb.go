@@ -35,6 +35,8 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// https://eprint.iacr.org/2021/060.pdf
+// Section 2.2
 type RingPederssenParameterMessage struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
