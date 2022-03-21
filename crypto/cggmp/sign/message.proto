@@ -1,0 +1,68 @@
+// Copyright © 2022 AMIS Technologies
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package sign;
+
+option go_package = "github.com/getamis/alice/crypto/cggmp/sign";
+
+import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
+import "github.com/getamis/alice/crypto/zkproof/paillier/message.proto";
+
+
+enum Type {
+    Round1 = 0;
+    Round2 = 1;
+    Round3 = 2;
+    Round4 = 3;
+}
+
+message Message {
+    Type type = 1;
+    string id = 2;
+    oneof body {
+        Round1Msg round1 = 4;
+        Round2Msg round2 = 5;
+        Round3Msg round3 = 6;
+        Round4Msg round4 = 7;
+    }
+}
+
+message Round1Msg {
+    bytes kCiphertext = 1;
+    bytes gammaCiphertext = 2;
+    paillier.EncryptRangeMessage psi = 3; 
+}
+
+message Round2Msg {
+    bytes D = 1;
+    bytes F = 2;
+    bytes Dhat = 3;
+    bytes Fhat = 4;
+    paillier.PaillierAffAndGroupRangeMessage psi = 5;
+    paillier.PaillierAffAndGroupRangeMessage psihat = 6;
+    paillier.LogStarMessage psipai = 7;
+    ecpointgrouplaw.EcPointMessage Gamma = 8;
+}
+
+message Round3Msg {
+    string delta = 1;
+    ecpointgrouplaw.EcPointMessage bigDelta = 2;
+    paillier.LogStarMessage psidoublepai = 3;
+}
+
+message Round4Msg {
+    bytes sigmai = 1;
+}

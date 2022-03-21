@@ -43,10 +43,11 @@ var _ = Describe("Logstar test", func() {
 			C := new(big.Int).Mul(new(big.Int).Exp(new(big.Int).Add(big1, n0), x, n0Square), new(big.Int).Exp(rho, n0, n0Square))
 			C.Mod(C, n0Square)
 			X := pt.ScalarBaseMult(config.Curve, x)
+			G := pt.NewBase(config.Curve)
 
-			zkproof, err := NewKnowExponentAndPaillierEncryption(config, ssIDInfo, x, rho, C, n0, pedN, peds, pedt, X)
+			zkproof, err := NewKnowExponentAndPaillierEncryption(config, ssIDInfo, x, rho, C, n0, pedN, peds, pedt, X, G)
 			Expect(err).Should(BeNil())
-			err = zkproof.Verify(config, ssIDInfo, C, n0, pedN, peds, pedt, X)
+			err = zkproof.Verify(config, ssIDInfo, C, n0, pedN, peds, pedt, X, G)
 			Expect(err).Should(BeNil())
 		})
 	})
