@@ -75,7 +75,7 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 		logger.Debug("Failed to ToPoint", "err", err)
 		return err
 	}
-	err = round3.Psidoublepai.Verify(parameter, peer.ssidWithBk, peer.round1Data.kOtherCiphertext, peer.para.Getn(), ownPed.Getn(), ownPed.Gets(), ownPed.Gett(), Delta, p.sumGamma)
+	err = round3.Psidoublepai.Verify(parameter, peer.ssidWithBk, peer.round1Data.kCiphertext, peer.para.Getn(), ownPed.Getn(), ownPed.Gets(), ownPed.Gett(), Delta, p.sumGamma)
 	if err != nil {
 		logger.Debug("Failed to Verify", "err", err)
 		return err

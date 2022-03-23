@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sign
+package signSix
 
 import (
 	"errors"
 	"math/big"
 
+	"github.com/getamis/alice/crypto/cggmp"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/crypto/utils"
 	paillierzkproof "github.com/getamis/alice/crypto/zkproof/paillier"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
@@ -31,19 +33,25 @@ var (
 )
 
 type round2Data struct {
-	allGammaPoint *pt.ECPoint
-	psiProof      *paillierzkproof.PaillierAffAndGroupRangeMessage
-	psihatProoof  *paillierzkproof.PaillierAffAndGroupRangeMessage
-	d             *big.Int
-	f             *big.Int
-	dhat          *big.Int
-	fhat          *big.Int
-	alpha         *big.Int
-	alphahat      *big.Int
+	psihatProoof *paillierzkproof.PaillierAffAndGroupRangeMessage
+	d            *big.Int
+	f            *big.Int
+	dhat         *big.Int
+	fhat         *big.Int
+	alpha        *big.Int
+	alphahat     *big.Int
 }
 
 type round2Handler struct {
 	*round1Handler
+
+	delta       *big.Int
+	chi         *big.Int
+	sumMTAAlpha *big.Int
+
+	bhat  *big.Int
+	Z1Hat *pt.ECPoint
+	Z2Hat *pt.ECPoint
 }
 
 func newRound2Handler(round1Handler *round1Handler) (*round2Handler, error) {
@@ -78,16 +86,12 @@ func (p *round2Handler) HandleMessage(logger log.Logger, message types.Message) 
 		return tss.ErrPeerNotFound
 	}
 	round2 := msg.GetRound2()
-	Gamma, err := round2.Gamma.ToPoint()
-	if err != nil {
-		logger.Debug("Failed to Gamma.ToPoint", "err", err)
-		return err
-	}
-
 	ownPed := p.own.para
 	n := peer.para.Getn()
+	// curve := p.pubKey.GetCurve()
+	// curveN := curve.Params().N
 	// Verify psi
-	err = round2.Psi.Verify(parameter, peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, new(big.Int).SetBytes(round2.D), new(big.Int).SetBytes(round2.F), ownPed.Getn(), ownPed.Gets(), ownPed.Gett(), Gamma)
+	err := round2.Psi.Verify(parameter, peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, new(big.Int).SetBytes(round2.D), peer.round1Data.gammaCiphertext, new(big.Int).SetBytes(round2.F), ownPed.Getn(), ownPed.Gets(), ownPed.Gett())
 	if err != nil {
 		logger.Debug("Failed to verify", "err", err)
 		return err
@@ -99,35 +103,23 @@ func (p *round2Handler) HandleMessage(logger log.Logger, message types.Message) 
 		logger.Debug("Failed to verify", "err", err)
 		return err
 	}
-	// Verify phipai
-	curve := p.pubKey.GetCurve()
-	G := pt.NewBase(curve)
-	err = round2.Psipai.Verify(parameter, peer.ssidWithBk, peer.round1Data.gammaCiphertext, n, ownPed.Getn(), ownPed.Gets(), ownPed.Gett(), Gamma, G)
-	if err != nil {
-		logger.Debug("Failed to verify", "err", err)
-		return err
-	}
+
 	alpha, err := p.paillierKey.Decrypt(round2.D)
 	if err != nil {
-		logger.Debug("Failed to decrypt", "err", err)
 		return err
 	}
 	alphahat, err := p.paillierKey.Decrypt(round2.Dhat)
 	if err != nil {
-		logger.Debug("Failed to decrypt", "err", err)
 		return err
 	}
-
 	peer.round2Data = &round2Data{
-		psiProof:      round2.Psi,
-		d:             new(big.Int).SetBytes(round2.D),
-		f:             new(big.Int).SetBytes(round2.F),
-		psihatProoof:  round2.Psihat,
-		dhat:          new(big.Int).SetBytes(round2.Dhat),
-		fhat:          new(big.Int).SetBytes(round2.Fhat),
-		alpha:         new(big.Int).SetBytes(alpha),
-		alphahat:      new(big.Int).SetBytes(alphahat),
-		allGammaPoint: Gamma,
+		d:            new(big.Int).SetBytes(round2.D),
+		f:            new(big.Int).SetBytes(round2.F),
+		psihatProoof: round2.Psihat,
+		dhat:         new(big.Int).SetBytes(round2.Dhat),
+		fhat:         new(big.Int).SetBytes(round2.Fhat),
+		alpha:        new(big.Int).SetBytes(alpha),
+		alphahat:     new(big.Int).SetBytes(alphahat),
 	}
 	return peer.AddMessage(msg)
 }
@@ -137,17 +129,15 @@ func (p *round2Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	var err error
 	curve := p.pubKey.GetCurve()
 	curveN := curve.Params().N
-	sumGamma := pt.ScalarBaseMult(curve, p.gamma)
+	G := pt.NewBase(curve)
 	delta := new(big.Int).Mul(p.gamma, p.k)
 	chi := new(big.Int).Mul(p.bkMulShare, p.k)
+	sumMTAAlpha := big.NewInt(0)
 	for id, peer := range p.peers {
 		logger = logger.New("peerId", id)
-		sumGamma, err = sumGamma.Add(peer.round2Data.allGammaPoint)
-		if err != nil {
-			logger.Debug("Failed to add gamma", "err")
-			return nil, err
-		}
-		// Compute δi=γiki+ sum_{j!= i}(αi,j+βi,j) mod q and χi=xiki+sum_{j!=0i}(αˆi,j+βˆi,j) mod q.
+		// Use this value in Failure part.
+		sumMTAAlpha.Add(sumMTAAlpha, peer.round2Data.alpha)
+
 		delta.Add(delta, peer.round2Data.alpha)
 		delta.Add(delta, peer.round1Data.beta)
 		delta.Mod(delta, curveN)
@@ -155,41 +145,42 @@ func (p *round2Handler) Finalize(logger log.Logger) (types.Handler, error) {
 		chi.Add(chi, peer.round1Data.betahat)
 		chi.Mod(chi, curveN)
 	}
-	if sumGamma.IsIdentity() {
-		logger.Debug("SumGamma is identity")
-		return nil, ErrZeroR
-	}
-	p.sumGamma = sumGamma
 	p.delta = delta
 	p.chi = chi
-	Delta := sumGamma.ScalarMult(p.k)
-	p.BigDelta = Delta
-	MsgDelta, err := Delta.ToEcPointMessage()
+	p.sumMTAAlpha = sumMTAAlpha
+
+	bhat, err := utils.RandomInt(curveN)
 	if err != nil {
-		logger.Debug("Failed to ToEcPointMessage", "err", err)
 		return nil, err
 	}
-	p.sumMTAAlpha = big.NewInt(0)
-	for id, peer := range p.peers {
-		logger = logger.New("peerId", id)
-		peerPed := peer.para
-		// Compute proof phi''
-		psidoublepaiProof, err := paillierzkproof.NewKnowExponentAndPaillierEncryption(parameter, p.own.ssidWithBk, p.k, p.rho, p.kCiphertext, p.own.para.Getn(), peerPed.Getn(), peerPed.Gets(), peerPed.Gett(), Delta, sumGamma)
-		if err != nil {
-			logger.Debug("Failed to NewKnowExponentAndPaillierEncryption", "err", err)
-			return nil, err
-		}
-		p.peerManager.MustSend(id, &Message{
-			Id:   p.own.Id,
-			Type: Type_Round3,
-			Body: &Message_Round3{
-				Round3: &Round3Msg{
-					Delta:        delta.String(),
-					BigDelta:     MsgDelta,
-					Psidoublepai: psidoublepaiProof,
-				},
-			},
-		})
+	Zhat1 := G.ScalarMult(bhat)
+	Zhat2 := G.ScalarMult(chi)
+	Zhat2, err = Zhat2.Add((p.own.allY).ScalarMult(bhat))
+	if err != nil {
+		return nil, err
 	}
+	msgZhat1, err := Zhat1.ToEcPointMessage()
+	if err != nil {
+		return nil, err
+	}
+	msgZhat2, err := Zhat2.ToEcPointMessage()
+	if err != nil {
+		return nil, err
+	}
+	p.bhat = bhat
+	p.Z1Hat = Zhat1
+	p.Z2Hat = Zhat2
+
+	cggmp.Broadcast(p.peerManager, &Message{
+		Id:   p.own.Id,
+		Type: Type_Round3,
+		Body: &Message_Round3{
+			Round3: &Round3Msg{
+				Delta: delta.Bytes(),
+				Z1Hat: msgZhat1,
+				Z2Hat: msgZhat2,
+			},
+		},
+	})
 	return newRound3Handler(p)
 }

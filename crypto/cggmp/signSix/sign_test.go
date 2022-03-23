@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package sign
+package signSix
 
 import (
 	"math/big"
@@ -31,7 +31,7 @@ import (
 
 func TestDKG(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Sign Suite")
+	RunSpecs(t, "SignSix Suite")
 }
 
 var (
@@ -42,7 +42,7 @@ var (
 	msg       = []byte("Edwin HaHa")
 )
 
-var _ = Describe("Refresh", func() {
+var _ = Describe("SignSix", func() {
 	It("should be ok", func() {
 		signs, _, listeners := newSigns()
 		for _, l := range listeners {
@@ -103,8 +103,10 @@ func newSigns() (map[string]*Sign, map[string]*birkhoffinterpolation.BkParameter
 	allPed := make(map[string]*paillier.PederssenOpenParameter)
 	allPed[tss.GetTestID(0)] = pedA.PedersenOpenParameter
 	allPed[tss.GetTestID(1)] = pedB.PedersenOpenParameter
-	// rho := []byte("Una HaHa")
-
+	ySecret := []*big.Int{
+		big.NewInt(100),
+		big.NewInt(200),
+	}
 	for i := 0; i < lens; i++ {
 		id := tss.GetTestID(i)
 		pm := tss.NewTestPeerManager(i, lens)
@@ -112,7 +114,7 @@ func newSigns() (map[string]*Sign, map[string]*birkhoffinterpolation.BkParameter
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
 		var err error
-		signs[id], err = NewSign(threshold, ssidInfo, shares[i], publicKey, partialPubKey, allY, paillierKey[i], allPed, bks, msg, peerManagers[i], listeners[id])
+		signs[id], err = NewSign(threshold, ssidInfo, shares[i], ySecret[i], publicKey, partialPubKey, allY, bks, paillierKey[i], allPed, msg, peerManagers[i], listeners[id])
 		Expect(err).Should(BeNil())
 		signsMain[id] = signs[id]
 		r, err := signs[id].GetResult()
