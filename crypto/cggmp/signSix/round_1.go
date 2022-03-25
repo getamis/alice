@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package sign
+package signSix
 
 import (
 	"errors"
 	"math/big"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
+	"github.com/getamis/alice/crypto/cggmp/sign"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/tss"
@@ -41,12 +42,11 @@ var (
 )
 
 type round1Data struct {
-	countDelta *big.Int
-	beta       *big.Int
-	s          *big.Int
-	r          *big.Int
-	D          []byte
-	F          *big.Int
+	beta *big.Int
+	s    *big.Int
+	r    *big.Int
+	D    *big.Int
+	F    *big.Int
 
 	countSigma      *big.Int
 	betahat         *big.Int
@@ -56,19 +56,17 @@ type round1Data struct {
 	Fhat            *big.Int
 	gammaCiphertext *big.Int
 	kCiphertext     *big.Int
+
+	Z1 *pt.ECPoint
+	Z2 *pt.ECPoint
 }
 
 type round1Handler struct {
-	ssid            []byte
 	bkMulShare      *big.Int
 	pubKey          *pt.ECPoint
 	paillierKey     *paillier.Paillier
 	bkpartialPubKey *pt.ECPoint
 	msg             []byte
-
-	delta    *big.Int
-	chi      *big.Int
-	BigDelta *pt.ECPoint
 
 	k           *big.Int
 	rho         *big.Int
@@ -76,10 +74,15 @@ type round1Handler struct {
 
 	gamma           *big.Int
 	mu              *big.Int
+	ySecret         *big.Int
 	gammaCiphertext *big.Int
-	sumMTAAlpha     *big.Int
 
-	sumGamma *pt.ECPoint
+	Z1 *pt.ECPoint
+	Z2 *pt.ECPoint
+	b  *big.Int
+
+	Gamma    *pt.ECPoint
+	msgGamma *pt.EcPointMessage
 
 	bks     map[string]*birkhoffinterpolation.BkParameter
 	bkShare *big.Int
@@ -90,8 +93,9 @@ type round1Handler struct {
 	own         *peer
 }
 
-func newRound1Handler(threshold uint32, ssid []byte, share *big.Int, pubKey *pt.ECPoint, partialPubKey, allY map[string]*pt.ECPoint, paillierKey *paillier.Paillier, ped map[string]*paillier.PederssenOpenParameter, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, peerManager types.PeerManager) (*round1Handler, error) {
-	curveN := pubKey.GetCurve().Params().N
+func newRound1Handler(threshold uint32, ssid []byte, share *big.Int, ySecret *big.Int, pubKey *pt.ECPoint, partialPubKey, allY map[string]*pt.ECPoint, bks map[string]*birkhoffinterpolation.BkParameter, paillierKey *paillier.Paillier, ped map[string]*paillier.PederssenOpenParameter, msg []byte, peerManager types.PeerManager) (*round1Handler, error) {
+	curve := pubKey.GetCurve()
+	curveN := curve.Params().N
 	// Establish BK Coefficient:
 	selfId := peerManager.SelfID()
 	ownBK := bks[peerManager.SelfID()]
@@ -134,7 +138,7 @@ func newRound1Handler(threshold uint32, ssid []byte, share *big.Int, pubKey *pt.
 	if err != nil {
 		return nil, err
 	}
-	gamma, err := utils.RandomInt(curveN)
+	b, err := utils.RandomInt(curveN)
 	if err != nil {
 		return nil, err
 	}
@@ -143,25 +147,48 @@ func newRound1Handler(threshold uint32, ssid []byte, share *big.Int, pubKey *pt.
 	if err != nil {
 		return nil, err
 	}
+
+	// Set own data
+	own := newPeer(selfId, ssid, ownBK, bkcoefficient[0], ped[selfId], partialPubKey[selfId], allY[selfId])
+	Z1 := pt.ScalarBaseMult(curve, b)
+	Z2 := pt.ScalarBaseMult(curve, k)
+	Z2, err = Z2.Add(own.allY.ScalarMult(b))
+	if err != nil {
+		return nil, err
+	}
+	// γ in F_q
+	gamma, err := utils.RandomInt(curveN)
+	if err != nil {
+		return nil, err
+	}
 	gammaCiphertext, mu, err := paillierKey.EncryptWithOutputSalt(gamma)
 	if err != nil {
 		return nil, err
 	}
-
-	// Set data
-	own := newPeer(selfId, ssid, ownBK, bkcoefficient[0], ped[selfId], partialPubKey[selfId], allY[selfId])
+	Gamma := pt.ScalarBaseMult(curve, gamma)
+	msgGamma, err := Gamma.ToEcPointMessage()
+	if err != nil {
+		return nil, err
+	}
 	return &round1Handler{
-		ssid:            ssid,
 		bkMulShare:      bkShare,
 		pubKey:          pubKey,
 		paillierKey:     paillierKey,
 		bkpartialPubKey: own.partialPubKey.ScalarMult(own.bkcoefficient),
 		msg:             msg,
 
-		k:               k,
-		rho:             rho,
-		gamma:           gamma,
+		k:        k,
+		rho:      rho,
+		gamma:    gamma,
+		Gamma:    Gamma,
+		msgGamma: msgGamma,
+
+		Z1: Z1,
+		Z2: Z2,
+		b:  b,
+
 		mu:              mu,
+		ySecret:         ySecret,
 		gammaCiphertext: gammaCiphertext,
 		kCiphertext:     kCiphertext,
 
@@ -200,37 +227,44 @@ func (p *round1Handler) HandleMessage(logger log.Logger, message types.Message) 
 		logger.Warn("Peer not found")
 		return tss.ErrPeerNotFound
 	}
-
-	curve := p.pubKey.GetCurve()
-	// Compute Gamma = gamma*G
-	Gamma := pt.ScalarBaseMult(curve, p.gamma)
-	msgGamma, err := Gamma.ToEcPointMessage()
-	if err != nil {
-		return err
-	}
-
 	round1 := msg.GetRound1()
 	ownPed := p.own.para
 	peerPed := peer.para
 	n := peerPed.Getn()
 
-	// verify Proof_enc
-	err = round1.Psi.Verify(parameter, p.own.ssidWithBk, round1.KCiphertext, n, ownPed.Getn(), ownPed.Gets(), ownPed.Gett())
+	kciphertext := new(big.Int).SetBytes(round1.KCiphertext)
+	A := peer.allY
+	B, err := round1.Z1.ToPoint()
 	if err != nil {
 		return err
 	}
-	negBeta, countDelta, r, s, D, F, phiProof, err := MtaWithProofAff_g(p.own.ssidWithBk, peer.para, p.paillierKey, round1.KCiphertext, p.gamma, Gamma)
+	X, err := round1.Z2.ToPoint()
+	if err != nil {
+		return err
+	}
+	// verify Proof_enc
+	err = round1.Psi.Verify(parameter, peer.ssidWithBk, kciphertext, n, A, B, X, ownPed.Getn(), ownPed.Gets(), ownPed.Gett())
+	if err != nil {
+		return err
+	}
+	negBeta, r, s, D, F, phiProof, err := mtaWithProofAff_p(p.own.ssidWithBk, peer.para, p.paillierKey, round1.KCiphertext, p.gamma, p.mu, p.gammaCiphertext)
 	if err != nil {
 		return err
 	}
 	// psihat share proof: M(prove,Πaff-g,(sid,i),(Iε,Jε,Dˆj,i,Kj,Fˆj,i,Xi);(xi,βˆi,j,sˆi,j,rˆi,j)).
-	negBetahat, countSigma, rhat, shat, Dhat, Fhat, psihatProof, err := MtaWithProofAff_g(p.own.ssidWithBk, peer.para, p.paillierKey, round1.KCiphertext, p.bkMulShare, p.bkpartialPubKey)
+	negBetahat, countSigma, rhat, shat, Dhat, Fhat, psihatProof, err := sign.MtaWithProofAff_g(p.own.ssidWithBk, peer.para, p.paillierKey, round1.KCiphertext, p.bkMulShare, p.bkpartialPubKey)
 	if err != nil {
 		return err
 	}
-
+	Z1, err := round1.Z1.ToPoint()
+	if err != nil {
+		return err
+	}
+	Z2, err := round1.Z2.ToPoint()
+	if err != nil {
+		return err
+	}
 	peer.round1Data = &round1Data{
-		countDelta:      countDelta,
 		beta:            negBeta,
 		r:               r,
 		s:               s,
@@ -245,27 +279,23 @@ func (p *round1Handler) HandleMessage(logger log.Logger, message types.Message) 
 		shat:       shat,
 		Dhat:       Dhat,
 		Fhat:       Fhat,
+
+		Z1: Z1,
+		Z2: Z2,
 	}
 
 	// logstar proof for the secret gamma, mu: M(prove,Πlog,(sid,i),(Iε,Gi,Γi,g);(γi,νi)).
-	G := pt.NewBase(curve)
-	psipaiProof, err := paillierzkproof.NewKnowExponentAndPaillierEncryption(parameter, p.own.ssidWithBk, p.gamma, p.mu, p.gammaCiphertext, p.paillierKey.GetN(), peerPed.Getn(), peerPed.Gets(), peerPed.Gett(), Gamma, G)
-	if err != nil {
-		return err
-	}
 	p.peerManager.MustSend(id, &Message{
 		Id:   p.own.Id,
 		Type: Type_Round2,
 		Body: &Message_Round2{
 			Round2: &Round2Msg{
-				D:      D,
+				D:      D.Bytes(),
 				F:      F.Bytes(),
 				Dhat:   Dhat,
 				Fhat:   Fhat.Bytes(),
 				Psi:    phiProof,
 				Psihat: psihatProof,
-				Psipai: psipaiProof,
-				Gamma:  msgGamma,
 			},
 		},
 	})
@@ -276,59 +306,18 @@ func (p *round1Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	return newRound2Handler(p)
 }
 
-func (p *round1Handler) sendRound1Messages() error {
-	n := p.paillierKey.GetN()
-	selfId := p.peerManager.SelfID()
-	for id, peer := range p.peers {
-		ped := peer.para
-		pedN := ped.Getn()
-		peds := ped.Gets()
-		pedt := ped.Gett()
-		// Compute proof psi_{j,i}^0
-		psi, err := paillierzkproof.NewEncryptRangeMessage(parameter, peer.ssidWithBk, p.kCiphertext, n, p.k, p.rho, pedN, peds, pedt)
-		if err != nil {
-			return err
-		}
-		p.peerManager.MustSend(id, &Message{
-			Id:   selfId,
-			Type: Type_Round1,
-			Body: &Message_Round1{
-				Round1: &Round1Msg{
-					KCiphertext:     p.kCiphertext.Bytes(),
-					GammaCiphertext: p.gammaCiphertext.Bytes(),
-					Psi:             psi,
-				},
-			},
-		})
-	}
-	return nil
-}
-
 func getMessage(messsage types.Message) *Message {
 	return messsage.(*Message)
 }
 
-func MtaWithProofAff_g(ownssid []byte, peerPed *paillier.PederssenOpenParameter, paillierKey *paillier.Paillier, msgCipher []byte, x *big.Int, ecPoint *pt.ECPoint) (*big.Int, *big.Int, *big.Int, *big.Int, []byte, *big.Int, *paillierzkproof.PaillierAffAndGroupRangeMessage, error) {
-	beta, s, r, D, F, err := PerformMTA(peerPed, paillierKey, msgCipher, x)
-	if err != nil {
-		return nil, nil, nil, nil, nil, nil, nil, err
-	}
-	peerPaillierKey := peerPed.ToPaillierPubKeyWithSpecialG()
-	proof, err := paillierzkproof.NewPaillierAffAndGroupRangeMessage(parameter, ownssid, x, beta, s, r, peerPed.Getn(), paillierKey.GetN(), new(big.Int).SetBytes(msgCipher), D, F, peerPed.Getn(), peerPed.Gets(), peerPed.Gett(), ecPoint)
-	if err != nil {
-		return nil, nil, nil, nil, nil, nil, nil, err
-	}
-	adjustBeat, count := computeBeta(beta, peerPaillierKey.GetN(), ecPoint.GetCurve().Params().N, big.NewInt(0))
-	return adjustBeat, count, r, s, D.Bytes(), F, proof, nil
-}
-
-func PerformMTA(ped *paillier.PederssenOpenParameter, paillierKey *paillier.Paillier, msgCipher []byte, x *big.Int) (*big.Int, *big.Int, *big.Int, *big.Int, *big.Int, error) {
+func performMTA(peer *peer, paillierKey *paillier.Paillier, msgCipher []byte, x *big.Int) (*big.Int, *big.Int, *big.Int, *big.Int, *big.Int, error) {
 	beta, err := utils.RandomAbsoluteRangeInt(new(big.Int).Lsh(big2, parameter.Lpai))
 	if err != nil {
 		return nil, nil, nil, nil, nil, err
 	}
 
 	// Use other people pubKey: Dj,i = (γi ⊙ Kj) ⊕ encj(−βi,j , si,j) and Fj,i = enci(βi,j , ri,j).
+	ped := peer.para
 	peoplePaillierKey := ped.ToPaillierPubKeyWithSpecialG()
 	D := new(big.Int).Exp(new(big.Int).SetBytes(msgCipher), x, peoplePaillierKey.GetNSquare())
 	tempEnc, s, err := peoplePaillierKey.EncryptWithOutputSalt(beta)
@@ -353,4 +342,55 @@ func computeBeta(beta *big.Int, paillierN *big.Int, fieldOrder *big.Int, count *
 		count.Add(count, big1)
 	}
 	return result, count
+}
+
+func mtaWithProofAff_p(ownssid []byte, peerPed *paillier.PederssenOpenParameter, paillierKey *paillier.Paillier, msgKCipher []byte, gamma *big.Int, mu *big.Int, gammaCiphertext *big.Int) (*big.Int, *big.Int, *big.Int, *big.Int, *big.Int, *paillierzkproof.PaillierOperationAndCommitmentMessage, error) {
+	beta, s, r, D, F, err := sign.PerformMTA(peerPed, paillierKey, msgKCipher, gamma)
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
+	}
+	proof, err := paillierzkproof.NewPaillierOperationAndPaillierCommitment(parameter, ownssid, gamma, beta, s, mu, r, peerPed.Getn(), paillierKey.GetN(), gammaCiphertext, F, new(big.Int).SetBytes(msgKCipher), D, peerPed.Getn(), peerPed.Gets(), peerPed.Gett())
+	if err != nil {
+		return nil, nil, nil, nil, nil, nil, err
+	}
+	adjustBeta, _ := computeBeta(beta, peerPed.Getn(), parameter.Curve.Params().N, big.NewInt(0))
+	return adjustBeta, r, s, D, F, proof, nil
+}
+
+func (p *round1Handler) sendRound1Messages() error {
+	n := p.paillierKey.GetN()
+	msgZ1, err := p.Z1.ToEcPointMessage()
+	if err != nil {
+		return err
+	}
+	msgZ2, err := p.Z2.ToEcPointMessage()
+	if err != nil {
+		return err
+	}
+	for _, peer := range p.peers {
+		ped := peer.para
+		pedN := ped.Getn()
+		peds := ped.Gets()
+		pedt := ped.Gett()
+		// Compute proof psi_{j,i}^0
+		psi, err := paillierzkproof.NewEncryptRangeWithELMessage(parameter, p.own.ssidWithBk, p.k, p.rho, p.ySecret, p.b, p.kCiphertext, n, p.own.allY, p.Z1, p.Z2, pedN, peds, pedt)
+		if err != nil {
+			return err
+		}
+		p.peerManager.MustSend(peer.Id, &Message{
+			Id:   p.own.Id,
+			Type: Type_Round1,
+			Body: &Message_Round1{
+				Round1: &Round1Msg{
+					KCiphertext:     p.kCiphertext.Bytes(),
+					GammaCiphertext: p.gammaCiphertext.Bytes(),
+					Z1:              msgZ1,
+					Z2:              msgZ2,
+					Psi:             psi,
+				},
+			},
+		})
+	}
+
+	return nil
 }
