@@ -77,7 +77,7 @@ func NewNoSmallFactorMessage(config *CurveConfig, ssidInfo, rho []byte, p *big.I
 	// T = Q^α*t^r mod Nˆ.
 	T := new(big.Int).Mul(new(big.Int).Exp(Q, alpha, pedN), new(big.Int).Exp(pedt, r, pedN))
 	T.Mod(T, pedN)
-	e, salt, err := GetE(groupOrder, utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), new(big.Int).SetInt64(int64(groupOrder.BitLen())).Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), sigma.Bytes())...)
+	e, salt, err := GetE(groupOrder, utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), sigma.Bytes())...)
 	if err != nil {
 		return nil, err
 	}
@@ -121,12 +121,12 @@ func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byt
 	R := new(big.Int).Mul(new(big.Int).Exp(peds, n, pedN), new(big.Int).Exp(pedt, sigma, pedN))
 	R.Mod(R, pedN)
 
-	seed, err := utils.HashProtos(msg.Salt, utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), new(big.Int).SetInt64(int64(groupOrder.BitLen())).Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), sigma.Bytes())...)
+	seed, err := utils.HashProtos(msg.Salt, utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), sigma.Bytes())...)
 	if err != nil {
 		return err
 	}
 
-	e := utils.RandomAbsoluteRangeIntBySeed(seed, groupOrder)
+	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, groupOrder)
 	err = utils.InRange(e, new(big.Int).Neg(groupOrder), new(big.Int).Add(big1, groupOrder))
 	if err != nil {
 		return err

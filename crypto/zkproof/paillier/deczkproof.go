@@ -55,7 +55,7 @@ func NewDecryMessage(config *CurveConfig, ssidInfo []byte, y, rho, N0, C, x, ped
 	gamma := new(big.Int).Set(alpha)
 	gamma.Mod(gamma, config.Curve.Params().N)
 
-	e, salt, err := GetE(config.Curve.Params().N, utils.GetAnyMsg(ssidInfo, A.Bytes(), gamma.Bytes(), S.Bytes(), T.Bytes(), N0.Bytes(), C.Bytes(), x.Bytes(), config.Curve.Params().N.Bytes())...)
+	e, salt, err := GetE(config.Curve.Params().N, utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), A.Bytes(), gamma.Bytes(), S.Bytes(), T.Bytes(), N0.Bytes(), C.Bytes(), x.Bytes(), config.Curve.Params().N.Bytes())...)
 	if err != nil {
 		return nil, err
 	}
@@ -81,24 +81,57 @@ func NewDecryMessage(config *CurveConfig, ssidInfo []byte, y, rho, N0, C, x, ped
 
 func (msg *DecryMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, x, pedN, peds, pedt *big.Int) error {
 	fieldOrder := config.Curve.Params().N
-	seed, err := utils.HashProtos(msg.Salt, utils.GetAnyMsg(ssidInfo, msg.A, msg.Gamma, msg.S, msg.T, N0.Bytes(), C.Bytes(), x.Bytes(), fieldOrder.Bytes())...)
+	N0Square := new(big.Int).Mul(N0, N0)
+	seed, err := utils.HashProtos(msg.Salt, utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), msg.A, msg.Gamma, msg.S, msg.T, N0.Bytes(), C.Bytes(), x.Bytes(), fieldOrder.Bytes())...)
 	if err != nil {
 		return err
 	}
-	e := utils.RandomAbsoluteRangeIntBySeed(seed, fieldOrder)
+	// check A in Z_{N^2}^\ast, S, T in Z_{\hat{N}}^\ast, \gamma \in [0, q), w in Z_{N_0}^\ast, and e in ±q.
+	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, fieldOrder)
 	err = utils.InRange(e, new(big.Int).Neg(fieldOrder), new(big.Int).Add(big1, fieldOrder))
 	if err != nil {
 		return err
 	}
 
 	S := new(big.Int).SetBytes(msg.S)
+	err = utils.InRange(S, big0, pedN)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(S, pedN) {
+		return ErrVerifyFailure
+	}
 	T := new(big.Int).SetBytes(msg.T)
+	err = utils.InRange(T, big0, pedN)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(T, pedN) {
+		return ErrVerifyFailure
+	}
 	A := new(big.Int).SetBytes(msg.A)
+	err = utils.InRange(A, big0, N0Square)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(A, N0Square) {
+		return ErrVerifyFailure
+	}
 	gamma := new(big.Int).SetBytes(msg.Gamma)
+	err = utils.InRange(gamma, big0, fieldOrder)
+	if err != nil {
+		return err
+	}
 	z1, _ := new(big.Int).SetString(msg.Z1, 10)
 	z2, _ := new(big.Int).SetString(msg.Z2, 10)
 	W := new(big.Int).SetBytes(msg.W)
-	N0Square := new(big.Int).Mul(N0, N0)
+	err = utils.InRange(W, big0, N0)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(W, N0) {
+		return ErrVerifyFailure
+	}
 
 	// Check (1+N_0)^{z1} ·w^{N_0} =A·C^e mod N_0^2.
 	ACexpe := new(big.Int).Mul(A, new(big.Int).Exp(C, e, N0Square))

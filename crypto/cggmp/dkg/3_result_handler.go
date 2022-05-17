@@ -64,12 +64,22 @@ func (p *resultHandler) HandleMessage(logger log.Logger, message types.Message) 
 	}
 
 	siGProofMsg := msg.GetResult().SiGProofMsg
+	alphaHat, err := siGProofMsg.Alpha.ToPoint()
+	if err != nil {
+		logger.Warn("Failed to get point", "err", err)
+		return err
+	}
+	if !peer.decommit.schnorrAPoint.Equal(alphaHat) {
+		logger.Warn("Failed to verify Schnorr commitment", "err", err)
+		return err
+	}
+
 	r, err := siGProofMsg.V.ToPoint()
 	if err != nil {
 		logger.Warn("Failed to get point", "err", err)
 		return err
 	}
-	err = siGProofMsg.Verify(ecpointgrouplaw.NewBase(p.publicKey.GetCurve()), cggmp.ComputeSSID(p.rid))
+	err = siGProofMsg.Verify(ecpointgrouplaw.NewBase(p.publicKey.GetCurve()), cggmp.ComputeSSID(p.sid, []byte(id), p.rid))
 	if err != nil {
 		logger.Warn("Failed to verify Schorr proof", "err", err)
 		return err

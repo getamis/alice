@@ -68,7 +68,7 @@ func NewMulStarMessage(config *CurveConfig, ssidInfo []byte, x, rho, N0, C, D, p
 	S := new(big.Int).Mul(new(big.Int).Exp(peds, x, pedN), new(big.Int).Exp(pedt, m, pedN))
 	S.Mod(S, pedN)
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, N0.Bytes(), C.Bytes(), A.Bytes(), E.Bytes(), S.Bytes()), msgG, msgX, msgBx)
+	msgs := append(utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), N0.Bytes(), C.Bytes(), D.Bytes(), A.Bytes(), E.Bytes(), S.Bytes()), msgG, msgX, msgBx)
 	e, salt, err := GetE(G.GetCurve().Params().N, msgs...)
 	if err != nil {
 		return nil, err
@@ -94,6 +94,7 @@ func NewMulStarMessage(config *CurveConfig, ssidInfo []byte, x, rho, N0, C, D, p
 
 func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D, pedN, peds, pedt *big.Int, X *pt.ECPoint) error {
 	G := pt.NewBase(X.GetCurve())
+	N0Square := new(big.Int).Mul(N0, N0)
 	msgG, err := G.ToEcPointMessage()
 	if err != nil {
 		return err
@@ -104,28 +105,55 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 	}
 	curveOrder := X.GetCurve().Params().N
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, N0.Bytes(), C.Bytes(), msg.A, msg.E, msg.S), msgG, msgX, msg.B)
+	msgs := append(utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), N0.Bytes(), C.Bytes(), D.Bytes(), msg.A, msg.E, msg.S), msgG, msgX, msg.B)
 	seed, err := utils.HashProtos(msg.Salt, msgs...)
 	if err != nil {
 		return err
 	}
-	e := utils.RandomAbsoluteRangeIntBySeed(seed, curveOrder)
+	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveOrder)
 	err = utils.InRange(e, new(big.Int).Neg(curveOrder), new(big.Int).Add(big1, curveOrder))
 	if err != nil {
 		return err
 	}
+	// check A in Z_{N0^2}^\ast, E,S in Z_{\hat{N}}^\ast, w in Z_{N0}^\ast, and e ∈ ±q.
 	z1, _ := new(big.Int).SetString(msg.Z1, 10)
 	z2, _ := new(big.Int).SetString(msg.Z2, 10)
 	w := new(big.Int).SetBytes(msg.W)
+	err = utils.InRange(w, big0, N0)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(w, N0) {
+		return ErrVerifyFailure
+	}
 	A := new(big.Int).SetBytes(msg.A)
+	err = utils.InRange(A, big0, N0Square)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(A, N0Square) {
+		return ErrVerifyFailure
+	}
 	S := new(big.Int).SetBytes(msg.S)
+	err = utils.InRange(S, big0, pedN)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(S, pedN) {
+		return ErrVerifyFailure
+	}
 	E := new(big.Int).SetBytes(msg.E)
+	err = utils.InRange(E, big0, pedN)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(E, pedN) {
+		return ErrVerifyFailure
+	}
 	Bx, err := msg.B.ToPoint()
 	if err != nil {
 		return err
 	}
-
-	N0Square := new(big.Int).Mul(N0, N0)
 
 	// Check (C)^{z1} ·w^{N_0} =A·D^e mod N_0^2.
 	ADexpe := new(big.Int).Mul(A, new(big.Int).Exp(D, e, N0Square))
@@ -138,7 +166,7 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 		return ErrVerifyFailure
 	}
 
-	// Check z1*G =B_x + e*X
+	// Check z1*G = B_x + e*X
 	BxXexpe := X.ScalarMult(e)
 	BxXexpe, err = BxXexpe.Add(Bx)
 	if err != nil {

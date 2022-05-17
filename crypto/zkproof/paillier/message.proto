@@ -34,7 +34,7 @@ message RingPederssenParameterMessage {
 message PaillierBlumMessage {
     repeated bytes a = 1;
     repeated bytes b= 2;
-    repeated bytes w = 3;
+    bytes w = 3;
     repeated bytes x = 4;
     repeated bytes z = 5;
     repeated bytes salt = 6;

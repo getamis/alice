@@ -78,6 +78,7 @@ var _ = Describe("peer handler, negative cases", func() {
 
 	Context("Finalize", func() {
 		var (
+			sid       = make([]byte, 1)
 			curve     = elliptic.Secp256k1()
 			threshold = uint32(3)
 			ranks     = []uint32{0, 0, 0, 0, 0}
@@ -86,7 +87,7 @@ var _ = Describe("peer handler, negative cases", func() {
 			listeners map[string]*mocks.StateChangedListener
 		)
 		BeforeEach(func() {
-			dkgs, listeners = newDKGs(curve, threshold, ranks)
+			dkgs, listeners = newDKGs(curve, sid, threshold, ranks)
 		})
 
 		AfterEach(func() {

@@ -48,7 +48,6 @@ message BodyPeer {
 message BodyDecommit {
     commitment.HashDecommitmentMessage hashDecommitment = 1;
     commitment.PointCommitmentMessage pointCommitment = 2;
-    bytes ridi = 3;
 }
 
 message BodyVerify {

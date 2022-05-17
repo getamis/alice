@@ -172,12 +172,9 @@ func generateZ(N *big.Int, index *big.Int, maxTry int) (*big.Int, error) {
 	var result *big.Int
 	for i := 0; i < maxTry; i++ {
 		for j := 0; j < maxTry; j++ {
-			inputData, err := utils.ExtnedHashOuput(index.Bytes(), N.Bytes(), N.BitLen())
-			if err != nil {
-				return nil, err
-			}
+			inputData := utils.ExtnedHashOuput(index.Bytes(), N.Bytes(), N.BitLen())
 			result = new(big.Int).SetBytes(inputData)
-			err = utils.InRange(result, big2, new(big.Int).Sub(N, big1))
+			err := utils.InRange(result, big2, new(big.Int).Sub(N, big1))
 			if err == nil {
 				break
 			}

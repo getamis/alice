@@ -81,7 +81,7 @@ func NewELog(config *CurveConfig, ssidInfo []byte, y, lambda *big.Int, L, M, X, 
 		return nil, err
 	}
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes()), msgA, msgB, msgL, msgM, msgX, msgY, msgh, msgN, msgG)
+	msgs := append(utils.GetAnyMsg(ssidInfo), msgA, msgB, msgL, msgM, msgX, msgY, msgh, msgN, msgG)
 	e, salt, err := GetE(curveN, msgs...)
 	if err != nil {
 		return nil, err
@@ -143,13 +143,13 @@ func (msg *ELogMessage) Verify(config *CurveConfig, ssidInfo []byte, L, M, X, Y,
 		return err
 	}
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes()), msg.A, msg.B, msgL, msgM, msgX, msgY, msgh, msg.N, msgG)
+	msgs := append(utils.GetAnyMsg(ssidInfo), msg.A, msg.B, msgL, msgM, msgX, msgY, msgh, msg.N, msgG)
 	seed, err := utils.HashProtos(msg.Salt, msgs...)
 	if err != nil {
 		return err
 	}
 
-	e := utils.RandomAbsoluteRangeIntBySeed(seed, curveN)
+	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveN)
 	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
 	if err != nil {
 		return err

@@ -55,7 +55,7 @@ func NewBaseSchorrMessage(curve elliptic.Curve, a1 *big.Int, seedInfo ...[]byte)
 	return NewSchorrMessage(a1, big0, base, seedInfo...)
 }
 
-func NewSchorrMessage(a1 *big.Int, a2 *big.Int, R *pt.ECPoint, seedInfo ...[]byte) (*SchnorrProofMessage, error) {
+func NewSchnorrMessageWithGivenMN(a1 *big.Int, a2 *big.Int, m, n *big.Int, R *pt.ECPoint, seedInfo ...[]byte) (*SchnorrProofMessage, error) {
 	msgR, err := R.ToEcPointMessage()
 	if err != nil {
 		return nil, err
@@ -91,15 +91,7 @@ func NewSchorrMessage(a1 *big.Int, a2 *big.Int, R *pt.ECPoint, seedInfo ...[]byt
 	if err != nil {
 		return nil, err
 	}
-	m, err := utils.RandomInt(fieldOrder)
-	if err != nil {
-		return nil, err
-	}
 	mG := pt.ScalarBaseMult(curve, m)
-	n, err := utils.RandomInt(fieldOrder)
-	if err != nil {
-		return nil, err
-	}
 	nR := R.ScalarMult(n)
 	alpha, err := mG.Add(nR)
 	if err != nil {
@@ -146,6 +138,20 @@ func NewSchorrMessage(a1 *big.Int, a2 *big.Int, R *pt.ECPoint, seedInfo ...[]byt
 		return nil, err
 	}
 	return msg, nil
+}
+
+func NewSchorrMessage(a1 *big.Int, a2 *big.Int, R *pt.ECPoint, seedInfo ...[]byte) (*SchnorrProofMessage, error) {
+	curve := R.GetCurve()
+	fieldOrder := curve.Params().N
+	m, err := utils.RandomInt(fieldOrder)
+	if err != nil {
+		return nil, err
+	}
+	n, err := utils.RandomInt(fieldOrder)
+	if err != nil {
+		return nil, err
+	}
+	return NewSchnorrMessageWithGivenMN(a1, a2, m, n, R, seedInfo...)
 }
 
 func (s *SchnorrProofMessage) Verify(R *pt.ECPoint, seedInfo ...[]byte) error {
