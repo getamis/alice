@@ -4,8 +4,9 @@ go 1.17
 
 require (
 	github.com/btcsuite/btcd v0.20.1-beta
+	github.com/decred/dcrd/dcrec/edwards v1.0.0
 	github.com/getamis/sirius v1.1.7
-	github.com/golang/protobuf v1.5.0
+	github.com/golang/protobuf v1.5.2
 	github.com/libp2p/go-libp2p v0.7.0
 	github.com/libp2p/go-libp2p-core v0.5.0
 	github.com/minio/blake2b-simd v0.0.0-20160723061019-3f5f724cb5b1
@@ -14,10 +15,10 @@ require (
 	github.com/onsi/gomega v1.9.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
-	github.com/stretchr/testify v1.4.0
-	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d
+	github.com/stretchr/testify v1.7.1
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
 	gonum.org/v1/gonum v0.7.0
-	google.golang.org/protobuf v1.26.0
+	google.golang.org/protobuf v1.28.0
 	gopkg.in/yaml.v2 v2.2.4
 )
 
@@ -27,7 +28,6 @@ require (
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20170701192655-dcfb0a7ac018 // indirect
-	github.com/decred/dcrd/dcrec/edwards v1.0.0
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gogo/protobuf v1.3.1 // indirect
@@ -89,7 +89,7 @@ require (
 	github.com/multiformats/go-multistream v0.1.1 // indirect
 	github.com/multiformats/go-varint v0.0.5 // indirect
 	github.com/opentracing/opentracing-go v1.1.0 // indirect
-	github.com/pelletier/go-toml v1.2.0 // indirect
+	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rollbar/rollbar-go v1.2.0 // indirect
@@ -108,12 +108,13 @@ require (
 	go.uber.org/tools v0.0.0-20190618225709-2cfd321de3ee // indirect
 	go.uber.org/zap v1.13.0 // indirect
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
-	golang.org/x/net v0.0.0-20190923162816-aa69164e4478 // indirect
-	golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae // indirect
-	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/net v0.0.0-20220412020605-290c469a71a5 // indirect
+	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.0.0-20200129045341-207d3de1faaf // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 	honnef.co/go/tools v0.0.1-2019.2.3 // indirect
 )
