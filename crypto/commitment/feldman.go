@@ -15,13 +15,13 @@
 package commitment
 
 import (
-	"crypto/elliptic"
 	"errors"
 	"math/big"
 
 	bkhoff "github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/polynomial"
 )
 

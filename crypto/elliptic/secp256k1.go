@@ -21,18 +21,22 @@ import (
 	"github.com/btcsuite/btcd/btcec"
 )
 
-type Secp256k1 struct {
+var (
+	secp256k1Curve = &secp256k1{
+		Curve: btcec.S256(),
+	}
+)
+
+type secp256k1 struct {
 	elliptic.Curve
 }
 
-func NewSecp256k1() *Secp256k1 {
-	return &Secp256k1{
-		Curve: btcec.S256(),
-	}
+func Secp256k1() *secp256k1 {
+	return secp256k1Curve
 }
 
 // Warn: does not deal with the original point
-func (sep *Secp256k1) Neg(x, y *big.Int) (*big.Int, *big.Int) {
+func (sep *secp256k1) Neg(x, y *big.Int) (*big.Int, *big.Int) {
 	NegY := new(big.Int).Neg(y)
 	return new(big.Int).Set(x), NegY.Mod(NegY, sep.Curve.Params().P)
 }

@@ -50,10 +50,10 @@ var _ = Describe("Child test", func() {
 		pubKey := ecpointgrouplaw.ScalarBaseMult(curve, privateKey)
 		// share1: x = 1 rank and share2: x = 2 rank 0
 		share1 := new(big.Int).Add(privateKey, big.NewInt(1))
-		share1.Mod(share1, curve.N)
+		share1.Mod(share1, curve.Params().N)
 		share2 := new(big.Int).Add(privateKey, big.NewInt(2))
-		share2.Mod(share2, curve.N)
-		// curve := btcec.S256()
+		share2.Mod(share2, curve.Params().N)
+		// curve := elliptic.Secp256k1()
 		childIndex := uint32(2147483648)
 
 		children, listeners := newChildren(sid, []*big.Int{
@@ -101,9 +101,9 @@ var _ = Describe("Child test", func() {
 		}
 
 		childPrivateKey := new(big.Int).Add(childShares[0].share, childShares[1].share)
-		childPrivateKey.Mod(childPrivateKey, curve.N)
+		childPrivateKey.Mod(childPrivateKey, curve.Params().N)
 		anotherMethodChildParivateKey := new(big.Int).Add(privateKey, childTranslate)
-		anotherMethodChildParivateKey.Mod(anotherMethodChildParivateKey, curve.N)
+		anotherMethodChildParivateKey.Mod(anotherMethodChildParivateKey, curve.Params().N)
 		Expect(anotherMethodChildParivateKey).Should(Equal(anotherMethodChildParivateKey))
 		Expect(hex.EncodeToString(childPrivateKey.Bytes())).Should(Equal(expectedPrivate1))
 		Expect(hex.EncodeToString(childPrivateKey.Bytes())).Should(Equal(expectedPrivate1))
@@ -113,7 +113,7 @@ var _ = Describe("Child test", func() {
 		grandChildManager, err := childShares[0].ComputeNonHardenedChildShare(1)
 		Expect(err).Should(BeNil())
 		grandChildPrivateKey := new(big.Int).Add(grandChildManager.share, childShares[1].share)
-		grandChildPrivateKey.Mod(grandChildPrivateKey, curve.N)
+		grandChildPrivateKey.Mod(grandChildPrivateKey, curve.Params().N)
 		Expect(hex.EncodeToString(grandChildPrivateKey.Bytes())).Should(Equal(expectedPrivate2))
 		Expect(hex.EncodeToString(grandChildManager.chainCode)).Should(Equal(expectedChaincode2))
 	},

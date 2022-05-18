@@ -23,7 +23,9 @@ message EcPointMessage {
     P224 = 0;
     P256 = 1;
     P384 = 2;
+    // Above curves are not implemented
     S256 = 3;
+    EDWARD25519 = 4;
   }
   Curve curve = 1;
   bytes x = 2;

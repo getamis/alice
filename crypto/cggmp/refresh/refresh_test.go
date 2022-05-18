@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/alice/internal/message/types/mocks"
@@ -35,7 +35,7 @@ func TestDKG(t *testing.T) {
 
 var (
 	threshold = uint32(2)
-	publicKey = pt.ScalarBaseMult(btcec.S256(), big1)
+	publicKey = pt.ScalarBaseMult(elliptic.Secp256k1(), big1)
 )
 
 var _ = Describe("Refresh", func() {

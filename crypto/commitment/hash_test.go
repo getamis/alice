@@ -17,8 +17,8 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -147,7 +147,7 @@ var _ = Describe("hash", func() {
 
 	Context("NewCommitterByPoint/GetPointFromHashCommitment", func() {
 		It("should be ok", func() {
-			p := pt.NewIdentity(btcec.S256())
+			p := pt.NewIdentity(elliptic.Secp256k1())
 			c, err := NewCommitterByPoint(p)
 			Expect(err).Should(BeNil())
 			Expect(c).ShouldNot(BeNil())

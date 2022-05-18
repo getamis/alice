@@ -14,12 +14,12 @@
 package dkg
 
 import (
-	"crypto/elliptic"
 	"math/big"
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
+
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/polynomial"
@@ -38,7 +38,7 @@ func TestDKG(t *testing.T) {
 }
 
 var _ = Describe("DKG", func() {
-	curve := btcec.S256()
+	curve := elliptic.Secp256k1()
 	DescribeTable("NewDKG()", func(c elliptic.Curve, threshold uint32, ranks []uint32) {
 		// new peer managers and dkgs
 		dkgs, listeners := newDKGs(c, threshold, ranks)

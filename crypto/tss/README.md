@@ -340,7 +340,7 @@ In DKG stage, all of them should create a peer manager specifying number of peer
 
 ```go
 // S256 for example
-curve := btcec.S256()
+curve := elliptic.Secp256k1()
 id := "myID"
 peerNum := uint32(2)
 threshold := uint32(2)
@@ -378,7 +378,7 @@ In DKG stage, all of them should create a peer manager specifying number of peer
 
 ```go
 // S256 for example
-curve := btcec.S256()
+curve := elliptic.Secp256k1()
 id := "myID"
 peerNum := uint32(3)
 threshold := uint32(3)

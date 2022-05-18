@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	elliptic "crypto/elliptic"
+	elliptic "github.com/getamis/alice/crypto/elliptic"
 	big "math/big"
 
 	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"

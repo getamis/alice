@@ -14,12 +14,12 @@
 package reshare
 
 import (
-	"crypto/elliptic"
 	"math/big"
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
+
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/polynomial"
@@ -38,7 +38,7 @@ func TestReshare(t *testing.T) {
 }
 
 var _ = Describe("Reshare", func() {
-	curve := btcec.S256()
+	curve := elliptic.Secp256k1()
 	DescribeTable("NewReshare()", func(c elliptic.Curve, threshold uint32, bks []*birkhoffinterpolation.BkParameter) {
 		reshares, listeners := newReshares(c, threshold, bks)
 		for _, l := range listeners {

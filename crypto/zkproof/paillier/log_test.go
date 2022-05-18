@@ -17,8 +17,8 @@ package paillier
 import (
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,10 +28,10 @@ var _ = Describe("Log test", func() {
 	ssid := []byte("Una HaHa")
 	Context("It is OK", func() {
 		It("over Range, should be ok", func() {
-			G := pt.NewBase(btcec.S256())
+			G := pt.NewBase(elliptic.Secp256k1())
 			h := G.ScalarMult(big.NewInt(28397529))
 			x := big.NewInt(309098)
-			X := pt.ScalarBaseMult(btcec.S256(), x)
+			X := pt.ScalarBaseMult(elliptic.Secp256k1(), x)
 			Y := h.ScalarMult(x)
 
 			zkproof, err := NewLog(ssid, x, G, h, X, Y)

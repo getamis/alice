@@ -16,8 +16,8 @@ package dkg
 import (
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/commitment"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/alice/internal/message/types/mocks"
@@ -57,7 +57,7 @@ var _ = Describe("decommit handler, negative cases", func() {
 
 	Context("HandleMessage", func() {
 		var (
-			curve     = btcec.S256()
+			curve     = elliptic.Secp256k1()
 			threshold = uint32(3)
 			ranks     = []uint32{0, 0, 0, 0, 0}
 

@@ -15,12 +15,12 @@
 package dkg
 
 import (
-	"crypto/elliptic"
 	"math/big"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/cggmp"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/internal/message"

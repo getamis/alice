@@ -17,8 +17,7 @@ package paillier
 import (
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
-
+	"github.com/getamis/alice/crypto/elliptic"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -32,7 +31,7 @@ var _ = Describe("Mulzkproof test", func() {
 
 	Context("It is OK", func() {
 		It("over Range, should be ok", func() {
-			fieldOrder := btcec.S256().N
+			fieldOrder := elliptic.Secp256k1().Params().N
 			x := big.NewInt(3)
 			rho := big.NewInt(103)
 			rhox := big.NewInt(203)

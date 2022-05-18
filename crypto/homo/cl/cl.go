@@ -15,10 +15,11 @@
 package cl
 
 import (
-	"crypto/elliptic"
 	"errors"
 	"math"
 	"math/big"
+
+	"github.com/getamis/alice/crypto/elliptic"
 
 	bqForm "github.com/getamis/alice/crypto/binaryquadraticform"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"

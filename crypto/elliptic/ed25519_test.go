@@ -21,10 +21,10 @@ import (
 )
 
 var _ = Describe("ed25519", func() {
-	var _ Curve = NewEd25519()
+	var _ Curve = Ed25519()
 	Context("Negative Point", func() {
 		It("It is OK", func() {
-			ed25519 := NewEd25519()
+			ed25519 := Ed25519()
 			negX, negY := ed25519.Neg(ed25519.Params().Gx, ed25519.Params().Gy)
 			scalX, scalY := ed25519.ScalarBaseMult(new(big.Int).Sub(ed25519.Params().N, big.NewInt(1)).Bytes())
 			Expect(negX.Cmp(scalX) == 0).Should(BeTrue())

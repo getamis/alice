@@ -21,18 +21,22 @@ import (
 	"github.com/decred/dcrd/dcrec/edwards"
 )
 
-type Ed25519 struct {
+var (
+	ed25519Curve = &ed25519{
+		Curve: edwards.Edwards(),
+	}
+)
+
+type ed25519 struct {
 	elliptic.Curve
 }
 
-func NewEd25519() *Ed25519 {
-	return &Ed25519{
-		Curve: edwards.Edwards(),
-	}
+func Ed25519() *ed25519 {
+	return ed25519Curve
 }
 
 // Warn: does not deal with the original point
-func (ed *Ed25519) Neg(x, y *big.Int) (*big.Int, *big.Int) {
+func (ed *ed25519) Neg(x, y *big.Int) (*big.Int, *big.Int) {
 	negativeX := new(big.Int).Neg(x)
 	return negativeX.Mod(negativeX, ed.Params().P), new(big.Int).Set(y)
 }

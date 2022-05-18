@@ -19,10 +19,10 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/bip32"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/circuit"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/ot"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/internal/message/types"
@@ -63,8 +63,8 @@ type initial struct {
 
 var (
 	otherInfoBit, _ = hex.DecodeString(otherInfoBitStr)
-	curve           = btcec.S256()
-	secp256k1N      = curve.N
+	curve           = elliptic.Secp256k1()
+	secp256k1N      = curve.Params().N
 	big2Inver, _    = new(big.Int).SetString("57896044618658097711785492504343953926418782139537452191302581570759080747169", 10)
 
 	// alice

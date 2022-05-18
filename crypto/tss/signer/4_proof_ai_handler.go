@@ -15,9 +15,10 @@
 package signer
 
 import (
-	"crypto/elliptic"
 	"errors"
 	"math/big"
+
+	"github.com/getamis/alice/crypto/elliptic"
 
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
