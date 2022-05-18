@@ -14,14 +14,13 @@
 package utils
 
 import (
-	"crypto/elliptic"
 	"errors"
 	"fmt"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/example/config"
 	"github.com/getamis/sirius/log"
@@ -41,7 +40,7 @@ func GetPeerIDFromPort(port int64) string {
 // GetCurve returns the curve we used in this example.
 func GetCurve() elliptic.Curve {
 	// For simplicity, we use S256 curve.
-	return btcec.S256()
+	return elliptic.Secp256k1()
 }
 
 // ConvertDKGResult converts DKG result from config.

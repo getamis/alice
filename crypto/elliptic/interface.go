@@ -1,4 +1,4 @@
-// Copyright © 2020 AMIS Technologies
+// Copyright © 2022 AMIS Technologies
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,23 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+package elliptic
 
-package ecpointgrouplaw;
+import (
+	"crypto/elliptic"
+	"math/big"
+)
 
-option go_package = "github.com/getamis/alice/crypto/ecpointgrouplaw";
+type Curve interface {
+	elliptic.Curve
 
-message EcPointMessage {
-  enum Curve {
-    P224 = 0;
-    P256 = 1;
-    P384 = 2;
-    // Above curves are not implemented
-    S256 = 3;
-    EDWARD25519 = 4;
-  }
-  Curve curve = 1;
-  bytes x = 2;
-  bytes y = 3;
+	Neg(x1, y1 *big.Int) (x, y *big.Int)
 }
- 

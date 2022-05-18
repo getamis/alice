@@ -18,8 +18,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/golang/protobuf/proto"
@@ -108,7 +108,7 @@ var _ = Describe("CL test", func() {
 	})
 
 	Context("GetMtaProof()/VerifyMtaProof()", func() {
-		curve := btcec.S256()
+		curve := elliptic.Secp256k1()
 		beta := big.NewInt(2)
 		alpha := big.NewInt(8)
 		b := big.NewInt(2)

@@ -19,8 +19,8 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/homo/cl"
 	"github.com/getamis/alice/crypto/homo/mocks"
@@ -38,8 +38,8 @@ func TestMta(t *testing.T) {
 }
 
 var (
-	curve      = btcec.S256()
-	fieldOrder = curve.N
+	curve      = elliptic.Secp256k1()
+	fieldOrder = curve.Params().N
 	unknownErr = errors.New("unknown error")
 
 	//paillier
@@ -152,7 +152,7 @@ var _ = Describe("Mta", func() {
 	})
 
 	It("GetProofWithCheck", func() {
-		curve := btcec.S256()
+		curve := elliptic.Secp256k1()
 		beta := big.NewInt(3)
 		proof := []byte("proof")
 		mockHomo.On("GetMtaProof", curve, beta, m.a).Return(proof, nil).Once()
@@ -162,7 +162,7 @@ var _ = Describe("Mta", func() {
 	})
 
 	It("VerifyProofWithCheck", func() {
-		curve := btcec.S256()
+		curve := elliptic.Secp256k1()
 		alpha := big.NewInt(3)
 		proof := []byte("proof")
 		p := &pt.ECPoint{}

@@ -11,33 +11,24 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-package paillier
+package elliptic
 
 import (
 	"math/big"
-
-	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/elliptic"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Log test", func() {
-	ssid := []byte("Una HaHa")
-	Context("It is OK", func() {
-		It("over Range, should be ok", func() {
-			G := pt.NewBase(elliptic.Secp256k1())
-			h := G.ScalarMult(big.NewInt(28397529))
-			x := big.NewInt(309098)
-			X := pt.ScalarBaseMult(elliptic.Secp256k1(), x)
-			Y := h.ScalarMult(x)
-
-			zkproof, err := NewLog(ssid, x, G, h, X, Y)
-			Expect(err).Should(BeNil())
-			err = zkproof.Verify(ssid, G, h, X, Y)
-			Expect(err).Should(BeNil())
+var _ = Describe("ed25519", func() {
+	var _ Curve = Ed25519()
+	Context("Negative Point", func() {
+		It("It is OK", func() {
+			ed25519 := Ed25519()
+			negX, negY := ed25519.Neg(ed25519.Params().Gx, ed25519.Params().Gy)
+			scalX, scalY := ed25519.ScalarBaseMult(new(big.Int).Sub(ed25519.Params().N, big.NewInt(1)).Bytes())
+			Expect(negX.Cmp(scalX) == 0).Should(BeTrue())
+			Expect(negY.Cmp(scalY) == 0).Should(BeTrue())
 		})
 	})
 })

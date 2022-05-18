@@ -18,9 +18,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/internal/message/types"
@@ -37,7 +37,7 @@ func TestDKG(t *testing.T) {
 var (
 	threshold = uint32(2)
 	secret    = big.NewInt(1)
-	curve     = btcec.S256()
+	curve     = elliptic.Secp256k1()
 	publicKey = pt.ScalarBaseMult(curve, secret)
 	msg       = []byte("Edwin HaHa")
 )

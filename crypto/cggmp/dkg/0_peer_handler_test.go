@@ -16,8 +16,8 @@ package dkg
 import (
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/internal/message/types/mocks"
 	"github.com/getamis/sirius/log"
@@ -78,7 +78,7 @@ var _ = Describe("peer handler, negative cases", func() {
 
 	Context("Finalize", func() {
 		var (
-			curve     = btcec.S256()
+			curve     = elliptic.Secp256k1()
 			threshold = uint32(3)
 			ranks     = []uint32{0, 0, 0, 0, 0}
 

@@ -18,11 +18,11 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/bip32"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/circuit"
 	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/ot"
 	"github.com/getamis/alice/crypto/zkproof"
@@ -60,8 +60,8 @@ type initial struct {
 }
 
 var (
-	curve      = btcec.S256()
-	secp256k1N = curve.N
+	curve      elliptic.Curve = elliptic.Secp256k1()
+	secp256k1N                = curve.Params().N
 
 	// alice
 	aliceParseFunc = func(initialBody *BodyInitial, ownResult [][]byte) [][]byte {

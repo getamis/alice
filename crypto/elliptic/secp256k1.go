@@ -1,4 +1,4 @@
-// Copyright © 2020 AMIS Technologies
+// Copyright © 2021 AMIS Technologies
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,23 +12,31 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+package elliptic
 
-package ecpointgrouplaw;
+import (
+	"crypto/elliptic"
+	"math/big"
 
-option go_package = "github.com/getamis/alice/crypto/ecpointgrouplaw";
+	"github.com/btcsuite/btcd/btcec"
+)
 
-message EcPointMessage {
-  enum Curve {
-    P224 = 0;
-    P256 = 1;
-    P384 = 2;
-    // Above curves are not implemented
-    S256 = 3;
-    EDWARD25519 = 4;
-  }
-  Curve curve = 1;
-  bytes x = 2;
-  bytes y = 3;
+var (
+	secp256k1Curve = &secp256k1{
+		Curve: btcec.S256(),
+	}
+)
+
+type secp256k1 struct {
+	elliptic.Curve
 }
- 
+
+func Secp256k1() *secp256k1 {
+	return secp256k1Curve
+}
+
+// Warn: does not deal with the original point
+func (sep *secp256k1) Neg(x, y *big.Int) (*big.Int, *big.Int) {
+	NegY := new(big.Int).Neg(y)
+	return new(big.Int).Set(x), NegY.Mod(NegY, sep.Curve.Params().P)
+}

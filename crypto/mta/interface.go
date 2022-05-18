@@ -15,8 +15,9 @@
 package mta
 
 import (
-	"crypto/elliptic"
 	"math/big"
+
+	"github.com/getamis/alice/crypto/elliptic"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo"

@@ -14,8 +14,9 @@
 package signer
 
 import (
-	"crypto/elliptic"
 	"time"
+
+	"github.com/getamis/alice/crypto/elliptic"
 
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
@@ -235,14 +236,14 @@ var _ = Describe("decommit vi ai handler, negative cases", func() {
 		})
 
 		It("failed to build V (different curve)", func() {
-			toH.vi = pt.NewBase(elliptic.P224())
+			toH.vi = pt.NewBase(elliptic.Ed25519())
 			got, err := toH.Finalize(log.Discard())
 			Expect(got).Should(BeNil())
 			Expect(err).Should(Equal(pt.ErrDifferentCurve))
 		})
 
 		It("failed to build A (different curve)", func() {
-			toH.ai = pt.NewBase(elliptic.P224())
+			toH.ai = pt.NewBase(elliptic.Ed25519())
 			got, err := toH.Finalize(log.Discard())
 			Expect(got).Should(BeNil())
 			Expect(err).Should(Equal(pt.ErrDifferentCurve))

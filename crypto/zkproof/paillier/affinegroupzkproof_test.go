@@ -17,8 +17,8 @@ package paillier
 import (
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -48,7 +48,7 @@ var _ = Describe("Affinegroupzkproof test", func() {
 			rhoy := big.NewInt(101)
 			rho := big.NewInt(103)
 			C := big.NewInt(108)
-			X := pt.ScalarBaseMult(btcec.S256(), x)
+			X := pt.ScalarBaseMult(elliptic.Secp256k1(), x)
 			Y := new(big.Int).Mul(new(big.Int).Exp(new(big.Int).Add(big1, n1), y, n1Square), new(big.Int).Exp(rhoy, n1, n1Square))
 			Y.Mod(Y, n1Square)
 			D := new(big.Int).Exp(C, x, n0Square)

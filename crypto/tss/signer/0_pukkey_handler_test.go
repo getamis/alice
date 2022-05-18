@@ -17,9 +17,9 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/homo/cl"
 	homoMocks "github.com/getamis/alice/crypto/homo/mocks"
 	"github.com/getamis/alice/crypto/matrix"
@@ -49,7 +49,7 @@ var _ = Describe("pubkey handler, negative cases", func() {
 			mockPeerManager *mocks.PeerManager
 			mockHomo        *homoMocks.Crypto
 
-			curve = btcec.S256()
+			curve = elliptic.Secp256k1()
 			bks   = map[string]*birkhoffinterpolation.BkParameter{
 				"1": birkhoffinterpolation.NewBkParameter(big.NewInt(1), 0),
 				"2": birkhoffinterpolation.NewBkParameter(big.NewInt(10), 0),
@@ -168,7 +168,7 @@ var _ = Describe("pubkey handler, negative cases", func() {
 })
 
 func newTestSigners() (map[string]*Signer, map[string]*mocks.StateChangedListener) {
-	curve := btcec.S256()
+	curve := elliptic.Secp256k1()
 	ss := [][]*big.Int{
 		{big.NewInt(1094), big.NewInt(591493497), big.NewInt(0)},
 		{big.NewInt(59887), big.NewInt(58337825), big.NewInt(1)},

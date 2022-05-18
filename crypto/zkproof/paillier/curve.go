@@ -15,10 +15,9 @@
 package paillier
 
 import (
-	"crypto/elliptic"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/getamis/alice/crypto/elliptic"
 )
 
 const (
@@ -39,10 +38,11 @@ type CurveConfig struct {
 }
 
 func NewS256() *CurveConfig {
-	curve := btcec.S256()
-	epsilon := uint(epsilonFactor * curve.N.BitLen())
-	L := uint(LFactor * curve.N.BitLen())
-	Lpai := uint(LpaiFactor * curve.N.BitLen())
+	curve := elliptic.Secp256k1()
+	N := curve.Params().N
+	epsilon := uint(epsilonFactor * N.BitLen())
+	L := uint(LFactor * N.BitLen())
+	Lpai := uint(LpaiFactor * N.BitLen())
 	return &CurveConfig{
 		Curve:                curve,
 		TwoExpLAddepsilon:    new(big.Int).Lsh(big2, L+epsilon),

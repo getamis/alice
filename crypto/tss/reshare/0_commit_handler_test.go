@@ -16,9 +16,9 @@ package reshare
 import (
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/matrix"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/utils"
@@ -46,7 +46,7 @@ var _ = Describe("commit handler, negative cases", func() {
 		var (
 			mockPeerManager *mocks.PeerManager
 
-			curve = btcec.S256()
+			curve = elliptic.Secp256k1()
 			bks   = map[string]*birkhoffinterpolation.BkParameter{
 				"1": birkhoffinterpolation.NewBkParameter(big.NewInt(1), uint32(0)),
 				"2": birkhoffinterpolation.NewBkParameter(big.NewInt(2), uint32(0)),
@@ -148,7 +148,7 @@ var _ = Describe("commit handler, negative cases", func() {
 })
 
 func newTestReshares() (map[string]*Reshare, map[string]*mocks.StateChangedListener) {
-	curve := btcec.S256()
+	curve := elliptic.Secp256k1()
 	bks := []*birkhoffinterpolation.BkParameter{
 		birkhoffinterpolation.NewBkParameter(big.NewInt(1), uint32(0)),
 		birkhoffinterpolation.NewBkParameter(big.NewInt(2), uint32(0)),
