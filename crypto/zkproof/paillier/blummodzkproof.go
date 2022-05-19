@@ -207,6 +207,7 @@ func generateIndicateBitLengthInteger(input *big.Int, desiredByteLength uint64) 
 
 	result := make([]byte, desiredByteLength)
 	for i := 0; i < len(result); i++ {
+		// #nosec: G404: Use of weak random number generator (math/rand instead of crypto/rand)
 		result[i] = byte(rand.Intn(256))
 	}
 	return new(big.Int).SetBytes(result), nil

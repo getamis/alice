@@ -402,6 +402,7 @@ func ExtnedHashOuput(salt, message []byte, outputBitLength int) []byte {
 	input = append(input, separation...)
 	input = append(input, []byte(strconv.Itoa(count))...)
 	seedInt := new(big.Int).SetBytes(input).Int64()
+	// #nosec: G404: Use of weak random number generator (math/rand instead of crypto/rand)
 	r := mRand.New(mRand.NewSource(seedInt))
 	up := 1 << remainderPart
 	for i := 0; i < 1; i++ {

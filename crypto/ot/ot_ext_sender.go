@@ -144,6 +144,7 @@ func prg(seed []byte, outputByteLength int) []byte {
 		seed32 = utils.Xor(seed32, seed[strart:end])
 	}
 	result := make([]byte, outputByteLength)
+	// #nosec: G404: Use of weak random number generator (math/rand instead of crypto/rand)
 	r := rand.New(rand.NewSource(int64(binary.BigEndian.Uint32(seed32))))
 	// #nosec: G404: Use of weak random number generator (math/rand instead of crypto/rand)
 	r.Read(result)

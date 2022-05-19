@@ -72,6 +72,7 @@ func getPeerAddr(port int64) (string, error) {
 // generateIdentity generates a fixed key pair by using port as random source.
 func generateIdentity(port int64) (crypto.PrivKey, error) {
 	// Use the port as the randomness source in this example.
+	// #nosec: G404: Use of weak random number generator (math/rand instead of crypto/rand)
 	r := rand.New(rand.NewSource(port))
 
 	// Generate a key pair for this host.
