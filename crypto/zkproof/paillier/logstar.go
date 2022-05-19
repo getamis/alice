@@ -69,7 +69,7 @@ func NewKnowExponentAndPaillierEncryption(config *CurveConfig, ssidInfo []byte, 
 		return nil, err
 	}
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), C.Bytes(), S.Bytes(), A.Bytes(), D.Bytes()), msgG, msgX, msgY)
+	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), n0.Bytes(), pedN.Bytes(), C.Bytes(), S.Bytes(), A.Bytes(), D.Bytes()), msgG, msgX, msgY)
 	e, salt, err := GetE(curveN, msgs...)
 	if err != nil {
 		return nil, err
@@ -97,11 +97,40 @@ func NewKnowExponentAndPaillierEncryption(config *CurveConfig, ssidInfo []byte, 
 func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0, pedN, peds, pedt *big.Int, X *pt.ECPoint, G *pt.ECPoint) error {
 	n0Square := new(big.Int).Exp(n0, big2, nil)
 	curveN := G.GetCurve().Params().N
+	// check A in Z_{N0^2}^\ast, S,D in Z_{\hat{N}}^\ast, and z2 in Z_{0}^\ast.
 	S := new(big.Int).SetBytes(msg.S)
+	err := utils.InRange(S, big0, pedN)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(S, pedN) {
+		return ErrVerifyFailure
+	}
 	A := new(big.Int).SetBytes(msg.A)
+	err = utils.InRange(A, big0, n0Square)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(A, n0) {
+		return ErrVerifyFailure
+	}
 	D := new(big.Int).SetBytes(msg.D)
+	err = utils.InRange(D, big0, pedN)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(D, pedN) {
+		return ErrVerifyFailure
+	}
 	z1, _ := new(big.Int).SetString(msg.Z1, 10)
 	z2 := new(big.Int).SetBytes(msg.Z2)
+	err = utils.InRange(z2, big0, n0)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(z2, n0) {
+		return ErrVerifyFailure
+	}
 	z3, _ := new(big.Int).SetString(msg.Z3, 10)
 	Y, err := msg.Y.ToPoint()
 	if err != nil {
@@ -116,14 +145,13 @@ func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0, p
 		return err
 	}
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), C.Bytes(), S.Bytes(), A.Bytes(), D.Bytes()), msgG, msgX, msg.Y)
+	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), n0.Bytes(), pedN.Bytes(), C.Bytes(), S.Bytes(), A.Bytes(), D.Bytes()), msgG, msgX, msg.Y)
 	seed, err := utils.HashProtos(msg.Salt, msgs...)
 	if err != nil {
 		return err
 	}
 
-	e := utils.RandomAbsoluteRangeIntBySeed(seed, curveN)
-
+	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveN)
 	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
 	if err != nil {
 		return err

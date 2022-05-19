@@ -38,10 +38,11 @@ func TestDKG(t *testing.T) {
 }
 
 var _ = Describe("DKG", func() {
+	sid := make([]byte, 1)
 	curve := elliptic.Secp256k1()
 	DescribeTable("NewDKG()", func(c elliptic.Curve, threshold uint32, ranks []uint32) {
 		// new peer managers and dkgs
-		dkgs, listeners := newDKGs(c, threshold, ranks)
+		dkgs, listeners := newDKGs(c, sid, threshold, ranks)
 		for _, l := range listeners {
 			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
 		}
@@ -85,7 +86,8 @@ var _ = Describe("DKG", func() {
 	)
 
 	DescribeTable("newDKGWithHandler", func(c elliptic.Curve, threshold uint32, coefficients [][]*big.Int, x []*big.Int, ranks []uint32, expectShare []*big.Int, expPubKey *ecpointgrouplaw.ECPoint) {
-		dkgs, listeners := newDKGWithPeerHandler(c, threshold, ranks, x, coefficients)
+		sid := make([]byte, 1)
+		dkgs, listeners := newDKGWithPeerHandler(c, sid, threshold, ranks, x, coefficients)
 		// new peer managers and dkgs
 		lens := len(ranks)
 		bks := make(map[string]*birkhoffinterpolation.BkParameter, lens)
@@ -320,8 +322,9 @@ var _ = Describe("DKG", func() {
 	)
 
 	DescribeTable("negative cases", func(c elliptic.Curve, threshold uint32, coefficients [][]*big.Int, x []*big.Int, ranks []uint32) {
+		sid := make([]byte, 1)
 		// new peer managers and dkgs
-		dkgs, listeners := newDKGWithPeerHandler(c, threshold, ranks, x, coefficients)
+		dkgs, listeners := newDKGWithPeerHandler(c, sid, threshold, ranks, x, coefficients)
 		for _, d := range dkgs {
 			d.Start()
 		}
@@ -406,20 +409,22 @@ var _ = Describe("DKG", func() {
 		}
 		lens := len(ranks)
 		peerManagers := make([]types.PeerManager, lens)
+		sid := make([]byte, 1)
 		for i := 0; i < lens; i++ {
 			pm := tss.NewTestPeerManager(i, lens)
 			peerManagers[i] = pm
 			poly, err := polynomial.NewPolynomial(curve.Params().N, coefficients[i])
 			Expect(err).Should(BeNil())
-			ph, err := newPeerHandlerWithPolynomial(curve, peerManagers[i], threshold, x[i], ranks[i], poly)
+			ph, err := newPeerHandlerWithPolynomial(curve, peerManagers[i], sid, threshold, x[i], ranks[i], poly)
 			Expect(err).Should(Equal(utils.ErrLargeThreshold))
 			Expect(ph).Should(BeNil())
 		}
 	})
 
 	Context("negative cases", func() {
+		sid := make([]byte, 1)
 		It("larger threshold", func() {
-			d, err := NewDKG(curve, tss.NewTestPeerManager(0, 4), 6, 0, nil)
+			d, err := NewDKG(curve, tss.NewTestPeerManager(0, 4), sid, 6, 0, nil)
 			Expect(err).Should(Equal(utils.ErrLargeThreshold))
 			Expect(d).Should(BeNil())
 
@@ -429,7 +434,7 @@ var _ = Describe("DKG", func() {
 		})
 
 		It("large rank", func() {
-			d, err := NewDKG(curve, tss.NewTestPeerManager(0, 4), 3, 3, nil)
+			d, err := NewDKG(curve, tss.NewTestPeerManager(0, 4), sid, 3, 3, nil)
 			Expect(err).Should(Equal(utils.ErrLargeRank))
 			Expect(d).Should(BeNil())
 
@@ -439,7 +444,7 @@ var _ = Describe("DKG", func() {
 		})
 
 		It("larger threshold", func() {
-			d, err := NewDKG(curve, tss.NewTestPeerManager(0, 5), 5, 0, nil)
+			d, err := NewDKG(curve, tss.NewTestPeerManager(0, 5), sid, 5, 0, nil)
 			Expect(err).Should(BeNil())
 			Expect(d).ShouldNot(BeNil())
 			r, err := d.GetResult()
@@ -456,7 +461,7 @@ var _ = Describe("DKG", func() {
 	})
 })
 
-func newDKGs(curve elliptic.Curve, threshold uint32, ranks []uint32) (map[string]*DKG, map[string]*mocks.StateChangedListener) {
+func newDKGs(curve elliptic.Curve, sid []byte, threshold uint32, ranks []uint32) (map[string]*DKG, map[string]*mocks.StateChangedListener) {
 	lens := len(ranks)
 	dkgs := make(map[string]*DKG, lens)
 	dkgsMain := make(map[string]types.MessageMain, lens)
@@ -469,7 +474,7 @@ func newDKGs(curve elliptic.Curve, threshold uint32, ranks []uint32) (map[string
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
 		var err error
-		dkgs[id], err = NewDKG(curve, peerManagers[i], threshold, ranks[i], listeners[id])
+		dkgs[id], err = NewDKG(curve, peerManagers[i], sid, threshold, ranks[i], listeners[id])
 		Expect(err).Should(BeNil())
 		dkgsMain[id] = dkgs[id]
 		r, err := dkgs[id].GetResult()
@@ -479,7 +484,7 @@ func newDKGs(curve elliptic.Curve, threshold uint32, ranks []uint32) (map[string
 	return dkgs, listeners
 }
 
-func newDKGWithPeerHandler(curve elliptic.Curve, threshold uint32, ranks []uint32, x []*big.Int, coefficients [][]*big.Int) (map[string]*DKG, map[string]*mocks.StateChangedListener) {
+func newDKGWithPeerHandler(curve elliptic.Curve, sid []byte, threshold uint32, ranks []uint32, x []*big.Int, coefficients [][]*big.Int) (map[string]*DKG, map[string]*mocks.StateChangedListener) {
 	lens := len(ranks)
 	dkgs := make(map[string]*DKG, lens)
 	dkgsMain := make(map[string]types.MessageMain, lens)
@@ -492,7 +497,7 @@ func newDKGWithPeerHandler(curve elliptic.Curve, threshold uint32, ranks []uint3
 		peerManagers[i] = pm
 		poly, err := polynomial.NewPolynomial(curve.Params().N, coefficients[i])
 		Expect(err).Should(BeNil())
-		ph, err := newPeerHandlerWithPolynomial(curve, peerManagers[i], threshold, x[i], ranks[i], poly)
+		ph, err := newPeerHandlerWithPolynomial(curve, peerManagers[i], sid, threshold, x[i], ranks[i], poly)
 		Expect(err).Should(BeNil())
 		listeners[id] = new(mocks.StateChangedListener)
 		dkgs[id], err = newDKGWithHandler(peerManagers[i], threshold, ranks[i], listeners[id], ph)

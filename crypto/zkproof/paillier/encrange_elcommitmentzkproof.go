@@ -96,7 +96,7 @@ func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, 
 		return nil, err
 	}
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), ciphertext.Bytes(), S.Bytes(), T.Bytes(), D.Bytes(), N.Bytes()), msgY, msgZ, msgA, msgB, msgG, msgX)
+	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), pedersenN.Bytes(), pedersenS.Bytes(), pedersenT.Bytes(), ciphertext.Bytes(), S.Bytes(), T.Bytes(), D.Bytes(), N.Bytes()), msgY, msgZ, msgA, msgB, msgG, msgX)
 	e, salt, err := GetE(curveN, msgs...)
 	if err != nil {
 		return nil, err
@@ -128,14 +128,36 @@ func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, 
 	}, nil
 }
 
-// TODO: check range of message elements
 func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertext, N *big.Int, A, B, X *pt.ECPoint, pedersenN, pedersenS, pedersenT *big.Int) error {
 	curve := A.GetCurve()
 	curveN := curve.Params().N
+	NSaure := new(big.Int).Mul(N, N)
 	G := pt.NewBase(curve)
+	// check D in Z_{N0^2}^\ast, S,T in Z_{\hat{N}}^\ast, w in [0,q), e in (-q, q), and z_2 in Z_{N}^\ast.
 	S := new(big.Int).SetBytes(msg.S)
+	err := utils.InRange(S, big0, pedersenN)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(S, pedersenN) {
+		return ErrVerifyFailure
+	}
 	T := new(big.Int).SetBytes(msg.T)
+	err = utils.InRange(T, big0, pedersenN)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(T, pedersenN) {
+		return ErrVerifyFailure
+	}
 	D := new(big.Int).SetBytes(msg.D)
+	err = utils.InRange(D, big0, NSaure)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(D, NSaure) {
+		return ErrVerifyFailure
+	}
 	Y, err := msg.Y.ToPoint()
 	if err != nil {
 		return err
@@ -156,7 +178,9 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	if err != nil {
 		return err
 	}
-
+	if !utils.IsRelativePrime(z2, N) {
+		return ErrVerifyFailure
+	}
 	z3, _ := new(big.Int).SetString(msg.Z3, 10)
 	msgA, err := A.ToEcPointMessage()
 	if err != nil {
@@ -174,14 +198,13 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	if err != nil {
 		return err
 	}
-	NSaure := new(big.Int).Mul(N, N)
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), ciphertext.Bytes(), S.Bytes(), T.Bytes(), D.Bytes(), N.Bytes()), msg.Y, msg.Z, msgA, msgB, msgG, msgX)
+	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), pedersenN.Bytes(), pedersenS.Bytes(), pedersenT.Bytes(), ciphertext.Bytes(), S.Bytes(), T.Bytes(), D.Bytes(), N.Bytes()), msg.Y, msg.Z, msgA, msgB, msgG, msgX)
 	seed, err := utils.HashProtos(msg.Salt, msgs...)
 	if err != nil {
 		return err
 	}
-	e := utils.RandomAbsoluteRangeIntBySeed(seed, curveN)
+	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveN)
 	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
 	if err != nil {
 		return err

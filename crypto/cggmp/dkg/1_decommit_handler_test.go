@@ -14,7 +14,6 @@
 package dkg
 
 import (
-	"bytes"
 	"time"
 
 	"github.com/getamis/alice/crypto/commitment"
@@ -60,13 +59,14 @@ var _ = Describe("decommit handler, negative cases", func() {
 		var (
 			curve     = elliptic.Secp256k1()
 			threshold = uint32(3)
+			sid       = make([]byte, 1)
 			ranks     = []uint32{0, 0, 0, 0, 0}
 
 			dkgs      map[string]*DKG
 			listeners map[string]*mocks.StateChangedListener
 		)
 		BeforeEach(func() {
-			dkgs, listeners = newDKGs(curve, threshold, ranks)
+			dkgs, listeners = newDKGs(curve, sid, threshold, ranks)
 			// Override peer manager
 			for _, d := range dkgs {
 				p := newStopPeerManager(Type_Decommit, d.ph.peerManager)
@@ -125,7 +125,6 @@ var _ = Describe("decommit handler, negative cases", func() {
 								Salt: de.HashDecommitment.Salt,
 							},
 							PointCommitment: de.PointCommitment,
-							Ridi:            bytes.Repeat([]byte{0}, LenRidi),
 						},
 					}
 					Expect(d.GetHandler().HandleMessage(log.Discard(), msg)).Should(Equal(commitment.ErrDifferentDigest))

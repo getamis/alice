@@ -40,12 +40,12 @@ type Result struct {
 	Rid       []byte
 }
 
-func NewDKG(curve elliptic.Curve, peerManager types.PeerManager, threshold uint32, rank uint32, listener types.StateChangedListener) (*DKG, error) {
+func NewDKG(curve elliptic.Curve, peerManager types.PeerManager, sid []byte, threshold uint32, rank uint32, listener types.StateChangedListener) (*DKG, error) {
 	peerNum := peerManager.NumPeers()
 	if err := ensureRandAndThreshold(rank, threshold, peerNum); err != nil {
 		return nil, err
 	}
-	ph, err := newPeerHandler(curve, peerManager, threshold, rank)
+	ph, err := newPeerHandler(curve, peerManager, sid, threshold, rank)
 	if err != nil {
 		return nil, err
 	}

@@ -78,7 +78,7 @@ func (msg *RingPederssenParameterMessage) Verify(ssidInfo []byte) error {
 	if verifyTime < MINIMALCHALLENGE {
 		return ErrTooFewChallenge
 	}
-
+	var err error
 	n := new(big.Int).SetBytes(msg.N)
 	s := new(big.Int).SetBytes(msg.S)
 	t := new(big.Int).SetBytes(msg.T)
@@ -86,6 +86,21 @@ func (msg *RingPederssenParameterMessage) Verify(ssidInfo []byte) error {
 	Z := msg.Z
 
 	for i := 0; i < verifyTime; i++ {
+		// check Ai \in Z_{n}^\ast and zi in [0,N).
+		Ai := new(big.Int).SetBytes(A[i])
+		err = utils.InRange(Ai, big0, n)
+		if err != nil {
+			return err
+		}
+		if !utils.IsRelativePrime(Ai, n) {
+			return ErrVerifyFailure
+		}
+		zi := new(big.Int).SetBytes(Z[i])
+		err = utils.InRange(zi, big0, n)
+		if err != nil {
+			return err
+		}
+
 		// Check t^{zi}=Ai· s^{ei} mod N , for every i ∈ {1,..,m}.
 		ei, err := utils.HashBytesToInt(msg.Salt, ssidInfo, n.Bytes(), s.Bytes(), t.Bytes(), A[i])
 		if err != nil {
@@ -93,9 +108,9 @@ func (msg *RingPederssenParameterMessage) Verify(ssidInfo []byte) error {
 		}
 		ei.Mod(ei, big2)
 		Asei := new(big.Int).Exp(s, ei, n)
-		Asei.Mul(Asei, new(big.Int).SetBytes(A[i]))
+		Asei.Mul(Asei, Ai)
 		Asei.Mod(Asei, n)
-		tzi := new(big.Int).Exp(t, new(big.Int).SetBytes(Z[i]), n)
+		tzi := new(big.Int).Exp(t, zi, n)
 		if tzi.Cmp(Asei) != 0 {
 			return ErrVerifyFailure
 		}

@@ -101,7 +101,7 @@ func NewPaillierAffAndGroupRangeMessage(config *CurveConfig, ssidInfo []byte, x 
 	}
 
 	// e in ±q.
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), n0.Bytes(), n1.Bytes(), C.Bytes(), D.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), By.Bytes(), E.Bytes(), F.Bytes()), msgG, msgX, msgBx)
+	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), n0.Bytes(), n1.Bytes(), C.Bytes(), D.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), By.Bytes(), E.Bytes(), F.Bytes()), msgG, msgX, msgBx)
 	e, salt, err := GetE(curveN, msgs...)
 	if err != nil {
 		return nil, err
@@ -138,12 +138,55 @@ func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo
 	curveN := G.GetCurve().Params().N
 	n0Square := new(big.Int).Exp(n0, big2, nil)
 	n1Square := new(big.Int).Exp(n1, big2, nil)
+	// check A in Z_{N0^2}^\ast, By in Z_{N1^2}^\ast, E,S,T,F in Z_{\hat{N}}^\ast, w in Z_{N0}^\ast, and wy in Z_{N1}^\ast.
 	S := new(big.Int).SetBytes(msg.S)
+	err := utils.InRange(S, big0, pedN)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(S, pedN) {
+		return ErrVerifyFailure
+	}
 	T := new(big.Int).SetBytes(msg.T)
+	err = utils.InRange(T, big0, pedN)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(T, pedN) {
+		return ErrVerifyFailure
+	}
 	A := new(big.Int).SetBytes(msg.A)
+	err = utils.InRange(A, big0, n0Square)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(A, n0) {
+		return ErrVerifyFailure
+	}
 	By := new(big.Int).SetBytes(msg.By)
+	err = utils.InRange(By, big0, n1Square)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(By, n1) {
+		return ErrVerifyFailure
+	}
 	E := new(big.Int).SetBytes(msg.E)
+	err = utils.InRange(E, big0, pedN)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(E, pedN) {
+		return ErrVerifyFailure
+	}
 	F := new(big.Int).SetBytes(msg.F)
+	err = utils.InRange(F, big0, pedN)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(F, pedN) {
+		return ErrVerifyFailure
+	}
 	z1, ok := new(big.Int).SetString(msg.Z1, 10)
 	if !ok {
 		return ErrInvalidInput
@@ -161,7 +204,21 @@ func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo
 		return ErrInvalidInput
 	}
 	W := new(big.Int).SetBytes(msg.W)
+	err = utils.InRange(W, big0, n0)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(W, n0) {
+		return ErrVerifyFailure
+	}
 	Wy := new(big.Int).SetBytes(msg.Wy)
+	err = utils.InRange(Wy, big0, n1)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(Wy, n1) {
+		return ErrVerifyFailure
+	}
 	Bx, err := msg.Bx.ToPoint()
 	if err != nil {
 		return err
@@ -175,13 +232,12 @@ func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo
 		return err
 	}
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), n0.Bytes(), n1.Bytes(), C.Bytes(), D.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), By.Bytes(), E.Bytes(), F.Bytes()), msgG, msgX, msg.Bx)
-
+	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), n0.Bytes(), n1.Bytes(), C.Bytes(), D.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), By.Bytes(), E.Bytes(), F.Bytes()), msgG, msgX, msg.Bx)
 	seed, err := utils.HashProtos(msg.Salt, msgs...)
 	if err != nil {
 		return err
 	}
-	e := utils.RandomAbsoluteRangeIntBySeed(seed, curveN)
+	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveN)
 	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
 	if err != nil {
 		return err
@@ -250,13 +306,14 @@ func GetE(groupOrder *big.Int, msgs ...proto.Message) (*big.Int, []byte, error) 
 		if err != nil {
 			return nil, nil, err
 		}
-		seed, err := utils.HashProtos(salt, msgs...)
+		seedMsg, err := utils.HashProtos(salt, msgs...)
 		if err != nil {
 			return nil, nil, err
 		}
+
 		// Assume that the length of yi is 32 byte
 		// e should belongs in [-q, q]
-		e := utils.RandomAbsoluteRangeIntBySeed(seed, groupOrder)
+		e := utils.RandomAbsoluteRangeIntBySeed(salt, seedMsg, groupOrder)
 		absoluteE := new(big.Int).Abs(e)
 		if absoluteE.Cmp(groupOrder) <= 0 {
 			return e, salt, nil

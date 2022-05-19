@@ -45,6 +45,7 @@ type peerData struct {
 type peerHandler struct {
 	// self information
 	fieldOrder          *big.Int
+	sid                 []byte
 	bk                  *birkhoffinterpolation.BkParameter
 	poly                *polynomial.Polynomial
 	threshold           uint32
@@ -53,13 +54,14 @@ type peerHandler struct {
 	u0gCommiter         *commitment.HashCommitmenter
 	feldmanCommitmenter *commitment.FeldmanCommitmenter
 	ridi                []byte
+	schnorrAValue       *big.Int
 
 	peerManager types.PeerManager
 	peerNum     uint32
 	peers       map[string]*peer
 }
 
-func newPeerHandler(curve elliptic.Curve, peerManager types.PeerManager, threshold uint32, rank uint32) (*peerHandler, error) {
+func newPeerHandler(curve elliptic.Curve, peerManager types.PeerManager, sid []byte, threshold uint32, rank uint32) (*peerHandler, error) {
 	params := curve.Params()
 	fieldOrder := params.N
 	poly, err := polynomial.RandomPolynomial(fieldOrder, threshold-1)
@@ -71,10 +73,10 @@ func newPeerHandler(curve elliptic.Curve, peerManager types.PeerManager, thresho
 	if err != nil {
 		return nil, err
 	}
-	return newPeerHandlerWithPolynomial(curve, peerManager, threshold, x, rank, poly)
+	return newPeerHandlerWithPolynomial(curve, peerManager, sid, threshold, x, rank, poly)
 }
 
-func newPeerHandlerWithPolynomial(curve elliptic.Curve, peerManager types.PeerManager, threshold uint32, x *big.Int, rank uint32, poly *polynomial.Polynomial) (*peerHandler, error) {
+func newPeerHandlerWithPolynomial(curve elliptic.Curve, peerManager types.PeerManager, sid []byte, threshold uint32, x *big.Int, rank uint32, poly *polynomial.Polynomial) (*peerHandler, error) {
 	fieldOrder := curve.Params().N
 	if err := utils.EnsureThreshold(threshold, peerManager.NumPeers()+1); err != nil {
 		return nil, err
@@ -92,10 +94,11 @@ func newPeerHandlerWithPolynomial(curve elliptic.Curve, peerManager types.PeerMa
 	// Calculate u0g
 	u0 := poly.Get(0)
 	u0g := ecpointgrouplaw.ScalarBaseMult(curve, u0)
-	u0gCommiter, err := commitment.NewCommitterByPoint(u0g)
+	a, err := utils.RandomInt(fieldOrder)
 	if err != nil {
 		return nil, err
 	}
+	A := ecpointgrouplaw.ScalarBaseMult(curve, a)
 
 	// Construct peers
 	peers := make(map[string]*peer, peerManager.NumPeers())
@@ -106,9 +109,14 @@ func newPeerHandlerWithPolynomial(curve elliptic.Curve, peerManager types.PeerMa
 	if err != nil {
 		return nil, err
 	}
+	u0gCommiter, err := commitment.NewCommiterByPointAndSSIDInfo(sid, []byte(peerManager.SelfID()), ridi, A, u0g)
+	if err != nil {
+		return nil, err
+	}
 
 	return &peerHandler{
 		fieldOrder:          fieldOrder,
+		sid:                 sid,
 		bk:                  bk,
 		poly:                poly,
 		threshold:           threshold,
@@ -117,6 +125,7 @@ func newPeerHandlerWithPolynomial(curve elliptic.Curve, peerManager types.PeerMa
 		u0gCommiter:         u0gCommiter,
 		feldmanCommitmenter: feldmanCommitmenter,
 		ridi:                ridi,
+		schnorrAValue:       a,
 
 		peerManager: peerManager,
 		peerNum:     peerManager.NumPeers(),
@@ -204,7 +213,6 @@ func (p *peerHandler) getDecommitMessage() *Message {
 			Decommit: &BodyDecommit{
 				HashDecommitment: p.u0gCommiter.GetDecommitmentMessage(),
 				PointCommitment:  p.feldmanCommitmenter.GetCommitmentMessage(),
-				Ridi:             p.ridi,
 			},
 		},
 	}

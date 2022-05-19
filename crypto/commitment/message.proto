@@ -48,3 +48,11 @@ message PedersenVerifyMessage {
     bytes evaluation = 1;
     bytes salt = 2;
 }
+
+message PointSSIDInfoMessage {
+  ecpointgrouplaw.EcPointMessage u0G = 1;
+  bytes sid = 2;
+  bytes rid = 3;
+  bytes ID = 4;
+  ecpointgrouplaw.EcPointMessage A = 5;
+}

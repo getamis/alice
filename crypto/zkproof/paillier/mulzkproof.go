@@ -68,18 +68,47 @@ func (msg *MulMessage) Verify(ssidInfo []byte, N, X, Y, C, fieldOrder *big.Int) 
 	if err != nil {
 		return err
 	}
-	e := utils.RandomAbsoluteRangeIntBySeed(seed, fieldOrder)
+	// check A, B in Z_{N^2}^\ast, u, v in Z_{N}^\ast, and e in ±q.
+	NSquare := new(big.Int).Mul(N, N)
+	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, fieldOrder)
 	err = utils.InRange(e, new(big.Int).Neg(fieldOrder), new(big.Int).Add(big1, fieldOrder))
 	if err != nil {
 		return err
 	}
 	z, _ := new(big.Int).SetString(msg.Z, 10)
 	u := new(big.Int).SetBytes(msg.U)
+	err = utils.InRange(u, big0, N)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(u, N) {
+		return ErrVerifyFailure
+	}
 	v := new(big.Int).SetBytes(msg.V)
+	err = utils.InRange(v, big0, N)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(v, N) {
+		return ErrVerifyFailure
+	}
 	A := new(big.Int).SetBytes(msg.A)
+	err = utils.InRange(A, big0, NSquare)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(A, NSquare) {
+		return ErrVerifyFailure
+	}
 	B := new(big.Int).SetBytes(msg.B)
+	err = utils.InRange(B, big0, NSquare)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(B, NSquare) {
+		return ErrVerifyFailure
+	}
 
-	NSquare := new(big.Int).Mul(N, N)
 	YExpZuExpN := new(big.Int).Exp(Y, z, NSquare)
 	YExpZuExpN = YExpZuExpN.Mul(YExpZuExpN, new(big.Int).Exp(u, N, NSquare))
 	YExpZuExpN.Mod(YExpZuExpN, NSquare)

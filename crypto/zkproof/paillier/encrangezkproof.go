@@ -53,7 +53,7 @@ func NewEncryptRangeMessage(config *CurveConfig, ssidInfo []byte, ciphertext *bi
 	C := new(big.Int).Mul(new(big.Int).Exp(pedersenS, alpha, pedersenN), new(big.Int).Exp(pedersenT, gamma, pedersenN))
 	C.Mod(C, pedersenN)
 
-	e, salt, err := GetE(groupOrder, utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), ciphertext.Bytes(), S.Bytes(), A.Bytes(), C.Bytes())...)
+	e, salt, err := GetE(groupOrder, utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), ciphertext.Bytes(), proverN.Bytes(), pedersenN.Bytes(), pedersenS.Bytes(), pedersenT.Bytes(), S.Bytes(), A.Bytes(), C.Bytes())...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,20 +80,48 @@ func NewEncryptRangeMessage(config *CurveConfig, ssidInfo []byte, ciphertext *bi
 
 func (msg *EncryptRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertext []byte, proveN *big.Int, pedersenN, pedersenS, pedersenT *big.Int) error {
 	groupOrder := config.Curve.Params().N
+	// check S, C ∈ Z_{pedN}^\ast
 	S := new(big.Int).SetBytes(msg.S)
-	A := new(big.Int).SetBytes(msg.A)
-	C := new(big.Int).SetBytes(msg.C)
-	z1, _ := new(big.Int).SetString(msg.Z1, 10)
-	z2 := new(big.Int).SetBytes(msg.Z2)
-	z3, _ := new(big.Int).SetString(msg.Z3, 10)
-	K := new(big.Int).SetBytes(ciphertext)
-	proveNSaure := new(big.Int).Exp(proveN, big2, nil)
-
-	seed, err := utils.HashProtos(msg.Salt, utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), ciphertext, S.Bytes(), A.Bytes(), C.Bytes())...)
+	err := utils.InRange(S, big0, pedersenN)
 	if err != nil {
 		return err
 	}
-	e := utils.RandomAbsoluteRangeIntBySeed(seed, groupOrder)
+	if !utils.IsRelativePrime(S, pedersenN) {
+		return ErrVerifyFailure
+	}
+	C := new(big.Int).SetBytes(msg.C)
+	err = utils.InRange(C, big0, pedersenN)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(C, pedersenN) {
+		return ErrVerifyFailure
+	}
+	z1, _ := new(big.Int).SetString(msg.Z1, 10)
+	// check z2 in [0, N_0)
+	z2 := new(big.Int).SetBytes(msg.Z2)
+	err = utils.InRange(z2, big0, proveN)
+	if err != nil {
+		return err
+	}
+	z3, _ := new(big.Int).SetString(msg.Z3, 10)
+	K := new(big.Int).SetBytes(ciphertext)
+	proveNSaure := new(big.Int).Exp(proveN, big2, nil)
+	// check S, C ∈ Z_{N_0^2}^\ast
+	A := new(big.Int).SetBytes(msg.A)
+	err = utils.InRange(A, big0, proveNSaure)
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(A, pedersenN) {
+		return ErrVerifyFailure
+	}
+
+	seed, err := utils.HashProtos(msg.Salt, utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), ciphertext, proveN.Bytes(), pedersenN.Bytes(), pedersenS.Bytes(), pedersenT.Bytes(), S.Bytes(), A.Bytes(), C.Bytes())...)
+	if err != nil {
+		return err
+	}
+	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, groupOrder)
 	err = utils.InRange(e, new(big.Int).Neg(groupOrder), new(big.Int).Add(big1, groupOrder))
 	if err != nil {
 		return err

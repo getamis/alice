@@ -26,6 +26,8 @@ import (
 const (
 	// maxRetry defines the max retries
 	maxRetry = 100
+	// SAFESECURITYLEVEL define the minimal security level
+	SAFESECURITYLEVEL = 2048
 )
 
 var (
@@ -57,45 +59,43 @@ func NewPaillierBlumMessage(ssidInfo []byte, p *big.Int, q *big.Int, n *big.Int,
 	a := make([][]byte, numberzkProof)
 	b := make([][]byte, numberzkProof)
 	z := make([][]byte, numberzkProof)
-	w := make([][]byte, numberzkProof)
 	salt := make([][]byte, numberzkProof)
 
-	for i := 0; i < numberzkProof; i++ {
-		// Find w in Z_N such that Jacobi(w, N) = -1.
-		wi, err := utils.RandomCoprimeInt(n)
-		for j := 0; j < maxRetry; j++ {
-			if err != nil {
-				return nil, err
-			}
-			if big.Jacobi(wi, n) == -1 {
-				break
-			}
-			wi, err = utils.RandomCoprimeInt(n)
+	// Find w in Z_N such that Jacobi(w, N) = -1.
+	w, err := utils.RandomCoprimeInt(n)
+	for j := 0; j < maxRetry; j++ {
+		if err != nil {
+			return nil, err
 		}
+		if big.Jacobi(w, n) == -1 {
+			break
+		}
+		w, err = utils.RandomCoprimeInt(n)
+	}
 
+	for i := 0; i < numberzkProof; i++ {
 		salti, err := utils.GenRandomBytes(128)
 		if err != nil {
 			return nil, err
 		}
 		// Challenges {yi in Z_N}_{i=1,...,m}.
-		yi, salti, err := computeyByRejectSampling(wi, n, salti, ssidInfo)
+		yi, salti, err := computeyByRejectSampling(w, n, salti, ssidInfo)
 		if err != nil {
 			return nil, err
 		}
 		// Compute xi = yi^{1/4} mod N with yi=(-1)^ai*w^bi*yi mod N, where ai, bi in {0,1} such that xi is well-defined.
-		ai, bi, xi := get4thRootWithabValue(yi, wi, p, q, n)
+		ai, bi, xi := get4thRootWithabValue(yi, w, p, q, n)
 		zi := new(big.Int).Exp(yi, new(big.Int).ModInverse(n, eulerValue), n)
 		x[i] = xi.Bytes()
 		a[i] = ai.Bytes()
 		b[i] = bi.Bytes()
 		z[i] = zi.Bytes()
-		w[i] = wi.Bytes()
 		salt[i] = salti
 	}
 	return &PaillierBlumMessage{
 		A:    a,
 		B:    b,
-		W:    w,
+		W:    w.Bytes(),
 		X:    x,
 		Z:    z,
 		Salt: salt,
@@ -103,34 +103,61 @@ func NewPaillierBlumMessage(ssidInfo []byte, p *big.Int, q *big.Int, n *big.Int,
 }
 
 func (msg *PaillierBlumMessage) Verify(ssidInfo []byte, n *big.Int) error {
-	if n.ProbablyPrime(1) || new(big.Int).And(n, big1).Cmp(big0) == 0 {
-		return ErrVerifyFailure
-	}
 	a := msg.A
 	b := msg.B
-	w := msg.W
+	w := new(big.Int).SetBytes(msg.W)
 	salt := msg.Salt
 	x := msg.X
 	z := msg.Z
+	// check N is an odd composite number.
+	if n.BitLen() < SAFESECURITYLEVEL || n.Cmp(big0) < 0 {
+		return ErrInvalidInput
+	}
+	testTime := 0
+	for i := 0; i < maxRetry; i++ {
+		if !n.ProbablyPrime(1) {
+			break
+		}
+		testTime++
+	}
+	if testTime == maxRetry {
+		return ErrExceedMaxRetry
+	}
 
 	for i := 0; i < len(a); i++ {
-		wi := new(big.Int).SetBytes(w[i])
-		yi, _, err := computeyByRejectSampling(wi, n, salt[i], ssidInfo)
+		yi, _, err := computeyByRejectSampling(w, n, salt[i], ssidInfo)
+		if err != nil {
+			return err
+		}
+		// check z in [2, n-1]
+		zi := new(big.Int).SetBytes(z[i])
+		err = utils.InRange(zi, big2, n)
 		if err != nil {
 			return err
 		}
 
 		// check zi^n = yi mod n
-		if new(big.Int).Exp(new(big.Int).SetBytes(z[i]), n, n).Cmp(yi) != 0 {
+		if new(big.Int).Exp(zi, n, n).Cmp(yi) != 0 {
 			return ErrVerifyFailure
 		}
 		// xi^4 = (-1)^a*w^b*yi mod n
+		ai := new(big.Int).SetBytes(a[i])
+		err = utils.InRange(ai, big0, big2)
+		if err != nil {
+			return err
+		}
+		bi := new(big.Int).SetBytes(b[i])
+		err = utils.InRange(bi, big0, big2)
+		if err != nil {
+			return err
+		}
+
 		rightPary := new(big.Int).Set(yi)
-		if new(big.Int).SetBytes(a[i]).Cmp(big1) == 0 {
+		if ai.Cmp(big1) == 0 {
 			rightPary.Neg(rightPary)
 		}
-		if new(big.Int).SetBytes(b[i]).Cmp(big1) == 0 {
-			rightPary.Mul(rightPary, wi)
+		if bi.Cmp(big1) == 0 {
+			rightPary.Mul(rightPary, w)
 		}
 		rightPary.Mod(rightPary, n)
 
@@ -180,6 +207,7 @@ func generateIndicateBitLengthInteger(input *big.Int, desiredByteLength uint64) 
 
 	result := make([]byte, desiredByteLength)
 	for i := 0; i < len(result); i++ {
+		// #nosec: G404: Use of weak random number generator (math/rand instead of crypto/rand)
 		result[i] = byte(rand.Intn(256))
 	}
 	return new(big.Int).SetBytes(result), nil

@@ -21,6 +21,7 @@ import (
 	"github.com/getamis/alice/crypto/commitment"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
@@ -31,6 +32,7 @@ var (
 
 type decommitData struct {
 	u0g           *ecpointgrouplaw.ECPoint
+	schnorrAPoint *ecpointgrouplaw.ECPoint
 	verifyMessage *Message
 	ridi          []byte
 }
@@ -75,21 +77,23 @@ func (p *decommitHandler) HandleMessage(logger log.Logger, message types.Message
 
 	// Ensure decommit successfully
 	body := msg.GetDecommit()
-	if len(body.Ridi) != LenRidi {
-		logger.Warn("Invalid ridi length", "lens", len(body.Ridi))
-		return ErrInvalidRidi
-	}
 	peerMessage := getMessageByType(peer, Type_Peer)
-	u0g, err := commitment.GetPointFromHashCommitment(peerMessage.GetPeer().GetCommitment(), body.GetHashDecommitment())
+	ridi, A, u0g, err := commitment.GetPointInfoHashCommitment(p.sid, peerMessage.GetPeer().GetCommitment(), body.GetHashDecommitment())
 	if err != nil {
 		logger.Warn("Failed to get u0g", "err", err)
 		return err
+	}
+	if len(ridi) != LenRidi {
+		logger.Warn("Invalid ridi length", "lens", len(ridi))
+		return ErrInvalidRidi
 	}
 
 	// Build and send the verify message
 	v := p.feldmanCommitmenter.GetVerifyMessage(peer.peer.bk)
 	peer.decommit = &decommitData{
-		u0g: u0g,
+		u0g:           u0g,
+		schnorrAPoint: A,
+		ridi:          ridi,
 		verifyMessage: &Message{
 			Type: Type_Verify,
 			Id:   p.peerManager.SelfID(),
@@ -107,12 +111,10 @@ func (p *decommitHandler) HandleMessage(logger log.Logger, message types.Message
 func (p *decommitHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	// XOR all ridis
 	rid := bytes.Repeat([]byte{0}, LenRidi)
+	copy(rid, p.peerHandler.ridi)
 	for _, peer := range p.peers {
-		for i, b := range peer.decommit.ridi {
-			rid[i] = rid[i] ^ b
-		}
+		rid = utils.Xor(rid, peer.decommit.ridi)
 	}
 	p.rid = rid
-
 	return newVerifyHandler(p), nil
 }

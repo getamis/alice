@@ -20,8 +20,16 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func ComputeSSID(rid []byte) []byte {
-	return rid
+// The output is sid + ',' + id ',' + rid.
+func ComputeSSID(sid, id, rid []byte) []byte {
+	separation := []byte(",")
+	result := make([]byte, len(sid))
+	copy(result, result)
+	result = append(result, separation...)
+	result = append(result, id...)
+	result = append(result, separation...)
+	result = append(result, rid...)
+	return result
 }
 
 func ComputeZKSsid(ssid []byte, bk *birkhoffinterpolation.BkParameter) []byte {

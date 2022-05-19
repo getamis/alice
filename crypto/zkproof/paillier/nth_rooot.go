@@ -57,8 +57,7 @@ func (msg *NthRootMessage) Verify(config *CurveConfig, ssidInfo []byte, NPower, 
 		return err
 	}
 
-	e := utils.RandomAbsoluteRangeIntBySeed(seed, curveN)
-
+	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveN)
 	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
 	if err != nil {
 		return err

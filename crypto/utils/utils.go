@@ -17,7 +17,6 @@ package utils
 import (
 	"crypto/rand"
 	"errors"
-	"math"
 	"math/big"
 	"math/bits"
 	mRand "math/rand"
@@ -296,19 +295,10 @@ func RandomAbsoluteRangeInt(n *big.Int) (*big.Int, error) {
 
 // RandomAbsoluteRangeIntBySeed generates a random number in [-q, q] with seed.
 // TODO: Find more nice implement method. should belong [-q, q]
-func RandomAbsoluteRangeIntBySeed(seed []byte, q *big.Int) *big.Int {
-	desiredByteLength := uint64(math.Ceil(float64(q.BitLen()) / 8))
-	seedInt := new(big.Int).SetBytes(seed).Int64()
-	r := mRand.New(mRand.NewSource(seedInt))
-	randomValue := make([]byte, desiredByteLength)
-	for i := 0; i < len(randomValue); i++ {
-		randomValue[i] = byte(r.Intn(256))
-	}
-	result := new(big.Int).SetBytes(randomValue)
-	if r.Intn(2) == 1 {
-		result.Add(result, new(big.Int).Lsh(big1, 256))
-	}
-	return result.Sub(result, q)
+func RandomAbsoluteRangeIntBySeed(salt []byte, message []byte, q *big.Int) *big.Int {
+	expendResult := ExtnedHashOuput(salt, message, q.BitLen()+1)
+	result := new(big.Int).SetBytes(expendResult)
+	return result.Sub(result, new(big.Int).Lsh(big1, 256))
 }
 
 func Xor(bigArray, smallArray []byte) []byte {
@@ -387,21 +377,36 @@ func ReverseByte(s []byte) []byte {
 	return result
 }
 
-// Let n := outputBitLength / 256. The hash result is Hash(salt + "," + message +"," + "0") | Hash(salt + "," + message + "," + "1") | .... | Hash(salt + "," + message + "," + "n").
-func ExtnedHashOuput(salt, message []byte, outputBitLength int) ([]byte, error) {
-	if outputBitLength%blake2b.Size256 != 0 {
-		return nil, ErrInvalidInput
-	}
+// Let n := outputBitLength / 256. The hash result is Hash(salt + "," + message +"," + "0") | Hash(salt + "," + message + "," + "1") | .... | Hash(salt + "," + message + "," + "n") | remainder part.
+func ExtnedHashOuput(salt, message []byte, outputBitLength int) []byte {
 	separation := []byte(",")
-	result := make([]byte, 0)
 	count := outputBitLength >> 8
+	result := make([]byte, (outputBitLength>>3)+1)
 	for i := 0; i < count; i++ {
 		input := append(salt, separation...)
 		input = append(input, message...)
 		input = append(input, separation...)
 		input = append(input, []byte(strconv.Itoa(i))...)
 		temp := blake2b.Sum256(input)
-		result = append(result, temp[:]...)
+		up := i << 5
+		for j := 0; j < 32; j++ {
+			result[up+j+1] = temp[j]
+		}
 	}
-	return result, nil
+	remainderPart := outputBitLength - (count << 8)
+	if remainderPart == 0 {
+		return result[1:]
+	}
+	input := append(salt, separation...)
+	input = append(input, message...)
+	input = append(input, separation...)
+	input = append(input, []byte(strconv.Itoa(count))...)
+	seedInt := new(big.Int).SetBytes(input).Int64()
+	// #nosec: G404: Use of weak random number generator (math/rand instead of crypto/rand)
+	r := mRand.New(mRand.NewSource(seedInt))
+	up := 1 << remainderPart
+	for i := 0; i < 1; i++ {
+		result[0] = byte(r.Intn(up))
+	}
+	return result
 }

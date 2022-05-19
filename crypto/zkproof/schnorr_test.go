@@ -49,12 +49,6 @@ var _ = Describe("Schnorr (Sigma protocol)", func() {
 	)
 
 	Context("NewSchorrMessage", func() {
-		It("invalid point message", func() {
-			p, err := NewSchorrMessage(a1, a2, &pt.ECPoint{})
-			Expect(err).ShouldNot(BeNil())
-			Expect(p).Should(BeNil())
-		})
-
 		It("a1 is out of range", func() {
 			wrongA1 := elliptic.Secp256k1().Params().N
 			p, err := NewSchorrMessage(wrongA1, a2, R)

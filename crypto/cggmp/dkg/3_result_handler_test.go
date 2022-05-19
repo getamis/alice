@@ -69,13 +69,14 @@ var _ = Describe("result handler, negative cases", func() {
 		var (
 			curve     = elliptic.Secp256k1()
 			threshold = uint32(3)
+			sid       = make([]byte, 1)
 			ranks     = []uint32{0, 0, 0, 0, 0}
 
 			dkgs      map[string]*DKG
 			listeners map[string]*mocks.StateChangedListener
 		)
 		BeforeEach(func() {
-			dkgs, listeners = newDKGs(curve, threshold, ranks)
+			dkgs, listeners = newDKGs(curve, sid, threshold, ranks)
 			// Override peer manager
 			for _, d := range dkgs {
 				p := newStopPeerManager(Type_Result, d.ph.peerManager)

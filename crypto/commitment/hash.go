@@ -111,6 +111,25 @@ func NewCommitterByPoint(p *pt.ECPoint) (*HashCommitmenter, error) {
 	return NewProtoHashCommitmenter(msg)
 }
 
+func NewCommiterByPointAndSSIDInfo(sid, id, ridi []byte, A, u0G *pt.ECPoint) (*HashCommitmenter, error) {
+	u0GMsg, err := u0G.ToEcPointMessage()
+	if err != nil {
+		return nil, err
+	}
+	AMsg, err := A.ToEcPointMessage()
+	if err != nil {
+		return nil, err
+	}
+	msg := &PointSSIDInfoMessage{
+		U0G: u0GMsg,
+		Sid: sid,
+		Rid: ridi,
+		ID:  id,
+		A:   AMsg,
+	}
+	return NewProtoHashCommitmenter(msg)
+}
+
 func GetPointFromHashCommitment(commit *HashCommitmentMessage, decommit *HashDecommitmentMessage) (*pt.ECPoint, error) {
 	msg := &pt.EcPointMessage{}
 	err := commit.DecommitToProto(decommit, msg)
@@ -122,4 +141,24 @@ func GetPointFromHashCommitment(commit *HashCommitmentMessage, decommit *HashDec
 		return nil, err
 	}
 	return point, nil
+}
+
+func GetPointInfoHashCommitment(sid []byte, commit *HashCommitmentMessage, decommit *HashDecommitmentMessage) ([]byte, *pt.ECPoint, *pt.ECPoint, error) {
+	msg := &PointSSIDInfoMessage{}
+	err := commit.DecommitToProto(decommit, msg)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if subtle.ConstantTimeCompare(sid, msg.Sid) != 1 {
+		return nil, nil, nil, ErrFailedVerify
+	}
+	A, err := msg.A.ToPoint()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	u0G, err := msg.U0G.ToPoint()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return msg.Rid, A, u0G, nil
 }
