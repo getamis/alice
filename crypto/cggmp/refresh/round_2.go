@@ -34,6 +34,7 @@ const (
 )
 
 type round2Data struct {
+	share         *big.Int
 	encryptShare  *big.Int
 	pederssenPara *paillier.PederssenOpenParameter
 	y             *pt.ECPoint
@@ -124,13 +125,13 @@ func (p *round2Handler) buildRound2Data(peerId string, commitData *HashMsg) (*ro
 		return nil, ErrTrivialPoint
 	}
 	// Verify pederssenPara proof
-	pubKey, err := paillier.ToPaillierPubKeyWithSpecialG(cggmp.ComputeZKSsid(p.ssid, p.bks[peerId]), commitData.PedPar)
+	bk := p.bks[peerId]
+	pubKey, err := paillier.ToPaillierPubKeyWithSpecialG(cggmp.ComputeZKSsid(p.ssid, bk), commitData.PedPar)
 	if err != nil {
 		return nil, err
 	}
 
 	// compute share
-	bk := p.bks[peerId]
 	diff := p.poly.Differentiate(bk.GetRank())
 	xValue := bk.GetX()
 	refreshshareplaintext := diff.Evaluate(xValue)
@@ -149,6 +150,7 @@ func (p *round2Handler) buildRound2Data(peerId string, commitData *HashMsg) (*ro
 		return nil, err
 	}
 	return &round2Data{
+		share:         refreshshareplaintext,
 		encryptShare:  new(big.Int).SetBytes(tempEnc),
 		pederssenPara: pederssenPara,
 		y:             Y,
@@ -172,7 +174,7 @@ func (p *round2Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	p.refreshShare = diff.Evaluate(p.ownBK.GetX())
 
 	// Generate SSID Info + sumro
-	ssidSumRho := append(p.ssid, []byte("!")...)
+	ssidSumRho := append(cggmp.ComputeZKSsid(p.ssid, p.ownBK), []byte("!")...)
 	ssidSumRho = append(ssidSumRho, p.sumrho...)
 	for _, peer := range p.peers {
 		temp := peer.round2.pederssenPara
@@ -192,22 +194,28 @@ func (p *round2Handler) Finalize(logger log.Logger) (types.Handler, error) {
 		return nil, err
 	}
 	// Generate Schnorr proof pi
-	ySchnorrzkproof, err := zkproof.NewSchorrMessage(p.y, big0, G, ssidSumRho)
+	ySchnorrzkproof, err := zkproof.NewSchnorrMessageWithGivenMN(p.y, big0, p.tau, big0, G, ssidSumRho)
 	if err != nil {
 		return nil, err
 	}
 
 	// Send round3 messages
 	for id, peer := range p.peers {
+		// Generate Schnorr proof psi_i
+		xijzkproof, err := zkproof.NewSchnorrMessageWithGivenMN(peer.round2.share, big0, p.ai[id], big0, G, ssidSumRho)
+		if err != nil {
+			return nil, err
+		}
 		p.peerManager.MustSend(id, &Message{
 			Type: Type_Round3,
 			Id:   p.peerManager.SelfID(),
 			Body: &Message_Round3{
 				Round3: &Round3Msg{
-					ModProof:     modProof,
-					FacProof:     peer.round2.factorProof,
-					SchnorrProof: ySchnorrzkproof,
-					Encshare:     peer.round2.encryptShare.Bytes(),
+					ModProof:          modProof,
+					FacProof:          peer.round2.factorProof,
+					YschnorrProof:     ySchnorrzkproof,
+					Encshare:          peer.round2.encryptShare.Bytes(),
+					ShareschnorrProof: xijzkproof,
 				},
 			},
 		})

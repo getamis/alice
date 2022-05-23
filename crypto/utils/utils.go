@@ -377,7 +377,7 @@ func ReverseByte(s []byte) []byte {
 	return result
 }
 
-// Let n := outputBitLength / 256. The hash result is Hash(salt + "," + message +"," + "0") | Hash(salt + "," + message + "," + "1") | .... | Hash(salt + "," + message + "," + "n") | remainder part.
+// Let n := outputBitLength / 256. The hash result is Hash(salt + "," + message +"," + "0") | Hash(salt + "," + message + "," + "1") | .... | Hash(salt + "," + message + "," + "n") | the remainder part.
 func ExtnedHashOuput(salt, message []byte, outputBitLength int) []byte {
 	separation := []byte(",")
 	count := outputBitLength >> 8

@@ -48,13 +48,15 @@ type round1Handler struct {
 	ownBK       *birkhoffinterpolation.BkParameter
 
 	y              *big.Int
+	tau            *big.Int // Schnorr commitment of y
 	poly           *polynomial.Polynomial
 	feldCommitment *commitment.FeldmanCommitmenter
 	rho            []byte
-	u              []byte
+	u              []byte // salt
 	ped            *paillier.PederssenParameter
 	pedParZkproof  *paillierzkproof.RingPederssenParameterMessage
 	V              *commitment.HashCommitmenter
+	ai             map[string]*big.Int // Schnorr commitment of shares
 
 	bks map[string]*birkhoffinterpolation.BkParameter
 
@@ -100,6 +102,16 @@ func newRound1Handler(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerMan
 	if err != nil {
 		return nil, err
 	}
+	tau, err := utils.RandomInt(curve.Params().N)
+	if err != nil {
+		return nil, err
+	}
+	B := pt.ScalarBaseMult(curve, tau)
+	msgB, err := B.ToEcPointMessage()
+	if err != nil {
+		return nil, err
+	}
+
 	// Generate polynomial commitment f(x) with f(0) mod q.
 	poly, err := polynomial.RandomPolynomial(curve.Params().N, p.threshold-1)
 	if err != nil {
@@ -118,6 +130,22 @@ func newRound1Handler(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerMan
 		return nil, err
 	}
 	// TODO: Generate Ai commitment
+	Ai := make(map[string]*big.Int)
+	msgAi := make(map[string]*pt.EcPointMessage)
+	for i := 0; i < len(peerManager.PeerIDs()); i++ {
+		temp, err := utils.RandomInt(curve.Params().N)
+		if err != nil {
+			return nil, err
+		}
+		Ai[peerManager.PeerIDs()[i]] = temp
+		tempPoint := pt.ScalarBaseMult(curve, temp)
+		MsgTempPoint, err := tempPoint.ToEcPointMessage()
+		if err != nil {
+			return nil, err
+		}
+		msgAi[peerManager.PeerIDs()[i]] = MsgTempPoint
+	}
+
 	// Sample rho, u in {0,1}^kappa
 	rhoi, err := utils.GenRandomBytes(BYTELENGTHKAPPA)
 	if err != nil {
@@ -134,6 +162,10 @@ func newRound1Handler(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerMan
 		PedPar:          pedPar,
 		Rho:             rhoi,
 		U:               ui,
+		Ssid:            ssid,
+		Bk:              []byte(p.ownBK.String()),
+		A:               msgAi,
+		B:               msgB,
 	}
 	p.V, err = commitment.NewProtoHashCommitmenter(inputData)
 	if err != nil {
@@ -147,6 +179,8 @@ func newRound1Handler(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerMan
 	p.paillierKey = paillierKey
 	p.ped = ped
 	p.pedParZkproof = pedPar
+	p.tau = tau
+	p.ai = Ai
 	return p, nil
 }
 

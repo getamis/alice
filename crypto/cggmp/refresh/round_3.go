@@ -18,6 +18,7 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/getamis/alice/crypto/cggmp"
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
@@ -120,7 +121,7 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 	}
 
 	// Generate SSID Info + sumro
-	ssidSumRho := append(p.ssid, []byte("!")...)
+	ssidSumRho := append(cggmp.ComputeZKSsid(p.ssid, p.bks[id]), []byte("!")...)
 	ssidSumRho = append(ssidSumRho, p.sumrho...)
 	// Verify factor proof
 	err = round3Msg.FacProof.Verify(paillierzkproof.NewS256(),
@@ -136,16 +137,41 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 	}
 
 	// check commitment
-	Y, err := round3Msg.SchnorrProof.V.ToPoint()
+	Y, err := round3Msg.YschnorrProof.V.ToPoint()
 	if err != nil {
 		return err
 	}
 	if !peer.round2.y.Equal(Y) {
 		return ErrDifferentPoint
 	}
-
+	B, err := p.peers[id].round2.hashMsg.B.ToPoint()
+	if err != nil {
+		return err
+	}
+	Bhat, err := round3Msg.YschnorrProof.Alpha.ToPoint()
+	if err != nil {
+		return err
+	}
+	if !B.Equal(Bhat) {
+		return ErrDifferentPoint
+	}
+	Ai, err := p.peers[id].round2.hashMsg.A[p.peerManager.SelfID()].ToPoint()
+	if err != nil {
+		return err
+	}
+	Aihat, err := round3Msg.ShareschnorrProof.Alpha.ToPoint()
+	if err != nil {
+		return err
+	}
+	if !Ai.Equal(Aihat) {
+		return ErrDifferentPoint
+	}
 	// Because a2 = 0, so R can be arbitrary point.
-	err = round3Msg.SchnorrProof.Verify(p.pubKey, ssidSumRho)
+	err = round3Msg.YschnorrProof.Verify(p.pubKey, ssidSumRho)
+	if err != nil {
+		return err
+	}
+	err = round3Msg.ShareschnorrProof.Verify(p.pubKey, ssidSumRho)
 	if err != nil {
 		return err
 	}

@@ -46,6 +46,10 @@ message HashMsg {
     paillier.RingPederssenParameterMessage pedPar = 3;
     bytes rho = 4; 
     bytes u = 5;
+    bytes ssid = 6;
+    bytes bk = 7;
+    map<string, ecpointgrouplaw.EcPointMessage> A = 8;
+    ecpointgrouplaw.EcPointMessage B = 9;
 }
 
 message Round1Msg {
@@ -59,8 +63,9 @@ message Round2Msg {
 message Round3Msg {
     paillier.PaillierBlumMessage modProof = 1;
     paillier.NoSmallFactorMessage facProof = 2;
-    zkproof.SchnorrProofMessage schnorrProof = 3;
+    zkproof.SchnorrProofMessage yschnorrProof = 3;
     bytes encshare = 4;
+    zkproof.SchnorrProofMessage shareschnorrProof = 5;
 }
 
 message AuxiliaryInfoKeyRefeshErrorMessage {
