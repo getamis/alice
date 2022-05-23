@@ -33,7 +33,11 @@ func ComputeSSID(sid, id, rid []byte) []byte {
 }
 
 func ComputeZKSsid(ssid []byte, bk *birkhoffinterpolation.BkParameter) []byte {
-	return append(bk.GetX().Bytes(), ssid...)
+	separation := []byte(",")
+	result := make([]byte, len(ssid))
+	copy(result, result)
+	result = append(result, separation...)
+	return append(bk.GetX().Bytes(), result...)
 }
 
 func Broadcast(pm types.PeerManager, msg proto.Message) {
