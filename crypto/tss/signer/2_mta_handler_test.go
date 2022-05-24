@@ -19,7 +19,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	mtaMocks "github.com/getamis/alice/crypto/mta/mocks"
 	"github.com/getamis/alice/crypto/tss"

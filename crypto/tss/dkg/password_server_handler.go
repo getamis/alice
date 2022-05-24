@@ -18,7 +18,7 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/getamis/alice/crypto/oprf"
 	"github.com/getamis/alice/crypto/polynomial"
 	"github.com/getamis/alice/crypto/tss"

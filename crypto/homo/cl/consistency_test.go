@@ -17,7 +17,7 @@ package cl
 import (
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

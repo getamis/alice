@@ -3,7 +3,7 @@ module github.com/getamis/alice
 go 1.17
 
 require (
-	github.com/btcsuite/btcd v0.20.1-beta
+	github.com/btcsuite/btcd/btcec/v2 v2.2.0
 	github.com/getamis/sirius v1.1.7
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.5.0
@@ -15,7 +15,7 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
 	github.com/stretchr/testify v1.4.0
-	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d
+	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	gonum.org/v1/gonum v0.7.0
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/yaml.v2 v2.2.4
@@ -23,9 +23,11 @@ require (
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
+	github.com/btcsuite/btcd v0.20.1-beta // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20170701192655-dcfb0a7ac018 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/fsnotify/fsnotify v1.4.7 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/google/uuid v1.1.1 // indirect
@@ -106,11 +108,12 @@ require (
 	go.uber.org/tools v0.0.0-20190618225709-2cfd321de3ee // indirect
 	go.uber.org/zap v1.13.0 // indirect
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
-	golang.org/x/net v0.0.0-20190923162816-aa69164e4478 // indirect
-	golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae // indirect
-	golang.org/x/text v0.3.2 // indirect
-	golang.org/x/tools v0.0.0-20200129045341-207d3de1faaf // indirect
-	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
+	golang.org/x/mod v0.6.0-dev.0.20211013180041-c96bc1413d57 // indirect
+	golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f // indirect
+	golang.org/x/sys v0.0.0-20211019181941-9d821ace8654 // indirect
+	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/tools v0.1.8-0.20211029000441-d6a9af8af023 // indirect
+	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	honnef.co/go/tools v0.0.1-2019.2.3 // indirect

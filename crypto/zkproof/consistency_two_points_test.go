@@ -17,7 +17,7 @@ import (
 	"crypto/elliptic"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
 	. "github.com/onsi/ginkgo"

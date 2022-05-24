@@ -17,7 +17,7 @@ import (
 	"crypto/elliptic"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/matrix"
 	"github.com/getamis/alice/crypto/tss"

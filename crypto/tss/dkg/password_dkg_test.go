@@ -17,7 +17,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	oprf "github.com/getamis/alice/crypto/oprf"
 	"github.com/getamis/alice/crypto/oprf/hasher"

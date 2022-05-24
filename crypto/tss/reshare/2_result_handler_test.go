@@ -18,7 +18,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 
 	"github.com/getamis/alice/crypto/matrix"
 

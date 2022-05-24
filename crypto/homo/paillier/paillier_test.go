@@ -18,7 +18,7 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/utils"

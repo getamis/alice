@@ -17,7 +17,7 @@ import (
 	"crypto/elliptic"
 	"time"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/btcsuite/btcd/btcec/v2"
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	mtaMocks "github.com/getamis/alice/crypto/mta/mocks"
