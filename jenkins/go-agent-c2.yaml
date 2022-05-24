@@ -24,7 +24,7 @@ spec:
             - ""
   containers:
   - name: builder
-    image: "066141165427.dkr.ecr.ap-southeast-1.amazonaws.com/jenkins/go-agent:1.13"
+    image: "066141165427.dkr.ecr.ap-southeast-1.amazonaws.com/jenkins/go-agent:1.17-2022-15"
     command:
     - cat
     tty: true
