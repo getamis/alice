@@ -20,10 +20,13 @@ import (
 	"github.com/getamis/alice/crypto/utils"
 )
 
-func NewNoSmallFactorMessage(config *CurveConfig, ssidInfo, rho []byte, p *big.Int, q *big.Int, n, pedN, peds, pedt *big.Int) (*NoSmallFactorMessage, error) {
+func NewNoSmallFactorMessage(config *CurveConfig, ssidInfo, rho []byte, p *big.Int, q *big.Int, n *big.Int, ped *PederssenOpenParameter) (*NoSmallFactorMessage, error) {
 	sqrtN := new(big.Int).Sqrt(n)
 	groupOrder := config.Curve.Params().N
 	twoellAddepsionSqrtN := new(big.Int).Lsh(sqrtN, uint(config.LAddEpsilon))
+	pedN := ped.Getn()
+	peds := ped.Gets()
+	pedt := ped.Gett()
 	// Sample α,β in ±2^{l+ε}·N0^1/2
 	alpha, err := utils.RandomAbsoluteRangeInt(twoellAddepsionSqrtN)
 	if err != nil {
@@ -104,8 +107,11 @@ func NewNoSmallFactorMessage(config *CurveConfig, ssidInfo, rho []byte, p *big.I
 	}, nil
 }
 
-func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byte, n, pedN, peds, pedt *big.Int) error {
+func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byte, n *big.Int, ped *PederssenOpenParameter) error {
 	groupOrder := config.Curve.Params().N
+	pedN := ped.Getn()
+	peds := ped.Gets()
+	pedt := ped.Gett()
 	P := new(big.Int).SetBytes(msg.P)
 	Q := new(big.Int).SetBytes(msg.Q)
 	A := new(big.Int).SetBytes(msg.A)

@@ -87,6 +87,9 @@ func (p *round7Handler) Finalize(logger log.Logger) (types.Handler, error) {
 		s.Add(s, peer.round7Data.Sigma)
 		s.Mod(s, curveN)
 	}
+	if s.Cmp(big0) == 0 {
+		return nil, ErrZeroS
+	}
 	isCorrectSig := ecdsa.Verify(p.pubKey.ToPubKey(), p.msg, p.R.GetX(), s)
 
 	// TODO: Error message collect

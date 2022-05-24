@@ -75,7 +75,7 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 		logger.Debug("Failed to ToPoint", "err", err)
 		return err
 	}
-	err = round3.Psidoublepai.Verify(parameter, peer.ssidWithBk, peer.round1Data.kCiphertext, peer.para.Getn(), ownPed.Getn(), ownPed.Gets(), ownPed.Gett(), Delta, p.sumGamma)
+	err = round3.Psidoublepai.Verify(parameter, peer.ssidWithBk, peer.round1Data.kCiphertext, peer.para.Getn(), ownPed, Delta, p.sumGamma)
 	if err != nil {
 		logger.Debug("Failed to Verify", "err", err)
 		return err
@@ -122,7 +122,7 @@ func (p *round3Handler) Finalize(logger log.Logger) (types.Handler, error) {
 		return nil, ErrZeroR
 	}
 	r := R.GetX()
-	// TODO: replace new(big.Int).SetBytes to new(big.Int).SetBytes(SHA3(m))
+	// Recall that msg := Hash(message)
 	sigma := new(big.Int).Mul(p.k, new(big.Int).SetBytes(p.msg))
 
 	sigma.Add(sigma, new(big.Int).Mul(r, p.chi))

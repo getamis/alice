@@ -33,11 +33,12 @@ var _ = Describe("Nosmallfactoezkproof test", func() {
 	pedN := new(big.Int).Mul(pedp, pedq)
 	pedt := big.NewInt(9)
 	peds := big.NewInt(729)
+	ped := NewPedersenOpenParameter(pedN, peds, pedt)
 	Context("It is OK", func() {
 		It("over Range, should be ok", func() {
-			zkproof, err := NewNoSmallFactorMessage(config, ssIDInfo, rho, p, q, n, pedN, peds, pedt)
+			zkproof, err := NewNoSmallFactorMessage(config, ssIDInfo, rho, p, q, n, ped)
 			Expect(err).Should(BeNil())
-			err = zkproof.Verify(config, ssIDInfo, rho, n, pedN, peds, pedt)
+			err = zkproof.Verify(config, ssIDInfo, rho, n, ped)
 			Expect(err).Should(BeNil())
 		})
 	})

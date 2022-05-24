@@ -79,7 +79,7 @@ func (p *resultHandler) HandleMessage(logger log.Logger, message types.Message) 
 		logger.Warn("Failed to get point", "err", err)
 		return err
 	}
-	err = siGProofMsg.Verify(ecpointgrouplaw.NewBase(p.publicKey.GetCurve()), cggmp.ComputeSSID(p.sid, []byte(id), p.rid))
+	err = siGProofMsg.Verify(ecpointgrouplaw.NewBase(p.publicKey.GetCurve()), cggmp.ComputeSSID(p.sid, []byte(peer.peer.bk.String()), p.rid))
 	if err != nil {
 		logger.Warn("Failed to verify Schorr proof", "err", err)
 		return err

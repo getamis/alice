@@ -18,7 +18,7 @@ import (
 	"math/big"
 
 	"github.com/getamis/alice/crypto/utils"
-	"github.com/getamis/alice/crypto/zkproof/paillier"
+	zkPaillier "github.com/getamis/alice/crypto/zkproof/paillier"
 )
 
 type PederssenParameter struct {
@@ -27,13 +27,7 @@ type PederssenParameter struct {
 	eulern *big.Int
 	lambda *big.Int
 
-	PedersenOpenParameter *PederssenOpenParameter
-}
-
-type PederssenOpenParameter struct {
-	n *big.Int
-	s *big.Int
-	t *big.Int
+	PedersenOpenParameter *zkPaillier.PederssenOpenParameter
 }
 
 // By paillier
@@ -54,15 +48,11 @@ func (paillier *Paillier) NewPedersenParameterByPaillier() (*PederssenParameter,
 	t := new(big.Int).Exp(tau, big2, n)
 	s := new(big.Int).Exp(t, lambda, n)
 	return &PederssenParameter{
-		p:      paillier.privateKey.p,
-		q:      paillier.privateKey.q,
-		eulern: eulern,
-		lambda: lambda,
-		PedersenOpenParameter: &PederssenOpenParameter{
-			n: n,
-			s: s,
-			t: t,
-		},
+		p:                     paillier.privateKey.p,
+		q:                     paillier.privateKey.q,
+		eulern:                eulern,
+		lambda:                lambda,
+		PedersenOpenParameter: zkPaillier.NewPedersenOpenParameter(n, s, t),
 	}, nil
 }
 
@@ -70,7 +60,7 @@ func (ped *PederssenParameter) Getlambda() *big.Int {
 	return ped.lambda
 }
 
-func NewPedersenOpenParameter(n, s, t *big.Int) (*PederssenOpenParameter, error) {
+func NewPedersenOpenParameter(n, s, t *big.Int) (*zkPaillier.PederssenOpenParameter, error) {
 	if !utils.IsRelativePrime(s, n) {
 		return nil, ErrInvalidInput
 	}
@@ -80,11 +70,7 @@ func NewPedersenOpenParameter(n, s, t *big.Int) (*PederssenOpenParameter, error)
 	if n.BitLen() < safePubKeySize {
 		return nil, ErrSmallPublicKeySize
 	}
-	return &PederssenOpenParameter{
-		n: n,
-		s: s,
-		t: t,
-	}, nil
+	return zkPaillier.NewPedersenOpenParameter(n, s, t), nil
 }
 
 func (ped *PederssenParameter) GetP() *big.Int {
@@ -99,28 +85,17 @@ func (ped *PederssenParameter) GetEulerValue() *big.Int {
 	return ped.eulern
 }
 
-func (ped *PederssenOpenParameter) Getn() *big.Int {
-	return ped.n
-}
-
-func (ped *PederssenOpenParameter) Gets() *big.Int {
-	return ped.s
-}
-
-func (ped *PederssenOpenParameter) Gett() *big.Int {
-	return ped.t
-}
-
-func (ped *PederssenOpenParameter) ToPaillierPubKeyWithSpecialG() *publicKey {
+func ToPaillierPubKeyWithSpecialG(ped *zkPaillier.PederssenOpenParameter) *publicKey {
 	// special g = 1+ n (ref. definition 2.2 in cggmp)
+	n := ped.Getn()
 	return &publicKey{
-		n:       ped.n,
-		g:       new(big.Int).Add(big1, ped.n),
-		nSquare: new(big.Int).Mul(ped.n, ped.n),
+		n:       n,
+		g:       new(big.Int).Add(big1, n),
+		nSquare: new(big.Int).Mul(n, n),
 	}
 }
 
-func ToPaillierPubKeyWithSpecialG(ssidInfo []byte, msg *paillier.RingPederssenParameterMessage) (*publicKey, error) {
+func ToPaillierPubKeyWithSpecialGFromMsg(ssidInfo []byte, msg *zkPaillier.RingPederssenParameterMessage) (*publicKey, error) {
 	n := new(big.Int).SetBytes(msg.N)
 	if n.BitLen() < safePubKeySize {
 		return nil, ErrSmallPublicKeySize

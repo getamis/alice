@@ -97,9 +97,6 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 	}
 	plaintextShareBig := new(big.Int).SetBytes(plaintextShare)
 	ped := p.ped.PedersenOpenParameter
-	pedN := ped.Getn()
-	peds := ped.Gets()
-	pedt := ped.Gett()
 
 	// verify Feldmann commitment
 	err = commitment.FeldmanVerify(curve, p.ownBK, polyPoint, p.threshold-1, plaintextShareBig)
@@ -125,7 +122,7 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 	ssidSumRho = append(ssidSumRho, p.sumrho...)
 	// Verify factor proof
 	err = round3Msg.FacProof.Verify(paillierzkproof.NewS256(),
-		ssidSumRho, p.sumrho, peer.round2.pederssenPara.Getn(), pedN, peds, pedt)
+		ssidSumRho, p.sumrho, peer.round2.pederssenPara.Getn(), ped)
 	if err != nil {
 		return err
 	}

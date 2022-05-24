@@ -21,6 +21,7 @@ import (
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/tss"
+	paillierzkproof "github.com/getamis/alice/crypto/zkproof/paillier"
 	"github.com/getamis/alice/internal/message"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
@@ -31,7 +32,7 @@ type Sign struct {
 	*message.MsgMain
 }
 
-func NewSign(threshold uint32, ssid []byte, share *big.Int, ySecret *big.Int, pubKey *pt.ECPoint, partialPubKey, allY map[string]*pt.ECPoint, bks map[string]*birkhoffinterpolation.BkParameter, paillierKey *paillier.Paillier, ped map[string]*paillier.PederssenOpenParameter, msg []byte, peerManager types.PeerManager, listener types.StateChangedListener) (*Sign, error) {
+func NewSign(threshold uint32, ssid []byte, share *big.Int, ySecret *big.Int, pubKey *pt.ECPoint, partialPubKey, allY map[string]*pt.ECPoint, bks map[string]*birkhoffinterpolation.BkParameter, paillierKey *paillier.Paillier, ped map[string]*paillierzkproof.PederssenOpenParameter, msg []byte, peerManager types.PeerManager, listener types.StateChangedListener) (*Sign, error) {
 	peerNum := peerManager.NumPeers()
 	ph, err := newRound1Handler(threshold, ssid, share, ySecret, pubKey, partialPubKey, allY, bks, paillierKey, ped, msg, peerManager)
 	if err != nil {
