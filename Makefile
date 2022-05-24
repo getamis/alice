@@ -52,10 +52,6 @@ unit-test: coverage.txt
 		fi								\
 	done;
 
-PHONY += tss-example
-tss-example:
-	cd example && go build
-
 PHONY += wasm
 wasm:
 	GOOS=js GOARCH=wasm go build -o wasm/tss.wasm wasm/*.go

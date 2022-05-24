@@ -116,7 +116,7 @@ pipeline {
                                 }
                             }
                             withGoModuleLocal() {
-                                sh "make tss-example && make lint"
+                                sh "make lint"
                             }
                         }
                     }
