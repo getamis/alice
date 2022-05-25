@@ -43,6 +43,7 @@ var _ = Describe("Encrange elcommitmentzkproof test", func() {
 	pedn := new(big.Int).Mul(pedp, pedq)
 	pedt := big.NewInt(9)
 	peds := big.NewInt(729)
+	ped := NewPedersenOpenParameter(pedn, peds, pedt)
 
 	Context("It is OK", func() {
 		It("over Range, should be ok", func() {
@@ -51,9 +52,9 @@ var _ = Describe("Encrange elcommitmentzkproof test", func() {
 			ciphertext.Mul(ciphertext, new(big.Int).Exp(rho, n, nSquare))
 			ciphertext.Mod(ciphertext, nSquare)
 
-			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, n, A, B, X, pedn, peds, pedt)
+			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, n, A, B, X, ped)
 			Expect(err).Should(BeNil())
-			err = zkproof.Verify(config, ssIDInfo, ciphertext, n, A, B, X, pedn, peds, pedt)
+			err = zkproof.Verify(config, ssIDInfo, ciphertext, n, A, B, X, ped)
 			Expect(err).Should(BeNil())
 		})
 	})

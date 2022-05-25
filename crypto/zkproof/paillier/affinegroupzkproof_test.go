@@ -40,6 +40,7 @@ var _ = Describe("Affinegroupzkproof test", func() {
 	pedN := new(big.Int).Mul(pedp, pedq)
 	pedt := big.NewInt(9)
 	peds := big.NewInt(729)
+	ped := NewPedersenOpenParameter(pedN, peds, pedt)
 
 	Context("It is OK", func() {
 		It("over Range, should be ok", func() {
@@ -56,9 +57,9 @@ var _ = Describe("Affinegroupzkproof test", func() {
 			D.Mul(D, new(big.Int).Exp(rho, n0, n0Square))
 			D.Mod(D, n0Square)
 
-			zkproof, err := NewPaillierAffAndGroupRangeMessage(config, ssIDInfo, x, y, rho, rhoy, n0, n1, C, D, Y, pedN, peds, pedt, X)
+			zkproof, err := NewPaillierAffAndGroupRangeMessage(config, ssIDInfo, x, y, rho, rhoy, n0, n1, C, D, Y, ped, X)
 			Expect(err).Should(BeNil())
-			err = zkproof.Verify(config, ssIDInfo, n0, n1, C, D, Y, pedN, peds, pedt, X)
+			err = zkproof.Verify(config, ssIDInfo, n0, n1, C, D, Y, ped, X)
 			Expect(err).Should(BeNil())
 		})
 	})

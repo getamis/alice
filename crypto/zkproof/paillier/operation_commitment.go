@@ -20,10 +20,13 @@ import (
 	"github.com/getamis/alice/crypto/utils"
 )
 
-func NewPaillierOperationAndPaillierCommitment(config *CurveConfig, ssidInfo []byte, x *big.Int, y *big.Int, rho *big.Int, rhox *big.Int, rhoy *big.Int, n0 *big.Int, n1 *big.Int, X *big.Int, Y *big.Int, C *big.Int, D *big.Int, pedN *big.Int, peds *big.Int, pedt *big.Int) (*PaillierOperationAndCommitmentMessage, error) {
+func NewPaillierOperationAndPaillierCommitment(config *CurveConfig, ssidInfo []byte, x *big.Int, y *big.Int, rho *big.Int, rhox *big.Int, rhoy *big.Int, n0 *big.Int, n1 *big.Int, X *big.Int, Y *big.Int, C *big.Int, D *big.Int, ped *PederssenOpenParameter) (*PaillierOperationAndCommitmentMessage, error) {
 	n0Square := new(big.Int).Exp(n0, big2, nil)
 	n1Square := new(big.Int).Exp(n1, big2, nil)
 	fieldOrder := config.Curve.Params().N
+	pedN := ped.Getn()
+	peds := ped.Gets()
+	pedt := ped.Gett()
 	// Sample α in ± 2^{l+ε}, β in ±2^{l'+ε}.
 	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
 	if err != nil {
@@ -121,10 +124,13 @@ func NewPaillierOperationAndPaillierCommitment(config *CurveConfig, ssidInfo []b
 	}, nil
 }
 
-func (msg *PaillierOperationAndCommitmentMessage) Verify(config *CurveConfig, ssidInfo []byte, n0, n1, C, D, X, Y, pedN, peds, pedt *big.Int) error {
+func (msg *PaillierOperationAndCommitmentMessage) Verify(config *CurveConfig, ssidInfo []byte, n0, n1, C, D, X, Y *big.Int, ped *PederssenOpenParameter) error {
 	n0Square := new(big.Int).Exp(n0, big2, nil)
 	n1Square := new(big.Int).Exp(n1, big2, nil)
 	fieldOrder := config.Curve.Params().N
+	pedN := ped.Getn()
+	peds := ped.Gets()
+	pedt := ped.Gett()
 	// check A in Z_{N0^2}^\ast, By, Bx in Z_{N1^2}^\ast, E,S,T,F in Z_{\hat{N}}^\ast, w in Z_{N0}^\ast, and wx, wy in Z_{N1}^\ast.
 	S := new(big.Int).SetBytes(msg.S)
 	err := utils.InRange(S, big0, pedN)

@@ -153,7 +153,39 @@ func NewPaillierSafePrime(keySize int) (*Paillier, error) {
 	return NewPaillierUnSafe(keySize, true)
 }
 
-// Warning: No check the size of public key. This function is only used in Test.
+//  Warning: Only use in test.
+func NewPaillierWithGivenPrimes(p, q *big.Int) (*Paillier, error) {
+	n := new(big.Int).Mul(p, q)
+	g := new(big.Int).Add(n, big1)
+	lambda, err := utils.EulerFunction([]*big.Int{p, q})
+	if err != nil {
+		return nil, err
+	}
+	mu := new(big.Int).ModInverse(lambda, n)
+	msg, err := zkproof.NewIntegerFactorizationProofMessage([]*big.Int{p, q}, n)
+	if err != nil {
+		return nil, err
+	}
+	pubKeyMessage := &PubKeyMessage{
+		Proof: msg,
+		G:     g.Bytes(),
+	}
+	pub, err := pubKeyMessage.ToPubkey()
+	if err != nil {
+		return nil, err
+	}
+	return &Paillier{
+		publicKey: pub,
+		privateKey: &privateKey{
+			p:      p,
+			q:      q,
+			lambda: lambda,
+			mu:     mu,
+		},
+	}, nil
+}
+
+// Warning: No check the size of public key.
 func NewPaillierUnSafe(keySize int, isSafe bool) (*Paillier, error) {
 	p, q, n, lambda, err := getNAndLambda(keySize, isSafe)
 	if err != nil {

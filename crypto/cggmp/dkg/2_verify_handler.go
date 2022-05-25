@@ -117,7 +117,7 @@ func (p *verifyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 
 	// Build and send out the result message
 	big0 := big.NewInt(0)
-	p.siGProofMsg, err = zkproof.NewSchnorrMessageWithGivenMN(p.share, big0, p.peerHandler.schnorrAValue, big0, ecpointgrouplaw.NewBase(p.publicKey.GetCurve()), cggmp.ComputeSSID(p.sid, []byte(p.peerManager.SelfID()), p.rid))
+	p.siGProofMsg, err = zkproof.NewSchnorrMessageWithGivenMN(p.share, big0, p.peerHandler.schnorrAValue, big0, ecpointgrouplaw.NewBase(p.publicKey.GetCurve()), cggmp.ComputeSSID(p.sid, []byte(p.bk.String()), p.rid))
 	if err != nil {
 		log.Warn("Failed to new si schorr proof", "err", err)
 		return nil, err
