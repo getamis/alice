@@ -3,6 +3,7 @@ module github.com/getamis/alice
 go 1.17
 
 require (
+	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412
 	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/decred/dcrd/dcrec/edwards v1.0.0
 	github.com/getamis/sirius v1.1.7
@@ -24,7 +25,6 @@ require (
 
 require (
 	github.com/BurntSushi/toml v0.3.1 // indirect
-	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/davidlazar/go-crypto v0.0.0-20170701192655-dcfb0a7ac018 // indirect
