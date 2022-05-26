@@ -18,6 +18,7 @@ import (
 	"crypto/sha512"
 	"errors"
 	"math/big"
+	"sort"
 
 	"github.com/agl/ed25519/edwards25519"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
@@ -209,10 +210,12 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	G := ecpointgrouplaw.NewBase(p.pubKey.GetCurve())
 	identify := ecpointgrouplaw.NewIdentity(p.pubKey.GetCurve())
 	R := identify.Copy()
-	var B []byte
+	xSlice := make([]string, len(p.nodes))
+	Dmap := make(map[string]*ecpointgrouplaw.ECPoint)
+	Emap := make(map[string]*ecpointgrouplaw.ECPoint)
+	count := 0
 	for _, node := range p.nodes {
 		msgBody := node.GetMessage(types.MessageType(Type_Round1)).(*Message).GetRound1()
-		x := node.bk.GetX().Bytes()
 		err := msgBody.SG.Verify(G)
 		if err != nil {
 			logger.Debug("Failed ot Verify", "err", err)
@@ -224,9 +227,13 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 			return nil, err
 		}
 		node.Y = tempsG
-		B = append(B, computeB(x, node.D, node.E)...)
+		xSlice[count] = node.bk.String()
+		Dmap[xSlice[count]] = node.D
+		Emap[xSlice[count]] = node.E
+		count += 1
 	}
-
+	sort.Strings(xSlice)
+	B := computeB(xSlice, Dmap, Emap)
 	for _, node := range p.nodes {
 		x := node.bk.GetX().Bytes()
 		ell, err := computeElli(x, node.E, p.message, B, p.curveN)
@@ -323,16 +330,21 @@ func ecpointEncoding(pt *ecpointgrouplaw.ECPoint) *[32]byte {
 	return &result
 }
 
-// Get xi,Di,Ei,.......
-func computeB(x []byte, D, E *ecpointgrouplaw.ECPoint) []byte {
+func computeB(x []string, D, E map[string]*ecpointgrouplaw.ECPoint) []byte {
 	var result []byte
 	separationSign := []byte(",")
-	result = append(result, x...)
-	result = append(result, separationSign...)
-	result = append(result, D.GetX().Bytes()...)
-	result = append(result, separationSign...)
-	result = append(result, E.GetY().Bytes()...)
-	result = append(result, separationSign...)
+	for i := 0; i < len(x); i++ {
+		result = append(result, []byte(x[i])...)
+		result = append(result, separationSign...)
+		result = append(result, D[x[i]].GetX().Bytes()...)
+		result = append(result, separationSign...)
+		result = append(result, D[x[i]].GetY().Bytes()...)
+		result = append(result, separationSign...)
+		result = append(result, E[x[i]].GetX().Bytes()...)
+		result = append(result, separationSign...)
+		result = append(result, E[x[i]].GetY().Bytes()...)
+		result = append(result, separationSign...)
+	}
 	return result
 }
 
@@ -373,6 +385,7 @@ func computeElli(x []byte, E *ecpointgrouplaw.ECPoint, message []byte, B []byte,
 				return temp, nil
 			}
 		}
+		return nil, ErrExceedMaxRetry
 	}
 	return temp, nil
 }
