@@ -36,7 +36,7 @@ const (
 type round2Data struct {
 	share         *big.Int
 	encryptShare  *big.Int
-	pederssenPara *paillier.PederssenOpenParameter
+	pederssenPara *paillierzkproof.PederssenOpenParameter
 	y             *pt.ECPoint
 	hashMsg       *HashMsg
 	factorProof   *paillierzkproof.NoSmallFactorMessage
@@ -126,7 +126,7 @@ func (p *round2Handler) buildRound2Data(peerId string, commitData *HashMsg) (*ro
 	}
 	// Verify pederssenPara proof
 	bk := p.bks[peerId]
-	pubKey, err := paillier.ToPaillierPubKeyWithSpecialG(cggmp.ComputeZKSsid(p.ssid, bk), commitData.PedPar)
+	pubKey, err := paillier.ToPaillierPubKeyWithSpecialGFromMsg(cggmp.ComputeZKSsid(p.ssid, bk), commitData.PedPar)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +182,7 @@ func (p *round2Handler) Finalize(logger log.Logger) (types.Handler, error) {
 		// Compute facProof phi
 		// FIXME: select curveconfig
 		var err error
-		peer.round2.factorProof, err = paillierzkproof.NewNoSmallFactorMessage(paillierzkproof.NewS256(), ssidSumRho, p.sumrho, p.ped.GetP(), p.ped.GetQ(), p.ped.PedersenOpenParameter.Getn(), temp.Getn(), temp.Gets(), temp.Gett())
+		peer.round2.factorProof, err = paillierzkproof.NewNoSmallFactorMessage(paillierzkproof.NewS256(), ssidSumRho, p.sumrho, p.ped.GetP(), p.ped.GetQ(), p.ped.PedersenOpenParameter.Getn(), temp)
 		if err != nil {
 			return nil, err
 		}

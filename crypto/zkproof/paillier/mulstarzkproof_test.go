@@ -36,6 +36,7 @@ var _ = Describe("Mulstarzkproof test", func() {
 	pedN := new(big.Int).Mul(pedp, pedq)
 	pedt := big.NewInt(9)
 	peds := big.NewInt(729)
+	ped := NewPedersenOpenParameter(pedN, peds, pedt)
 
 	Context("It is OK", func() {
 		It("over Range, should be ok", func() {
@@ -47,9 +48,9 @@ var _ = Describe("Mulstarzkproof test", func() {
 			D.Mul(D, new(big.Int).Exp(rho, n0, n0Square))
 			D.Mod(D, n0Square)
 
-			zkproof, err := NewMulStarMessage(config, ssIDInfo, x, rho, n0, C, D, pedN, peds, pedt, X)
+			zkproof, err := NewMulStarMessage(config, ssIDInfo, x, rho, n0, C, D, ped, X)
 			Expect(err).Should(BeNil())
-			err = zkproof.Verify(config, ssIDInfo, n0, C, D, pedN, peds, pedt, X)
+			err = zkproof.Verify(config, ssIDInfo, n0, C, D, ped, X)
 			Expect(err).Should(BeNil())
 		})
 	})

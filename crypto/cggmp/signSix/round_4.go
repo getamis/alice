@@ -85,7 +85,7 @@ func (p *round4Handler) HandleMessage(logger log.Logger, message types.Message) 
 		logger.Warn("Failed to ToPoint", "err", err)
 		return err
 	}
-	err = round4.Psipai.Verify(parameter, peer.ssidWithBk, peer.round1Data.gammaCiphertext, n, ownPed.Getn(), ownPed.Gets(), ownPed.Gett(), Gamma, G)
+	err = round4.Psipai.Verify(parameter, peer.ssidWithBk, peer.round1Data.gammaCiphertext, n, ownPed, Gamma, G)
 	if err != nil {
 		logger.Warn("Failed to Verify", "err", err)
 		return err

@@ -33,6 +33,7 @@ var _ = Describe("Deczkproof test", func() {
 	pedn := new(big.Int).Mul(pedp, pedq)
 	pedt := big.NewInt(9)
 	peds := big.NewInt(729)
+	ped := NewPedersenOpenParameter(pedn, pedt, peds)
 
 	Context("It is OK", func() {
 		It("over Range, should be ok", func() {
@@ -43,9 +44,9 @@ var _ = Describe("Deczkproof test", func() {
 			C.Mul(C, new(big.Int).Exp(rho, n, nSquare))
 			C.Mod(C, nSquare)
 
-			zkproof, err := NewDecryMessage(config, ssIDInfo, y, rho, n, C, x, pedn, peds, pedt)
+			zkproof, err := NewDecryMessage(config, ssIDInfo, y, rho, n, C, x, ped)
 			Expect(err).Should(BeNil())
-			err = zkproof.Verify(config, ssIDInfo, n, C, x, pedn, peds, pedt)
+			err = zkproof.Verify(config, ssIDInfo, n, C, x, ped)
 			Expect(err).Should(BeNil())
 		})
 	})

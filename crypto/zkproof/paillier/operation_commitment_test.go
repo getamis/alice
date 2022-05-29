@@ -37,6 +37,7 @@ var _ = Describe("Operation commitment test", func() {
 	pedN := new(big.Int).Mul(pedp, pedq)
 	pedt := big.NewInt(9)
 	peds := big.NewInt(729)
+	ped := NewPedersenOpenParameter(pedN, peds, pedt)
 
 	Context("It is OK", func() {
 		It("over Range, should be ok", func() {
@@ -54,9 +55,9 @@ var _ = Describe("Operation commitment test", func() {
 			D.Mul(D, new(big.Int).Exp(rho, n0, n0Square))
 			D.Mod(D, n0Square)
 
-			zkproof, err := NewPaillierOperationAndPaillierCommitment(config, ssIDInfo, x, y, rho, rhox, rhoy, n0, n1, X, Y, C, D, pedN, peds, pedt)
+			zkproof, err := NewPaillierOperationAndPaillierCommitment(config, ssIDInfo, x, y, rho, rhox, rhoy, n0, n1, X, Y, C, D, ped)
 			Expect(err).Should(BeNil())
-			err = zkproof.Verify(config, ssIDInfo, n0, n1, C, D, X, Y, pedN, peds, pedt)
+			err = zkproof.Verify(config, ssIDInfo, n0, n1, C, D, X, Y, ped)
 			Expect(err).Should(BeNil())
 		})
 	})

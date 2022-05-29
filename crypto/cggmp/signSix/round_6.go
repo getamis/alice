@@ -99,7 +99,7 @@ func (p *round6Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 
 	if !sumS.Equal(p.pubKey) {
-		return nil, errors.New("failed verification")
+		return nil, errors.New("failed verification of the public key")
 	}
 
 	// Signing

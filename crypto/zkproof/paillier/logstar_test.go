@@ -35,6 +35,7 @@ var _ = Describe("Logstar test", func() {
 	pedN := new(big.Int).Mul(pedp, pedq)
 	pedt := big.NewInt(9)
 	peds := big.NewInt(729)
+	ped := NewPedersenOpenParameter(pedN, peds, pedt)
 
 	Context("It is OK", func() {
 		It("over Range, should be ok", func() {
@@ -45,9 +46,9 @@ var _ = Describe("Logstar test", func() {
 			X := pt.ScalarBaseMult(config.Curve, x)
 			G := pt.NewBase(config.Curve)
 
-			zkproof, err := NewKnowExponentAndPaillierEncryption(config, ssIDInfo, x, rho, C, n0, pedN, peds, pedt, X, G)
+			zkproof, err := NewKnowExponentAndPaillierEncryption(config, ssIDInfo, x, rho, C, n0, ped, X, G)
 			Expect(err).Should(BeNil())
-			err = zkproof.Verify(config, ssIDInfo, C, n0, pedN, peds, pedt, X, G)
+			err = zkproof.Verify(config, ssIDInfo, C, n0, ped, X, G)
 			Expect(err).Should(BeNil())
 		})
 	})

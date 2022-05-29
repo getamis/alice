@@ -20,7 +20,7 @@ import (
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/cggmp"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/homo/paillier"
+	paillierzkproof "github.com/getamis/alice/crypto/zkproof/paillier"
 	"github.com/getamis/alice/internal/message"
 )
 
@@ -31,7 +31,7 @@ type peer struct {
 	ssidWithBk    []byte
 	bk            *birkhoffinterpolation.BkParameter
 	bkcoefficient *big.Int
-	para          *paillier.PederssenOpenParameter
+	para          *paillierzkproof.PederssenOpenParameter
 	partialPubKey *pt.ECPoint
 	allY          *pt.ECPoint
 
@@ -44,7 +44,7 @@ type peer struct {
 	round7Data *round7Data
 }
 
-func newPeer(id string, ssid []byte, bk *birkhoffinterpolation.BkParameter, bkcoefficient *big.Int, para *paillier.PederssenOpenParameter, partialPubKey *pt.ECPoint, allY *pt.ECPoint) *peer {
+func newPeer(id string, ssid []byte, bk *birkhoffinterpolation.BkParameter, bkcoefficient *big.Int, para *paillierzkproof.PederssenOpenParameter, partialPubKey *pt.ECPoint, allY *pt.ECPoint) *peer {
 	ssidWithBk := cggmp.ComputeZKSsid(ssid, bk)
 	return &peer{
 		Peer:          message.NewPeer(id),

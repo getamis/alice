@@ -91,14 +91,14 @@ func (p *round2Handler) HandleMessage(logger log.Logger, message types.Message) 
 	// curve := p.pubKey.GetCurve()
 	// curveN := curve.Params().N
 	// Verify psi
-	err := round2.Psi.Verify(parameter, peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, new(big.Int).SetBytes(round2.D), peer.round1Data.gammaCiphertext, new(big.Int).SetBytes(round2.F), ownPed.Getn(), ownPed.Gets(), ownPed.Gett())
+	err := round2.Psi.Verify(parameter, peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, new(big.Int).SetBytes(round2.D), peer.round1Data.gammaCiphertext, new(big.Int).SetBytes(round2.F), ownPed)
 	if err != nil {
 		logger.Debug("Failed to verify", "err", err)
 		return err
 	}
 	// Verify phiHat
 	bkPartialKey := peer.partialPubKey.ScalarMult(peer.bkcoefficient)
-	err = round2.Psihat.Verify(parameter, peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, new(big.Int).SetBytes(round2.Dhat), new(big.Int).SetBytes(round2.Fhat), ownPed.Getn(), ownPed.Gets(), ownPed.Gett(), bkPartialKey)
+	err = round2.Psihat.Verify(parameter, peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, new(big.Int).SetBytes(round2.Dhat), new(big.Int).SetBytes(round2.Fhat), ownPed, bkPartialKey)
 	if err != nil {
 		logger.Debug("Failed to verify", "err", err)
 		return err

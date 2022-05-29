@@ -33,6 +33,7 @@ var _ = Describe("Encrangezkproof test", func() {
 	pedn := new(big.Int).Mul(pedp, pedq)
 	pedt := big.NewInt(9)
 	peds := big.NewInt(729)
+	ped := NewPedersenOpenParameter(pedn, peds, pedt)
 
 	Context("It is OK", func() {
 		It("over Range, should be ok", func() {
@@ -42,9 +43,9 @@ var _ = Describe("Encrangezkproof test", func() {
 			ciphertext.Mul(ciphertext, new(big.Int).Exp(rho, n, nSquare))
 			ciphertext.Mod(ciphertext, nSquare)
 
-			zkproof, err := NewEncryptRangeMessage(config, ssIDInfo, ciphertext, n, k, rho, pedn, peds, pedt)
+			zkproof, err := NewEncryptRangeMessage(config, ssIDInfo, ciphertext, n, k, rho, ped)
 			Expect(err).Should(BeNil())
-			err = zkproof.Verify(config, ssIDInfo, ciphertext.Bytes(), n, pedn, peds, pedt)
+			err = zkproof.Verify(config, ssIDInfo, ciphertext.Bytes(), n, ped)
 			Expect(err).Should(BeNil())
 		})
 	})

@@ -28,7 +28,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestDKG(t *testing.T) {
+func TestRefresh(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Refresh Suite")
 }
