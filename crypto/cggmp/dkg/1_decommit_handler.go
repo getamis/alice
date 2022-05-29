@@ -15,13 +15,11 @@
 package dkg
 
 import (
-	"bytes"
 	"errors"
 
 	"github.com/getamis/alice/crypto/commitment"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
@@ -109,12 +107,5 @@ func (p *decommitHandler) HandleMessage(logger log.Logger, message types.Message
 }
 
 func (p *decommitHandler) Finalize(logger log.Logger) (types.Handler, error) {
-	// XOR all ridis
-	rid := bytes.Repeat([]byte{0}, LenRidi)
-	copy(rid, p.peerHandler.ridi)
-	for _, peer := range p.peers {
-		rid = utils.Xor(rid, peer.decommit.ridi)
-	}
-	p.rid = rid
 	return newVerifyHandler(p), nil
 }
