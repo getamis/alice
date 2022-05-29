@@ -15,6 +15,7 @@
 package dkg
 
 import (
+	"bytes"
 	"errors"
 	"math/big"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/getamis/alice/crypto/commitment"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
@@ -115,9 +117,17 @@ func (p *verifyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 	p.share = new(big.Int).Mod(p.share, p.fieldOrder)
 
+	// XOR all ridis
+	rid := bytes.Repeat([]byte{0}, LenRidi)
+	copy(rid, p.peerHandler.ridi)
+	for _, peer := range p.peers {
+		rid = utils.Xor(rid, peer.decommit.ridi)
+	}
+	p.rid = rid
+
 	// Build and send out the result message
 	big0 := big.NewInt(0)
-	p.siGProofMsg, err = zkproof.NewSchnorrMessageWithGivenMN(p.share, big0, p.peerHandler.schnorrAValue, big0, ecpointgrouplaw.NewBase(p.publicKey.GetCurve()), cggmp.ComputeSSID(p.sid, []byte(p.peerManager.SelfID()), p.rid))
+	p.siGProofMsg, err = zkproof.NewSchnorrMessageWithGivenMN(p.share, big0, p.peerHandler.schnorrAValue, big0, ecpointgrouplaw.NewBase(p.publicKey.GetCurve()), cggmp.ComputeSSID(p.sid, []byte(p.bk.String()), p.rid))
 	if err != nil {
 		log.Warn("Failed to new si schorr proof", "err", err)
 		return nil, err
