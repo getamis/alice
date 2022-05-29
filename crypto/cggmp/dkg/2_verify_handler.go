@@ -15,6 +15,7 @@
 package dkg
 
 import (
+	"bytes"
 	"errors"
 	"math/big"
 
@@ -22,6 +23,7 @@ import (
 	"github.com/getamis/alice/crypto/commitment"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
@@ -114,6 +116,14 @@ func (p *verifyHandler) Finalize(logger log.Logger) (types.Handler, error) {
 		p.share = new(big.Int).Add(p.share, new(big.Int).SetBytes(v.Evaluation))
 	}
 	p.share = new(big.Int).Mod(p.share, p.fieldOrder)
+
+	// XOR all ridis
+	rid := bytes.Repeat([]byte{0}, LenRidi)
+	copy(rid, p.peerHandler.ridi)
+	for _, peer := range p.peers {
+		rid = utils.Xor(rid, peer.decommit.ridi)
+	}
+	p.rid = rid
 
 	// Build and send out the result message
 	big0 := big.NewInt(0)
