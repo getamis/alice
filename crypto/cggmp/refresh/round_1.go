@@ -129,7 +129,6 @@ func newRound1Handler(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerMan
 	if err != nil {
 		return nil, err
 	}
-	// TODO: Generate Ai commitment
 	Ai := make(map[string]*big.Int)
 	msgAi := make(map[string]*pt.EcPointMessage)
 	for i := 0; i < len(peerManager.PeerIDs()); i++ {
