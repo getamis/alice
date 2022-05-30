@@ -87,14 +87,14 @@ func (p *round2Handler) HandleMessage(logger log.Logger, message types.Message) 
 	ownPed := p.own.para
 	n := peer.para.Getn()
 	// Verify psi
-	err = round2.Psi.Verify(parameter, peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, new(big.Int).SetBytes(round2.D), new(big.Int).SetBytes(round2.F), ownPed.Getn(), ownPed.Gets(), ownPed.Gett(), Gamma)
+	err = round2.Psi.Verify(parameter, peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, new(big.Int).SetBytes(round2.D), new(big.Int).SetBytes(round2.F), ownPed, Gamma)
 	if err != nil {
 		logger.Debug("Failed to verify", "err", err)
 		return err
 	}
 	// Verify phiHat
 	bkPartialKey := peer.partialPubKey.ScalarMult(peer.bkcoefficient)
-	err = round2.Psihat.Verify(parameter, peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, new(big.Int).SetBytes(round2.Dhat), new(big.Int).SetBytes(round2.Fhat), ownPed.Getn(), ownPed.Gets(), ownPed.Gett(), bkPartialKey)
+	err = round2.Psihat.Verify(parameter, peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, new(big.Int).SetBytes(round2.Dhat), new(big.Int).SetBytes(round2.Fhat), ownPed, bkPartialKey)
 	if err != nil {
 		logger.Debug("Failed to verify", "err", err)
 		return err
@@ -102,7 +102,7 @@ func (p *round2Handler) HandleMessage(logger log.Logger, message types.Message) 
 	// Verify phipai
 	curve := p.pubKey.GetCurve()
 	G := pt.NewBase(curve)
-	err = round2.Psipai.Verify(parameter, peer.ssidWithBk, peer.round1Data.gammaCiphertext, n, ownPed.Getn(), ownPed.Gets(), ownPed.Gett(), Gamma, G)
+	err = round2.Psipai.Verify(parameter, peer.ssidWithBk, peer.round1Data.gammaCiphertext, n, ownPed, Gamma, G)
 	if err != nil {
 		logger.Debug("Failed to verify", "err", err)
 		return err
@@ -169,12 +169,11 @@ func (p *round2Handler) Finalize(logger log.Logger) (types.Handler, error) {
 		logger.Debug("Failed to ToEcPointMessage", "err", err)
 		return nil, err
 	}
-	p.sumMTAAlpha = big.NewInt(0)
 	for id, peer := range p.peers {
 		logger = logger.New("peerId", id)
 		peerPed := peer.para
 		// Compute proof phi''
-		psidoublepaiProof, err := paillierzkproof.NewKnowExponentAndPaillierEncryption(parameter, p.own.ssidWithBk, p.k, p.rho, p.kCiphertext, p.own.para.Getn(), peerPed.Getn(), peerPed.Gets(), peerPed.Gett(), Delta, sumGamma)
+		psidoublepaiProof, err := paillierzkproof.NewKnowExponentAndPaillierEncryption(parameter, p.own.ssidWithBk, p.k, p.rho, p.kCiphertext, p.own.para.Getn(), peerPed, Delta, sumGamma)
 		if err != nil {
 			logger.Debug("Failed to NewKnowExponentAndPaillierEncryption", "err", err)
 			return nil, err

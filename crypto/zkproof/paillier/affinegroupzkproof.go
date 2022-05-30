@@ -22,11 +22,14 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-func NewPaillierAffAndGroupRangeMessage(config *CurveConfig, ssidInfo []byte, x *big.Int, y *big.Int, rho *big.Int, rhoy *big.Int, n0 *big.Int, n1 *big.Int, C *big.Int, D *big.Int, Y *big.Int, pedN *big.Int, peds *big.Int, pedt *big.Int, X *pt.ECPoint) (*PaillierAffAndGroupRangeMessage, error) {
+func NewPaillierAffAndGroupRangeMessage(config *CurveConfig, ssidInfo []byte, x *big.Int, y *big.Int, rho *big.Int, rhoy *big.Int, n0 *big.Int, n1 *big.Int, C *big.Int, D *big.Int, Y *big.Int, ped *PederssenOpenParameter, X *pt.ECPoint) (*PaillierAffAndGroupRangeMessage, error) {
 	G := pt.NewBase(X.GetCurve())
 	curveN := G.GetCurve().Params().N
 	n0Square := new(big.Int).Exp(n0, big2, nil)
 	n1Square := new(big.Int).Exp(n1, big2, nil)
+	pedN := ped.Getn()
+	peds := ped.Gets()
+	pedt := ped.Gett()
 
 	// Sample α in ± 2^{l+ε}, β in ±2^{l'+ε}.
 	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
@@ -133,11 +136,14 @@ func NewPaillierAffAndGroupRangeMessage(config *CurveConfig, ssidInfo []byte, x 
 	}, nil
 }
 
-func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, n0, n1, C, D, Y, pedN, peds, pedt *big.Int, X *pt.ECPoint) error {
+func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, n0, n1, C, D, Y *big.Int, ped *PederssenOpenParameter, X *pt.ECPoint) error {
 	G := pt.NewBase(X.GetCurve())
 	curveN := G.GetCurve().Params().N
 	n0Square := new(big.Int).Exp(n0, big2, nil)
 	n1Square := new(big.Int).Exp(n1, big2, nil)
+	pedN := ped.Getn()
+	peds := ped.Gets()
+	pedt := ped.Gett()
 	// check A in Z_{N0^2}^\ast, By in Z_{N1^2}^\ast, E,S,T,F in Z_{\hat{N}}^\ast, w in Z_{N0}^\ast, and wy in Z_{N1}^\ast.
 	S := new(big.Int).SetBytes(msg.S)
 	err := utils.InRange(S, big0, pedN)

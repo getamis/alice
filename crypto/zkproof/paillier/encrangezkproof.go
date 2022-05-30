@@ -20,16 +20,19 @@ import (
 	"github.com/getamis/alice/crypto/utils"
 )
 
-func NewEncryptRangeMessage(config *CurveConfig, ssidInfo []byte, ciphertext *big.Int, proverN *big.Int, k *big.Int, rho *big.Int, pedersenN *big.Int, pedersenS *big.Int, pedersenT *big.Int) (*EncryptRangeMessage, error) {
+func NewEncryptRangeMessage(config *CurveConfig, ssidInfo []byte, ciphertext *big.Int, proverN *big.Int, k *big.Int, rho *big.Int, ped *PederssenOpenParameter) (*EncryptRangeMessage, error) {
 	groupOrder := config.Curve.Params().N
 	proverNSquare := new(big.Int).Exp(proverN, big2, nil)
+	pedN := ped.Getn()
+	peds := ped.Gets()
+	pedt := ped.Gett()
 	// Sample α in ± 2^{l+ε}
 	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
 	if err != nil {
 		return nil, err
 	}
 	// Sample μ in ± 2^{l+ε}·Nˆ.
-	mu, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpL, pedersenN))
+	mu, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpL, pedN))
 	if err != nil {
 		return nil, err
 	}
@@ -39,21 +42,21 @@ func NewEncryptRangeMessage(config *CurveConfig, ssidInfo []byte, ciphertext *bi
 		return nil, err
 	}
 	// Sample γ in ± 2^{l+ε}·Nˆ.
-	gamma, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpLAddepsilon, pedersenN))
+	gamma, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpLAddepsilon, pedN))
 	if err != nil {
 		return nil, err
 	}
 	// S = s^k*t^μ mod Nˆ
-	S := new(big.Int).Mul(new(big.Int).Exp(pedersenS, k, pedersenN), new(big.Int).Exp(pedersenT, mu, pedersenN))
-	S.Mod(S, pedersenN)
+	S := new(big.Int).Mul(new(big.Int).Exp(peds, k, pedN), new(big.Int).Exp(pedt, mu, pedN))
+	S.Mod(S, pedN)
 	// A = (1+N_0)^α·r^{N_0} mod N_0^2
 	A := new(big.Int).Mul(new(big.Int).Exp(new(big.Int).Add(big1, proverN), alpha, proverNSquare), new(big.Int).Exp(r, proverN, proverNSquare))
 	A.Mod(A, proverNSquare)
 	// C = s^α*t^γ mod Nˆ
-	C := new(big.Int).Mul(new(big.Int).Exp(pedersenS, alpha, pedersenN), new(big.Int).Exp(pedersenT, gamma, pedersenN))
-	C.Mod(C, pedersenN)
+	C := new(big.Int).Mul(new(big.Int).Exp(peds, alpha, pedN), new(big.Int).Exp(pedt, gamma, pedN))
+	C.Mod(C, pedN)
 
-	e, salt, err := GetE(groupOrder, utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), ciphertext.Bytes(), proverN.Bytes(), pedersenN.Bytes(), pedersenS.Bytes(), pedersenT.Bytes(), S.Bytes(), A.Bytes(), C.Bytes())...)
+	e, salt, err := GetE(groupOrder, utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), ciphertext.Bytes(), proverN.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), S.Bytes(), A.Bytes(), C.Bytes())...)
 	if err != nil {
 		return nil, err
 	}
@@ -78,23 +81,26 @@ func NewEncryptRangeMessage(config *CurveConfig, ssidInfo []byte, ciphertext *bi
 	}, nil
 }
 
-func (msg *EncryptRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertext []byte, proveN *big.Int, pedersenN, pedersenS, pedersenT *big.Int) error {
+func (msg *EncryptRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertext []byte, proveN *big.Int, ped *PederssenOpenParameter) error {
 	groupOrder := config.Curve.Params().N
+	pedN := ped.Getn()
+	peds := ped.Gets()
+	pedt := ped.Gett()
 	// check S, C ∈ Z_{pedN}^\ast
 	S := new(big.Int).SetBytes(msg.S)
-	err := utils.InRange(S, big0, pedersenN)
+	err := utils.InRange(S, big0, pedN)
 	if err != nil {
 		return err
 	}
-	if !utils.IsRelativePrime(S, pedersenN) {
+	if !utils.IsRelativePrime(S, pedN) {
 		return ErrVerifyFailure
 	}
 	C := new(big.Int).SetBytes(msg.C)
-	err = utils.InRange(C, big0, pedersenN)
+	err = utils.InRange(C, big0, pedN)
 	if err != nil {
 		return err
 	}
-	if !utils.IsRelativePrime(C, pedersenN) {
+	if !utils.IsRelativePrime(C, pedN) {
 		return ErrVerifyFailure
 	}
 	z1, _ := new(big.Int).SetString(msg.Z1, 10)
@@ -113,11 +119,11 @@ func (msg *EncryptRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, cip
 	if err != nil {
 		return err
 	}
-	if !utils.IsRelativePrime(A, pedersenN) {
+	if !utils.IsRelativePrime(A, pedN) {
 		return ErrVerifyFailure
 	}
 
-	seed, err := utils.HashProtos(msg.Salt, utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), ciphertext, proveN.Bytes(), pedersenN.Bytes(), pedersenS.Bytes(), pedersenT.Bytes(), S.Bytes(), A.Bytes(), C.Bytes())...)
+	seed, err := utils.HashProtos(msg.Salt, utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), ciphertext, proveN.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), S.Bytes(), A.Bytes(), C.Bytes())...)
 	if err != nil {
 		return err
 	}
@@ -139,10 +145,10 @@ func (msg *EncryptRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, cip
 	}
 
 	// Check s^{z1}*t^{z3} =C·S^e mod Nˆ
-	CSexpe := new(big.Int).Mul(C, new(big.Int).Exp(S, e, pedersenN))
-	CSexpe.Mod(CSexpe, pedersenN)
-	compare = new(big.Int).Mul(new(big.Int).Exp(pedersenS, z1, pedersenN), new(big.Int).Exp(pedersenT, z3, pedersenN))
-	compare.Mod(compare, pedersenN)
+	CSexpe := new(big.Int).Mul(C, new(big.Int).Exp(S, e, pedN))
+	CSexpe.Mod(CSexpe, pedN)
+	compare = new(big.Int).Mul(new(big.Int).Exp(peds, z1, pedN), new(big.Int).Exp(pedt, z3, pedN))
+	compare.Mod(compare, pedN)
 	if CSexpe.Cmp(compare) != 0 {
 		return ErrVerifyFailure
 	}

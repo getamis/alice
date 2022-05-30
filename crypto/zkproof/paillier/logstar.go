@@ -21,9 +21,12 @@ import (
 	"github.com/getamis/alice/crypto/utils"
 )
 
-func NewKnowExponentAndPaillierEncryption(config *CurveConfig, ssidInfo []byte, x, rho, C, n0, pedN, peds, pedt *big.Int, X *pt.ECPoint, G *pt.ECPoint) (*LogStarMessage, error) {
+func NewKnowExponentAndPaillierEncryption(config *CurveConfig, ssidInfo []byte, x, rho, C, n0 *big.Int, ped *PederssenOpenParameter, X *pt.ECPoint, G *pt.ECPoint) (*LogStarMessage, error) {
 	n0Square := new(big.Int).Exp(n0, big2, nil)
 	curveN := G.GetCurve().Params().N
+	pedN := ped.Getn()
+	peds := ped.Gets()
+	pedt := ped.Gett()
 	// Sample α in ± 2^{l+ε}, β in ±2^{l'+ε}.
 	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
 	if err != nil {
@@ -94,9 +97,12 @@ func NewKnowExponentAndPaillierEncryption(config *CurveConfig, ssidInfo []byte, 
 	}, nil
 }
 
-func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0, pedN, peds, pedt *big.Int, X *pt.ECPoint, G *pt.ECPoint) error {
+func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0 *big.Int, ped *PederssenOpenParameter, X *pt.ECPoint, G *pt.ECPoint) error {
 	n0Square := new(big.Int).Exp(n0, big2, nil)
 	curveN := G.GetCurve().Params().N
+	pedN := ped.Getn()
+	peds := ped.Gets()
+	pedt := ped.Gett()
 	// check A in Z_{N0^2}^\ast, S,D in Z_{\hat{N}}^\ast, and z2 in Z_{0}^\ast.
 	S := new(big.Int).SetBytes(msg.S)
 	err := utils.InRange(S, big0, pedN)

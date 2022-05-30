@@ -31,7 +31,7 @@ func NewNthRoot(config *CurveConfig, ssidInfo []byte, rho, rhoNPower, n *big.Int
 	// A = r^{N} mod N^2
 	A := new(big.Int).Exp(r, n, nSquare)
 
-	e, salt, err := GetE(curveN, utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), rhoNPower.Bytes(), A.Bytes())...)
+	e, salt, err := GetE(curveN, utils.GetAnyMsg(ssidInfo, n.Bytes(), rhoNPower.Bytes(), A.Bytes())...)
 	if err != nil {
 		return nil, err
 	}
@@ -50,9 +50,20 @@ func (msg *NthRootMessage) Verify(config *CurveConfig, ssidInfo []byte, NPower, 
 	curveN := config.Curve.Params().N
 	nSquare := new(big.Int).Exp(n, big2, nil)
 	A := new(big.Int).SetBytes(msg.A)
+	err := utils.InRange(A, big0, nSquare)
+	// check A ∈ Z^*_{n^2}, and z1 ∈ [0,n).
+	if err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(A, n) {
+		return ErrVerifyFailure
+	}
 	z1 := new(big.Int).SetBytes(msg.Z1)
-
-	seed, err := utils.HashProtos(msg.Salt, utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), NPower.Bytes(), A.Bytes())...)
+	err = utils.InRange(z1, big0, n)
+	if err != nil {
+		return err
+	}
+	seed, err := utils.HashProtos(msg.Salt, utils.GetAnyMsg(ssidInfo, n.Bytes(), NPower.Bytes(), A.Bytes())...)
 	if err != nil {
 		return err
 	}

@@ -109,7 +109,7 @@ func newPeerHandlerWithPolynomial(curve elliptic.Curve, peerManager types.PeerMa
 	if err != nil {
 		return nil, err
 	}
-	u0gCommiter, err := commitment.NewCommiterByPointAndSSIDInfo(sid, []byte(peerManager.SelfID()), ridi, A, u0g)
+	u0gCommiter, err := commitment.NewCommiterByPointAndSSIDInfo(sid, []byte(bk.String()), ridi, A, u0g)
 	if err != nil {
 		return nil, err
 	}

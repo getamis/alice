@@ -72,7 +72,7 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 	G := pt.NewBase(curve)
 	otherPed := peer.para
 	// Verify phipai
-	phipai, err := paillierzkproof.NewKnowExponentAndPaillierEncryption(parameter, p.own.ssidWithBk, p.gamma, p.mu, p.gammaCiphertext, p.paillierKey.GetN(), otherPed.Getn(), otherPed.Gets(), otherPed.Gett(), p.Gamma, G)
+	phipai, err := paillierzkproof.NewKnowExponentAndPaillierEncryption(parameter, p.own.ssidWithBk, p.gamma, p.nu, p.gammaCiphertext, p.paillierKey.GetN(), otherPed, p.Gamma, G)
 	if err != nil {
 		return err
 	}
