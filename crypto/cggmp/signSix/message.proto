@@ -20,7 +20,6 @@ option go_package = "github.com/getamis/alice/crypto/cggmp/signSix";
 
 import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
 import "github.com/getamis/alice/crypto/zkproof/paillier/message.proto";
-import "github.com/getamis/alice/crypto/birkhoffinterpolation/bk.proto";
 
 enum Type {
     Round1 = 0;
@@ -88,25 +87,33 @@ message Round7Msg {
     bytes sigma = 1;
 }
 
-message RoundErr1Msg {
+message Err1Msg {
     bytes k = 1;
     bytes rhoNPower = 2;
     paillier.NthRootMessage psiRhoProof = 3;
     bytes gamma = 4;
-    repeated bytes alpha = 5;
-    repeated birkhoffinterpolation.BkParameterMessage residueBk  = 6;
-    repeated bytes muNPower = 7;
-    repeated paillier.NthRootMessage  psiMuProof = 8;
+    // key => bk
+    map<string, Err1PeerMsg> peers = 6;
 }
 
-message RoundErr2Msg {
+message Err1PeerMsg {
+    bytes alpha = 1;
+    bytes muNPower = 2;
+    paillier.NthRootMessage  psiMuProof = 3;
+}
+
+message Err2Msg {
     bytes k = 1;
     bytes rhoNPower = 2;
     paillier.NthRootMessage psiRhoProof = 3;
     ecpointgrouplaw.EcPointMessage ytilde = 4;
     paillier.LogMessage psipaiProof = 5;
-    repeated bytes alphahat = 6;
-    repeated birkhoffinterpolation.BkParameterMessage residueBk  = 7;
-    repeated bytes muhatNPower = 8;
-    repeated paillier.NthRootMessage  psiMuProof = 9;
+    // key => bk
+    map<string, Err2PeerMsg> peers = 6;
 } 
+
+message Err2PeerMsg {
+    bytes alphahat = 1;
+    bytes muhatNPower = 2;
+    paillier.NthRootMessage  psiMuProof = 3;
+}

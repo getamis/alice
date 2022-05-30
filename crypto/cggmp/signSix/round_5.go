@@ -35,6 +35,9 @@ type round5Handler struct {
 
 	R *pt.ECPoint
 	S *pt.ECPoint
+
+	// Error analysis message
+	roundErr1Msg *Err1Msg
 }
 
 func newRound5Handler(round4Handler *round4Handler) (*round5Handler, error) {
@@ -112,7 +115,10 @@ func (p *round5Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 
 	if !G.ScalarMult(sumdelta).Equal(sumDeltaPoint) {
-		// Do analysis
+		err := p.buildErr1Msg()
+		if err != nil {
+			logger.Warn("Failed to buildErr1Msg", "err", err)
+		}
 		return nil, errors.New("failed verify")
 	}
 	p.R = R
@@ -144,4 +150,48 @@ func (p *round5Handler) Finalize(logger log.Logger) (types.Handler, error) {
 		})
 	}
 	return newRound6Handler(p)
+}
+
+func (p *round5Handler) buildErr1Msg() error {
+	n := p.paillierKey.GetN()
+	nsquare := new(big.Int).Mul(n, n)
+	nAddone := new(big.Int).Add(n, big1)
+	nthRoot, err := p.paillierKey.GetNthRoot()
+	if err != nil {
+		return err
+	}
+	rhoNPower := new(big.Int).Exp(p.rho, n, nsquare)
+	psi, err := paillierzkproof.NewNthRoot(paillierzkproof.NewS256(), p.own.ssidWithBk, p.rho, rhoNPower, n)
+	if err != nil {
+		return err
+	}
+
+	// build peersMsg
+	peersMsg := make(map[string]*Err1PeerMsg, len(p.peers))
+	for _, peer := range p.peers {
+		muij := new(big.Int).Exp(nAddone, new(big.Int).Neg(peer.round2Data.alpha), n)
+		muij.Mul(muij, peer.round2Data.d)
+		muNthPower := new(big.Int).Mod(muij, n)
+		mu := muij.Exp(muNthPower, nthRoot, n)
+		muNPower := muNthPower
+		psiMuProof, err := paillierzkproof.NewNthRoot(paillierzkproof.NewS256(), p.own.ssidWithBk, mu, muNPower, n)
+		if err != nil {
+			return err
+		}
+
+		peersMsg[peer.bk.String()] = &Err1PeerMsg{
+			Alpha:      peer.round2Data.alpha.Bytes(),
+			MuNPower:   muNPower.Bytes(),
+			PsiMuProof: psiMuProof,
+		}
+	}
+
+	p.roundErr1Msg = &Err1Msg{
+		K:           p.k.Bytes(),
+		RhoNPower:   rhoNPower.Bytes(),
+		PsiRhoProof: psi,
+		Gamma:       p.gamma.Bytes(),
+		Peers:       peersMsg,
+	}
+	return nil
 }

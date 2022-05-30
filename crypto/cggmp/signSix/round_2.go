@@ -88,8 +88,6 @@ func (p *round2Handler) HandleMessage(logger log.Logger, message types.Message) 
 	round2 := msg.GetRound2()
 	ownPed := p.own.para
 	n := peer.para.Getn()
-	// curve := p.pubKey.GetCurve()
-	// curveN := curve.Params().N
 	// Verify psi
 	err := round2.Psi.Verify(parameter, peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, new(big.Int).SetBytes(round2.D), peer.round1Data.gammaCiphertext, new(big.Int).SetBytes(round2.F), ownPed)
 	if err != nil {

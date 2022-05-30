@@ -58,7 +58,6 @@ type round1Data struct {
 }
 
 type round1Handler struct {
-	ssid            []byte
 	bkMulShare      *big.Int
 	pubKey          *pt.ECPoint
 	paillierKey     *paillier.Paillier
@@ -149,7 +148,6 @@ func newRound1Handler(threshold uint32, ssid []byte, share *big.Int, pubKey *pt.
 	// Set data
 	own := newPeer(selfId, ssid, ownBK, bkcoefficient[0], ped[selfId], partialPubKey[selfId], allY[selfId])
 	return &round1Handler{
-		ssid:            ssid,
 		bkMulShare:      bkShare,
 		pubKey:          pubKey,
 		paillierKey:     paillierKey,

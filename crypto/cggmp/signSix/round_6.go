@@ -21,8 +21,13 @@ import (
 	"github.com/getamis/alice/crypto/cggmp"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
+	paillier "github.com/getamis/alice/crypto/zkproof/paillier"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
+)
+
+var (
+	big1 = big.NewInt(1)
 )
 
 type round6Data struct {
@@ -33,6 +38,9 @@ type round6Handler struct {
 	*round5Handler
 
 	sigma *big.Int
+
+	// Error analysis message
+	roundErr2Msg *Err2Msg
 }
 
 func newRound6Handler(round5Handler *round5Handler) (*round6Handler, error) {
@@ -99,6 +107,10 @@ func (p *round6Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 
 	if !sumS.Equal(p.pubKey) {
+		err := p.buildErr2Msg()
+		if err != nil {
+			logger.Warn("Failed to buildErr1Msg", "err", err)
+		}
 		return nil, errors.New("failed verification of the public key")
 	}
 
@@ -118,4 +130,63 @@ func (p *round6Handler) Finalize(logger log.Logger) (types.Handler, error) {
 		},
 	})
 	return newRound7Handler(p)
+}
+
+// Error presenter
+func (p *round6Handler) buildErr2Msg() error {
+	n := p.paillierKey.GetN()
+	nsquare := new(big.Int).Mul(n, n)
+	nAddone := new(big.Int).Add(n, big1)
+	nthRoot, err := p.paillierKey.GetNthRoot()
+	if err != nil {
+		return err
+	}
+	rhoNPower := new(big.Int).Exp(p.rho, n, nsquare)
+	curve := p.pubKey.GetCurve()
+	psi, err := paillier.NewNthRoot(paillier.NewS256(), p.own.ssidWithBk, p.rho, rhoNPower, n)
+	if err != nil {
+		return err
+	}
+	G := pt.NewBase(curve)
+	biG := G.ScalarMult(p.bhat)
+	Y := p.own.allY
+	biY := Y.ScalarMult(p.bhat)
+	psipai, err := paillier.NewLog(p.own.ssidWithBk, p.bhat, G, Y, biG, biY)
+	if err != nil {
+		return err
+	}
+	biYMsg, err := biY.ToEcPointMessage()
+	if err != nil {
+		return err
+	}
+
+	// build peersMsg
+	peersMsg := make(map[string]*Err2PeerMsg, len(p.peers))
+	for _, peer := range p.peers {
+		muij := new(big.Int).Exp(nAddone, new(big.Int).Neg(peer.round2Data.alphahat), n)
+		muij.Mul(muij, peer.round2Data.dhat)
+		muNthPower := new(big.Int).Mod(muij, n)
+		mu := muij.Exp(muNthPower, nthRoot, n)
+		muNPower := muNthPower
+		psiMuProof, err := paillier.NewNthRoot(paillier.NewS256(), p.own.ssidWithBk, mu, muNPower, n)
+		if err != nil {
+			return err
+		}
+		peersMsg[peer.bk.String()] = &Err2PeerMsg{
+			Alphahat:    peer.round2Data.alphahat.Bytes(),
+			MuhatNPower: muNPower.Bytes(),
+			PsiMuProof:  psiMuProof,
+		}
+	}
+
+	p.roundErr2Msg = &Err2Msg{
+		K:           p.k.Bytes(),
+		RhoNPower:   rhoNPower.Bytes(),
+		PsiRhoProof: psi,
+		PsipaiProof: psipai,
+		Ytilde:      biYMsg,
+		Peers:       peersMsg,
+	}
+
+	return nil
 }
