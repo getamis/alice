@@ -41,6 +41,12 @@ type peer struct {
 	si *big.Int
 }
 
+type peers []*peer
+
+func (p peers) Len() int           { return len(p) }
+func (p peers) Less(i, j int) bool { return p[i].bk.GetX().Cmp(p[j].bk.GetX()) < 0 }
+func (p peers) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+
 func newPeer(id string, index int, bk *birkhoffinterpolation.BkParameter) *peer {
 	return &peer{
 		Peer:  message.NewPeer(id),

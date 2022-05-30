@@ -18,6 +18,7 @@ import (
 	"crypto/sha512"
 	"errors"
 	"math/big"
+	"sort"
 
 	"github.com/agl/ed25519/edwards25519"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
@@ -210,7 +211,9 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	identify := ecpointgrouplaw.NewIdentity(p.pubKey.GetCurve())
 	R := identify.Copy()
 	var B []byte
-	for _, node := range p.nodes {
+	// Get ordered nodes
+	nodes := p.getOrderedNodes()
+	for _, node := range nodes {
 		msgBody := node.GetMessage(types.MessageType(Type_Round1)).(*Message).GetRound1()
 		x := node.bk.GetX().Bytes()
 		err := msgBody.SG.Verify(G)
@@ -227,7 +230,7 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 		B = append(B, computeB(x, node.D, node.E)...)
 	}
 
-	for _, node := range p.nodes {
+	for _, node := range nodes {
 		x := node.bk.GetX().Bytes()
 		ell, err := computeElli(x, node.E, p.message, B, p.curveN)
 		if err != nil {
@@ -375,4 +378,14 @@ func computeElli(x []byte, E *ecpointgrouplaw.ECPoint, message []byte, B []byte,
 		}
 	}
 	return temp, nil
+}
+
+func (p *round1) getOrderedNodes() peers {
+	var ps peers
+	for _, n := range p.nodes {
+		ps = append(ps, n)
+	}
+
+	sort.Sort(ps)
+	return ps
 }
