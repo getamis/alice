@@ -287,10 +287,10 @@ func sign(homoFunc func() (homo.Crypto, error), threshold, num int, dkgResult *r
 			Expect(err).Should(BeNil())
 			// All R and S should be the same.
 			if r != nil {
-				Expect(r).Should(Equal(signerResult.R))
+				Expect(r).Should(Equal(signerResult.R.GetX()))
 				Expect(s).Should(Equal(signerResult.S))
 			} else {
-				r = signerResult.R
+				r = signerResult.R.GetX()
 				s = signerResult.S
 			}
 		}
