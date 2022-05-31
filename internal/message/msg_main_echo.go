@@ -75,7 +75,7 @@ func (t *EchoMsgMain) AddMessage(msg types.Message) error {
 		// Broadcast to other peers
 		for _, id := range t.pm.PeerIDs() {
 			if mId != id {
-				t.pm.MustSend(id, msg)
+				go t.pm.MustSend(id, msg)
 			}
 		}
 		echoMsg[mId] = &echoMessage{
