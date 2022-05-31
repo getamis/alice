@@ -21,6 +21,8 @@ import (
 	"github.com/getamis/alice/crypto/cggmp"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/crypto/zkproof/paillier"
+	paillierzkproof "github.com/getamis/alice/crypto/zkproof/paillier"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 )
@@ -34,6 +36,9 @@ type round3Handler struct {
 
 	sigma *big.Int
 	R     *pt.ECPoint
+
+	// Error analysis
+	deltaVerifyFailureMsg *DeltaVerifyFailureMsg
 }
 
 func newRound3Handler(round2Handler *round2Handler) (*round3Handler, error) {
@@ -113,8 +118,11 @@ func (p *round3Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	// Do verification
 	gDelta := pt.NewBase(curve).ScalarMult(delta)
 	if !gDelta.Equal(bigDelta) {
-		// return nil, analysis()
-		return nil, errors.New("fix me QQ")
+		err := p.buildDeltaVerifyFailureMsg()
+		if err != nil {
+			logger.Warn("Failed to buildDeltaVerifyFailureMsg", "err", err)
+		}
+		return nil, errors.New("invalid delta")
 	}
 	R := p.sumGamma.ScalarMult(new(big.Int).ModInverse(delta, curveN))
 	if R.IsIdentity() {
@@ -142,102 +150,82 @@ func (p *round3Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	return newRound4Handler(p)
 }
 
-// func analysis() error {
-// 	// A: Reprove that {Dj,i}j ̸=i are well-formed according to prod_ell^aff-g , for l ̸= j,i.
-// 	for i := 0; i < len(msgs); i++ {
-// 		msg := msgs[i]
-// 		proveBK, err := msg.Bk.ToBk(curveN)
-// 		if err != nil {
-// 			return nil, nil, err
-// 		}
+func (p *round3Handler) buildDeltaVerifyFailureMsg() error {
+	// A: Reprove that {Dj,i}j ̸=i are well-formed according to prod_ell^aff-g , for l ̸= j,i.
+	curve := p.pubKey.GetCurve()
+	curveN := curve.Params().N
+	for _, peer := range p.peers {
+		ownPed := p.own.para
+		n := peer.para.Getn()
+		// Verify psi
+		err := peer.round2Data.psiProof.Verify(paillier.NewS256(), peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, peer.round2Data.d, peer.round2Data.f, ownPed, peer.round2Data.allGammaPoint)
+		if err != nil {
+			return err
+		}
+	}
+	// B: Compute Hi = enci(ki · γi) and prove in ZK that Hi is well formed wrt Ki and Gi in Πmul.
+	kMulGamma := new(big.Int).Mul(p.gamma, p.k)
+	kMulGammaCiphertext, randomRho, err := p.paillierKey.EncryptWithOutputSalt(kMulGamma)
+	if err != nil {
+		return err
+	}
+	rho := new(big.Int).Exp(p.mu, new(big.Int).Neg(p.k), p.paillierKey.GetNSquare())
+	rho.Mul(rho, randomRho)
+	rho.Mod(rho, p.paillierKey.GetNSquare())
+	proofMul, err := paillier.NewMulMessage(p.own.ssidWithBk, p.k, rho, p.rho, p.paillierKey.GetN(), p.kCiphertext, p.gammaCiphertext, kMulGammaCiphertext, curveN)
+	if err != nil {
+		return err
+	}
 
-// 		ownPed := p.pederssenPara[p.onwBK.GetX().String()]
-// 		n := p.pederssenPara[proveBK.GetX().String()].Getn()
-// 		proveBKXString := proveBK.GetX().String()
-// 		// Verify psi
-// 		err = p.psiProof[proveBKXString].Verify(msg.Ssid, p.paillierKey.GetN(), n, p.kCiphertext, p.otherD[proveBKXString], p.otherF[proveBKXString], ownPed.Getn(), ownPed.Gets(), ownPed.Gett(), p.allGammaPoint[proveBKXString])
-// 		if err != nil {
-// 			return nil, nil, err
-// 		}
-// 	}
-// 	// B: Compute Hi = enci(ki · γi) and prove in ZK that Hi is well formed wrt Ki and Gi in Πmul.
-// 	kMulGamma := new(big.Int).Mul(p.gamma, p.k)
-// 	kMulGammaCiphertext, randomRho, err := p.paillierKey.EncryptWithOutputSalt(kMulGamma)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-// 	rho := new(big.Int).Exp(p.mu, new(big.Int).Neg(p.k), p.paillierKey.GetNSquare())
-// 	rho.Mul(rho, randomRho)
-// 	rho.Mod(rho, p.paillierKey.GetNSquare())
-// 	proofMul, err := paillierzkproof.NewMulMessage(p.ssid, p.k, rho, p.rho, p.paillierKey.GetN(), p.kCiphertext, p.gammaCiphertext, kMulGammaCiphertext, curveN)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
+	deltaCiphertext := new(big.Int).Set(kMulGammaCiphertext)
+	rhoSalt := new(big.Int).Set(randomRho)
+	alphaDeltaWithSaltOne := new(big.Int).Add(big1, p.paillierKey.GetN())
+	paillierNnthRoot, err := p.paillierKey.GetNthRoot()
+	if err != nil {
+		return err
+	}
 
-// 	deltaCiphertext := new(big.Int).Set(kMulGammaCiphertext)
-// 	RhoSalt := new(big.Int).Set(randomRho)
-// 	alphaDeltaWithSaltOne := new(big.Int).Add(big1, p.paillierKey.GetN())
-// 	paillierNnthRoot, err := p.paillierKey.GetNthRoot()
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
+	tempResult := new(big.Int).Set(kMulGamma)
+	// C: Prove in ZK that δi is the plaintext value mod q of the ciphertext obtained as Hi*prod_{j\not=i}D_{i,j}*F_{j,i}
+	for _, peer := range p.peers {
+		tempDSalt := new(big.Int).Exp(alphaDeltaWithSaltOne, new(big.Int).Neg(peer.round2Data.alpha), p.paillierKey.GetNSquare())
+		tempDSalt.Mul(tempDSalt, peer.round2Data.d)
+		tempDSalt.Exp(tempDSalt, paillierNnthRoot, p.paillierKey.GetNSquare())
 
-// 	tempResult := new(big.Int).Set(kMulGamma)
-// 	// C: Prove in ZK that δi is the plaintext value mod q of the ciphertext obtained as Hi*prod_{j\not=i}D_{i,j}*F_{j,i}
-// 	for i := 0; i < len(msgs); i++ {
-// 		msg := msgs[i]
-// 		proveBK, err := msg.Bk.ToBk(curveN)
-// 		if err != nil {
-// 			return nil, nil, err
-// 		}
-// 		proveBKXString := proveBK.GetX().String()
-// 		tempDSalt := new(big.Int).Exp(alphaDeltaWithSaltOne, new(big.Int).Neg(p.otherAlpha[proveBKXString]), p.paillierKey.GetNSquare())
-// 		tempDSalt.Mul(tempDSalt, p.otherD[proveBKXString])
-// 		tempDSalt.Exp(tempDSalt, paillierNnthRoot, p.paillierKey.GetNSquare())
+		rhoSalt.Mul(rhoSalt, tempDSalt)
+		rhoSalt.Mul(rhoSalt, new(big.Int).ModInverse(peer.round1Data.r, p.paillierKey.GetNSquare()))
+		rhoSalt.Mod(rhoSalt, p.paillierKey.GetNSquare())
 
-// 		RhoSalt.Mul(RhoSalt, tempDSalt)
-// 		RhoSalt.Mul(RhoSalt, new(big.Int).ModInverse(p.r[proveBKXString], p.paillierKey.GetNSquare()))
-// 		RhoSalt.Mod(RhoSalt, p.paillierKey.GetNSquare())
+		deltaCiphertext.Mul(peer.round2Data.d, deltaCiphertext)
+		deltaCiphertext.Mul(new(big.Int).ModInverse(p.own.round1Data.F, p.paillierKey.GetNSquare()), deltaCiphertext)
+		deltaCiphertext.Mod(deltaCiphertext, p.paillierKey.GetNSquare())
 
-// 		deltaCiphertext.Mul(p.otherD[proveBKXString], deltaCiphertext)
-// 		deltaCiphertext.Mul(new(big.Int).ModInverse(p.F[proveBKXString], p.paillierKey.GetNSquare()), deltaCiphertext)
-// 		deltaCiphertext.Mod(deltaCiphertext, p.paillierKey.GetNSquare())
+		tempResult.Add(tempResult, peer.round2Data.alpha)
+		tempResult.Add(tempResult, peer.round1Data.beta)
+	}
 
-// 		tempResult.Add(tempResult, p.otherAlpha[proveBKXString])
-// 		tempResult.Add(tempResult, p.beta[proveBKXString])
-// 	}
+	peersMsg := make(map[string]*DeltaVerifyFailurePeerMsg)
+	for _, peer := range p.peers {
+		ped := peer.para
+		translateBeta := new(big.Int).Exp(alphaDeltaWithSaltOne, new(big.Int).Mul(new(big.Int).Neg(peer.round1Data.countDelta), ped.Getn()), p.paillierKey.GetNSquare())
+		deltaCiphertext.Mul(deltaCiphertext, translateBeta)
+		deltaCiphertext.Mod(deltaCiphertext, p.paillierKey.GetNSquare())
 
-// 	ErrMsg := make(map[string]*DeltaVerifyFailureMsg)
-// 	for i := 0; i < len(msgs); i++ {
-// 		msg := msgs[i]
-// 		proveBK, err := msg.Bk.ToBk(curveN)
-// 		if err != nil {
-// 			return nil, nil, err
-// 		}
-// 		proveBKXString := proveBK.GetX().String()
-// 		ped := p.pederssenPara[proveBKXString]
+		proofDec, err := paillierzkproof.NewDecryMessage(paillierzkproof.NewS256(), p.own.ssidWithBk, tempResult, rhoSalt, p.paillierKey.GetN(), deltaCiphertext, p.delta, ped)
+		if err != nil {
+			return err
+		}
+		peersMsg[peer.bk.String()] = &DeltaVerifyFailurePeerMsg{
+			DecryProoof: proofDec,
+			Count:       peer.round1Data.countDelta.Bytes(),
+		}
+	}
 
-// 		//fmt.Println("Original:", deltaCiphertext)
-// 		translateBeta := new(big.Int).Exp(alphaDeltaWithSaltOne, new(big.Int).Mul(new(big.Int).Neg(p.countDelta), ped.Getn()), p.paillierKey.GetNSquare())
-// 		deltaCiphertext.Mul(deltaCiphertext, translateBeta)
-// 		deltaCiphertext.Mod(deltaCiphertext, p.paillierKey.GetNSquare())
-
-// 		//fmt.Println("deltaCiphertext:", deltaCiphertext)
-// 		ProofDec, err := paillierzkproof.NewDecryMessage(p.ssid, tempResult, RhoSalt, p.paillierKey.GetN(), deltaCiphertext, p.delta, ped.Getn(), ped.Gets(), ped.Gett(), curveN)
-// 		if err != nil {
-// 			return nil, nil, err
-// 		}
-// 		err = ProofDec.Verify(p.ssid, p.paillierKey.GetN(), deltaCiphertext, p.delta, ped.Getn(), ped.Gets(), ped.Gett(), curveN)
-
-// 		ErrMsg[proveBKXString] = &DeltaVerifyFailureMsg{
-// 			Ssid:               p.ssid,
-// 			Bk:                 p.onwBK.ToMessage(),
-// 			KgammaCiphertext:   kMulGammaCiphertext.Bytes(),
-// 			MulProof:           proofMul,
-// 			DecryProoof:        ProofDec,
-// 			ProductrCiphertext: deltaCiphertext.Bytes(),
-// 			Count:              p.countDelta.Bytes(),
-// 		}
-// 	}
-// 	return nil, ErrMsg, ErrDifferentPoint
-// }
+	p.deltaVerifyFailureMsg = &DeltaVerifyFailureMsg{
+		KgammaCiphertext:   kMulGammaCiphertext.Bytes(),
+		MulProof:           proofMul,
+		ProductrCiphertext: deltaCiphertext.Bytes(),
+		Peers:              peersMsg,
+	}
+	return nil
+}

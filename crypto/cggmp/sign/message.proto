@@ -66,3 +66,30 @@ message Round3Msg {
 message Round4Msg {
     bytes sigmai = 1;
 }
+
+message DeltaVerifyFailureMsg {
+    bytes kgammaCiphertext = 1;
+    paillier.MulMessage mulProof = 2;
+    bytes productrCiphertext = 3;
+    // key => bk
+    map<string, DeltaVerifyFailurePeerMsg> peers = 4;
+
+}
+
+message DeltaVerifyFailurePeerMsg {
+    paillier.DecryMessage decryProoof = 1;
+    bytes count = 2;
+}
+
+message SigmaVerifyFailureMsg {
+    bytes kMulBkShareCiphertext = 1;
+    bytes productrCiphertext = 2;
+    // key => bk
+    map<string, SigmaVerifyFailurePeerMsg> peers = 3;
+}
+
+message SigmaVerifyFailurePeerMsg {
+    paillier.MulStarMessage mulStarProof = 1;
+    paillier.DecryMessage decryProoof = 2;
+    bytes count = 3;
+}
