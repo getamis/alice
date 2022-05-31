@@ -15,6 +15,7 @@
 package dkg
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/getamis/alice/crypto/elliptic"
@@ -87,6 +88,7 @@ func (d *DKG) GetResult() (*Result, error) {
 	rh, ok := h.(*resultHandler)
 	if !ok {
 		log.Error("We cannot convert to result handler in done state")
+		fmt.Println("Not ready")
 		return nil, tss.ErrNotReady
 	}
 

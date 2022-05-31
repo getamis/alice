@@ -16,9 +16,9 @@ package dkg
 import (
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/getamis/alice/crypto/elliptic"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
@@ -39,16 +39,24 @@ func TestDKG(t *testing.T) {
 
 var _ = Describe("DKG", func() {
 	curve := elliptic.Secp256k1()
+	eddCurve := elliptic.Ed25519()
 	DescribeTable("NewDKG()", func(c elliptic.Curve, threshold uint32, ranks []uint32) {
 		// new peer managers and dkgs
 		dkgs, listeners := newDKGs(c, threshold, ranks)
-		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
+		chs := make(map[string]chan struct{}, len(listeners))
+		for key, l := range listeners {
+			ch := make(chan struct{})
+			chs[key] = ch
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Run(func(mock.Arguments) {
+				close(ch)
+			}).Once()
 		}
 		for _, d := range dkgs {
 			d.Start()
 		}
-		time.Sleep(1 * time.Second)
+		for _, ch := range chs {
+			<-ch
+		}
 
 		// Build public key
 		secret := big.NewInt(0)
@@ -82,6 +90,11 @@ var _ = Describe("DKG", func() {
 				0, 0, 1, 1, 1,
 			},
 		),
+		Entry("EddCurve", eddCurve, uint32(3),
+			[]uint32{
+				0, 0, 1, 1, 1,
+			},
+		),
 	)
 
 	DescribeTable("newDKGWithHandler", func(c elliptic.Curve, threshold uint32, coefficients [][]*big.Int, x []*big.Int, ranks []uint32, expectShare []*big.Int, expPubKey *ecpointgrouplaw.ECPoint) {
@@ -93,13 +106,20 @@ var _ = Describe("DKG", func() {
 			id := tss.GetTestID(i)
 			bks[id] = birkhoffinterpolation.NewBkParameter(x[i], ranks[i])
 		}
-		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
+		chs := make(map[string]chan struct{}, len(listeners))
+		for key, l := range listeners {
+			ch := make(chan struct{})
+			chs[key] = ch
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Run(func(mock.Arguments) {
+				close(ch)
+			}).Once()
 		}
 		for _, d := range dkgs {
 			d.Start()
 		}
-		time.Sleep(1 * time.Second)
+		for _, ch := range chs {
+			<-ch
+		}
 
 		secret := big.NewInt(0)
 		for i := 0; i < len(dkgs); i++ {
@@ -108,7 +128,7 @@ var _ = Describe("DKG", func() {
 			d.Stop()
 			r, err := d.GetResult()
 			Expect(err).Should(BeNil())
-			Expect(r.Share).Should(Equal(new(big.Int).Mod(expectShare[i], curve.Params().N)))
+			Expect(r.Share).Should(Equal(new(big.Int).Mod(expectShare[i], c.Params().N)))
 			Expect(r.PublicKey.Equal(expPubKey)).Should(BeTrue())
 			Expect(r.Bks).Should(Equal(bks))
 			secret = new(big.Int).Add(secret, d.ph.poly.Get(0))
@@ -317,6 +337,30 @@ var _ = Describe("DKG", func() {
 			},
 			ecpointgrouplaw.ScalarBaseMult(curve, big.NewInt(-3754)),
 		),
+		Entry("Edd curve", eddCurve, uint32(4), [][]*big.Int{
+			{
+				big.NewInt(-1011), big.NewInt(-1), big.NewInt(-1), big.NewInt(-1),
+			},
+			{
+				big.NewInt(-512), big.NewInt(-2), big.NewInt(-2), big.NewInt(-200),
+			},
+			{
+				big.NewInt(-1312), big.NewInt(-11), big.NewInt(-30), big.NewInt(-5),
+			},
+			{
+				big.NewInt(-919), big.NewInt(-11), big.NewInt(-30), big.NewInt(-818),
+			},
+		}, []*big.Int{
+			big.NewInt(1), big.NewInt(50), big.NewInt(11), big.NewInt(91),
+		},
+			[]uint32{
+				0, 1, 2, 2,
+			},
+			[]*big.Int{
+				big.NewInt(-4866), big.NewInt(-7686325), big.NewInt(-67710), big.NewInt(-559230),
+			},
+			ecpointgrouplaw.ScalarBaseMult(eddCurve, big.NewInt(-3754)),
+		),
 	)
 
 	DescribeTable("negative cases", func(c elliptic.Curve, threshold uint32, coefficients [][]*big.Int, x []*big.Int, ranks []uint32) {
@@ -325,10 +369,18 @@ var _ = Describe("DKG", func() {
 		for _, d := range dkgs {
 			d.Start()
 		}
-		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateFailed).Once()
+		chs := make(map[string]chan struct{}, len(listeners))
+		for key, l := range listeners {
+			ch := make(chan struct{})
+			chs[key] = ch
+			l.On("OnStateChanged", types.StateInit, types.StateFailed).Run(func(mock.Arguments) {
+				close(ch)
+			}).Once()
 		}
-		time.Sleep(time.Second)
+		for _, ch := range chs {
+			<-ch
+		}
+
 		for _, l := range listeners {
 			l.AssertExpectations(GinkgoT())
 		}
