@@ -27,6 +27,8 @@ import (
 type Refresh struct {
 	ph *round1Handler
 	*message.MsgMain
+
+	msgMainer types.MessageMain
 }
 
 func NewRefresh(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, bks map[string]*birkhoffinterpolation.BkParameter, keySize int, ssid []byte, listener types.StateChangedListener) (*Refresh, error) {
@@ -35,9 +37,12 @@ func NewRefresh(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, 
 	if err != nil {
 		return nil, err
 	}
+	ms := message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_Round1), types.MessageType(Type_Round2), types.MessageType(Type_Round3))
+	msgMainer := message.NewEchoMsgMain(ms, peerManager, types.MessageType(Type_Round1), types.MessageType(Type_Round2))
 	return &Refresh{
-		ph:      ph,
-		MsgMain: message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_Round1), types.MessageType(Type_Round2), types.MessageType(Type_Round3)),
+		ph:        ph,
+		MsgMain:   ms,
+		msgMainer: msgMainer,
 	}, nil
 }
 
@@ -55,6 +60,10 @@ func (d *Refresh) GetResult() (*Result, error) {
 	}
 
 	return rh.result, nil
+}
+
+func (d *Refresh) AddMessage(msg types.Message) error {
+	return d.msgMainer.AddMessage(msg)
 }
 
 func (d *Refresh) Start() {

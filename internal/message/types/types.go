@@ -19,7 +19,7 @@ import (
 )
 
 // PeerManager defines the peer interface
-//go:generate mockery -name=PeerManager
+//go:generate mockery --name=PeerManager
 type PeerManager interface {
 	NumPeers() uint32
 	PeerIDs() []string
@@ -28,7 +28,7 @@ type PeerManager interface {
 }
 
 // Handler defines the message handler
-//go:generate mockery -name=Handler
+//go:generate mockery --name=Handler
 type Handler interface {
 	// MessageType return the message type which the handler want to collect
 	MessageType() MessageType
@@ -47,7 +47,7 @@ type Handler interface {
 type MessageType int32
 
 // Message defines the message interface
-//go:generate mockery -name=Message
+//go:generate mockery --name=Message
 type Message interface {
 	// GetId returns the message id
 	GetId() string
@@ -55,10 +55,12 @@ type Message interface {
 	GetMessageType() MessageType
 	// IsValid checks if message is valid or not
 	IsValid() bool
+	// Hash() return the h
+	Hash() ([]byte, error)
 }
 
 // MessageMain defines the message main interface
-//go:generate mockery -name=MessageMain
+//go:generate mockery --name=MessageMain
 type MessageMain interface {
 	AddMessage(msg Message) error
 }
@@ -87,7 +89,7 @@ func (m MainState) String() string {
 	return "Unknown"
 }
 
-//go:generate mockery -name=StateChangedListener
+//go:generate mockery --name=StateChangedListener
 type StateChangedListener interface {
 	OnStateChanged(oldState MainState, newState MainState)
 }
