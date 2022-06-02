@@ -36,6 +36,10 @@ func (m *Message) IsValid() bool {
 		return m.GetRound6() != nil
 	case Type_Round7:
 		return m.GetRound7() != nil
+	case Type_Err1:
+		return m.GetErr1() != nil
+	case Type_Err2:
+		return m.GetErr2() != nil
 	}
 	return false
 }

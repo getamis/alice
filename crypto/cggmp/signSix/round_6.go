@@ -40,7 +40,7 @@ type round6Handler struct {
 	sigma *big.Int
 
 	// Error analysis message
-	roundErr2Msg *Err2Msg
+	roundErr2Msg *Message
 }
 
 func newRound6Handler(round5Handler *round5Handler) (*round6Handler, error) {
@@ -172,21 +172,158 @@ func (p *round6Handler) buildErr2Msg() error {
 		if err != nil {
 			return err
 		}
-		peersMsg[peer.bk.String()] = &Err2PeerMsg{
+		peersMsg[peer.Id] = &Err2PeerMsg{
 			Alphahat:    peer.round2Data.alphahat.Bytes(),
 			MuhatNPower: muNPower.Bytes(),
 			PsiMuProof:  psiMuProof,
 		}
 	}
 
-	p.roundErr2Msg = &Err2Msg{
-		K:           p.k.Bytes(),
-		RhoNPower:   rhoNPower.Bytes(),
-		PsiRhoProof: psi,
-		PsipaiProof: psipai,
-		Ytilde:      biYMsg,
-		Peers:       peersMsg,
+	p.roundErr2Msg = &Message{
+		Id:   p.peerManager.SelfID(),
+		Type: Type_Err1,
+		Body: &Message_Err2{
+			Err2: &Err2Msg{
+				K:           p.k.Bytes(),
+				RhoNPower:   rhoNPower.Bytes(),
+				PsiRhoProof: psi,
+				PsipaiProof: psipai,
+				Ytilde:      biYMsg,
+				Peers:       peersMsg,
+			},
+		},
 	}
-
 	return nil
+}
+
+func (p *round6Handler) ProcessErr2Msg(msgs []*Message) (map[string]struct{}, error) {
+	curve := p.pubKey.GetCurve()
+	G := pt.NewBase(curve)
+	errPeers := make(map[string]struct{})
+	for i, m := range msgs {
+		peerId := m.GetId()
+		peer, ok := p.peers[peerId]
+		if !ok {
+			continue
+		}
+		msg := m.GetErr2()
+		if msg == nil {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+		n := peer.para.Getn()
+		nSquare := new(big.Int).Mul(n, n)
+		biY, err := msg.Ytilde.ToPoint()
+		if err != nil {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+
+		err = msg.PsipaiProof.Verify(peer.ssidWithBk, G, peer.allY, peer.round3Data.z1hat, biY)
+		if err != nil {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+
+		RhoNPower := new(big.Int).SetBytes(msg.RhoNPower)
+		err = msg.PsiRhoProof.Verify(paillier.NewS256(), peer.ssidWithBk, RhoNPower, n)
+		if err != nil {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+
+		compareK := new(big.Int).Exp(new(big.Int).Add(big1, n), new(big.Int).SetBytes(msg.K), nSquare)
+		compareK.Mul(compareK, RhoNPower)
+		compareK.Mod(compareK, nSquare)
+		if compareK.Cmp(peer.round1Data.kCiphertext) != 0 {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+
+		// sum_{j!=ell} alpha_{j,ell}
+		Xj := peer.partialPubKey.ScalarMult(peer.bkcoefficient)
+		compare := Xj.ScalarMult(new(big.Int).SetBytes(msg.K))
+		for checkPeerId, peerMsg := range msg.Peers {
+			muNPower := new(big.Int).SetBytes(peerMsg.MuhatNPower)
+			err = peerMsg.PsiMuProof.Verify(paillier.NewS256(), peer.ssidWithBk, muNPower, n)
+			if err != nil {
+				errPeers[peerId] = struct{}{}
+				continue
+			}
+			checkPeer, ok := p.peers[checkPeerId]
+			if !ok {
+				errPeers[peerId] = struct{}{}
+				continue
+			}
+			alpha := checkPeer.round2Data.alpha
+			verifyghat := new(big.Int).Exp(new(big.Int).Add(big1, n), alpha, nSquare)
+			verifyghat.Mul(verifyghat, muNPower)
+			verifyghat.Mod(verifyghat, nSquare)
+
+			D := peer.round2Data.dhat
+			if D.Cmp(verifyghat) != 0 {
+				errPeers[peerId] = struct{}{}
+				continue
+			}
+
+			temp := G.ScalarMult(new(big.Int).SetBytes(peerMsg.Alphahat))
+			compare, err = compare.Add(temp)
+			if err != nil {
+				errPeers[peerId] = struct{}{}
+				continue
+			}
+		}
+		YInverseM, err := msg.Ytilde.ToPoint()
+		if err != nil {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+		YInverseM, err = peer.round3Data.z2hat.Add(YInverseM.Neg())
+		if err != nil {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+
+		tempPt := Xj.ScalarMult(p.k)
+		tempPt, err = tempPt.Add(G.ScalarMult(peer.round2Data.alphahat).Neg())
+		if err != nil {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+		compare, err = compare.Add(tempPt)
+		if err != nil {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+
+		for j, m2 := range msgs {
+			if i == j {
+				continue
+			}
+			msg2 := m2.GetErr2()
+			got, ok := msg2.Peers[peerId]
+			if !ok {
+				errPeers[peerId] = struct{}{}
+				continue
+			}
+
+			temp := Xj.ScalarMult(new(big.Int).SetBytes(msg2.K))
+			temp, err = temp.Add(G.ScalarMult(new(big.Int).SetBytes(got.Alphahat)).Neg())
+			if err != nil {
+				errPeers[peerId] = struct{}{}
+				continue
+			}
+			compare, err = compare.Add(temp)
+			if err != nil {
+				errPeers[peerId] = struct{}{}
+				continue
+			}
+			break
+		}
+		if !compare.Equal(YInverseM) {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+	}
+	return errPeers, nil
 }

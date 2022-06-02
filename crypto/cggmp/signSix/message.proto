@@ -29,6 +29,9 @@ enum Type {
     Round5 = 4;
     Round6 = 5;
     Round7 = 6;
+
+    Err1 = 7;
+    Err2 = 8;
 }
 
 message Message {
@@ -42,6 +45,10 @@ message Message {
         Round5Msg round5 = 8;
         Round6Msg round6 = 9;
         Round7Msg round7 = 10;
+
+        // Error message
+        Err1Msg err1 = 11;
+        Err2Msg err2 = 12;
     }
 }
 
@@ -92,7 +99,7 @@ message Err1Msg {
     bytes rhoNPower = 2;
     paillier.NthRootMessage psiRhoProof = 3;
     bytes gamma = 4;
-    // key => bk
+    // key => id
     map<string, Err1PeerMsg> peers = 6;
 }
 
@@ -108,7 +115,7 @@ message Err2Msg {
     paillier.NthRootMessage psiRhoProof = 3;
     ecpointgrouplaw.EcPointMessage ytilde = 4;
     paillier.LogMessage psipaiProof = 5;
-    // key => bk
+    // key => id
     map<string, Err2PeerMsg> peers = 6;
 } 
 
