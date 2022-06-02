@@ -48,7 +48,7 @@ type round4Handler struct {
 
 	result *Result
 
-	sigmaVerifyFailureMsg *SigmaVerifyFailureMsg
+	err2Msg *Message
 }
 
 func newRound4Handler(round3Handler *round3Handler) (*round4Handler, error) {
@@ -153,7 +153,7 @@ func (p *round4Handler) buildSigmaVerifyFailureMsg() error {
 	}
 
 	// Compute MulStarProof
-	peersMsg := make(map[string]*SigmaVerifyFailurePeerMsg, len(p.peers))
+	peersMsg := make(map[string]*Err2PeerMsg, len(p.peers))
 	for _, peer := range p.peers {
 		ped := peer.para
 		// Verify psi and build proofMulStar
@@ -161,7 +161,7 @@ func (p *round4Handler) buildSigmaVerifyFailureMsg() error {
 		if err != nil {
 			return err
 		}
-		peersMsg[peer.bk.String()] = &SigmaVerifyFailurePeerMsg{
+		peersMsg[peer.bk.String()] = &Err2PeerMsg{
 			MulStarProof: proofMulStar,
 			Count:        peer.round1Data.countSigma.Bytes(),
 		}
@@ -195,13 +195,19 @@ func (p *round4Handler) buildSigmaVerifyFailureMsg() error {
 		if err != nil {
 			return err
 		}
-		peersMsg[peer.bk.String()].DecryProoof = proof
+		peersMsg[peer.Id].DecryProoof = proof
 	}
 
-	p.sigmaVerifyFailureMsg = &SigmaVerifyFailureMsg{
-		KMulBkShareCiphertext: dciphertext.Bytes(),
-		ProductrCiphertext:    ciphertext.Bytes(),
-		Peers:                 peersMsg,
+	p.err2Msg = &Message{
+		Id:   p.peerManager.SelfID(),
+		Type: Type_Err2,
+		Body: &Message_Err2{
+			Err2: &Err2Msg{
+				KMulBkShareCiphertext: dciphertext.Bytes(),
+				ProductrCiphertext:    ciphertext.Bytes(),
+				Peers:                 peersMsg,
+			},
+		},
 	}
 	return nil
 }

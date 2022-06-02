@@ -27,6 +27,9 @@ enum Type {
     Round2 = 1;
     Round3 = 2;
     Round4 = 3;
+
+    Err1 = 4;
+    Err2 = 5;
 }
 
 message Message {
@@ -37,6 +40,10 @@ message Message {
         Round2Msg round2 = 5;
         Round3Msg round3 = 6;
         Round4Msg round4 = 7;
+
+        // Error message
+        Err1Msg err1 = 8;
+        Err2Msg err2 = 9;        
     }
 }
 
@@ -67,28 +74,28 @@ message Round4Msg {
     bytes sigmai = 1;
 }
 
-message DeltaVerifyFailureMsg {
+message Err1Msg {
     bytes kgammaCiphertext = 1;
     paillier.MulMessage mulProof = 2;
     bytes productrCiphertext = 3;
-    // key => bk
-    map<string, DeltaVerifyFailurePeerMsg> peers = 4;
+    // key => id
+    map<string, Err1PeerMsg> peers = 4;
 
 }
 
-message DeltaVerifyFailurePeerMsg {
+message Err1PeerMsg {
     paillier.DecryMessage decryProoof = 1;
     bytes count = 2;
 }
 
-message SigmaVerifyFailureMsg {
+message Err2Msg {
     bytes kMulBkShareCiphertext = 1;
     bytes productrCiphertext = 2;
-    // key => bk
-    map<string, SigmaVerifyFailurePeerMsg> peers = 3;
+    // key => id
+    map<string, Err2PeerMsg> peers = 3;
 }
 
-message SigmaVerifyFailurePeerMsg {
+message Err2PeerMsg {
     paillier.MulStarMessage mulStarProof = 1;
     paillier.DecryMessage decryProoof = 2;
     bytes count = 3;

@@ -37,7 +37,7 @@ type round5Handler struct {
 	S *pt.ECPoint
 
 	// Error analysis message
-	roundErr1Msg *Err1Msg
+	roundErr1Msg *Message
 }
 
 func newRound5Handler(round4Handler *round4Handler) (*round5Handler, error) {
@@ -179,19 +179,124 @@ func (p *round5Handler) buildErr1Msg() error {
 			return err
 		}
 
-		peersMsg[peer.bk.String()] = &Err1PeerMsg{
+		peersMsg[peer.Id] = &Err1PeerMsg{
 			Alpha:      peer.round2Data.alpha.Bytes(),
 			MuNPower:   muNPower.Bytes(),
 			PsiMuProof: psiMuProof,
 		}
 	}
 
-	p.roundErr1Msg = &Err1Msg{
-		K:           p.k.Bytes(),
-		RhoNPower:   rhoNPower.Bytes(),
-		PsiRhoProof: psi,
-		Gamma:       p.gamma.Bytes(),
-		Peers:       peersMsg,
+	p.roundErr1Msg = &Message{
+		Id:   p.peerManager.SelfID(),
+		Type: Type_Err1,
+		Body: &Message_Err1{
+			Err1: &Err1Msg{
+				K:           p.k.Bytes(),
+				RhoNPower:   rhoNPower.Bytes(),
+				PsiRhoProof: psi,
+				Gamma:       p.gamma.Bytes(),
+				Peers:       peersMsg,
+			},
+		},
 	}
 	return nil
+}
+
+func (p *round5Handler) ProcessErr1Msg(msgs []*Message) (map[string]struct{}, error) {
+	curve := p.pubKey.GetCurve()
+	curveN := curve.Params().N
+	G := pt.NewBase(curve)
+	errPeers := make(map[string]struct{})
+	for i, m := range msgs {
+		peerId := m.GetId()
+		peer, ok := p.peers[peerId]
+		if !ok {
+			continue
+		}
+		msg := m.GetErr1()
+		if msg == nil {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+		n := peer.para.Getn()
+		nSquare := new(big.Int).Mul(n, n)
+
+		rhoNPower := new(big.Int).SetBytes(msg.RhoNPower)
+		err := msg.PsiRhoProof.Verify(paillierzkproof.NewS256(), peer.ssidWithBk, rhoNPower, n)
+		if err != nil {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+		// Check Kj
+		k := new(big.Int).SetBytes(msg.K)
+		verifyKCiphertext := new(big.Int).Exp(new(big.Int).Add(big1, n), k, nSquare)
+		verifyKCiphertext.Mul(verifyKCiphertext, rhoNPower)
+		verifyKCiphertext.Mod(verifyKCiphertext, nSquare)
+		KCiphertext := peer.round1Data.kCiphertext
+		if KCiphertext.Cmp(verifyKCiphertext) != 0 {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+
+		// sum_{j!=ell} alpha_{j,ell}
+		delta := new(big.Int).Mul(k, new(big.Int).SetBytes(msg.Gamma))
+		for checkPeerId, peerMsg := range msg.Peers {
+			muNPower := new(big.Int).SetBytes(peerMsg.MuNPower)
+			err = peerMsg.PsiMuProof.Verify(paillierzkproof.NewS256(), peer.ssidWithBk, muNPower, n)
+			if err != nil {
+				errPeers[peerId] = struct{}{}
+				continue
+			}
+			checkPeer, ok := p.peers[checkPeerId]
+			if !ok {
+				errPeers[peerId] = struct{}{}
+				continue
+			}
+			alpha := checkPeer.round2Data.alpha
+			verfigyD := new(big.Int).Exp(new(big.Int).Add(big1, n), alpha, nSquare)
+			verfigyD.Mul(verfigyD, muNPower)
+			verfigyD.Mod(verfigyD, nSquare)
+
+			D := peer.round2Data.d
+			if D.Cmp(verfigyD) != 0 {
+				errPeers[peerId] = struct{}{}
+				continue
+			}
+
+			delta.Add(delta, new(big.Int).SetBytes(peerMsg.Alpha))
+		}
+
+		gammaG := peer.round4Data.allGammaPoint
+		compareGammaG := G.ScalarMult(new(big.Int).SetBytes(msg.Gamma))
+		if !gammaG.Equal(compareGammaG) {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+		gamma := new(big.Int).SetBytes(msg.Gamma)
+		tempValue := new(big.Int).Mul(p.k, gamma)
+		delta.Add(delta, tempValue.Sub(tempValue, peer.round2Data.alpha))
+		delta.Mod(delta, curveN)
+
+		for j, m2 := range msgs {
+			if i == j {
+				continue
+			}
+			msg2 := m2.GetErr1()
+			got, ok := msg2.Peers[peerId]
+			if !ok {
+				errPeers[peerId] = struct{}{}
+				continue
+			}
+			temp := new(big.Int).Mul(new(big.Int).SetBytes(msg2.K), gamma)
+			temp.Sub(temp, new(big.Int).SetBytes(got.Alpha))
+			delta.Add(delta, temp)
+			delta.Mod(delta, curveN)
+		}
+
+		if peer.round3Data.delta.Cmp(delta) != 0 {
+			errPeers[peerId] = struct{}{}
+			continue
+		}
+	}
+	return errPeers, nil
 }

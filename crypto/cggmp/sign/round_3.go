@@ -38,7 +38,7 @@ type round3Handler struct {
 	R     *pt.ECPoint
 
 	// Error analysis
-	deltaVerifyFailureMsg *DeltaVerifyFailureMsg
+	err1Msg *Message
 }
 
 func newRound3Handler(round2Handler *round2Handler) (*round3Handler, error) {
@@ -204,7 +204,7 @@ func (p *round3Handler) buildDeltaVerifyFailureMsg() error {
 		tempResult.Add(tempResult, peer.round1Data.beta)
 	}
 
-	peersMsg := make(map[string]*DeltaVerifyFailurePeerMsg)
+	peersMsg := make(map[string]*Err1PeerMsg)
 	for _, peer := range p.peers {
 		ped := peer.para
 		translateBeta := new(big.Int).Exp(alphaDeltaWithSaltOne, new(big.Int).Mul(new(big.Int).Neg(peer.round1Data.countDelta), ped.Getn()), p.paillierKey.GetNSquare())
@@ -215,17 +215,23 @@ func (p *round3Handler) buildDeltaVerifyFailureMsg() error {
 		if err != nil {
 			return err
 		}
-		peersMsg[peer.bk.String()] = &DeltaVerifyFailurePeerMsg{
+		peersMsg[peer.Id] = &Err1PeerMsg{
 			DecryProoof: proofDec,
 			Count:       peer.round1Data.countDelta.Bytes(),
 		}
 	}
 
-	p.deltaVerifyFailureMsg = &DeltaVerifyFailureMsg{
-		KgammaCiphertext:   kMulGammaCiphertext.Bytes(),
-		MulProof:           proofMul,
-		ProductrCiphertext: deltaCiphertext.Bytes(),
-		Peers:              peersMsg,
+	p.err1Msg = &Message{
+		Id:   p.peerManager.SelfID(),
+		Type: Type_Err1,
+		Body: &Message_Err1{
+			Err1: &Err1Msg{
+				KgammaCiphertext:   kMulGammaCiphertext.Bytes(),
+				MulProof:           proofMul,
+				ProductrCiphertext: deltaCiphertext.Bytes(),
+				Peers:              peersMsg,
+			},
+		},
 	}
 	return nil
 }

@@ -30,6 +30,10 @@ func (m *Message) IsValid() bool {
 		return m.GetRound3() != nil
 	case Type_Round4:
 		return m.GetRound4() != nil
+	case Type_Err1:
+		return m.GetErr1() != nil
+	case Type_Err2:
+		return m.GetErr2() != nil
 	}
 	return false
 }
