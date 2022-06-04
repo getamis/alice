@@ -165,14 +165,13 @@ func (p *round5Handler) buildErr1Msg() error {
 	if err != nil {
 		return err
 	}
-
 	// build peersMsg
 	peersMsg := make(map[string]*Err1PeerMsg, len(p.peers))
 	for _, peer := range p.peers {
-		muij := new(big.Int).Exp(nAddone, new(big.Int).Neg(peer.round2Data.alpha), n)
+		muij := new(big.Int).Exp(nAddone, new(big.Int).Neg(peer.round2Data.alpha), nsquare)
 		muij.Mul(muij, peer.round2Data.d)
-		muNthPower := new(big.Int).Mod(muij, n)
-		mu := muij.Exp(muNthPower, nthRoot, n)
+		muNthPower := new(big.Int).Mod(muij, nsquare)
+		mu := muij.Exp(muNthPower, nthRoot, nsquare)
 		muNPower := muNthPower
 		psiMuProof, err := paillierzkproof.NewNthRoot(paillierzkproof.NewS256(), p.own.ssidWithBk, mu, muNPower, n)
 		if err != nil {
@@ -187,7 +186,7 @@ func (p *round5Handler) buildErr1Msg() error {
 	}
 
 	p.roundErr1Msg = &Message{
-		Id:   p.peerManager.SelfID(),
+		Id:   p.own.Id,
 		Type: Type_Err1,
 		Body: &Message_Err1{
 			Err1: &Err1Msg{
@@ -227,7 +226,8 @@ func (p *round5Handler) ProcessErr1Msg(msgs []*Message) (map[string]struct{}, er
 			errPeers[peerId] = struct{}{}
 			continue
 		}
-		// Check Kj
+
+		// Check Kj = (1+nj)^kj * rhoNPower
 		k := new(big.Int).SetBytes(msg.K)
 		verifyKCiphertext := new(big.Int).Exp(new(big.Int).Add(big1, n), k, nSquare)
 		verifyKCiphertext.Mul(verifyKCiphertext, rhoNPower)
@@ -247,31 +247,31 @@ func (p *round5Handler) ProcessErr1Msg(msgs []*Message) (map[string]struct{}, er
 				errPeers[peerId] = struct{}{}
 				continue
 			}
-			checkPeer, ok := p.peers[checkPeerId]
-			if !ok {
-				errPeers[peerId] = struct{}{}
-				continue
-			}
-			alpha := checkPeer.round2Data.alpha
-			verfigyD := new(big.Int).Exp(new(big.Int).Add(big1, n), alpha, nSquare)
-			verfigyD.Mul(verfigyD, muNPower)
-			verfigyD.Mod(verfigyD, nSquare)
-
-			D := peer.round2Data.d
-			if D.Cmp(verfigyD) != 0 {
-				errPeers[peerId] = struct{}{}
-				continue
+			// check Dj,k = (1+Nj)^αj * kμ ̃j,k mod Nj^2
+			if checkPeerId == p.own.Id {
+				alpha := new(big.Int).SetBytes(peerMsg.Alpha)
+				verfigyD := new(big.Int).Exp(new(big.Int).Add(big1, n), alpha, nSquare)
+				verfigyD.Mul(verfigyD, muNPower)
+				verfigyD.Mod(verfigyD, nSquare)
+				// Should be round1
+				D := peer.round1Data.D
+				if D.Cmp(verfigyD) != 0 {
+					errPeers[peerId] = struct{}{}
+					continue
+				}
 			}
 
 			delta.Add(delta, new(big.Int).SetBytes(peerMsg.Alpha))
 		}
-
+		// check γjG = Γj
 		gammaG := peer.round4Data.allGammaPoint
 		compareGammaG := G.ScalarMult(new(big.Int).SetBytes(msg.Gamma))
 		if !gammaG.Equal(compareGammaG) {
 			errPeers[peerId] = struct{}{}
 			continue
 		}
+		// check δj=kjγj+ sum_{l \not= j} (αj,l+kl*γj−αl,j) mod q.
+		// kiγj - αi,j
 		gamma := new(big.Int).SetBytes(msg.Gamma)
 		tempValue := new(big.Int).Mul(p.k, gamma)
 		delta.Add(delta, tempValue.Sub(tempValue, peer.round2Data.alpha))

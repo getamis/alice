@@ -30,13 +30,13 @@ var (
 	curveNSquare = new(big.Int).Mul(parameter.Curve.Params().N, parameter.Curve.Params().N)
 )
 
-func MtaWithProofAff_g(ownssid []byte, peerPed *paillierzkproof.PederssenOpenParameter, paillierKey *paillier.Paillier, msgCipher []byte, x *big.Int, ecPoint *pt.ECPoint) (*big.Int, *big.Int, *big.Int, *big.Int, []byte, *big.Int, *paillierzkproof.PaillierAffAndGroupRangeMessage, error) {
+func MtaWithProofAff_g(ownssidwithbk []byte, peerPed *paillierzkproof.PederssenOpenParameter, paillierKey *paillier.Paillier, msgCipher []byte, x *big.Int, ecPoint *pt.ECPoint) (*big.Int, *big.Int, *big.Int, *big.Int, []byte, *big.Int, *paillierzkproof.PaillierAffAndGroupRangeMessage, error) {
 	beta, s, r, D, F, err := PerformMTA(peerPed, paillierKey, msgCipher, x)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, nil, err
 	}
 	peerPaillierKey := paillier.ToPaillierPubKeyWithSpecialG(peerPed)
-	proof, err := paillierzkproof.NewPaillierAffAndGroupRangeMessage(parameter, ownssid, x, beta, s, r, peerPed.Getn(), paillierKey.GetN(), new(big.Int).SetBytes(msgCipher), D, F, peerPed, ecPoint)
+	proof, err := paillierzkproof.NewPaillierAffAndGroupRangeMessage(parameter, ownssidwithbk, x, beta, s, r, peerPed.Getn(), paillierKey.GetN(), new(big.Int).SetBytes(msgCipher), D, F, peerPed, ecPoint)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, nil, err
 	}
@@ -44,12 +44,12 @@ func MtaWithProofAff_g(ownssid []byte, peerPed *paillierzkproof.PederssenOpenPar
 	return adjustBeta, count, r, s, D.Bytes(), F, proof, nil
 }
 
-func MtaWithProofAff_p(ownssid []byte, peerPed *paillierzkproof.PederssenOpenParameter, paillierKey *paillier.Paillier, msgKCipher []byte, gamma *big.Int, mu *big.Int, gammaCiphertext *big.Int) (*big.Int, *big.Int, *big.Int, *big.Int, *big.Int, *paillierzkproof.PaillierOperationAndCommitmentMessage, error) {
+func MtaWithProofAff_p(ownssidwithbk []byte, peerPed *paillierzkproof.PederssenOpenParameter, paillierKey *paillier.Paillier, msgKCipher []byte, gamma *big.Int, mu *big.Int, gammaCiphertext *big.Int) (*big.Int, *big.Int, *big.Int, *big.Int, *big.Int, *paillierzkproof.PaillierOperationAndCommitmentMessage, error) {
 	beta, s, r, D, F, err := PerformMTA(peerPed, paillierKey, msgKCipher, gamma)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}
-	proof, err := paillierzkproof.NewPaillierOperationAndPaillierCommitment(parameter, ownssid, gamma, beta, s, mu, r, peerPed.Getn(), paillierKey.GetN(), gammaCiphertext, F, new(big.Int).SetBytes(msgKCipher), D, peerPed)
+	proof, err := paillierzkproof.NewPaillierOperationAndPaillierCommitment(parameter, ownssidwithbk, gamma, beta, s, mu, r, peerPed.Getn(), paillierKey.GetN(), gammaCiphertext, F, new(big.Int).SetBytes(msgKCipher), D, peerPed)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}

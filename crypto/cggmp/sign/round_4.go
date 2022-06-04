@@ -119,7 +119,6 @@ func (p *round4Handler) Finalize(logger log.Logger) (types.Handler, error) {
 }
 
 func (p *round4Handler) buildSigmaVerifyFailureMsg() error {
-	// TODO: A, B, C
 	// A: Reprove that {Dhatj,i}j ̸=i are well-formed according to prod_ell^aff-g , for l ̸= j,i.
 	for _, peer := range p.peers {
 		ownPed := p.own.para
