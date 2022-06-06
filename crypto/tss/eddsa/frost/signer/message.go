@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package eddsaSigner
+package signer
 
 import (
 	"github.com/getamis/alice/internal/message/types"

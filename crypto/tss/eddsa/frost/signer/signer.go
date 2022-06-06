@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package eddsaSigner
+package signer
 
 import (
 	"math/big"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
-	"github.com/getamis/alice/crypto/cggmp"
 	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/crypto/tss/ecdsa/cggmp"
 	"github.com/getamis/alice/internal/message"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"

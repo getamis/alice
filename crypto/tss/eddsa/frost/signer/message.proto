@@ -14,9 +14,9 @@
 
 syntax = "proto3";
 
-package eddsaSigner;
+package signer;
 
-option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/gg18/eddsaSigner";
+option go_package = "github.com/getamis/alice/crypto/tss/eddsa/frost/signer";
 
 import "github.com/getamis/alice/crypto/zkproof/message.proto";
 import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
