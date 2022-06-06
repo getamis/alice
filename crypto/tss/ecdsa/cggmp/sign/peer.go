@@ -12,15 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package signSix
+package sign
 
 import (
 	"math/big"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
-	"github.com/getamis/alice/crypto/cggmp"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	paillierzkproof "github.com/getamis/alice/crypto/zkproof/paillier"
+	"github.com/getamis/alice/crypto/tss/ecdsa/cggmp"
+	zkpaillier "github.com/getamis/alice/crypto/zkproof/paillier"
 	"github.com/getamis/alice/internal/message"
 )
 
@@ -31,7 +31,7 @@ type peer struct {
 	ssidWithBk    []byte
 	bk            *birkhoffinterpolation.BkParameter
 	bkcoefficient *big.Int
-	para          *paillierzkproof.PederssenOpenParameter
+	para          *zkpaillier.PederssenOpenParameter
 	partialPubKey *pt.ECPoint
 	allY          *pt.ECPoint
 
@@ -39,12 +39,9 @@ type peer struct {
 	round2Data *round2Data
 	round3Data *round3Data
 	round4Data *round4Data
-	round5Data *round5Data
-	round6Data *round6Data
-	round7Data *round7Data
 }
 
-func newPeer(id string, ssid []byte, bk *birkhoffinterpolation.BkParameter, bkcoefficient *big.Int, para *paillierzkproof.PederssenOpenParameter, partialPubKey *pt.ECPoint, allY *pt.ECPoint) *peer {
+func newPeer(id string, ssid []byte, bk *birkhoffinterpolation.BkParameter, bkcoefficient *big.Int, para *zkpaillier.PederssenOpenParameter, partialPubKey *pt.ECPoint, allY *pt.ECPoint) *peer {
 	ssidWithBk := cggmp.ComputeZKSsid(ssid, bk)
 	return &peer{
 		Peer:          message.NewPeer(id),

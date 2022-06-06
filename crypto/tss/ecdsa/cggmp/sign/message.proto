@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package sign;
 
-option go_package = "github.com/getamis/alice/crypto/cggmp/sign";
+option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/cggmp/sign";
 
 import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
 import "github.com/getamis/alice/crypto/zkproof/paillier/message.proto";

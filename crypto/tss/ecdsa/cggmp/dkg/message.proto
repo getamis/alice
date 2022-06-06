@@ -16,7 +16,7 @@ syntax = "proto3";
 
 package dkg;
 
-option go_package = "github.com/getamis/alice/crypto/cggmp/dkg";
+option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/cggmp/dkg";
 
 import "github.com/getamis/alice/crypto/birkhoffinterpolation/bk.proto";
 import "github.com/getamis/alice/crypto/commitment/message.proto";

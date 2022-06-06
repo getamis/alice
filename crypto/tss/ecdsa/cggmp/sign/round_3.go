@@ -18,9 +18,9 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/getamis/alice/crypto/cggmp"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/crypto/tss/ecdsa/cggmp"
 	"github.com/getamis/alice/crypto/zkproof/paillier"
 	paillierzkproof "github.com/getamis/alice/crypto/zkproof/paillier"
 	"github.com/getamis/alice/internal/message/types"
