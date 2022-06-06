@@ -163,10 +163,10 @@ func (p *round6Handler) buildErr2Msg() error {
 	// build peersMsg
 	peersMsg := make(map[string]*Err2PeerMsg, len(p.peers))
 	for _, peer := range p.peers {
-		muij := new(big.Int).Exp(nAddone, new(big.Int).Neg(peer.round2Data.alphahat), n)
+		muij := new(big.Int).Exp(nAddone, new(big.Int).Neg(peer.round2Data.alphahat), nsquare)
 		muij.Mul(muij, peer.round2Data.dhat)
-		muNthPower := new(big.Int).Mod(muij, n)
-		mu := muij.Exp(muNthPower, nthRoot, n)
+		muNthPower := new(big.Int).Mod(muij, nsquare)
+		mu := muij.Exp(muNthPower, nthRoot, nsquare)
 		muNPower := muNthPower
 		psiMuProof, err := paillier.NewNthRoot(paillier.NewS256(), p.own.ssidWithBk, mu, muNPower, n)
 		if err != nil {
@@ -180,7 +180,7 @@ func (p *round6Handler) buildErr2Msg() error {
 	}
 
 	p.roundErr2Msg = &Message{
-		Id:   p.peerManager.SelfID(),
+		Id:   p.own.Id,
 		Type: Type_Err1,
 		Body: &Message_Err2{
 			Err2: &Err2Msg{
@@ -231,7 +231,7 @@ func (p *round6Handler) ProcessErr2Msg(msgs []*Message) (map[string]struct{}, er
 			errPeers[peerId] = struct{}{}
 			continue
 		}
-
+		// Check Kj = (1+nj)^kj * rhoNPower
 		compareK := new(big.Int).Exp(new(big.Int).Add(big1, n), new(big.Int).SetBytes(msg.K), nSquare)
 		compareK.Mul(compareK, RhoNPower)
 		compareK.Mod(compareK, nSquare)
@@ -241,7 +241,7 @@ func (p *round6Handler) ProcessErr2Msg(msgs []*Message) (map[string]struct{}, er
 		}
 
 		// sum_{j!=ell} alpha_{j,ell}
-		Xj := peer.partialPubKey.ScalarMult(peer.bkcoefficient)
+		Xj := peer.partialPubKey
 		compare := Xj.ScalarMult(new(big.Int).SetBytes(msg.K))
 		for checkPeerId, peerMsg := range msg.Peers {
 			muNPower := new(big.Int).SetBytes(peerMsg.MuhatNPower)
@@ -250,20 +250,19 @@ func (p *round6Handler) ProcessErr2Msg(msgs []*Message) (map[string]struct{}, er
 				errPeers[peerId] = struct{}{}
 				continue
 			}
-			checkPeer, ok := p.peers[checkPeerId]
-			if !ok {
-				errPeers[peerId] = struct{}{}
-				continue
-			}
-			alpha := checkPeer.round2Data.alpha
-			verifyghat := new(big.Int).Exp(new(big.Int).Add(big1, n), alpha, nSquare)
-			verifyghat.Mul(verifyghat, muNPower)
-			verifyghat.Mod(verifyghat, nSquare)
 
-			D := peer.round2Data.dhat
-			if D.Cmp(verifyghat) != 0 {
-				errPeers[peerId] = struct{}{}
-				continue
+			// check Dj,k = (1+Nj)^αj * kμ ̃j,k mod Nj^2
+			if checkPeerId == p.own.Id {
+				alpha := new(big.Int).SetBytes(peerMsg.Alphahat)
+				verifyghat := new(big.Int).Exp(new(big.Int).Add(big1, n), alpha, nSquare)
+				verifyghat.Mul(verifyghat, muNPower)
+				verifyghat.Mod(verifyghat, nSquare)
+
+				D := new(big.Int).SetBytes(peer.round1Data.Dhat)
+				if D.Cmp(verifyghat) != 0 {
+					errPeers[peerId] = struct{}{}
+					continue
+				}
 			}
 
 			temp := G.ScalarMult(new(big.Int).SetBytes(peerMsg.Alphahat))
@@ -273,6 +272,7 @@ func (p *round6Handler) ProcessErr2Msg(msgs []*Message) (map[string]struct{}, er
 				continue
 			}
 		}
+		// check Mj −Y ̃j =kj ·Xj +sum_{ell != j} αˆj,l·G+kl·Xj −αˆl,j ·G.
 		YInverseM, err := msg.Ytilde.ToPoint()
 		if err != nil {
 			errPeers[peerId] = struct{}{}
@@ -318,7 +318,6 @@ func (p *round6Handler) ProcessErr2Msg(msgs []*Message) (map[string]struct{}, er
 				errPeers[peerId] = struct{}{}
 				continue
 			}
-			break
 		}
 		if !compare.Equal(YInverseM) {
 			errPeers[peerId] = struct{}{}
