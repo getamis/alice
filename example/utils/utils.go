@@ -21,7 +21,7 @@ import (
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/elliptic"
-	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/dkg"
+	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/example/config"
 	"github.com/getamis/sirius/log"
 )

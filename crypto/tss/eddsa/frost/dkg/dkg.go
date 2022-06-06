@@ -21,5 +21,5 @@ import (
 )
 
 func NewDKG(peerManager types.PeerManager, threshold uint32, rank uint32, listener types.StateChangedListener) (*dkg.DKG, error) {
-	return dkg.NewDKG(elliptic.Secp256k1(), peerManager, threshold, rank, listener)
+	return dkg.NewDKG(elliptic.Ed25519(), peerManager, threshold, rank, listener)
 }

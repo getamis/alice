@@ -26,9 +26,10 @@ import (
 	"github.com/getamis/alice/crypto/homo/cl"
 	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/addshare/newpeer"
 	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/addshare/oldpeer"
-	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/dkg"
+	gDkg "github.com/getamis/alice/crypto/tss/ecdsa/gg18/dkg"
 	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/reshare"
 	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/signer"
 	"github.com/getamis/alice/internal/message/types"
@@ -74,7 +75,7 @@ var _ = Describe("TSS", func() {
 			listener[i] = new(mocks.StateChangedListener)
 			listener[i].On("OnStateChanged", types.StateInit, types.StateDone).Once()
 			var err error
-			dkgs[id], err = dkg.NewDKG(c, dkgPeerManagers[i], threshold, ranks[i], listener[i])
+			dkgs[id], err = gDkg.NewDKG(dkgPeerManagers[i], threshold, ranks[i], listener[i])
 			Expect(err).Should(BeNil())
 			msgMain[id] = dkgs[id]
 			dkgResult, err := dkgs[id].GetResult()
