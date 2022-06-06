@@ -1,0 +1,59 @@
+// Copyright © 2022 AMIS Technologies
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package dkg;
+
+option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/cggmp/dkg";
+
+import "github.com/getamis/alice/crypto/birkhoffinterpolation/bk.proto";
+import "github.com/getamis/alice/crypto/commitment/message.proto";
+import "github.com/getamis/alice/crypto/zkproof/message.proto";
+
+enum Type {
+    Peer = 0;
+    Decommit = 1;
+    Verify = 2;
+    Result = 3;
+}
+
+message Message {
+    Type type = 1;
+    string id = 2;
+    oneof body {
+        BodyPeer peer = 3;
+        BodyDecommit decommit = 4;
+        BodyVerify verify = 5;
+        BodyResult result = 6;
+    }
+}
+
+message BodyPeer {
+    birkhoffinterpolation.BkParameterMessage bk = 1;
+    commitment.HashCommitmentMessage commitment = 2;
+}
+
+message BodyDecommit {
+    commitment.HashDecommitmentMessage hashDecommitment = 1;
+    commitment.PointCommitmentMessage pointCommitment = 2;
+}
+
+message BodyVerify {
+    commitment.FeldmanVerifyMessage verify = 1;
+}
+
+message BodyResult {
+    zkproof.SchnorrProofMessage siGProofMsg = 1;
+}

@@ -1,0 +1,126 @@
+// Copyright © 2022 AMIS Technologies
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package signSix;
+
+option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/cggmp/signSix";
+
+import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
+import "github.com/getamis/alice/crypto/zkproof/paillier/message.proto";
+
+enum Type {
+    Round1 = 0;
+    Round2 = 1;
+    Round3 = 2;
+    Round4 = 3;
+    Round5 = 4;
+    Round6 = 5;
+    Round7 = 6;
+
+    Err1 = 7;
+    Err2 = 8;
+}
+
+message Message {
+    Type type = 1;
+    string id = 2;
+    oneof body {
+        Round1Msg round1 = 4;
+        Round2Msg round2 = 5;
+        Round3Msg round3 = 6;
+        Round4Msg round4 = 7;
+        Round5Msg round5 = 8;
+        Round6Msg round6 = 9;
+        Round7Msg round7 = 10;
+
+        // Error message
+        Err1Msg err1 = 11;
+        Err2Msg err2 = 12;
+    }
+}
+
+message Round1Msg {
+    bytes kCiphertext = 1;
+    bytes gammaCiphertext = 2;
+    ecpointgrouplaw.EcPointMessage z1 = 3;
+    ecpointgrouplaw.EcPointMessage z2 = 4;
+    paillier.EncElgMessage psi = 5;
+}
+
+message Round2Msg {
+    bytes D = 1;
+    bytes F = 2;
+    bytes Dhat = 3;
+    bytes Fhat = 4;
+    paillier.PaillierOperationAndCommitmentMessage psi = 5;
+    paillier.PaillierAffAndGroupRangeMessage psihat = 6;   
+}
+
+message Round3Msg {
+    bytes delta = 1;
+    ecpointgrouplaw.EcPointMessage z1hat = 2;
+    ecpointgrouplaw.EcPointMessage z2hat = 3;
+}
+
+message Round4Msg {
+    ecpointgrouplaw.EcPointMessage gamma = 1;
+    paillier.LogStarMessage psipai = 2;
+}
+
+message Round5Msg {
+    ecpointgrouplaw.EcPointMessage delta = 1;
+    paillier.ELogMessage psi = 2;
+}
+
+message Round6Msg {
+    ecpointgrouplaw.EcPointMessage s = 1;
+    paillier.ELogMessage pi = 2;
+}
+
+message Round7Msg {
+    bytes sigma = 1;
+}
+
+message Err1Msg {
+    bytes k = 1;
+    bytes rhoNPower = 2;
+    paillier.NthRootMessage psiRhoProof = 3;
+    bytes gamma = 4;
+    // key => id
+    map<string, Err1PeerMsg> peers = 6;
+}
+
+message Err1PeerMsg {
+    bytes alpha = 1;
+    bytes muNPower = 2;
+    paillier.NthRootMessage  psiMuProof = 3;
+}
+
+message Err2Msg {
+    bytes k = 1;
+    bytes rhoNPower = 2;
+    paillier.NthRootMessage psiRhoProof = 3;
+    ecpointgrouplaw.EcPointMessage ytilde = 4;
+    paillier.LogMessage psipaiProof = 5;
+    // key => id
+    map<string, Err2PeerMsg> peers = 6;
+} 
+
+message Err2PeerMsg {
+    bytes alphahat = 1;
+    bytes muhatNPower = 2;
+    paillier.NthRootMessage  psiMuProof = 3;
+}

@@ -16,7 +16,7 @@ package reshare
 import (
 	"io/ioutil"
 
-	"github.com/getamis/alice/crypto/tss/reshare"
+	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/reshare"
 	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
