@@ -22,8 +22,14 @@ For example, an important contract not only requires enough signatures, but also
 HTSS  has been developed by [Tassa](https://www.openu.ac.il/lists/mediaserver_documents/personalsites/tamirtassa/hss_conf.pdf) and other researchers many years ago. In our implementation, we setup up this theory on TSS(i.e. just replace Lagrange Interpolation to Birkhoff Interpolation).  Meanwhile, our protocol of sign (i.e. GG18 and CCLST20 ) can support two homomorphic encryptions which are Paillier and CL scheme. 
 
 Now, Alice supports two parts:
-1. [HTSS(A variant of GG18 and CCLST): ECDSA](./crypto/tss/README.md). This part has been audited.
-2. [2-party Bip32](./crypto/bip32/README.md). **WARN: This part has NOT been audited (Preparation).** 
+### Audited Part :
+
+1. [HTSS(A variant of GG18 and CCLST): ECDSA](./crypto/tss/ecdsa/gg18/README.md).
+
+### Preparation : 
+1. [HTSS(A variant of CGGMP): ECDSA](./crypto/tss/ecdsa/cggmp/README.md).
+2. [HTSS(A variant of FROST): EdDSA](./crypto/tss/eddsa/frost/README.md).
+3. [2-party Bip32](./crypto/bip32/README.md).
 
 
 
@@ -44,4 +50,5 @@ If you have more questions, you can connect [us](https://www.am.is/) directly wi
 
 
 ## Acknowledgments:
-Thanks to [Filipe Casal from Trail of Bits](https://www.trailofbits.com) for indicating the potential issues of integer factorization proof.
+Thanks to 
+1. [Filipe Casal from Trail of Bits](https://www.trailofbits.com) for indicating the potential issues of integer factorization proof.
