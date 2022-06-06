@@ -22,7 +22,7 @@ import (
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/addshare"
+	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/addshare"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/sirius/log"
 	. "github.com/onsi/ginkgo"

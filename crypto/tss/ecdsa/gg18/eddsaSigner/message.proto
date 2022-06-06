@@ -1,4 +1,4 @@
-// Copyright © 2020 AMIS Technologies
+// Copyright © 2022 AMIS Technologies
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,37 +14,33 @@
 
 syntax = "proto3";
 
-package reshare;
+package eddsaSigner;
 
-option go_package = "github.com/getamis/alice/crypto/tss/reshare";
+option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/gg18/eddsaSigner";
 
-import "github.com/getamis/alice/crypto/commitment/message.proto";
 import "github.com/getamis/alice/crypto/zkproof/message.proto";
+import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
 
 enum Type {
-    Commit = 0;
-    Verify = 1;
-    Result = 2;
+    Round1 = 0;
+    Round2 = 1;
 }
 
 message Message {
     Type type = 1;
     string id = 2;
     oneof body {
-        BodyCommit commit = 3;
-        BodyVerify verify = 4;
-        BodyResult result = 5;
+        BodyRound1 round1 = 4;
+        BodyRound2 round2 = 5;
     }
 }
 
-message BodyCommit {
-    commitment.PointCommitmentMessage pointCommitment = 1;
+message BodyRound1 {
+	ecpointgrouplaw.EcPointMessage D = 1;
+	ecpointgrouplaw.EcPointMessage E = 2;
+	zkproof.SchnorrProofMessage sG = 3;
 }
 
-message BodyVerify {
-    commitment.FeldmanVerifyMessage verify = 1;
-}
-
-message BodyResult {
-    zkproof.SchnorrProofMessage siGProofMsg = 1;
+message BodyRound2 {
+	bytes si = 1;
 }

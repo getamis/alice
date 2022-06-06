@@ -14,46 +14,54 @@
 
 syntax = "proto3";
 
-package dkg;
+package addshare;
 
-option go_package = "github.com/getamis/alice/crypto/tss/dkg";
+option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/gg18/addshare";
 
 import "github.com/getamis/alice/crypto/birkhoffinterpolation/bk.proto";
-import "github.com/getamis/alice/crypto/commitment/message.proto";
+import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
 import "github.com/getamis/alice/crypto/zkproof/message.proto";
 
 enum Type {
-    Peer = 0;
-    Decommit = 1;
-    Verify = 2;
-    Result = 3;
+    OldPeer = 0;
+    NewBk   = 1;
+    Compute = 2;
+    Result  = 3;
+    Verify  = 4;
 }
 
 message Message {
     Type type = 1;
     string id = 2;
     oneof body {
-        BodyPeer peer = 3;
-        BodyDecommit decommit = 4;
-        BodyVerify verify = 5;
-        BodyResult result = 6;
+        BodyOldPeer old_peer = 3;
+        BodyNewBk   new_bk   = 4;
+        BodyCompute compute  = 5;
+        BodyResult  result   = 6;
+        BodyVerify  verify   = 7;
     }
 }
 
-message BodyPeer {
+message BodyOldPeer {
     birkhoffinterpolation.BkParameterMessage bk = 1;
-    commitment.HashCommitmentMessage commitment = 2;
+    zkproof.SchnorrProofMessage siGProofMsg = 2;
+    ecpointgrouplaw.EcPointMessage pubkey = 3;
+    uint32 threshold = 4;
 }
 
-message BodyDecommit {
-    commitment.HashDecommitmentMessage hashDecommitment = 1;
-    commitment.PointCommitmentMessage pointCommitment = 2;
+message BodyNewBk {
+    birkhoffinterpolation.BkParameterMessage bk = 1;
 }
 
-message BodyVerify {
-    commitment.FeldmanVerifyMessage verify = 1;
+message BodyCompute {
+    bytes delta = 1;
+    zkproof.SchnorrProofMessage siGProofMsg = 2;
 }
 
 message BodyResult {
+    bytes delta = 1;
+}
+
+message BodyVerify {
     zkproof.SchnorrProofMessage siGProofMsg = 1;
 }
