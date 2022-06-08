@@ -109,6 +109,10 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 	if err != nil {
 		return err
 	}
+	Bx, err := msg.B.ToPoint()
+	if err != nil {
+		return err
+	}
 	curveOrder := X.GetCurve().Params().N
 
 	msgs := append(utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), N0.Bytes(), C.Bytes(), D.Bytes(), msg.A, msg.E, msg.S), msgG, msgX, msg.B)
@@ -156,22 +160,11 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 	if !utils.IsRelativePrime(E, pedN) {
 		return ErrVerifyFailure
 	}
-	Bx, err := msg.B.ToPoint()
-	if err != nil {
-		return err
-	}
-
-	// Check (C)^{z1} ·w^{N_0} =A·D^e mod N_0^2.
-	ADexpe := new(big.Int).Mul(A, new(big.Int).Exp(D, e, N0Square))
-	ADexpe.Mod(ADexpe, N0Square)
-	temp := new(big.Int).Exp(C, z1, N0Square)
-	compare := new(big.Int).Exp(w, N0, N0Square)
-	compare.Mul(compare, temp)
-	compare.Mod(compare, N0Square)
-	if compare.Cmp(ADexpe) != 0 {
+	// Check z_1 in ±2^{l+ε}.
+	absZ1 := new(big.Int).Abs(z1)
+	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
-
 	// Check z1*G = B_x + e*X
 	BxXexpe := X.ScalarMult(e)
 	BxXexpe, err = BxXexpe.Add(Bx)
@@ -182,6 +175,16 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 	if !gz1.Equal(BxXexpe) {
 		return ErrVerifyFailure
 	}
+	// Check (C)^{z1} ·w^{N_0} =A·D^e mod N_0^2.
+	ADexpe := new(big.Int).Mul(A, new(big.Int).Exp(D, e, N0Square))
+	ADexpe.Mod(ADexpe, N0Square)
+	temp := new(big.Int).Exp(C, z1, N0Square)
+	compare := new(big.Int).Exp(w, N0, N0Square)
+	compare.Mul(compare, temp)
+	compare.Mod(compare, N0Square)
+	if compare.Cmp(ADexpe) != 0 {
+		return ErrVerifyFailure
+	}
 	// Check s^{z1}t^{z2} =E·S^e mod Nˆ
 	sz1tz3 := new(big.Int).Mul(new(big.Int).Exp(peds, z1, pedN), new(big.Int).Exp(pedt, z2, pedN))
 	sz1tz3.Mod(sz1tz3, pedN)
@@ -190,12 +193,5 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 	if sz1tz3.Cmp(ESexpe) != 0 {
 		return ErrVerifyFailure
 	}
-
-	// Check z_1 in ±2^{l+ε}.
-	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
-		return ErrVerifyFailure
-	}
-
 	return nil
 }

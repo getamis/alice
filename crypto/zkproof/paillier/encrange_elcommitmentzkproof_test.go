@@ -24,12 +24,6 @@ import (
 )
 
 var _ = Describe("Encrange elcommitmentzkproof test", func() {
-	config := NewS256()
-	p, _ := new(big.Int).SetString("104975615121222854384410219330480259027041155688835759631647658735069527864919393410352284436544267374160206678331198777612866309766581999589789442827625308608614590850591998897357449886061863686453412019330757447743487422636807387508460941025550338019105820406950462187693188000168607236389735877001362796259", 10)
-	q, _ := new(big.Int).SetString("102755306389915984635356782597494195047102560555160692696207839728487252530690043689166546890155633162017964085393843240989395317546293846694693801865924045225783240995686020308553449158438908412088178393717793204697268707791329981413862246773904710409946848630083569401668855899757371993960961231481357354607", 10)
-	n := new(big.Int).Mul(p, q)
-	nSquare := new(big.Int).Exp(n, big2, nil)
-	ssIDInfo := []byte("Mark HaHa")
 	G := pt.NewBase(config.Curve)
 	a := big.NewInt(3)
 	b := big.NewInt(5)
@@ -37,25 +31,125 @@ var _ = Describe("Encrange elcommitmentzkproof test", func() {
 	A := G.ScalarMult(a)
 	B := G.ScalarMult(b)
 	X := G.ScalarMult(new(big.Int).Add(new(big.Int).Mul(a, b), x))
-
-	pedp, _ := new(big.Int).SetString("172321190316317406041983369591732729491350806968006943303929709788136215251460267633420533682689046013587054841341976463526601587002102302546652907431187846060997247514915888514444763709031278321293105031395914163838109362462240334430371455027991864100292721059079328191363601847674802011142994248364894749407", 10)
-	pedq, _ := new(big.Int).SetString("133775161118873760646458598449594229708046435932335011961444226591456542241216521727451860331718305184791260558214309464515443345834395848652314690639803964821534655704923535199917670451716761498957904445631495169583566095296670783502280310288116580525460451464561679063318393570545894032154226243881186182059", 10)
-	pedn := new(big.Int).Mul(pedp, pedq)
-	pedt := big.NewInt(9)
-	peds := big.NewInt(729)
-	ped := NewPedersenOpenParameter(pedn, peds, pedt)
-
+	rho := big.NewInt(5)
+	ciphertext := new(big.Int).Exp(new(big.Int).Add(big1, n0), x, n0Square)
+	ciphertext.Mul(ciphertext, new(big.Int).Exp(rho, n0, n0Square))
+	ciphertext.Mod(ciphertext, n0Square)
 	Context("It is OK", func() {
+		BeforeEach(func() {
+			config = NewS256()
+		})
 		It("over Range, should be ok", func() {
-			rho := big.NewInt(5)
-			ciphertext := new(big.Int).Exp(new(big.Int).Add(big1, n), x, nSquare)
-			ciphertext.Mul(ciphertext, new(big.Int).Exp(rho, n, nSquare))
-			ciphertext.Mod(ciphertext, nSquare)
+			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, n0, A, B, X, ped)
+			Expect(err).Should(BeNil())
+			err = zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).Should(BeNil())
+		})
+		It("not in range", func() {
+			config.TwoExpLAddepsilon = big.NewInt(-1)
+			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+		It("not in range", func() {
+			config.TwoExpL = big.NewInt(-1)
+			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+		It("not in range", func() {
+			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, big.NewInt(-1), A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+	})
 
-			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, n, A, B, X, ped)
+	Context("Verify tests", func() {
+		var zkproof *EncElgMessage
+		BeforeEach(func() {
+			var err error
+			zkproof, err = NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, n0, A, B, X, ped)
 			Expect(err).Should(BeNil())
-			err = zkproof.Verify(config, ssIDInfo, ciphertext, n, A, B, X, ped)
-			Expect(err).Should(BeNil())
+		})
+		It("not in range", func() {
+			zkproof.S = pedN.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("not coprime", func() {
+			zkproof.S = pedp.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("not in range", func() {
+			zkproof.T = pedN.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("not coprime", func() {
+			zkproof.T = pedp.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("not in range", func() {
+			zkproof.D = n0Square.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("not coprime", func() {
+			zkproof.D = p0.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("not in range", func() {
+			zkproof.Z2 = n0.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("not coprime", func() {
+			zkproof.Z2 = p0.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("verify failure", func() {
+			zkproof.Z1 = new(big.Int).Lsh(big2, uint(config.LAddEpsilon)+1).String()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("verify failure", func() {
+			zkproof.Z1 = big1.String()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("verify failure", func() {
+			zkproof.W = big1.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("verify failure", func() {
+			zkproof.W = big1.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("verify failure", func() {
+			zkproof.Z3 = big1.String()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("verify failure", func() {
+			zkproof.Z2 = big1.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("wrong point", func() {
+			zkproof.Y = nil
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("wrong point", func() {
+			zkproof.Z = nil
+			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
 		})
 	})
 })

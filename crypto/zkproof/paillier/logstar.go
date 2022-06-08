@@ -162,13 +162,9 @@ func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0 *b
 	if err != nil {
 		return err
 	}
-	// Check (1+N_0)^{z1}z2^{N_0} = A·C^e mod N_0^2.
-	AKexpe := new(big.Int).Mul(A, new(big.Int).Exp(C, e, n0Square))
-	AKexpe.Mod(AKexpe, n0Square)
-	compare := new(big.Int).Exp(z2, n0, n0Square)
-	compare.Mul(compare, new(big.Int).Exp(new(big.Int).Add(big1, n0), z1, n0Square))
-	compare.Mod(compare, n0Square)
-	if compare.Cmp(AKexpe) != 0 {
+	// Check z_1 in ±2^{l+ε}.
+	absZ1 := new(big.Int).Abs(z1)
+	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
 	// Check z1*G =Y + e*X
@@ -181,17 +177,21 @@ func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0 *b
 	if !gz1.Equal(YXexpe) {
 		return ErrVerifyFailure
 	}
+	// Check (1+N_0)^{z1}z2^{N_0} = A·C^e mod N_0^2.
+	AKexpe := new(big.Int).Mul(A, new(big.Int).Exp(C, e, n0Square))
+	AKexpe.Mod(AKexpe, n0Square)
+	compare := new(big.Int).Exp(z2, n0, n0Square)
+	compare.Mul(compare, new(big.Int).Exp(new(big.Int).Add(big1, n0), z1, n0Square))
+	compare.Mod(compare, n0Square)
+	if compare.Cmp(AKexpe) != 0 {
+		return ErrVerifyFailure
+	}
 	// Check s^{z1}t^{z3} =E·S^e mod Nˆ
 	sz1tz3 := new(big.Int).Mul(new(big.Int).Exp(peds, z1, pedN), new(big.Int).Exp(pedt, z3, pedN))
 	sz1tz3.Mod(sz1tz3, pedN)
 	DSexpe := new(big.Int).Mul(D, new(big.Int).Exp(S, e, pedN))
 	DSexpe.Mod(DSexpe, pedN)
 	if sz1tz3.Cmp(DSexpe) != 0 {
-		return ErrVerifyFailure
-	}
-	// Check z_1 in ±2^{l+ε}.
-	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
 	return nil

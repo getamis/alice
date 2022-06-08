@@ -112,14 +112,14 @@ func (msg *EncryptRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, cip
 	}
 	z3, _ := new(big.Int).SetString(msg.Z3, 10)
 	K := new(big.Int).SetBytes(ciphertext)
-	proveNSaure := new(big.Int).Exp(proveN, big2, nil)
+	proveNSqaure := new(big.Int).Exp(proveN, big2, nil)
 	// check S, C ∈ Z_{N_0^2}^\ast
 	A := new(big.Int).SetBytes(msg.A)
-	err = utils.InRange(A, big0, proveNSaure)
+	err = utils.InRange(A, big0, proveNSqaure)
 	if err != nil {
 		return err
 	}
-	if !utils.IsRelativePrime(A, pedN) {
+	if !utils.IsRelativePrime(A, proveN) {
 		return ErrVerifyFailure
 	}
 
@@ -132,14 +132,19 @@ func (msg *EncryptRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, cip
 	if err != nil {
 		return err
 	}
+	// Check z1 ∈ ±2^{l+ε}.
+	absZ1 := new(big.Int).Abs(z1)
+	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
+		return ErrVerifyFailure
+	}
 	// Check (1+N_0)^{z1} ·z_2^{N_0} =A·K^e mod N_0^2.
-	AKexpe := new(big.Int).Mul(A, new(big.Int).Exp(K, e, proveNSaure))
-	AKexpe.Mod(AKexpe, proveNSaure)
+	AKexpe := new(big.Int).Mul(A, new(big.Int).Exp(K, e, proveNSqaure))
+	AKexpe.Mod(AKexpe, proveNSqaure)
 	temp := new(big.Int).Add(big1, proveN)
-	temp.Exp(temp, z1, proveNSaure)
-	compare := new(big.Int).Exp(z2, proveN, proveNSaure)
+	temp.Exp(temp, z1, proveNSqaure)
+	compare := new(big.Int).Exp(z2, proveN, proveNSqaure)
 	compare.Mul(compare, temp)
-	compare.Mod(compare, proveNSaure)
+	compare.Mod(compare, proveNSqaure)
 	if compare.Cmp(AKexpe) != 0 {
 		return ErrVerifyFailure
 	}
@@ -150,11 +155,6 @@ func (msg *EncryptRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, cip
 	compare = new(big.Int).Mul(new(big.Int).Exp(peds, z1, pedN), new(big.Int).Exp(pedt, z3, pedN))
 	compare.Mod(compare, pedN)
 	if CSexpe.Cmp(compare) != 0 {
-		return ErrVerifyFailure
-	}
-	// Check z1 ∈ ±2^{l+ε}.
-	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
 	return nil

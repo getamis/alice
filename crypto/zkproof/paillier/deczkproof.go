@@ -138,26 +138,24 @@ func (msg *DecryMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, x *
 	if !utils.IsRelativePrime(W, N0) {
 		return ErrVerifyFailure
 	}
-
-	// Check (1+N_0)^{z1} ·w^{N_0} =A·C^e mod N_0^2.
-	ACexpe := new(big.Int).Mul(A, new(big.Int).Exp(C, e, N0Square))
-	ACexpe.Mod(ACexpe, N0Square)
-	temp := new(big.Int).Add(big1, N0)
-	temp.Exp(temp, z1, N0Square)
-	compare := new(big.Int).Exp(W, N0, N0Square)
-	compare.Mul(compare, temp)
-	compare.Mod(compare, N0Square)
-	if compare.Cmp(ACexpe) != 0 {
-		return ErrVerifyFailure
-	}
-
-	compare = new(big.Int).Add(gamma, new(big.Int).Mul(e, x))
+	// Check
+	compare := new(big.Int).Add(gamma, new(big.Int).Mul(e, x))
 	compare.Mod(compare, fieldOrder)
 	z1ModCurveOrder := new(big.Int).Mod(z1, fieldOrder)
 	if compare.Cmp(z1ModCurveOrder) != 0 {
 		return ErrVerifyFailure
 	}
-
+	// Check (1+N_0)^{z1} ·w^{N_0} =A·C^e mod N_0^2.
+	ACexpe := new(big.Int).Mul(A, new(big.Int).Exp(C, e, N0Square))
+	ACexpe.Mod(ACexpe, N0Square)
+	temp := new(big.Int).Add(big1, N0)
+	temp.Exp(temp, z1, N0Square)
+	compare = new(big.Int).Exp(W, N0, N0Square)
+	compare.Mul(compare, temp)
+	compare.Mod(compare, N0Square)
+	if compare.Cmp(ACexpe) != 0 {
+		return ErrVerifyFailure
+	}
 	// Check s^{z1}t^{z2} =T·S^e mod Nˆ
 	sz1tz2 := new(big.Int).Mul(new(big.Int).Exp(peds, z1, pedN), new(big.Int).Exp(pedt, z2, pedN))
 	sz1tz2.Mod(sz1tz2, pedN)

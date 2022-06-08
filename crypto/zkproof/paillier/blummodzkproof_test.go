@@ -22,18 +22,46 @@ import (
 )
 
 var _ = Describe("Blummodzkproof test", func() {
-	p, _ := new(big.Int).SetString("724334377473689364544838428087481034584099153487855340008424871105046166518428970750574404355303850918007125792350135220204204914450213831218820360920136994359584963169366146339629206326690417884172903949709795973492622857252471234238734443420121520959794039877095360362260419273921676996295515593562694725039318971623", 10)
-	q, _ := new(big.Int).SetString("102755306389915984635356782597494195047102560555160692696207839728487252530690043689166546890155633162017964085393843240989395317546293846694693801865924045225783240995686020308553449158438908412088178393717793204697268707791329981413862246773904710409946848630083569401668855899757371993960961231481357354607", 10)
-	n := new(big.Int).Mul(p, q)
-	ssIDInfo := []byte("Mark HaHa")
-
 	Context("It is OK", func() {
 		It("over Range, should be ok", func() {
-			zkproof, err := NewPaillierBlumMessage(ssIDInfo, p, q, n, MINIMALCHALLENGE)
+			zkproof, err := NewPaillierBlumMessage(ssIDInfo, p1, q1, n1, MINIMALCHALLENGE)
 			Expect(err).Should(BeNil())
-			err = zkproof.Verify(ssIDInfo, n)
+			err = zkproof.Verify(ssIDInfo, n1)
 			Expect(err).Should(BeNil())
 		})
+		It("wrong p and q", func() {
+			zkproof, err := NewPaillierBlumMessage(ssIDInfo, big0, big0, n0, MINIMALCHALLENGE)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+		It("wrong challenge size", func() {
+			zkproof, err := NewPaillierBlumMessage(ssIDInfo, p0, q0, n0, 0)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+		It("wrong n0", func() {
+			zkproof, err := NewPaillierBlumMessage(ssIDInfo, p0, q0, big0, MINIMALCHALLENGE)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+	})
+
+	Context("Verify tests", func() {
+		var zkproof *PaillierBlumMessage
+		BeforeEach(func() {
+			var err error
+			zkproof, err = NewPaillierBlumMessage(ssIDInfo, p1, q1, n1, MINIMALCHALLENGE)
+			Expect(err).Should(BeNil())
+		})
+		It("wrong security level", func() {
+			err := zkproof.Verify(ssIDInfo, big0)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("wrong security level", func() {
+			err := zkproof.Verify(ssIDInfo, new(big.Int).Lsh(n0, 2))
+			Expect(err).ShouldNot(BeNil())
+		})
+
 	})
 
 })

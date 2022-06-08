@@ -137,6 +137,17 @@ func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byt
 	if err != nil {
 		return err
 	}
+	// Check z1, z2 in ±N0^1/2*2^{l+ε}.
+	sqrtN := new(big.Int).Sqrt(n)
+	absZ1 := new(big.Int).Abs(z1)
+	upBd := new(big.Int).Lsh(sqrtN, uint(config.LAddEpsilon))
+	if absZ1.Cmp(upBd) > 0 {
+		return ErrVerifyFailure
+	}
+	absZ2 := new(big.Int).Abs(z2)
+	if absZ2.Cmp(upBd) > 0 {
+		return ErrVerifyFailure
+	}
 	// Set R = s^{N0}*t^ρ. Check s^{z1}*t^{w1} = A·P^e mod Nˆ.
 	ADexpe := new(big.Int).Mul(A, new(big.Int).Exp(P, e, pedN))
 	ADexpe.Mod(ADexpe, pedN)
@@ -159,17 +170,6 @@ func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byt
 	compare = new(big.Int).Mul(new(big.Int).Exp(Q, z1, pedN), new(big.Int).Exp(pedt, v, pedN))
 	compare.Mod(compare, pedN)
 	if compare.Cmp(TRexpe) != 0 {
-		return ErrVerifyFailure
-	}
-	// Check z1, z2 in ±N0^1/2*2^{l+ε}.
-	sqrtN := new(big.Int).Sqrt(n)
-	absZ1 := new(big.Int).Abs(z1)
-	upBd := new(big.Int).Lsh(sqrtN, uint(config.LAddEpsilon))
-	if absZ1.Cmp(upBd) > 0 {
-		return ErrVerifyFailure
-	}
-	absZ2 := new(big.Int).Abs(z2)
-	if absZ2.Cmp(upBd) > 0 {
 		return ErrVerifyFailure
 	}
 	return nil

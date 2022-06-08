@@ -18,31 +18,80 @@ import (
 	"math/big"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Elog test", func() {
-	config := NewS256()
 	G := pt.NewBase(config.Curve)
 	X := G.ScalarMult(big.NewInt(232579))
 	h := G.ScalarMult(big.NewInt(1))
 	lambda := big.NewInt(23424)
 	y := big.NewInt(0)
 	ssIDInfo := []byte("Mark HaHa")
+	L := G.ScalarMult(lambda)
+	M := G.ScalarMult(y)
+	M, _ = M.Add(X.ScalarMult(lambda))
+	Y := h.ScalarMult(y)
 	Context("It is OK", func() {
 		It("over Range, should be ok", func() {
-			L := G.ScalarMult(lambda)
-			M := G.ScalarMult(y)
-			M, err := M.Add(X.ScalarMult(lambda))
-			Expect(err).Should(BeNil())
-			Y := h.ScalarMult(y)
-
 			zkproof, err := NewELog(config, ssIDInfo, y, lambda, L, M, X, Y, h)
 			Expect(err).Should(BeNil())
 			err = zkproof.Verify(config, ssIDInfo, L, M, X, Y, h)
 			Expect(err).Should(BeNil())
+		})
+		It("over Range, should be ok", func() {
+			Xhat := pt.NewBase(elliptic.Ed25519())
+			zkproof, err := NewELog(config, ssIDInfo, y, lambda, L, M, Xhat, Y, h)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+	})
+
+	Context("Verify tests", func() {
+		var zkproof *ELogMessage
+		twiceCurveN := new(big.Int).Mul(big2, G.GetCurve().Params().N).Bytes()
+		BeforeEach(func() {
+			var err error
+			zkproof, err = NewELog(config, ssIDInfo, y, lambda, L, M, X, Y, h)
+			Expect(err).Should(BeNil())
+		})
+		It("not in range", func() {
+			zkproof.Z = twiceCurveN
+			err := zkproof.Verify(config, ssIDInfo, L, M, X, Y, h)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("not coprime", func() {
+			zkproof.U = twiceCurveN
+			err := zkproof.Verify(config, ssIDInfo, L, M, X, Y, h)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("verify failure", func() {
+			zkproof.Z = big1.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, L, M, X, Y, h)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("verify failure", func() {
+			zkproof.U = big1.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, L, M, X, Y, h)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("wrong Point", func() {
+			zkproof.A = nil
+			err := zkproof.Verify(config, ssIDInfo, L, M, X, Y, h)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("wrong Point", func() {
+			zkproof.B = nil
+			err := zkproof.Verify(config, ssIDInfo, L, M, X, Y, h)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("wrong Point", func() {
+			zkproof.N = nil
+			err := zkproof.Verify(config, ssIDInfo, L, M, X, Y, h)
+			Expect(err).ShouldNot(BeNil())
 		})
 	})
 })
