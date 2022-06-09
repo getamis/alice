@@ -226,6 +226,16 @@ func (msg *PaillierOperationAndCommitmentMessage) Verify(config *CurveConfig, ss
 	if err != nil {
 		return err
 	}
+	// Check z_1 in ±2^{l+ε}.
+	absZ1 := new(big.Int).Abs(z1)
+	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
+		return ErrVerifyFailure
+	}
+	// Check z_2 in ±2^{l′+ε}.
+	absZ2 := new(big.Int).Abs(z2)
+	if absZ2.Cmp(new(big.Int).Lsh(big2, uint(config.LpaiAddEpsilon))) > 0 {
+		return ErrVerifyFailure
+	}
 	// Check C^{z1}(1+N_0)^{z2}w^{N_0} = A·D^e mod N_0^2.
 	ADexpe := new(big.Int).Mul(A, new(big.Int).Exp(D, e, n0Square))
 	ADexpe.Mod(ADexpe, n0Square)
@@ -236,7 +246,7 @@ func (msg *PaillierOperationAndCommitmentMessage) Verify(config *CurveConfig, ss
 	if compare.Cmp(ADexpe) != 0 {
 		return ErrVerifyFailure
 	}
-	// Check (1+N_1)^{z_z}wx^{N_1} = B_x·X^e mod N_1^2.
+	// Check (1+N_1)^{z_1}wx^{N_1} = B_x·X^e mod N_1^2.
 	BxXexpe := new(big.Int).Mul(Bx, new(big.Int).Exp(X, e, n1Square))
 	BxXexpe.Mod(BxXexpe, n1Square)
 	compare = new(big.Int).Exp(Wx, n1, n1Square)
@@ -268,16 +278,6 @@ func (msg *PaillierOperationAndCommitmentMessage) Verify(config *CurveConfig, ss
 	FTexpe := new(big.Int).Mul(F, new(big.Int).Exp(T, e, pedN))
 	FTexpe.Mod(FTexpe, pedN)
 	if FTexpe.Cmp(sz2tz4) != 0 {
-		return ErrVerifyFailure
-	}
-	// Check z_1 in ±2^{l+ε}.
-	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
-		return ErrVerifyFailure
-	}
-	// Check z_2 in ±2^{l′+ε}.
-	absZ2 := new(big.Int).Abs(z2)
-	if absZ2.Cmp(new(big.Int).Lsh(big2, uint(config.LpaiAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
 	return nil

@@ -27,7 +27,7 @@ const (
 	// maxRetry defines the max retries
 	maxRetry = 100
 	// SAFESECURITYLEVEL define the minimal security level
-	SAFESECURITYLEVEL = 2048
+	SAFESECURITYLEVEL = 2047
 )
 
 var (
@@ -63,6 +63,9 @@ func NewPaillierBlumMessage(ssidInfo []byte, p *big.Int, q *big.Int, n *big.Int,
 
 	// Find w in Z_N such that Jacobi(w, N) = -1.
 	w, err := utils.RandomCoprimeInt(n)
+	if err != nil {
+		return nil, err
+	}
 	for j := 0; j < maxRetry; j++ {
 		if err != nil {
 			return nil, err

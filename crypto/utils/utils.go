@@ -101,6 +101,9 @@ func EnsureThreshold(threshold uint32, n uint32) error {
 
 // RandomInt generates a random number in [0, n).
 func RandomInt(n *big.Int) (*big.Int, error) {
+	if n.Cmp(big0) < 1 {
+		return nil, ErrInvalidInput
+	}
 	return rand.Int(rand.Reader, n)
 }
 

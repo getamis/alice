@@ -22,23 +22,63 @@ import (
 )
 
 var _ = Describe("Nth Root test", func() {
-	config := NewS256()
-	p0, _ := new(big.Int).SetString("104975615121222854384410219330480259027041155688835759631647658735069527864919393410352284436544267374160206678331198777612866309766581999589789442827625308608614590850591998897357449886061863686453412019330757447743487422636807387508460941025550338019105820406950462187693188000168607236389735877001362796259", 10)
-	q0, _ := new(big.Int).SetString("102755306389915984635356782597494195047102560555160692696207839728487252530690043689166546890155633162017964085393843240989395317546293846694693801865924045225783240995686020308553449158438908412088178393717793204697268707791329981413862246773904710409946848630083569401668855899757371993960961231481357354607", 10)
-	n0 := new(big.Int).Mul(p0, q0)
-	n0Square := new(big.Int).Exp(n0, big2, nil)
-	ssIDInfo := []byte("Mark HaHa")
-
 	Context("It is OK", func() {
+		rho := big.NewInt(103)
+		NPower := new(big.Int).Exp(rho, n0, n0Square)
+		NPower.Mod(NPower, n0Square)
 		It("over Range, should be ok", func() {
-			rho := big.NewInt(103)
-			NPower := new(big.Int).Exp(rho, n0, n0Square)
-			NPower.Mod(NPower, n0Square)
-
 			zkproof, err := NewNthRoot(config, ssIDInfo, rho, NPower, n0)
 			Expect(err).Should(BeNil())
 			err = zkproof.Verify(config, ssIDInfo, NPower, n0)
 			Expect(err).Should(BeNil())
+		})
+
+		It("not in range", func() {
+			zkproof, err := NewNthRoot(config, ssIDInfo, rho, NPower, big.NewInt(-1))
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+	})
+
+	Context("verify test", func() {
+		var zkproof *NthRootMessage
+		rho := big.NewInt(103)
+		NPower := new(big.Int).Exp(rho, n0, n0Square)
+		BeforeEach(func() {
+			var err error
+			config.Curve.Params().N = S256N
+			zkproof, err = NewNthRoot(config, ssIDInfo, rho, NPower, n0)
+			Expect(err).Should(BeNil())
+		})
+
+		It("not in range", func() {
+			zkproof.A = new(big.Int).Set(n0Square).Bytes()
+			err := zkproof.Verify(config, ssIDInfo, NPower, n0)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("not coprime", func() {
+			zkproof.A = new(big.Int).Set(p0).Bytes()
+			err := zkproof.Verify(config, ssIDInfo, NPower, n0)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("wrong fieldOrder", func() {
+			config.Curve.Params().N = big1
+			err := zkproof.Verify(config, ssIDInfo, NPower, n0)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("not in range", func() {
+			zkproof.Z1 = new(big.Int).Set(n0).Bytes()
+			err := zkproof.Verify(config, ssIDInfo, NPower, n0)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("verify failure", func() {
+			zkproof.A = big1.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, NPower, n0)
+			Expect(err).ShouldNot(BeNil())
 		})
 	})
 })

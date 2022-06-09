@@ -67,9 +67,6 @@ func NewRingPederssenParameterMessage(ssidInfo []byte, eulerValue *big.Int, n *b
 		T:    t.Bytes(),
 		Salt: salt,
 	}
-	if result.Verify(ssidInfo) != nil {
-		return nil, ErrVerifyFailure
-	}
 	return result, nil
 }
 

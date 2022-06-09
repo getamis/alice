@@ -134,7 +134,7 @@ func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, 
 func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertext, N *big.Int, A, B, X *pt.ECPoint, ped *PederssenOpenParameter) error {
 	curve := A.GetCurve()
 	curveN := curve.Params().N
-	NSaure := new(big.Int).Mul(N, N)
+	NSqaure := new(big.Int).Mul(N, N)
 	G := pt.NewBase(curve)
 	pedN := ped.Getn()
 	peds := ped.Gets()
@@ -157,11 +157,11 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 		return ErrVerifyFailure
 	}
 	D := new(big.Int).SetBytes(msg.D)
-	err = utils.InRange(D, big0, NSaure)
+	err = utils.InRange(D, big0, NSqaure)
 	if err != nil {
 		return err
 	}
-	if !utils.IsRelativePrime(D, NSaure) {
+	if !utils.IsRelativePrime(D, NSqaure) {
 		return ErrVerifyFailure
 	}
 	Y, err := msg.Y.ToPoint()
@@ -215,16 +215,19 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	if err != nil {
 		return err
 	}
-
-	// Check (1+N)^{z1} ·z_2^{N_0} =D·C^e mod N_0^2.
-	DCexpe := new(big.Int).Mul(D, new(big.Int).Exp(ciphertext, e, NSaure))
-	DCexpe.Mod(DCexpe, NSaure)
-	temp := new(big.Int).Add(big1, N)
-	temp.Exp(temp, z1, NSaure)
-	compare := new(big.Int).Exp(z2, N, NSaure)
-	compare.Mul(compare, temp)
-	compare.Mod(compare, NSaure)
-	if compare.Cmp(DCexpe) != 0 {
+	// Check z1 ∈ ±2^{l+ε}.
+	absZ1 := new(big.Int).Abs(z1)
+	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
+		return ErrVerifyFailure
+	}
+	// w*g = Z+e*B
+	wG := G.ScalarMult(W)
+	comparePoint := B.ScalarMult(e)
+	comparePoint, err = comparePoint.Add(Z)
+	if err != nil {
+		return err
+	}
+	if !wG.Equal(comparePoint) {
 		return ErrVerifyFailure
 	}
 
@@ -234,7 +237,7 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	if err != nil {
 		return err
 	}
-	comparePoint := X.ScalarMult(e)
+	comparePoint = X.ScalarMult(e)
 	comparePoint, err = comparePoint.Add(Y)
 	if err != nil {
 		return err
@@ -242,29 +245,23 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	if !comparePoint.Equal(awAddz1G) {
 		return ErrVerifyFailure
 	}
-	// w*g = Z+e*B
-	wG := G.ScalarMult(W)
-	comparePoint = B.ScalarMult(e)
-	comparePoint, err = comparePoint.Add(Z)
-	if err != nil {
-		return err
-	}
-	if !wG.Equal(comparePoint) {
+	// Check (1+N)^{z1} ·z_2^{N_0} =D·C^e mod N_0^2.
+	DCexpe := new(big.Int).Mul(D, new(big.Int).Exp(ciphertext, e, NSqaure))
+	DCexpe.Mod(DCexpe, NSqaure)
+	temp := new(big.Int).Add(big1, N)
+	temp.Exp(temp, z1, NSqaure)
+	compare := new(big.Int).Exp(z2, N, NSqaure)
+	compare.Mul(compare, temp)
+	compare.Mod(compare, NSqaure)
+	if compare.Cmp(DCexpe) != 0 {
 		return ErrVerifyFailure
 	}
-
 	// Check s^{z1}*t^{z3} =T·S^e mod Nˆ
 	TSexpe := new(big.Int).Mul(T, new(big.Int).Exp(S, e, pedN))
 	TSexpe.Mod(TSexpe, pedN)
 	compare = new(big.Int).Mul(new(big.Int).Exp(peds, z1, pedN), new(big.Int).Exp(pedt, z3, pedN))
 	compare.Mod(compare, pedN)
 	if TSexpe.Cmp(compare) != 0 {
-		return ErrVerifyFailure
-	}
-
-	// Check z1 ∈ ±2^{l+ε}.
-	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
 	return nil

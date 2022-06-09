@@ -248,14 +248,14 @@ func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo
 	if err != nil {
 		return err
 	}
-	// Check C^{z1}(1+N_0)^{z2}w^{N_0} = A·D^e mod N_0^2.
-	ADexpe := new(big.Int).Mul(A, new(big.Int).Exp(D, e, n0Square))
-	ADexpe.Mod(ADexpe, n0Square)
-	compare := new(big.Int).Exp(C, z1, n0Square)
-	compare.Mul(compare, new(big.Int).Exp(new(big.Int).Add(big1, n0), z2, n0Square))
-	compare.Mul(compare, new(big.Int).Exp(W, n0, n0Square))
-	compare.Mod(compare, n0Square)
-	if compare.Cmp(ADexpe) != 0 {
+	// Check z_1 in ±2^{l+ε}.
+	absZ1 := new(big.Int).Abs(z1)
+	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
+		return ErrVerifyFailure
+	}
+	// Check z_2 in ±2^{l′+ε}.
+	absZ2 := new(big.Int).Abs(z2)
+	if absZ2.Cmp(new(big.Int).Lsh(big2, uint(config.LpaiAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
 	// Check z1*G =B_x + e*X
@@ -268,7 +268,17 @@ func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo
 	if !gz1.Equal(BxXexpe) {
 		return ErrVerifyFailure
 	}
-	// Check (1+N_1)^{z_2}w^{N_1} = B_y·Y^e mod N_1^2.
+	// Check C^{z1}(1+N_0)^{z2}w^{N_0} = A·D^e mod N_0^2.
+	ADexpe := new(big.Int).Mul(A, new(big.Int).Exp(D, e, n0Square))
+	ADexpe.Mod(ADexpe, n0Square)
+	compare := new(big.Int).Exp(C, z1, n0Square)
+	compare.Mul(compare, new(big.Int).Exp(new(big.Int).Add(big1, n0), z2, n0Square))
+	compare.Mul(compare, new(big.Int).Exp(W, n0, n0Square))
+	compare.Mod(compare, n0Square)
+	if compare.Cmp(ADexpe) != 0 {
+		return ErrVerifyFailure
+	}
+	// Check (1+N_1)^{z_2}wy^{N_1} = B_y·Y^e mod N_1^2.
 	Byyexpe := new(big.Int).Mul(By, new(big.Int).Exp(Y, e, n1Square))
 	Byyexpe.Mod(Byyexpe, n1Square)
 	compare = new(big.Int).Exp(Wy, n1, n1Square)
@@ -291,16 +301,6 @@ func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo
 	FTexpe := new(big.Int).Mul(F, new(big.Int).Exp(T, e, pedN))
 	FTexpe.Mod(FTexpe, pedN)
 	if FTexpe.Cmp(sz2tz4) != 0 {
-		return ErrVerifyFailure
-	}
-	// Check z_1 in ±2^{l+ε}.
-	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
-		return ErrVerifyFailure
-	}
-	// Check z_2 in ±2^{l′+ε}.
-	absZ2 := new(big.Int).Abs(z2)
-	if absZ2.Cmp(new(big.Int).Lsh(big2, uint(config.LpaiAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
 	return nil

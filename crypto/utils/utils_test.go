@@ -78,6 +78,13 @@ var _ = Describe("Utils", func() {
 		Expect(got.Cmp(big.NewInt(-1))).Should(Equal(1))
 	})
 
+	It("RandomInt(): negative input", func() {
+		got, err := RandomInt(big.NewInt(-1))
+		Expect(err).ShouldNot(BeNil())
+		// Should be in [0, 10)
+		Expect(got).Should(BeNil())
+	})
+
 	It("RandomPositiveInt()", func() {
 		got, err := RandomPositiveInt(big.NewInt(10))
 		Expect(err).Should(BeNil())

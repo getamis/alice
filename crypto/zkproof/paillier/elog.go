@@ -142,18 +142,6 @@ func (msg *ELogMessage) Verify(config *CurveConfig, ssidInfo []byte, L, M, X, Y,
 	if err != nil {
 		return err
 	}
-
-	msgs := append(utils.GetAnyMsg(ssidInfo), msg.A, msg.B, msgL, msgM, msgX, msgY, msgh, msg.N, msgG)
-	seed, err := utils.HashProtos(msg.Salt, msgs...)
-	if err != nil {
-		return err
-	}
-
-	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveN)
-	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
-	if err != nil {
-		return err
-	}
 	A, err := msg.A.ToPoint()
 	if err != nil {
 		return err
@@ -163,6 +151,18 @@ func (msg *ELogMessage) Verify(config *CurveConfig, ssidInfo []byte, L, M, X, Y,
 		return err
 	}
 	N, err := msg.N.ToPoint()
+	if err != nil {
+		return err
+	}
+
+	msgs := append(utils.GetAnyMsg(ssidInfo), msg.A, msg.B, msgL, msgM, msgX, msgY, msgh, msg.N, msgG)
+	seed, err := utils.HashProtos(msg.Salt, msgs...)
+	if err != nil {
+		return err
+	}
+
+	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveN)
+	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
 	if err != nil {
 		return err
 	}

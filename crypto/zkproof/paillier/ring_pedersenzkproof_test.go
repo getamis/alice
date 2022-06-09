@@ -47,4 +47,57 @@ var _ = Describe("Ring pedersenzkproof test", func() {
 		})
 	})
 
+	Context("Error handle", func() {
+		It("negative eulerValue", func() {
+			zkproof, err := NewRingPederssenParameterMessage(ssIDInfo, big.NewInt(-1), n, s, t, lambda, MINIMALCHALLENGE)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+
+		It("the number of MINIMALCHALLENGE too small", func() {
+			zkproof, err := NewRingPederssenParameterMessage(ssIDInfo, big.NewInt(-1), n, s, t, lambda, 1)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+	})
+
+	Context("It is OK", func() {
+		var zkproof *RingPederssenParameterMessage
+		BeforeEach(func() {
+			var err error
+			zkproof, err = NewRingPederssenParameterMessage(ssIDInfo, eulerValue, n, s, t, lambda, MINIMALCHALLENGE)
+			Expect(err).Should(BeNil())
+		})
+
+		It("the number of MINIMALCHALLENGE too small", func() {
+			zkproof.A = zkproof.A[0:1]
+			err := zkproof.Verify(ssIDInfo)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("wrong range of A", func() {
+			zkproof.A[0] = zkproof.N
+			err := zkproof.Verify(ssIDInfo)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("not coprime A and p", func() {
+			zkproof.A[0] = new(big.Int).Set(p).Bytes()
+			err := zkproof.Verify(ssIDInfo)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("wrong range of Z", func() {
+			zkproof.Z[0] = zkproof.N
+			err := zkproof.Verify(ssIDInfo)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("verify failure", func() {
+			zkproof.Z[0] = big1.Bytes()
+			err := zkproof.Verify(ssIDInfo)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+
 })
