@@ -78,11 +78,38 @@ var _ = Describe("Utils", func() {
 		Expect(got.Cmp(big.NewInt(-1))).Should(Equal(1))
 	})
 
+	It("HashBytesToInt()", func() {
+		got, err := HashBytesToInt([]byte("1"), []byte("2"))
+		Expect(err).Should(BeNil())
+		Expect(got).ShouldNot(BeNil())
+	})
+
 	It("RandomInt(): negative input", func() {
 		got, err := RandomInt(big.NewInt(-1))
 		Expect(err).ShouldNot(BeNil())
 		// Should be in [0, 10)
 		Expect(got).Should(BeNil())
+	})
+
+	It("RandomAbsoluteRangeInt()", func() {
+		got, err := RandomInt(big.NewInt(10))
+		Expect(err).Should(BeNil())
+		// Should be in [-10, 10]
+		Expect(got.Cmp(big.NewInt(11))).Should(Equal(-1))
+		Expect(got.Cmp(big.NewInt(-11))).Should(Equal(1))
+	})
+
+	It("RandomAbsoluteRangeInt(): negative input", func() {
+		got, err := RandomAbsoluteRangeInt(big.NewInt(-10))
+		Expect(err).ShouldNot(BeNil())
+		// Should be in [0, 10)
+		Expect(got).Should(BeNil())
+	})
+
+	It("RandomAbsoluteRangeIntBySeed()", func() {
+		got := RandomAbsoluteRangeIntBySeed([]byte("1"), []byte("312.0."), big.NewInt(15))
+		Expect(got.Cmp(big.NewInt(16))).Should(Equal(-1))
+		Expect(got.Cmp(big.NewInt(-16))).Should(Equal(1))
 	})
 
 	It("RandomPositiveInt()", func() {
@@ -91,6 +118,13 @@ var _ = Describe("Utils", func() {
 		// Should be in [1, 10)
 		Expect(got.Cmp(big.NewInt(10))).Should(Equal(-1))
 		Expect(got.Cmp(big.NewInt(0))).Should(Equal(1))
+	})
+
+	It("RandomPositiveInt(): negative input", func() {
+		got, err := RandomPositiveInt(big.NewInt(-1))
+		Expect(err).ShouldNot(BeNil())
+		// Should be in [0, 10)
+		Expect(got).Should(BeNil())
 	})
 
 	It("RandomPrime()", func() {
@@ -317,10 +351,10 @@ var _ = Describe("Utils", func() {
 
 	Context("ExtnedHashOuput()", func() {
 		It("It is OK", func() {
-			ExpectOutputBitLength := 512
+			ExpectOutputBitLength := 511
 			N := big.NewInt(101 * 103)
 			got := ExtnedHashOuput([]byte("1"), N.Bytes(), ExpectOutputBitLength)
-			Expect(len(got)).Should(Equal(ExpectOutputBitLength >> 3))
+			Expect(new(big.Int).SetBytes(got).BitLen()).Should(Equal(ExpectOutputBitLength - 1))
 		})
 	})
 })
