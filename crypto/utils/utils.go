@@ -17,9 +17,9 @@ package utils
 import (
 	"crypto/rand"
 	"errors"
+	"math"
 	"math/big"
 	"math/bits"
-	mRand "math/rand"
 	"strconv"
 
 	"github.com/golang/protobuf/proto"
@@ -163,11 +163,6 @@ func Lcm(a, b *big.Int) (*big.Int, error) {
 		return nil, ErrInvalidInput
 	}
 	t := Gcd(a, b)
-	// avoid panic in Div function
-	if t.Cmp(big0) <= 0 {
-		return nil, ErrInvalidInput
-	}
-
 	t = t.Div(a, t)
 	t = t.Mul(t, b)
 	return t, nil
@@ -296,12 +291,12 @@ func RandomAbsoluteRangeInt(n *big.Int) (*big.Int, error) {
 	return result.Sub(result, n), nil
 }
 
-// RandomAbsoluteRangeIntBySeed generates a random number in [-q, q] with seed.
-// TODO: Find more nice implement method. should belong [-q, q]
+// RandomAbsoluteRangeIntBySeed generates a random number in (-2^q.bit, 2^q.bit) with seed.
 func RandomAbsoluteRangeIntBySeed(salt []byte, message []byte, q *big.Int) *big.Int {
 	expendResult := ExtnedHashOuput(salt, message, q.BitLen()+1)
 	result := new(big.Int).SetBytes(expendResult)
-	return result.Sub(result, new(big.Int).Lsh(big1, 256))
+	translate := new(big.Int).Lsh(big1, uint(q.BitLen()))
+	return result.Sub(result, translate)
 }
 
 func Xor(bigArray, smallArray []byte) []byte {
@@ -383,9 +378,9 @@ func ReverseByte(s []byte) []byte {
 // Let n := outputBitLength / 256. The hash result is Hash(salt + "," + message +"," + "0") | Hash(salt + "," + message + "," + "1") | .... | Hash(salt + "," + message + "," + "n") | the remainder part.
 func ExtnedHashOuput(salt, message []byte, outputBitLength int) []byte {
 	separation := []byte(",")
-	count := outputBitLength >> 8
-	result := make([]byte, (outputBitLength>>3)+1)
-	for i := 0; i < count; i++ {
+	Up := int(math.Ceil(float64(outputBitLength) / 256))
+	result := make([]byte, Up<<5)
+	for i := 0; i < Up; i++ {
 		input := append(salt, separation...)
 		input = append(input, message...)
 		input = append(input, separation...)
@@ -393,23 +388,8 @@ func ExtnedHashOuput(salt, message []byte, outputBitLength int) []byte {
 		temp := blake2b.Sum256(input)
 		up := i << 5
 		for j := 0; j < 32; j++ {
-			result[up+j+1] = temp[j]
+			result[up+j] = temp[j]
 		}
 	}
-	remainderPart := outputBitLength - (count << 8)
-	if remainderPart == 0 {
-		return result[1:]
-	}
-	input := append(salt, separation...)
-	input = append(input, message...)
-	input = append(input, separation...)
-	input = append(input, []byte(strconv.Itoa(count))...)
-	seedInt := new(big.Int).SetBytes(input).Int64()
-	// #nosec: G404: Use of weak random number generator (math/rand instead of crypto/rand)
-	r := mRand.New(mRand.NewSource(seedInt))
-	up := 1 << remainderPart
-	for i := 0; i < 1; i++ {
-		result[0] = byte(r.Intn(up))
-	}
-	return result
+	return new(big.Int).Rsh(new(big.Int).SetBytes(result), uint((Up<<8)-outputBitLength)).Bytes()
 }
