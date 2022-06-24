@@ -35,7 +35,8 @@ func TestRefresh(t *testing.T) {
 
 var (
 	threshold = uint32(2)
-	publicKey = pt.ScalarBaseMult(elliptic.Secp256k1(), big1)
+	secret    = big.NewInt(2)
+	publicKey = pt.ScalarBaseMult(elliptic.Secp256k1(), secret)
 )
 
 var _ = Describe("Refresh", func() {
@@ -55,12 +56,12 @@ var _ = Describe("Refresh", func() {
 
 		r, err := refreshes[tss.GetTestID(0)].GetResult()
 		Expect(err).Should(BeNil())
-		shareA := big.NewInt(2)
+		shareA := big.NewInt(3)
 		afterShareA := new(big.Int).Add(r.refreshShare, shareA)
 
 		r, err = refreshes[tss.GetTestID(1)].GetResult()
 		Expect(err).Should(BeNil())
-		shareB := big.NewInt(3)
+		shareB := big.NewInt(4)
 		afterShareB := new(big.Int).Add(r.refreshShare, shareB)
 
 		allBks := birkhoffinterpolation.BkParameters{bks[tss.GetTestID(0)], bks[tss.GetTestID(1)]}
@@ -68,7 +69,6 @@ var _ = Describe("Refresh", func() {
 		Expect(err).Should(BeNil())
 		gotSecret := new(big.Int).Add(new(big.Int).Mul(afterShareA, bkcoefficient[0]), new(big.Int).Mul(afterShareB, bkcoefficient[1]))
 		gotSecret.Mod(gotSecret, publicKey.GetCurve().Params().N)
-		secret := big.NewInt(1)
 		Expect(gotSecret.Cmp(secret) == 0).Should(BeTrue())
 	})
 })
