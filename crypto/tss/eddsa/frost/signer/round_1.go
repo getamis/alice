@@ -35,7 +35,7 @@ import (
 
 const (
 	// maxRetry defines the max retries to generate proof
-	maxRetry = 100
+	maxRetry = 200
 )
 
 var (
@@ -316,6 +316,9 @@ func ecpointEncoding(pt *ecpointgrouplaw.ECPoint) *[32]byte {
 		for i := 0; i < len(tempX); i++ {
 			index := len(tempX) - 1 - i
 			X[index] = tempX[i]
+		}
+		for i := 0; i < len(tempY); i++ {
+			index := len(tempY) - 1 - i
 			Y[index] = tempY[i]
 		}
 	}
