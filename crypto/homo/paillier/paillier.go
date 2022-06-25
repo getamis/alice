@@ -100,7 +100,6 @@ func (pub *publicKey) Encrypt(mBytes []byte) ([]byte, error) {
 	return c.Bytes(), nil
 }
 
-// TODO: maybe chack the range of m
 func (pub *publicKey) EncryptWithOutputSalt(m *big.Int) (*big.Int, *big.Int, error) {
 	// gcd(r, n)=1
 	r, err := utils.RandomCoprimeInt(pub.n)
@@ -216,17 +215,6 @@ func NewPaillierUnSafe(keySize int, isSafe bool) (*Paillier, error) {
 			mu:     mu,
 		},
 	}, nil
-}
-
-func (p *Paillier) GetSalt(plaintext, ciphertext *big.Int) (*big.Int, error) {
-	nroot, err := p.GetNthRoot()
-	if err != nil {
-		return nil, err
-	}
-	mainPart := new(big.Int).Add(big1, p.n)
-	mainPart.Exp(mainPart, new(big.Int).Neg(plaintext), p.nSquare)
-	saltPart := new(big.Int).Mul(ciphertext, mainPart)
-	return saltPart.Exp(saltPart, nroot, p.nSquare), nil
 }
 
 // Decrypt computes the plaintext from the ciphertext
@@ -358,30 +346,6 @@ func isCorrectCiphertext(c *big.Int, pubKey *publicKey) error {
 		return ErrInvalidMessage
 	}
 	return nil
-}
-
-// getGAndMu returns G and mu.
-func getGAndMu(lambda *big.Int, n *big.Int) (*big.Int, *big.Int, error) {
-	nSquare := new(big.Int).Mul(n, n) // n^2
-	for i := 0; i < maxGenG; i++ {
-		g, err := utils.RandomCoprimeInt(nSquare) // g
-		if err != nil {
-			return nil, nil, err
-		}
-		x := new(big.Int).Exp(g, lambda, nSquare) // x
-		u, err := lFunction(x, n)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		mu := new(big.Int).ModInverse(u, n)
-		// if mu is nil, it means u and n are not relatively prime. We need to try again
-		if mu == nil {
-			continue
-		}
-		return g, mu, nil
-	}
-	return nil, nil, ErrExceedMaxRetry
 }
 
 // getGAndMu returns G and mu.

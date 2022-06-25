@@ -163,12 +163,13 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 	if !Ai.Equal(Aihat) {
 		return ErrDifferentPoint
 	}
-	// Because a2 = 0, so R can be arbitrary point.
-	err = round3Msg.YschnorrProof.Verify(p.pubKey, ssidSumRho)
+
+	G := pt.NewBase(curve)
+	err = round3Msg.YschnorrProof.Verify(G, ssidSumRho)
 	if err != nil {
 		return err
 	}
-	err = round3Msg.ShareschnorrProof.Verify(p.pubKey, ssidSumRho)
+	err = round3Msg.ShareschnorrProof.Verify(G, ssidSumRho)
 	if err != nil {
 		return err
 	}

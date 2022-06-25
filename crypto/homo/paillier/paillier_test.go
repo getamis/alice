@@ -23,6 +23,7 @@ import (
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/utils"
 	zkproof "github.com/getamis/alice/crypto/zkproof"
+	zkPaillier "github.com/getamis/alice/crypto/zkproof/paillier"
 	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
@@ -62,7 +63,11 @@ var _ = Describe("Paillier test", func() {
 		Expect(p.VerifyEnc([]byte("enc"))).Should(BeNil())
 	})
 
-	It("GetPubKey()", func() {
+	It("GetN()", func() {
+		Expect(p.publicKey.GetN()).ShouldNot(BeNil())
+	})
+
+	It("Getn()", func() {
 		Expect(p.GetPubKey()).Should(Equal(p.publicKey))
 	})
 
@@ -289,6 +294,200 @@ var _ = Describe("Paillier test", func() {
 			got, err := p.publicKey.Add(big1.Bytes(), big0.Bytes())
 			Expect(err).Should(Equal(utils.ErrNotInRange))
 			Expect(got).Should(BeNil())
+		})
+	})
+
+	Context("pedersenparameter", func() {
+		It("NewPedersenParameterByPaillier: it should be ok", func() {
+			ped, err := p.NewPedersenParameterByPaillier()
+			Expect(err).Should(BeNil())
+			Expect(ped).ShouldNot(BeNil())
+		})
+
+		It("negative p or q", func() {
+			p.privateKey.q.Neg(p.privateKey.q)
+			ped, err := p.NewPedersenParameterByPaillier()
+			Expect(err).ShouldNot(BeNil())
+			Expect(ped).Should(BeNil())
+		})
+
+		It("negative n", func() {
+			p.publicKey.n.Neg(p.publicKey.n)
+			ped, err := p.NewPedersenParameterByPaillier()
+			Expect(err).ShouldNot(BeNil())
+			Expect(ped).Should(BeNil())
+		})
+
+		It("get parameter:p , q, eulern, lambda: it should be ok", func() {
+			ped, err := p.NewPedersenParameterByPaillier()
+			Expect(err).Should(BeNil())
+			lambda := ped.Getlambda()
+			Expect(lambda).ShouldNot(BeNil())
+			p := ped.GetP()
+			Expect(p).ShouldNot(BeNil())
+			q := ped.GetQ()
+			Expect(q).ShouldNot(BeNil())
+			eulern := ped.eulern
+			Expect(eulern).ShouldNot(BeNil())
+		})
+
+		It("NewPedersenOpenParameter: it should be ok", func() {
+			ped, err := p.NewPedersenParameterByPaillier()
+			Expect(err).Should(BeNil())
+			pedOpen, err := NewPedersenOpenParameter(ped.PedersenOpenParameter.Getn(), ped.PedersenOpenParameter.Gets(), ped.PedersenOpenParameter.Gett())
+			Expect(err).Should(BeNil())
+			Expect(pedOpen).ShouldNot(BeNil())
+		})
+		It("NewPedersenOpenParameter: s and n are not coprime", func() {
+			ped, err := p.NewPedersenParameterByPaillier()
+			Expect(err).Should(BeNil())
+			pedOpen, err := NewPedersenOpenParameter(ped.PedersenOpenParameter.Getn(), ped.PedersenOpenParameter.Getn(), ped.PedersenOpenParameter.Gett())
+			Expect(err).ShouldNot(BeNil())
+			Expect(pedOpen).Should(BeNil())
+		})
+
+		It("NewPedersenOpenParameter: t and n are not coprime", func() {
+			ped, err := p.NewPedersenParameterByPaillier()
+			Expect(err).Should(BeNil())
+			pedOpen, err := NewPedersenOpenParameter(ped.PedersenOpenParameter.Getn(), ped.PedersenOpenParameter.Gets(), ped.PedersenOpenParameter.Getn())
+			Expect(err).ShouldNot(BeNil())
+			Expect(pedOpen).Should(BeNil())
+		})
+
+		It("NewPedersenOpenParameter: bitlength of n is too small", func() {
+			ped, err := p.NewPedersenParameterByPaillier()
+			Expect(err).Should(BeNil())
+			pedOpen, err := NewPedersenOpenParameter(ped.GetP(), ped.PedersenOpenParameter.Gets(), ped.PedersenOpenParameter.Gett())
+			Expect(err).ShouldNot(BeNil())
+			Expect(pedOpen).Should(BeNil())
+		})
+
+		It("ToPaillierPubKeyWithSpecialG: it should be ok", func() {
+			ped, err := p.NewPedersenParameterByPaillier()
+			Expect(err).Should(BeNil())
+			pedOpen, err := NewPedersenOpenParameter(ped.PedersenOpenParameter.Getn(), ped.PedersenOpenParameter.Gets(), ped.PedersenOpenParameter.Gett())
+			Expect(err).Should(BeNil())
+			pubKey := ToPaillierPubKeyWithSpecialG(pedOpen)
+			Expect(pubKey).ShouldNot(BeNil())
+		})
+
+		It("ToPaillierPubKeyWithSpecialGFromMsg: bitlength of n is too small ", func() {
+			msg := &zkPaillier.RingPederssenParameterMessage{
+				N: big1.Bytes(),
+			}
+			pubKey, err := ToPaillierPubKeyWithSpecialGFromMsg(nil, msg)
+			Expect(err).ShouldNot(BeNil())
+			Expect(pubKey).Should(BeNil())
+		})
+
+		It("ToPaillierPubKeyWithSpecialGFromMsg: SSIDINFO is nil", func() {
+			msg := &zkPaillier.RingPederssenParameterMessage{
+				N: p.n.Bytes(),
+			}
+			pubKey, err := ToPaillierPubKeyWithSpecialGFromMsg(nil, msg)
+			Expect(err).ShouldNot(BeNil())
+			Expect(pubKey).Should(BeNil())
+		})
+
+		It("GetNthRoot: it should be ok", func() {
+			nRoot, err := p.GetNthRoot()
+			Expect(err).Should(BeNil())
+			twoNPower := new(big.Int).Exp(big2, p.n, p.n)
+			Expect(twoNPower.Exp(twoNPower, nRoot, p.n).Cmp(big2) == 0).Should(BeTrue())
+
+		})
+
+		It("GetNthRoot: negtive p", func() {
+			p.privateKey.p.Neg(p.privateKey.p)
+			nRoot, err := p.GetNthRoot()
+			Expect(err).ShouldNot(BeNil())
+			Expect(nRoot).Should(BeNil())
+		})
+
+		It("MulConst: negtive n", func() {
+			p.publicKey.n.Neg(p.publicKey.n)
+			msg, err := p.publicKey.MulConst([]byte("1"), big2)
+			Expect(err).ShouldNot(BeNil())
+			Expect(msg).Should(BeNil())
+		})
+
+		It("add: negtive n", func() {
+			p.publicKey.n.Neg(p.publicKey.n)
+			msg, err := p.publicKey.Add([]byte("1"), big2.Bytes())
+			Expect(err).ShouldNot(BeNil())
+			Expect(msg).Should(BeNil())
+		})
+
+		It("EncryptWithOutputSalt: negtive n", func() {
+			p.publicKey.n.Neg(p.publicKey.n)
+			c, r, err := p.publicKey.EncryptWithOutputSalt(big2)
+			Expect(err).ShouldNot(BeNil())
+			Expect(c).Should(BeNil())
+			Expect(r).Should(BeNil())
+		})
+
+		It("getGAndMuWithSpecialG: negtive n", func() {
+			p.publicKey.n.Neg(p.publicKey.n)
+			g, mu, err := getGAndMuWithSpecialG(big2, p.publicKey.n)
+			Expect(err).ShouldNot(BeNil())
+			Expect(g).Should(BeNil())
+			Expect(mu).Should(BeNil())
+		})
+
+		It("NewPaillierSafePrime: it should be ok", func() {
+			key, err := NewPaillierSafePrime(safePubKeySize)
+			Expect(err).Should(BeNil())
+			p := key.privateKey.p
+			q := key.privateKey.q
+			Expect(p.ProbablyPrime(1)).Should(BeTrue())
+			Expect(q.ProbablyPrime(1)).Should(BeTrue())
+			pMinus1OverTwo := new(big.Int).Rsh(p, 1)
+			qMinus1OverTwo := new(big.Int).Rsh(q, 1)
+			Expect(pMinus1OverTwo.ProbablyPrime(1)).Should(BeTrue())
+			Expect(qMinus1OverTwo.ProbablyPrime(1)).Should(BeTrue())
+		})
+
+		It("NewPaillierSafePrime: two small Privete key", func() {
+			key, err := NewPaillierSafePrime(100)
+			Expect(key).Should(BeNil())
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("NewPaillierWithGivenPrimes: it should be ok", func() {
+			key, err := NewPaillierWithGivenPrimes(p.privateKey.p, p.privateKey.q)
+			Expect(key).ShouldNot(BeNil())
+			Expect(err).Should(BeNil())
+		})
+
+		It("NewPaillierWithGivenPrimes: negtive p", func() {
+			key, err := NewPaillierWithGivenPrimes(new(big.Int).Neg(p.privateKey.p), p.privateKey.q)
+			Expect(key).Should(BeNil())
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("NewPaillierWithGivenPrimes: p and q are the same", func() {
+			key, err := NewPaillierWithGivenPrimes(p.privateKey.p, p.privateKey.p)
+			Expect(key).Should(BeNil())
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("NewPaillierUnSafe: small key size", func() {
+			p, err := NewPaillierUnSafe(1, true)
+			Expect(p).Should(BeNil())
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("NewPaillierSafe: small key size", func() {
+			p, err := NewPaillierUnSafe(1, false)
+			Expect(p).Should(BeNil())
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("decypt: negative n", func() {
+			p.publicKey.n.Neg(p.publicKey.n)
+			plaintext, err := p.Decrypt(big2.Bytes())
+			Expect(plaintext).Should(BeNil())
+			Expect(err).ShouldNot(BeNil())
 		})
 	})
 })
