@@ -14,10 +14,16 @@
 package signer
 
 import (
+	"encoding/hex"
 	"fmt"
+	"github.com/agl/ed25519/edwards25519"
+	"github.com/decred/dcrd/dcrec/edwards"
+	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/utils"
 	"io/ioutil"
+	"math/big"
 
-	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/signer"
+	EDSigner "github.com/getamis/alice/crypto/tss/eddsa/frost/signer"
 	"github.com/getamis/alice/example/config"
 	"github.com/getamis/sirius/log"
 	"gopkg.in/yaml.v2"
@@ -51,17 +57,43 @@ func readSignerConfigFile(filaPath string) (*SignerConfig, error) {
 	return c, nil
 }
 
-func writeSignerResult(id string, result *signer.Result) error {
-	signerResult := &SignerResult{
-		R: result.R.String(),
-		S: result.S.String(),
-	}
-	err := config.WriteYamlFile(signerResult, getFilePath(id))
+func writeEDSignerResult(id string, result *EDSigner.Result, sigBytes *[]byte) error {
+	test1 := ecpointEncoding(result.R)
+	test2 := *test1
+	r := new(big.Int).SetBytes(utils.ReverseByte(test2[:]))
+	sig := edwards.NewSignature(r, result.S)
+	*sigBytes = sig.Serialize()
+
+	log.Info("sign result","",hex.EncodeToString(*sigBytes))
+	err := config.WriteYamlFile(hex.EncodeToString(*sigBytes), getFilePath(id))
 	if err != nil {
 		log.Error("Cannot write YAML file", "err", err)
 		return err
 	}
 	return nil
+}
+
+func ecpointEncoding(pt *ecpointgrouplaw.ECPoint) *[32]byte {
+	var result, X, Y [32]byte
+	var x, y edwards25519.FieldElement
+	if pt.Equal(ecpointgrouplaw.NewIdentity(pt.GetCurve())) {
+		// TODO: We need to check this
+		Y[0] = 1
+	} else {
+		tempX := pt.GetX().Bytes()
+		tempY := pt.GetY().Bytes()
+
+		for i := 0; i < len(tempX); i++ {
+			index := len(tempX) - 1 - i
+			X[index] = tempX[i]
+			Y[index] = tempY[i]
+		}
+	}
+	edwards25519.FeFromBytes(&x, &X)
+	edwards25519.FeFromBytes(&y, &Y)
+	edwards25519.FeToBytes(&result, &y)
+	result[31] ^= edwards25519.FeIsNegative(&x) << 7
+	return &result
 }
 
 func getFilePath(id string) string {

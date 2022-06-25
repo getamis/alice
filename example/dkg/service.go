@@ -14,10 +14,10 @@
 package dkg
 
 import (
+	"github.com/getamis/alice/crypto/elliptic"
 	"io/ioutil"
 
 	"github.com/getamis/alice/crypto/tss/dkg"
-	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 	"github.com/golang/protobuf/proto"
@@ -40,7 +40,7 @@ func NewService(config *DKGConfig, pm types.PeerManager) (*service, error) {
 	}
 
 	// Create dkg
-	d, err := dkg.NewDKG(utils.GetCurve(), pm, config.Threshold, config.Rank, s)
+	d, err := dkg.NewDKG(elliptic.Ed25519(), pm, config.Threshold, config.Rank, s)
 	if err != nil {
 		log.Warn("Cannot create a new DKG", "config", config, "err", err)
 		return nil, err

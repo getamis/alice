@@ -14,10 +14,13 @@
 package signer
 
 import (
+	"encoding/hex"
+	"github.com/decred/dcrd/dcrec/edwards"
 	"io/ioutil"
+	"math/big"
 
-	"github.com/getamis/alice/crypto/homo/paillier"
-	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/signer"
+	"crypto/ed25519"
+	"github.com/getamis/alice/crypto/tss/eddsa/frost/signer"
 	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
@@ -48,14 +51,9 @@ func NewService(config *SignerConfig, pm types.PeerManager) (*service, error) {
 	}
 
 	// For simplicity, we use Paillier algorithm in signer.
-	paillier, err := paillier.NewPaillier(2048)
-	if err != nil {
-		log.Warn("Cannot create a paillier function", "err", err)
-		return nil, err
-	}
 
 	// Create signer
-	signer, err := signer.NewSigner(pm, dkgResult.PublicKey, paillier, dkgResult.Share, dkgResult.Bks, []byte(config.Message), s)
+	signer, err := signer.NewSigner(dkgResult.PublicKey, pm, (uint32)(len(dkgResult.Bks)), dkgResult.Share, dkgResult.Bks, []byte(config.Message), s)
 	if err != nil {
 		log.Warn("Cannot create a new signer", "err", err)
 		return nil, err
@@ -103,10 +101,25 @@ func (p *service) OnStateChanged(oldState types.MainState, newState types.MainSt
 		close(p.done)
 		return
 	} else if newState == types.StateDone {
+		sigBytes := new([]byte)
 		log.Info("Signer done", "old", oldState.String(), "new", newState.String())
 		result, err := p.signer.GetResult()
 		if err == nil {
-			writeSignerResult(p.pm.SelfID(), result)
+			writeEDSignerResult(p.pm.SelfID()+"-ed25519", result, sigBytes)
+			// Build public key.
+			x, ok := new(big.Int).SetString(p.config.Pubkey.X, 10)
+			if !ok {
+				log.Error("Cannot convert string to big int", "x", p.config.Pubkey.X)
+				return
+			}
+			y, ok := new(big.Int).SetString(p.config.Pubkey.Y, 10)
+			if !ok {
+				log.Error("Cannot convert string to big int", "y", p.config.Pubkey.Y)
+				return
+			}
+			pubkey := edwards.NewPublicKey(edwards.Edwards(), x, y)
+			ret := ed25519.Verify(pubkey.Serialize(), []byte(p.config.Message), *sigBytes)
+			log.Info("verify ", "result", ret, "sigBytes", hex.EncodeToString(*sigBytes), "\n", "\n")
 		} else {
 			log.Warn("Failed to get result from signer", "err", err)
 		}

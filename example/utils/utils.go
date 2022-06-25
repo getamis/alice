@@ -56,7 +56,7 @@ func ConvertDKGResult(cfgPubkey config.Pubkey, cfgShare string, cfgBKs map[strin
 		log.Error("Cannot convert string to big int", "y", cfgPubkey.Y)
 		return nil, ErrConversion
 	}
-	pubkey, err := ecpointgrouplaw.NewECPoint(GetCurve(), x, y)
+	pubkey, err := ecpointgrouplaw.NewECPoint(elliptic.Ed25519(), x, y)
 	if err != nil {
 		log.Error("Cannot get public key", "err", err)
 		return nil, err

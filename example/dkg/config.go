@@ -74,5 +74,5 @@ func writeDKGResult(id string, result *dkg.Result) error {
 }
 
 func getFilePath(id string) string {
-	return fmt.Sprintf("dkg/%s-output.yaml", id)
+	return fmt.Sprintf("dkg/%s-ed25519-output.yaml", id)
 }
