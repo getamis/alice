@@ -26,6 +26,7 @@ import (
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/alice/internal/message/types/mocks"
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/stretchr/testify/mock"
 )
@@ -40,13 +41,7 @@ var _ = Describe("Signer", func() {
 		curve = elliptic.Ed25519()
 	)
 
-	It("NewSigner()", func() {
-		ss := [][]*big.Int{
-			{big.NewInt(1), big.NewInt(102), big.NewInt(0)},
-			{big.NewInt(2), big.NewInt(104), big.NewInt(0)},
-		}
-		// new peer managers and dkgs
-		privateKey := big.NewInt(100)
+	DescribeTable("It should be OK", func(ss [][]*big.Int, privateKey *big.Int) {
 		expPublic := ecpointgrouplaw.ScalarBaseMult(curve, privateKey)
 		threshold := len(ss)
 		message := []byte("8077818")
@@ -90,11 +85,37 @@ var _ = Describe("Signer", func() {
 		test1 := ecpointEncoding(R)
 		test2 := *test1
 		r := new(big.Int).SetBytes(utils.ReverseByte(test2[:]))
+
 		Expect(edwards.Verify(edwardPubKey, message, r, s)).Should(BeTrue())
 		for _, l := range listeners {
 			l.AssertExpectations(GinkgoT())
 		}
-	})
+	},
+		Entry("(x-cooord, share, rank):f(x) = 2x+100", [][]*big.Int{
+			{big.NewInt(1), big.NewInt(102), big.NewInt(0)},
+			{big.NewInt(2), big.NewInt(104), big.NewInt(0)},
+			{big.NewInt(8), big.NewInt(116), big.NewInt(0)},
+		}, big.NewInt(100)),
+		Entry("(x-cooord, share, rank):f(x) = 2x+100", [][]*big.Int{
+			{big.NewInt(1), big.NewInt(102), big.NewInt(0)},
+			{big.NewInt(2), big.NewInt(104), big.NewInt(0)},
+		}, big.NewInt(100)),
+		Entry("(x-cooord, share, rank):f(x) = x^2+5*x+1109", [][]*big.Int{
+			{big.NewInt(1), big.NewInt(1115), big.NewInt(0)},
+			{big.NewInt(2), big.NewInt(1123), big.NewInt(0)},
+			{big.NewInt(50), big.NewInt(3859), big.NewInt(0)},
+		}, big.NewInt(1109)),
+		Entry("(x-cooord, share, rank):f(x) = x^2+3*x+5555", [][]*big.Int{
+			{big.NewInt(1), big.NewInt(5559), big.NewInt(0)},
+			{big.NewInt(2), big.NewInt(5565), big.NewInt(0)},
+			{big.NewInt(50), big.NewInt(103), big.NewInt(1)},
+		}, big.NewInt(5555)),
+		Entry("(x-cooord, share, rank):f(x) = 2*x^2+3*x+1111", [][]*big.Int{
+			{big.NewInt(1), big.NewInt(1116), big.NewInt(0)},
+			{big.NewInt(2), big.NewInt(4), big.NewInt(2)},
+			{big.NewInt(50), big.NewInt(203), big.NewInt(1)},
+		}, big.NewInt(1111)),
+	)
 })
 
 func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][]*big.Int, msg []byte) (map[string]*Signer, map[string]*mocks.StateChangedListener) {

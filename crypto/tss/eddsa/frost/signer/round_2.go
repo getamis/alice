@@ -87,6 +87,7 @@ func (p *round2) Finalize(logger log.Logger) (types.Handler, error) {
 			return nil, ErrVerifyFailure
 		}
 	}
-	p.s = s
+	p.s = s.Mod(s, p.curveN)
+
 	return nil, nil
 }
