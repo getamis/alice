@@ -27,7 +27,6 @@ import (
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/tss/ecdsa/cggmp"
 	"github.com/getamis/alice/crypto/utils"
-	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/alice/internal/message/types"
 	"github.com/getamis/sirius/log"
 	"github.com/golang/protobuf/ptypes/any"
@@ -121,11 +120,8 @@ func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, t
 	if err != nil {
 		return nil, err
 	}
-	Y, err := zkproof.NewBaseSchorrMessage(curve, share)
-	if err != nil {
-		return nil, err
-	}
-	YPoint, err := Y.V.ToPoint()
+	YPoint := ecpointgrouplaw.ScalarBaseMult(curve, share)
+	msgY, err := YPoint.ToEcPointMessage()
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +134,7 @@ func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, t
 			Round1: &BodyRound1{
 				D:  msgD,
 				E:  msgE,
-				SG: Y,
+				SG: msgY,
 			},
 		},
 	}
@@ -210,7 +206,6 @@ func (p *round1) HandleMessage(logger log.Logger, message types.Message) error {
 
 func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	// Build B/c/R
-	G := ecpointgrouplaw.NewBase(p.pubKey.GetCurve())
 	identify := ecpointgrouplaw.NewIdentity(p.pubKey.GetCurve())
 	R := identify.Copy()
 	var B []byte
@@ -219,12 +214,7 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	for _, node := range nodes {
 		msgBody := node.GetMessage(types.MessageType(Type_Round1)).(*Message).GetRound1()
 		x := node.bk.GetX().Bytes()
-		err := msgBody.SG.Verify(G)
-		if err != nil {
-			logger.Debug("Failed ot Verify", "err", err)
-			return nil, err
-		}
-		tempsG, err := msgBody.SG.GetV().ToPoint()
+		tempsG, err := msgBody.SG.ToPoint()
 		if err != nil {
 			logger.Debug("Failed ot ToPoint", "err", err)
 			return nil, err
@@ -368,8 +358,9 @@ func computeElli(x []byte, E *ecpointgrouplaw.ECPoint, message []byte, B []byte,
 	}
 	tempMod := new(big.Int).Mod(temp, bit254)
 	if tempMod.Cmp(fieldOrder) >= 0 {
+		upBd := maxRetry - 2
 		for j := 0; j < maxRetry; j++ {
-			if j == maxRetry {
+			if j > upBd {
 				return nil, ErrExceedMaxRetry
 			}
 			temp, err = utils.HashProtosToInt(temp.Bytes(), &any.Any{
