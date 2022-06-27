@@ -18,7 +18,6 @@ package signer;
 
 option go_package = "github.com/getamis/alice/crypto/tss/eddsa/frost/signer";
 
-import "github.com/getamis/alice/crypto/zkproof/message.proto";
 import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
 
 enum Type {
@@ -38,7 +37,7 @@ message Message {
 message BodyRound1 {
 	ecpointgrouplaw.EcPointMessage D = 1;
 	ecpointgrouplaw.EcPointMessage E = 2;
-	zkproof.SchnorrProofMessage sG = 3;
+	ecpointgrouplaw.EcPointMessage sG = 3;
 }
 
 message BodyRound2 {
