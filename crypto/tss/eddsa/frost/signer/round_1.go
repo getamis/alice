@@ -35,18 +35,21 @@ import (
 
 const (
 	// maxRetry defines the max retries to generate proof
-	maxRetry = 200
+	maxRetry = 300
 )
 
 var (
 	bit254 = new(big.Int).Lsh(big.NewInt(1), 253)
+	big0   = big.NewInt(0)
 
 	//ErrExceedMaxRetry is returned if we retried over times
 	ErrExceedMaxRetry = errors.New("exceed max retries")
 	//ErrVerifyFailure is returned if the verification is failure.
 	ErrVerifyFailure = errors.New("the verification is failure")
-
+	//ErrPeerNotFound is returned if peer message not found.
 	ErrPeerNotFound = errors.New("peer message not found")
+	//ErrTrivialSignature is returned if obtain trivial signature.
+	ErrTrivialSignature = errors.New("obtain trivial signature")
 )
 
 type pubkeyData struct {
@@ -251,6 +254,9 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 			return nil, err
 		}
 	}
+	if R.Equal(identify) {
+		return nil, ErrTrivialSignature
+	}
 	p.c = SHAPoints(p.pubKey, R, p.message)
 	p.r = R
 
@@ -361,7 +367,7 @@ func computeElli(x []byte, E *ecpointgrouplaw.ECPoint, message []byte, B []byte,
 		return nil, err
 	}
 	tempMod := new(big.Int).Mod(temp, bit254)
-	if tempMod.Cmp(fieldOrder) > 0 {
+	if tempMod.Cmp(fieldOrder) >= 0 {
 		for j := 0; j < maxRetry; j++ {
 			if j == maxRetry {
 				return nil, ErrExceedMaxRetry
