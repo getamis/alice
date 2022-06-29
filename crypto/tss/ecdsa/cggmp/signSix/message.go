@@ -15,7 +15,7 @@
 package signSix
 
 import (
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/types"
 	"github.com/golang/protobuf/proto"
 	"github.com/minio/blake2b-simd"
 )

@@ -15,7 +15,7 @@
 package dkg
 
 import (
-	"github.com/getamis/alice/internal/message"
+	"github.com/getamis/alice/types/message"
 )
 
 type peer struct {

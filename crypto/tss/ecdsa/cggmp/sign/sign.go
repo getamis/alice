@@ -22,8 +22,8 @@ import (
 	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/tss"
 	paillierzkproof "github.com/getamis/alice/crypto/zkproof/paillier"
-	"github.com/getamis/alice/internal/message"
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/types"
+	"github.com/getamis/alice/types/message"
 	"github.com/getamis/sirius/log"
 )
 
