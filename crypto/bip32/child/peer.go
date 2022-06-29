@@ -19,7 +19,7 @@ import (
 
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/ot"
-	"github.com/getamis/alice/internal/message"
+	"github.com/getamis/alice/types/message"
 )
 
 type peer struct {

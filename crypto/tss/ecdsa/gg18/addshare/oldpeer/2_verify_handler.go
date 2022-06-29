@@ -20,7 +20,7 @@ import (
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/addshare"
 	"github.com/getamis/alice/crypto/zkproof"
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/types"
 	"github.com/getamis/sirius/log"
 )
 

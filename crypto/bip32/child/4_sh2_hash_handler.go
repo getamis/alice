@@ -17,7 +17,7 @@ package child
 import (
 	"crypto/subtle"
 
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/types"
 	"github.com/getamis/sirius/log"
 	"golang.org/x/crypto/blake2b"
 )

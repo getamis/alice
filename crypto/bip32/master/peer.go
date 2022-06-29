@@ -17,7 +17,7 @@ package master
 import (
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/internal/message"
+	"github.com/getamis/alice/types/message"
 )
 
 type peer struct {

@@ -26,7 +26,7 @@ import (
 	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/ot"
 	"github.com/getamis/alice/crypto/zkproof"
-	"github.com/getamis/alice/internal/message/types"
+	"github.com/getamis/alice/types"
 	"github.com/getamis/sirius/log"
 	"golang.org/x/crypto/blake2b"
 	"google.golang.org/protobuf/proto"
