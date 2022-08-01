@@ -72,13 +72,11 @@ var _ = Describe("Bristol fashion evaluate", func() {
 		Entry("Count:None", "1000000000000000000000000000ABCD", "fffffffffffffffffffffffffffffffe00000000000000000000000000000000", "9ce3b13e4b3f8fe2ee85cec035fb5f0b"),
 	)
 
-	DescribeTable("Add 64", func(a, b *big.Int, expected *big.Int) {
+	DescribeTable("Add 64", func(a, b *big.Int) {
 		// Set the input and the output
 		input := make([][]uint8, 2)
 		input[0] = make([]uint8, 64)
 		input[1] = make([]uint8, 64)
-		output := make([][]uint8, 1)
-		output[0] = make([]uint8, 64)
 
 		for i := 0; i < len(input[0]); i++ {
 			input[0][i] = uint8(a.Bit(i))
@@ -86,15 +84,74 @@ var _ = Describe("Bristol fashion evaluate", func() {
 		for i := 0; i < len(input[1]); i++ {
 			input[1][i] = uint8(b.Bit(i))
 		}
+
 		cir, err := LoadBristol("bristolFashion/adder64.txt")
 		Expect(err).Should(BeNil())
 		got, err := cir.evaluate(input)
 		Expect(err).Should(BeNil())
 		gotInt := bitArrayToInt(got[0])
+		expected := new(big.Int).Add(a, b)
 		Expect(gotInt.Cmp(expected) == 0).Should(BeTrue())
 	},
-		Entry("2345 + 17823795 = 17826140", big.NewInt(2345), big.NewInt(17823795), big.NewInt(17826140)),
-		Entry("928372 + 746826529925 = 746827458297", big.NewInt(928372), big.NewInt(746826529925), big.NewInt(746827458297)),
+		Entry("0 + 1 = 1", big.NewInt(0), big1),
+		Entry("2^63-135783737373 + 2^63-2", new(big.Int).Sub(new(big.Int).Lsh(big1, 63), big.NewInt(135783737373)), new(big.Int).Sub(new(big.Int).Lsh(big1, 63), big.NewInt(2))),
+		Entry("928372 + 746826529925 = 746827458297", big.NewInt(928372), big.NewInt(746826529925)),
+		Entry("2^63 + 0 = 2^63", new(big.Int).Lsh(big1, 63), big.NewInt(0)),
+	)
+
+	DescribeTable("Add 256", func(a, b *big.Int) {
+		// Set the input and the output
+		input := make([][]uint8, 2)
+		input[0] = make([]uint8, 256)
+		input[1] = make([]uint8, 256)
+
+		for i := 0; i < len(input[0]); i++ {
+			input[0][i] = uint8(a.Bit(i))
+		}
+		for i := 0; i < len(input[1]); i++ {
+			input[1][i] = uint8(b.Bit(i))
+		}
+		cir, err := LoadBristol("bristolFashion/adder256.txt")
+		Expect(err).Should(BeNil())
+		got, err := cir.evaluate(input)
+		Expect(err).Should(BeNil())
+		gotInt := bitArrayToInt(got[0])
+		expected := new(big.Int).Add(a, b)
+		Expect(gotInt.Cmp(expected) == 0).Should(BeTrue())
+	},
+		Entry("2^253-135783737373 + 2^250-2", new(big.Int).Sub(new(big.Int).Lsh(big1, 253), big.NewInt(135783737373)), new(big.Int).Sub(new(big.Int).Lsh(big1, 250), big.NewInt(2))),
+		Entry("928372 + 746826529925 = 746827458297", big.NewInt(928372), big.NewInt(746826529925)),
+		Entry("2^255-135783737373 + 2^255-2", new(big.Int).Sub(new(big.Int).Lsh(big1, 255), big.NewInt(135783737373)), new(big.Int).Sub(new(big.Int).Lsh(big1, 255), big.NewInt(2))),
+		Entry("2^256-1 + 2^256-1", new(big.Int).Sub(new(big.Int).Lsh(big1, 256), big.NewInt(1)), new(big.Int).Sub(new(big.Int).Lsh(big1, 256), big.NewInt(1))),
+	)
+
+	DescribeTable("Mul 256", func(a, b *big.Int) {
+		// Set the input and the output
+		input := make([][]uint8, 2)
+		input[0] = make([]uint8, 256)
+		input[1] = make([]uint8, 256)
+
+		for i := 0; i < len(input[0]); i++ {
+			input[0][i] = uint8(a.Bit(i))
+		}
+		for i := 0; i < len(input[1]); i++ {
+			input[1][i] = uint8(b.Bit(i))
+		}
+		cir, err := LoadBristol("bristolFashion/mul256.txt")
+		Expect(err).Should(BeNil())
+		got, err := cir.evaluate(input)
+		Expect(err).Should(BeNil())
+		gotInt := bitArrayToInt(got[0])
+		expected := new(big.Int).Mul(a, b)
+		Expect(gotInt.Cmp(expected) == 0).Should(BeTrue())
+	},
+		Entry("2^253-135783737373 * 2^250-2", new(big.Int).Sub(new(big.Int).Lsh(big1, 253), big.NewInt(135783737373)), new(big.Int).Sub(new(big.Int).Lsh(big1, 250), big.NewInt(2))),
+		Entry("0 *63", big.NewInt(0), big.NewInt(63)),
+		Entry("1 *6283479234792384793", big.NewInt(1), big.NewInt(6283479234792384793)),
+		Entry("2^255-135783737373 * 2^255-2", new(big.Int).Sub(new(big.Int).Lsh(big1, 255), big.NewInt(135783737373)), new(big.Int).Sub(new(big.Int).Lsh(big1, 255), big.NewInt(2))),
+		Entry("2^256-1 * 2^256-1", new(big.Int).Sub(new(big.Int).Lsh(big1, 256), big.NewInt(1)), new(big.Int).Sub(new(big.Int).Lsh(big1, 256), big.NewInt(1))),
+		Entry("2^256-892374928749 * 2^256-9283749279", new(big.Int).Sub(new(big.Int).Lsh(big1, 256), big.NewInt(892374928749)), new(big.Int).Sub(new(big.Int).Lsh(big1, 256), big.NewInt(9283749279))),
+		Entry("2^254-1 + 2^63-1", new(big.Int).Sub(new(big.Int).Lsh(big1, 254), big.NewInt(1)), new(big.Int).Sub(new(big.Int).Lsh(big1, 63), big.NewInt(1))),
 	)
 
 	DescribeTable("Add 512 and Mod 512", func(a, b, p string, expected string) {
