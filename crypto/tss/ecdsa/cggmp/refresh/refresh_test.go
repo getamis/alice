@@ -41,6 +41,12 @@ var (
 
 var _ = Describe("Refresh", func() {
 	It("should be ok", func() {
+		fieldOrder := publicKey.GetCurve().Params().N
+		shareA := big.NewInt(3)
+		shareB := big.NewInt(4)
+		partialPubKeyA := pt.ScalarBaseMult(publicKey.GetCurve(), shareA)
+		partialPubKeyB := pt.ScalarBaseMult(publicKey.GetCurve(), shareB)
+
 		// new peer managers and dkgs
 		refreshes, bks, listeners := newRefreshes()
 		for _, l := range listeners {
@@ -54,22 +60,35 @@ var _ = Describe("Refresh", func() {
 			l.AssertExpectations(GinkgoT())
 		}
 
-		r, err := refreshes[tss.GetTestID(0)].GetResult()
+		r0, err := refreshes[tss.GetTestID(0)].GetResult()
 		Expect(err).Should(BeNil())
-		shareA := big.NewInt(3)
-		afterShareA := new(big.Int).Add(r.refreshShare, shareA)
+		afterShareA := new(big.Int).Add(r0.refreshShare, shareA)
 
-		r, err = refreshes[tss.GetTestID(1)].GetResult()
+		r1, err := refreshes[tss.GetTestID(1)].GetResult()
 		Expect(err).Should(BeNil())
-		shareB := big.NewInt(4)
-		afterShareB := new(big.Int).Add(r.refreshShare, shareB)
+		afterShareB := new(big.Int).Add(r1.refreshShare, shareB)
+		// check that all refresh partial public keys are the same.
+		for k, v := range r0.sumpartialPubKey {
+			Expect(v.Equal(r1.sumpartialPubKey[k])).Should(BeTrue())
+		}
+		// Set new shares and all partial public keys.
+		afterPartialPubKeyA := r0.sumpartialPubKey[tss.GetTestID(0)]
+		afterPartialPubKeyA, err = afterPartialPubKeyA.Add(partialPubKeyA)
+		Expect(err).Should(BeNil())
+		afterPartialPubKeyB := r1.sumpartialPubKey[tss.GetTestID(1)]
+		afterPartialPubKeyB, err = afterPartialPubKeyB.Add(partialPubKeyB)
+		Expect(err).Should(BeNil())
 
 		allBks := birkhoffinterpolation.BkParameters{bks[tss.GetTestID(0)], bks[tss.GetTestID(1)]}
-		bkcoefficient, err := allBks.ComputeBkCoefficient(threshold, publicKey.GetCurve().Params().N)
+		bkcoefficient, err := allBks.ComputeBkCoefficient(threshold, fieldOrder)
 		Expect(err).Should(BeNil())
 		gotSecret := new(big.Int).Add(new(big.Int).Mul(afterShareA, bkcoefficient[0]), new(big.Int).Mul(afterShareB, bkcoefficient[1]))
 		gotSecret.Mod(gotSecret, publicKey.GetCurve().Params().N)
 		Expect(gotSecret.Cmp(secret) == 0).Should(BeTrue())
+		// Check all partial public keys are correct.
+		gotPubKey, err := afterPartialPubKeyA.ScalarMult(bkcoefficient[0]).Add(afterPartialPubKeyB.ScalarMult(bkcoefficient[1]))
+		Expect(err).Should(BeNil())
+		Expect(gotPubKey.Equal(publicKey)).Should(BeTrue())
 	})
 })
 
@@ -83,6 +102,7 @@ func newRefreshes() (map[string]*Refresh, map[string]*birkhoffinterpolation.BkPa
 		tss.GetTestID(0): birkhoffinterpolation.NewBkParameter(big.NewInt(1), 0),
 		tss.GetTestID(1): birkhoffinterpolation.NewBkParameter(big.NewInt(2), 0),
 	}
+
 	keySize := 2048
 	ssidInfo := []byte("A")
 	for i := 0; i < lens; i++ {

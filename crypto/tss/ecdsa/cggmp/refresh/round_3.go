@@ -29,12 +29,12 @@ import (
 
 type round3Data struct {
 	plaintextShareBig    *big.Int
-	partialRefreshPubkey *pt.ECPoint
+	partialRefreshPubKey map[string]*pt.ECPoint
 }
 
 type Result struct {
 	refreshShare     *big.Int
-	sumpartialPubKey *pt.ECPoint
+	sumpartialPubKey map[string]*pt.ECPoint
 }
 
 type round3Handler struct {
@@ -117,6 +117,16 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 		return errors.New(errMsg.String())
 	}
 
+	// Establish other partial participant pubKey
+	partialRefreshPubKey := make(map[string]*pt.ECPoint)
+	for k := range p.peers {
+		getPoint, err := commitment.ComputePolyEvaluatePoint(curve.Params().N, p.bks[k], polyPoint, p.threshold-1)
+		if err != nil {
+			return err
+		}
+		partialRefreshPubKey[k] = getPoint
+	}
+
 	// Generate SSID Info + sumro
 	ssidSumRho := append(cggmp.ComputeZKSsid(p.ssid, p.bks[id]), []byte("!")...)
 	ssidSumRho = append(ssidSumRho, p.sumrho...)
@@ -176,7 +186,7 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 
 	peer.round3 = &round3Data{
 		plaintextShareBig:    plaintextShareBig,
-		partialRefreshPubkey: pt.ScalarBaseMult(curve, plaintextShareBig),
+		partialRefreshPubKey: partialRefreshPubKey,
 	}
 	return peer.AddMessage(msg)
 }
@@ -185,6 +195,7 @@ func (p *round3Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	curve := p.pubKey.GetCurve()
 	refreshShare := new(big.Int).Set(p.refreshShare)
 	sumpartialPubKey := pt.ScalarBaseMult(curve, p.refreshShare)
+	partialPubKey := make(map[string]*pt.ECPoint)
 	var err error
 	for _, peer := range p.peers {
 		plaintextShareBig := peer.round3.plaintextShareBig
@@ -194,9 +205,20 @@ func (p *round3Handler) Finalize(logger log.Logger) (types.Handler, error) {
 			return nil, err
 		}
 	}
+	partialPubKey[p.peerManager.SelfID()] = sumpartialPubKey
+	for _, peer1 := range p.peers {
+		tempSum := pt.ScalarBaseMult(curve, peer1.round2.share)
+		for _, peer2 := range p.peers {
+			tempSum, err = tempSum.Add(peer2.round3.partialRefreshPubKey[peer1.Id])
+			if err != nil {
+				return nil, err
+			}
+		}
+		partialPubKey[peer1.Id] = tempSum
+	}
 	p.result = &Result{
 		refreshShare:     refreshShare,
-		sumpartialPubKey: sumpartialPubKey,
+		sumpartialPubKey: partialPubKey,
 	}
 	return nil, nil
 }
