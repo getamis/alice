@@ -62,7 +62,7 @@ var _ = Describe("Refresh", func() {
 			l.AssertExpectations(GinkgoT())
 		}
 
-		// Set new shares and all partial public keys.
+		// Set new shares
 		afterShares := make([]*big.Int, len(shares))
 		afterPartialRefreshPubKeys := make([]*pt.ECPoint, len(partialPubKeys))
 		for i := 0; i < len(afterShares); i++ {
@@ -72,10 +72,14 @@ var _ = Describe("Refresh", func() {
 			afterPartialRefreshPubKeys[i], err = r.sumpartialPubKey[tss.GetTestID(i)].Add(partialPubKeys[i])
 			Expect(err).Should(BeNil())
 		}
-
-		// check that all refresh partial public keys are the same.
 		r0, err := refreshes[tss.GetTestID(0)].GetResult()
 		Expect(err).Should(BeNil())
+		for i := 0; i < len(afterShares); i++ {
+			afterPartialRefreshPubKeys[i], err = r0.sumpartialPubKey[tss.GetTestID(i)].Add(partialPubKeys[i])
+			Expect(err).Should(BeNil())
+		}
+
+		// check that all refresh partial public keys are the same.
 		for i := 1; i < len(shares); i++ {
 			r, err := refreshes[tss.GetTestID(i)].GetResult()
 			Expect(err).Should(BeNil())
