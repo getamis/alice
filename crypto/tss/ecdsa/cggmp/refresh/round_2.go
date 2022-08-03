@@ -140,6 +140,7 @@ func (p *round2Handler) buildRound2Data(peerId string, commitData *HashMsg) (*ro
 	if err != nil {
 		return nil, err
 	}
+
 	// Build round2data
 	pederssenPara, err := paillier.NewPedersenOpenParameter(new(big.Int).SetBytes(commitData.PedPar.N), new(big.Int).SetBytes(commitData.PedPar.S), new(big.Int).SetBytes(commitData.PedPar.T))
 	if err != nil {

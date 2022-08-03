@@ -113,8 +113,7 @@ func (cMsg *PointCommitmentMessage) getEllipticCurve(degree uint32) (elliptic.Cu
 func FeldmanVerify(curve elliptic.Curve, bk *bkhoff.BkParameter, pts []*ecpointgrouplaw.ECPoint, degree uint32, evaluation *big.Int) error {
 	fieldOrder := curve.Params().N
 	expectPoint := ecpointgrouplaw.ScalarBaseMult(curve, evaluation)
-	scalars := bk.GetLinearEquationCoefficient(fieldOrder, degree)
-	tempResult, err := pt.ComputeLinearCombinationPoint(scalars, pts)
+	tempResult, err := ComputePolyEvaluatePoint(fieldOrder, bk, pts, degree)
 	if err != nil {
 		return err
 	}
@@ -122,4 +121,13 @@ func FeldmanVerify(curve elliptic.Curve, bk *bkhoff.BkParameter, pts []*ecpointg
 		return ErrFailedVerify
 	}
 	return nil
+}
+
+func ComputePolyEvaluatePoint(fieldOrder *big.Int, bk *bkhoff.BkParameter, pts []*ecpointgrouplaw.ECPoint, degree uint32) (*ecpointgrouplaw.ECPoint, error) {
+	scalars := bk.GetLinearEquationCoefficient(fieldOrder, degree)
+	result, err := pt.ComputeLinearCombinationPoint(scalars, pts)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }

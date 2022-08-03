@@ -16,9 +16,7 @@ package paillier
 
 import (
 	"errors"
-	"math"
 	"math/big"
-	"math/rand"
 
 	"github.com/getamis/alice/crypto/utils"
 )
@@ -75,7 +73,7 @@ func NewPaillierBlumMessage(ssidInfo []byte, p *big.Int, q *big.Int, n *big.Int,
 		}
 		w, err = utils.RandomCoprimeInt(n)
 	}
-
+	nInverEuler := new(big.Int).ModInverse(n, eulerValue)
 	for i := 0; i < numberzkProof; i++ {
 		salti, err := utils.GenRandomBytes(128)
 		if err != nil {
@@ -86,15 +84,17 @@ func NewPaillierBlumMessage(ssidInfo []byte, p *big.Int, q *big.Int, n *big.Int,
 		if err != nil {
 			return nil, err
 		}
+		zi := new(big.Int).Exp(yi, nInverEuler, n)
 		// Compute xi = yi^{1/4} mod N with yi=(-1)^ai*w^bi*yi mod N, where ai, bi in {0,1} such that xi is well-defined.
 		ai, bi, xi := get4thRootWithabValue(yi, w, p, q, n)
-		zi := new(big.Int).Exp(yi, new(big.Int).ModInverse(n, eulerValue), n)
+
 		x[i] = xi.Bytes()
 		a[i] = ai.Bytes()
 		b[i] = bi.Bytes()
 		z[i] = zi.Bytes()
 		salt[i] = salti
 	}
+
 	return &PaillierBlumMessage{
 		A:    a,
 		B:    b,
@@ -172,18 +172,13 @@ func (msg *PaillierBlumMessage) Verify(ssidInfo []byte, n *big.Int) error {
 }
 
 func computeyByRejectSampling(w *big.Int, n *big.Int, salt []byte, ssidInfo []byte) (*big.Int, []byte, error) {
-	nByteLength := uint64(math.Ceil(float64(n.BitLen()) / 8))
 	var yi *big.Int
 	for j := 0; j < maxRetry; j++ {
-		yiSeed, err := utils.HashProtosToInt(salt, utils.GetAnyMsg(ssidInfo, n.Bytes(), w.Bytes())...)
+		yiSeed, err := utils.HashProtos(salt, utils.GetAnyMsg(ssidInfo, n.Bytes(), w.Bytes())...)
 		if err != nil {
 			return nil, nil, err
 		}
-		// Assume that the length of yi is 32 byte
-		yi, err = generateIndicateBitLengthInteger(yiSeed, nByteLength)
-		if err != nil {
-			return nil, nil, err
-		}
+		yi = new(big.Int).SetBytes(utils.ExtnedHashOuput(salt, yiSeed, n.BitLen()))
 		if yi.Cmp(n) > -1 || utils.Gcd(yi, n).Cmp(big1) != 0 {
 			salt, err = utils.GenRandomBytes(128)
 			if err != nil {
@@ -194,26 +189,6 @@ func computeyByRejectSampling(w *big.Int, n *big.Int, salt []byte, ssidInfo []by
 		return yi, salt, nil
 	}
 	return nil, nil, ErrExceedMaxRetry
-}
-
-func generateIndicateBitLengthInteger(input *big.Int, desiredByteLength uint64) (*big.Int, error) {
-	if input.BitLen() > 256 {
-		return nil, ErrInvalidInput
-	}
-	// Assume that the length of yi is 32 byte
-	seed := new(big.Int).And(input, max64Bit)
-	seed.Xor(seed, new(big.Int).Lsh(input, 64))
-	seed.Xor(seed, new(big.Int).Lsh(input, 128))
-	seed.Xor(seed, new(big.Int).Lsh(input, 196))
-	seed.Sub(seed, bit32)
-	rand.Seed(seed.Int64())
-
-	result := make([]byte, desiredByteLength)
-	for i := 0; i < len(result); i++ {
-		// #nosec: G404: Use of weak random number generator (math/rand instead of crypto/rand)
-		result[i] = byte(rand.Intn(256))
-	}
-	return new(big.Int).SetBytes(result), nil
 }
 
 // In our context, p = 3 mod 4 and q = 3 mod 4.
