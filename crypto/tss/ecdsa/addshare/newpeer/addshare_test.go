@@ -24,7 +24,7 @@ import (
 	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/polynomial"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/addshare"
+	"github.com/getamis/alice/crypto/tss/ecdsa/addshare"
 	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/alice/types"
 	"github.com/getamis/alice/types/mocks"
@@ -132,5 +132,14 @@ var _ = Describe("AddShare", func() {
 		Expect(err).Should(BeNil())
 		Expect(r.Share).ShouldNot(BeNil())
 		Expect(r.PublicKey).Should(Equal(pubkey))
+
+		newBks := birkhoffinterpolation.BkParameters{}
+		pks := []*ecpointgrouplaw.ECPoint{}
+		for id, bk := range r.Bks {
+			newBks = append(newBks, bk)
+			pks = append(pks, r.PartialPublicKeys[id])
+		}
+
+		Expect(newBks.ValidatePublicKey(pks, threshold, pubkey)).Should(BeNil())
 	})
 })
