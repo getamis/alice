@@ -30,6 +30,7 @@ import (
 	"github.com/getamis/alice/types"
 	"github.com/getamis/sirius/log"
 	"github.com/golang/protobuf/ptypes/any"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -213,14 +214,18 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	nodes := p.getOrderedNodes()
 	for _, node := range nodes {
 		msgBody := node.GetMessage(types.MessageType(Type_Round1)).(*Message).GetRound1()
-		x := node.bk.GetX().Bytes()
+		x := []byte(node.bk.String())
 		tempsG, err := msgBody.SG.ToPoint()
 		if err != nil {
 			logger.Debug("Failed ot ToPoint", "err", err)
 			return nil, err
 		}
 		node.Y = tempsG
-		B = append(B, computeB(x, node.D, node.E)...)
+		subBPart, err := computeB(x, node.D, node.E)
+		if err != nil {
+			return nil, err
+		}
+		B = append(B, subBPart...)
 	}
 
 	for _, node := range nodes {
@@ -326,16 +331,22 @@ func ecpointEncoding(pt *ecpointgrouplaw.ECPoint) *[32]byte {
 }
 
 // Get xi,Di,Ei,.......
-func computeB(x []byte, D, E *ecpointgrouplaw.ECPoint) []byte {
-	var result []byte
-	separationSign := []byte(",")
-	result = append(result, x...)
-	result = append(result, separationSign...)
-	result = append(result, D.GetX().Bytes()...)
-	result = append(result, separationSign...)
-	result = append(result, E.GetY().Bytes()...)
-	result = append(result, separationSign...)
-	return result
+func computeB(x []byte, D, E *ecpointgrouplaw.ECPoint) ([]byte, error) {
+	if !D.IsSameCurve(E) {
+		return nil, ecpointgrouplaw.ErrDifferentCurve
+	}
+	encodingD := ecpointEncoding(D)[:]
+	encodingE := ecpointEncoding(E)[:]
+	bMsg := &BMessage{
+		X: x,
+		D: encodingD,
+		E: encodingE,
+	}
+	result, err := proto.Marshal(bMsg)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func computeRi(D, E *ecpointgrouplaw.ECPoint, ell *big.Int) (*ecpointgrouplaw.ECPoint, error) {

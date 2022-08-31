@@ -38,6 +38,7 @@ func TestSigner(t *testing.T) {
 
 var _ = Describe("Signer", func() {
 	var (
+		big2  = big.NewInt(2)
 		curve = elliptic.Ed25519()
 	)
 
@@ -116,6 +117,14 @@ var _ = Describe("Signer", func() {
 			{big.NewInt(50), big.NewInt(203), big.NewInt(1)},
 		}, big.NewInt(1111)),
 	)
+
+	It("Verify failure case: computeB", func() {
+		D := ecpointgrouplaw.ScalarBaseMult(curve, big2)
+		E := ecpointgrouplaw.ScalarBaseMult(elliptic.Secp256k1(), big2)	
+		got, err := computeB(nil, D, E)
+		Expect(got).Should(BeNil())
+		Expect(err).ShouldNot(BeNil())
+	})
 })
 
 func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][]*big.Int, msg []byte) (map[string]*Signer, map[string]*mocks.StateChangedListener) {

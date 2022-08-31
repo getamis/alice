@@ -287,6 +287,69 @@ func (x *BodyRound2) GetSi() []byte {
 	return nil
 }
 
+type BMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	X []byte `protobuf:"bytes,1,opt,name=x,proto3" json:"x,omitempty"`
+	D []byte `protobuf:"bytes,2,opt,name=D,proto3" json:"D,omitempty"`
+	E []byte `protobuf:"bytes,3,opt,name=E,proto3" json:"E,omitempty"`
+}
+
+func (x *BMessage) Reset() {
+	*x = BMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_msgTypes[3]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *BMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*BMessage) ProtoMessage() {}
+
+func (x *BMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_msgTypes[3]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use BMessage.ProtoReflect.Descriptor instead.
+func (*BMessage) Descriptor() ([]byte, []int) {
+	return file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *BMessage) GetX() []byte {
+	if x != nil {
+		return x.X
+	}
+	return nil
+}
+
+func (x *BMessage) GetD() []byte {
+	if x != nil {
+		return x.D
+	}
+	return nil
+}
+
+func (x *BMessage) GetE() []byte {
+	if x != nil {
+		return x.E
+	}
+	return nil
+}
+
 var File_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto protoreflect.FileDescriptor
 
 var file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_rawDesc = []byte{
@@ -320,13 +383,17 @@ var file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_ra
 	0x67, 0x72, 0x6f, 0x75, 0x70, 0x6c, 0x61, 0x77, 0x2e, 0x45, 0x63, 0x50, 0x6f, 0x69, 0x6e, 0x74,
 	0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x02, 0x73, 0x47, 0x22, 0x1c, 0x0a, 0x0a, 0x42,
 	0x6f, 0x64, 0x79, 0x52, 0x6f, 0x75, 0x6e, 0x64, 0x32, 0x12, 0x0e, 0x0a, 0x02, 0x73, 0x69, 0x18,
-	0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x02, 0x73, 0x69, 0x2a, 0x1e, 0x0a, 0x04, 0x54, 0x79, 0x70,
-	0x65, 0x12, 0x0a, 0x0a, 0x06, 0x52, 0x6f, 0x75, 0x6e, 0x64, 0x31, 0x10, 0x00, 0x12, 0x0a, 0x0a,
-	0x06, 0x52, 0x6f, 0x75, 0x6e, 0x64, 0x32, 0x10, 0x01, 0x42, 0x38, 0x5a, 0x36, 0x67, 0x69, 0x74,
-	0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x67, 0x65, 0x74, 0x61, 0x6d, 0x69, 0x73, 0x2f,
-	0x61, 0x6c, 0x69, 0x63, 0x65, 0x2f, 0x63, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x2f, 0x74, 0x73, 0x73,
-	0x2f, 0x65, 0x64, 0x64, 0x73, 0x61, 0x2f, 0x66, 0x72, 0x6f, 0x73, 0x74, 0x2f, 0x73, 0x69, 0x67,
-	0x6e, 0x65, 0x72, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x01, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x02, 0x73, 0x69, 0x22, 0x34, 0x0a, 0x08, 0x42, 0x4d, 0x65,
+	0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x0c, 0x0a, 0x01, 0x78, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0c,
+	0x52, 0x01, 0x78, 0x12, 0x0c, 0x0a, 0x01, 0x44, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x01,
+	0x44, 0x12, 0x0c, 0x0a, 0x01, 0x45, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x01, 0x45, 0x2a,
+	0x1e, 0x0a, 0x04, 0x54, 0x79, 0x70, 0x65, 0x12, 0x0a, 0x0a, 0x06, 0x52, 0x6f, 0x75, 0x6e, 0x64,
+	0x31, 0x10, 0x00, 0x12, 0x0a, 0x0a, 0x06, 0x52, 0x6f, 0x75, 0x6e, 0x64, 0x32, 0x10, 0x01, 0x42,
+	0x38, 0x5a, 0x36, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x67, 0x65,
+	0x74, 0x61, 0x6d, 0x69, 0x73, 0x2f, 0x61, 0x6c, 0x69, 0x63, 0x65, 0x2f, 0x63, 0x72, 0x79, 0x70,
+	0x74, 0x6f, 0x2f, 0x74, 0x73, 0x73, 0x2f, 0x65, 0x64, 0x64, 0x73, 0x61, 0x2f, 0x66, 0x72, 0x6f,
+	0x73, 0x74, 0x2f, 0x73, 0x69, 0x67, 0x6e, 0x65, 0x72, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
+	0x33,
 }
 
 var (
@@ -342,21 +409,22 @@ func file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_r
 }
 
 var file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_goTypes = []interface{}{
 	(Type)(0),                              // 0: signer.Type
 	(*Message)(nil),                        // 1: signer.Message
 	(*BodyRound1)(nil),                     // 2: signer.BodyRound1
 	(*BodyRound2)(nil),                     // 3: signer.BodyRound2
-	(*ecpointgrouplaw.EcPointMessage)(nil), // 4: ecpointgrouplaw.EcPointMessage
+	(*BMessage)(nil),                       // 4: signer.BMessage
+	(*ecpointgrouplaw.EcPointMessage)(nil), // 5: ecpointgrouplaw.EcPointMessage
 }
 var file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_depIdxs = []int32{
 	0, // 0: signer.Message.type:type_name -> signer.Type
 	2, // 1: signer.Message.round1:type_name -> signer.BodyRound1
 	3, // 2: signer.Message.round2:type_name -> signer.BodyRound2
-	4, // 3: signer.BodyRound1.D:type_name -> ecpointgrouplaw.EcPointMessage
-	4, // 4: signer.BodyRound1.E:type_name -> ecpointgrouplaw.EcPointMessage
-	4, // 5: signer.BodyRound1.sG:type_name -> ecpointgrouplaw.EcPointMessage
+	5, // 3: signer.BodyRound1.D:type_name -> ecpointgrouplaw.EcPointMessage
+	5, // 4: signer.BodyRound1.E:type_name -> ecpointgrouplaw.EcPointMessage
+	5, // 5: signer.BodyRound1.sG:type_name -> ecpointgrouplaw.EcPointMessage
 	6, // [6:6] is the sub-list for method output_type
 	6, // [6:6] is the sub-list for method input_type
 	6, // [6:6] is the sub-list for extension type_name
@@ -406,6 +474,18 @@ func file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_i
 				return nil
 			}
 		}
+		file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*BMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_msgTypes[0].OneofWrappers = []interface{}{
 		(*Message_Round1)(nil),
@@ -417,7 +497,7 @@ func file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_i
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_github_com_getamis_alice_crypto_tss_eddsa_frost_signer_message_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
