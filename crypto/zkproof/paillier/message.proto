@@ -85,6 +85,20 @@ message PaillierOperationAndCommitmentMessage {
     bytes wy = 15;
 }
 
+message simplifyPaillierOperationAndCommitmentMessage {
+    bytes salt = 1;
+    bytes S = 2;
+    bytes T = 3;
+    bytes A = 4;
+    bytes E = 5;
+    bytes F = 6; 
+    string z1 = 7;
+    string z2 = 8;
+    string z3 = 9;
+    string z4 = 10;
+    bytes w = 11;
+}
+
 message LogStarMessage {
     bytes salt = 1;
     bytes S = 2;

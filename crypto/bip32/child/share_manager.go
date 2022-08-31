@@ -20,6 +20,7 @@ import (
 	"crypto/sha512"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"math/big"
 
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
@@ -97,6 +98,7 @@ func (sHolder *shareManager) ComputeHardenedChildShare(childIndex uint32, second
 	}
 	curve := sHolder.publicKey.GetCurve()
 	curveN := curve.Params().N
+	fmt.Println("secondState:", secondState)
 	hashResult := sHolder.newHmacSha512().Digest(secondState)
 	translate := new(big.Int).SetBytes(hashResult[0:32])
 	if translate.Cmp(curveN) > 0 {
