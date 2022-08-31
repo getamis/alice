@@ -49,6 +49,8 @@ var (
 	ErrPeerNotFound = errors.New("peer message not found")
 	//ErrTrivialSignature is returned if obtain trivial signature.
 	ErrTrivialSignature = errors.New("obtain trivial signature")
+	//ErrTrivialShaResult is returned if the output of SHAPoint is trivial.
+	ErrTrivialShaResult = errors.New("the output of SHAPoint is trivial")
 )
 
 type pubkeyData struct {
@@ -209,6 +211,7 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	identify := ecpointgrouplaw.NewIdentity(p.pubKey.GetCurve())
 	R := identify.Copy()
 	var B []byte
+	var err error
 	// Get ordered nodes
 	nodes := p.getOrderedNodes()
 	for _, node := range nodes {
@@ -247,7 +250,10 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	if R.Equal(identify) {
 		return nil, ErrTrivialSignature
 	}
-	p.c = SHAPoints(p.pubKey, R, p.message)
+	p.c, err = SHAPoints(p.pubKey, R, p.message)
+	if err != nil {
+		return nil, err
+	}
 	p.r = R
 
 	// Compute own si = di+ ei*li + c bi xi
@@ -286,7 +292,7 @@ func getMessage(messsage types.Message) *Message {
 	return messsage.(*Message)
 }
 
-func SHAPoints(pubKey, R *ecpointgrouplaw.ECPoint, message []byte) *big.Int {
+func SHAPoints(pubKey, R *ecpointgrouplaw.ECPoint, message []byte) (*big.Int, error) {
 	encodedR := ecpointEncoding(R)
 	encodedPubKey := ecpointEncoding(pubKey)
 	h := sha512.New()
@@ -296,7 +302,12 @@ func SHAPoints(pubKey, R *ecpointgrouplaw.ECPoint, message []byte) *big.Int {
 	h.Write(message)
 	digest := h.Sum(nil)
 	result := new(big.Int).SetBytes(utils.ReverseByte(digest))
-	return result.Mod(result, R.GetCurve().Params().N)
+	result = result.Mod(result, R.GetCurve().Params().N)
+	if result.Cmp(big0) == 0 {
+		return nil, ErrTrivialShaResult
+	}
+
+	return result, nil
 }
 
 func ecpointEncoding(pt *ecpointgrouplaw.ECPoint) *[32]byte {
