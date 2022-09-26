@@ -167,14 +167,14 @@ func (p *round6Handler) buildErr2Msg() error {
 		muij.Mul(muij, peer.round2Data.dhat)
 		muNthPower := new(big.Int).Mod(muij, nsquare)
 		mu := muij.Exp(muNthPower, nthRoot, nsquare)
-		muNPower := muNthPower
-		psiMuProof, err := paillier.NewNthRoot(paillier.NewS256(), p.own.ssidWithBk, mu, muNPower, n)
+		mu.Mod(mu, n)
+		psiMuProof, err := paillier.NewNthRoot(paillier.NewS256(), p.own.ssidWithBk, mu, muNthPower, n)
 		if err != nil {
 			return err
 		}
 		peersMsg[peer.Id] = &Err2PeerMsg{
 			Alphahat:    peer.round2Data.alphahat.Bytes(),
-			MuhatNPower: muNPower.Bytes(),
+			MuhatNPower: muNthPower.Bytes(),
 			PsiMuProof:  psiMuProof,
 		}
 	}
