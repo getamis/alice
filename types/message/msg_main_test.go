@@ -40,6 +40,7 @@ var _ = Describe("MsgMain", func() {
 
 		msgType         = types.MessageType(10)
 		nextMessageType = msgType + 1
+		msgId           = "id"
 	)
 	BeforeEach(func() {
 		mockListener = new(mocks.StateChangedListener)
@@ -56,17 +57,19 @@ var _ = Describe("MsgMain", func() {
 
 	Context("AddMessage", func() {
 		It("should be ok", func() {
+			mockMsg.On("GetId").Return(msgId).Once()
 			mockHandler.On("MessageType").Return(msgType).Once()
 			mockMsg.On("GetMessageType").Return(msgType).Twice()
 			mockMsg.On("IsValid").Return(true).Once()
-			err := msgMain.AddMessage(mockMsg)
+			err := msgMain.AddMessage(msgId, mockMsg)
 			Expect(err).Should(BeNil())
 		})
 
 		It("old message", func() {
+			mockMsg.On("GetId").Return(msgId).Once()
 			mockHandler.On("MessageType").Return(msgType).Once()
 			mockMsg.On("GetMessageType").Return(types.MessageType(9)).Once()
-			err := msgMain.AddMessage(mockMsg)
+			err := msgMain.AddMessage(msgId, mockMsg)
 			Expect(err).Should(Equal(ErrOldMessage))
 		})
 	})
@@ -79,10 +82,11 @@ var _ = Describe("MsgMain", func() {
 		)
 
 		BeforeEach(func() {
+			mockMsg.On("GetId").Return(msgId).Once()
 			mockHandler.On("MessageType").Return(msgType).Once()
 			mockMsg.On("GetMessageType").Return(msgType).Twice()
 			mockMsg.On("IsValid").Return(true).Once()
-			err := msgMain.AddMessage(mockMsg)
+			err := msgMain.AddMessage(msgId, mockMsg)
 			Expect(err).Should(BeNil())
 
 			mockMsg.On("GetId").Return(id).Once()

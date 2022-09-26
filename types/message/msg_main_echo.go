@@ -23,22 +23,36 @@ import (
 	"github.com/getamis/sirius/log"
 )
 
+// Message defines the message interface
+//go:generate mockery --name=EchoMessage
+type EchoMessage interface {
+	types.Message
+	// Hash() return the h
+	EchoHash() ([]byte, error)
+	// Hash() return the h
+	GetEchoMessage() types.Message
+}
+
 var (
+	ErrNotEchoMsg    = errors.New("not a echo message")
 	ErrDifferentHash = errors.New("different hash")
 )
 
 type EchoMsgMain struct {
+	types.MessageMain
+
 	logger log.Logger
 	pm     types.PeerManager
 	mu     sync.Mutex
-	// keep msgs
+	// keep echo msgs
+	// map[message type][the message id]
 	echoMsgs map[types.MessageType]map[string]*echoMessage
-	next     types.MessageMain
 }
 
 type echoMessage struct {
-	hash  []byte
-	count uint32
+	hash        []byte
+	msgMap      map[string]struct{}
+	originalMsg types.Message
 }
 
 func NewEchoMsgMain(next types.MessageMain, pm types.PeerManager, ts ...types.MessageType) types.MessageMain {
@@ -47,25 +61,29 @@ func NewEchoMsgMain(next types.MessageMain, pm types.PeerManager, ts ...types.Me
 		msgs[t] = make(map[string]*echoMessage)
 	}
 	return &EchoMsgMain{
+		MessageMain: next,
+
 		logger:   log.New("service", "EchoMsgMain"),
 		pm:       pm,
 		echoMsgs: msgs,
-		next:     next,
 	}
 }
 
 // NOTE: Avoid duplicate messages from the same peer should be handled in the caller
-func (t *EchoMsgMain) AddMessage(msg types.Message) error {
+func (t *EchoMsgMain) AddMessage(senderId string, msg types.Message) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	// Check if not echo messages
 	echoMsg, ok := t.echoMsgs[msg.GetMessageType()]
 	if !ok {
-		return t.next.AddMessage(msg)
+		return t.MessageMain.AddMessage(senderId, msg)
 	}
-
-	hash, err := msg.Hash()
+	eMsg, ok := msg.(EchoMessage)
+	if !ok {
+		return ErrNotEchoMsg
+	}
+	hash, err := eMsg.EchoHash()
 	if err != nil {
 		return err
 	}
@@ -75,23 +93,28 @@ func (t *EchoMsgMain) AddMessage(msg types.Message) error {
 		// Broadcast to other peers
 		for _, id := range t.pm.PeerIDs() {
 			if mId != id {
-				go t.pm.MustSend(id, msg)
+				go t.pm.MustSend(id, eMsg.GetEchoMessage())
 			}
 		}
 		echoMsg[mId] = &echoMessage{
-			hash: hash,
+			hash:   hash,
+			msgMap: make(map[string]struct{}),
 		}
 		m = echoMsg[mId]
 	} else if !bytes.Equal(m.hash, hash) {
 		return ErrDifferentHash
 	}
-	m.count++
+	// If it's an original message
+	if senderId == mId && echoMsg[mId].originalMsg == nil {
+		m.originalMsg = msg
+	}
+	m.msgMap[senderId] = struct{}{}
 
 	// Not handle if the message count is not enough
-	if m.count < t.pm.NumPeers() {
+	if len(m.msgMap) < int(t.pm.NumPeers()) || m.originalMsg == nil {
 		return nil
 	}
 	// Clear count
-	m.count = 0
-	return t.next.AddMessage(msg)
+	m.msgMap = make(map[string]struct{})
+	return t.MessageMain.AddMessage(m.originalMsg.GetId(), m.originalMsg)
 }

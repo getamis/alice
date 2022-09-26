@@ -25,6 +25,7 @@ import (
 
 var (
 	ErrOldMessage             = errors.New("old message")
+	ErrBadMsg                 = errors.New("bad message")
 	ErrInvalidStateTransition = errors.New("invalid state transition")
 	ErrDupMsg                 = errors.New("duplicate message")
 )
@@ -76,7 +77,11 @@ func (t *MsgMain) Stop() {
 	t.cancel = nil
 }
 
-func (t *MsgMain) AddMessage(msg types.Message) error {
+func (t *MsgMain) AddMessage(senderId string, msg types.Message) error {
+	if senderId != msg.GetId() {
+		t.logger.Debug("Different sender", "senderId", senderId, "msgId", msg.GetId())
+		return ErrBadMsg
+	}
 	currentMsgType := t.currentHandler.MessageType()
 	newMessageType := msg.GetMessageType()
 	if currentMsgType > newMessageType {
