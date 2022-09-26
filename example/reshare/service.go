@@ -73,7 +73,7 @@ func (p *service) Handle(s network.Stream) {
 	}
 
 	log.Info("Received request", "from", s.Conn().RemotePeer())
-	err = p.reshare.AddMessage(data)
+	err = p.reshare.AddMessage(data.GetId(), data)
 	if err != nil {
 		log.Warn("Cannot add message to reshare", "err", err)
 		return

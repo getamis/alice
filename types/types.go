@@ -55,14 +55,16 @@ type Message interface {
 	GetMessageType() MessageType
 	// IsValid checks if message is valid or not
 	IsValid() bool
-	// Hash() return the h
-	Hash() ([]byte, error)
 }
 
 // MessageMain defines the message main interface
 //go:generate mockery --name=MessageMain
 type MessageMain interface {
-	AddMessage(msg Message) error
+	AddMessage(senderId string, msg Message) error
+	GetHandler() Handler
+	GetState() MainState
+	Start()
+	Stop()
 }
 
 // MainState defines the msg main state

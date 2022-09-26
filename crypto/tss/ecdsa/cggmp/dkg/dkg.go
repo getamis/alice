@@ -30,9 +30,7 @@ import (
 
 type DKG struct {
 	ph *peerHandler
-	*message.MsgMain
-
-	msgMainer types.MessageMain
+	types.MessageMain
 }
 
 type Result struct {
@@ -63,9 +61,8 @@ func newDKGWithHandler(peerManager types.PeerManager, threshold uint32, rank uin
 	ms := message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_Peer), types.MessageType(Type_Decommit), types.MessageType(Type_Verify), types.MessageType(Type_Result))
 	msgMainer := message.NewEchoMsgMain(ms, peerManager, types.MessageType(Type_Peer), types.MessageType(Type_Decommit), types.MessageType(Type_Result))
 	return &DKG{
-		ph:        ph,
-		MsgMain:   ms,
-		msgMainer: msgMainer,
+		ph:          ph,
+		MessageMain: msgMainer,
 	}, nil
 }
 
@@ -78,10 +75,6 @@ func ensureRandAndThreshold(rank uint32, threshold uint32, peerNum uint32) error
 		return err
 	}
 	return nil
-}
-
-func (d *DKG) AddMessage(msg types.Message) error {
-	return d.msgMainer.AddMessage(msg)
 }
 
 // GetResult returns the final result: public key, share, bks (including self bk)
@@ -111,7 +104,7 @@ func (d *DKG) GetResult() (*Result, error) {
 }
 
 func (d *DKG) Start() {
-	d.MsgMain.Start()
+	d.MessageMain.Start()
 
 	// Send the first message to new peer
 	cggmp.Broadcast(d.ph.peerManager, d.ph.getPeerMessage())

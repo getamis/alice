@@ -66,7 +66,7 @@ func (p *service) Handle(s network.Stream) {
 	}
 
 	log.Info("Received request", "from", s.Conn().RemotePeer())
-	err = p.dkg.AddMessage(data)
+	err = p.dkg.AddMessage(data.GetId(), data)
 	if err != nil {
 		log.Warn("Cannot add message to DKG", "err", err)
 		return

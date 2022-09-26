@@ -15,18 +15,58 @@ type MessageMain struct {
 	mock.Mock
 }
 
-// AddMessage provides a mock function with given fields: msg
-func (_m *MessageMain) AddMessage(msg types.Message) error {
-	ret := _m.Called(msg)
+// AddMessage provides a mock function with given fields: senderId, msg
+func (_m *MessageMain) AddMessage(senderId string, msg types.Message) error {
+	ret := _m.Called(senderId, msg)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(types.Message) error); ok {
-		r0 = rf(msg)
+	if rf, ok := ret.Get(0).(func(string, types.Message) error); ok {
+		r0 = rf(senderId, msg)
 	} else {
 		r0 = ret.Error(0)
 	}
 
 	return r0
+}
+
+// GetHandler provides a mock function with given fields:
+func (_m *MessageMain) GetHandler() types.Handler {
+	ret := _m.Called()
+
+	var r0 types.Handler
+	if rf, ok := ret.Get(0).(func() types.Handler); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(types.Handler)
+		}
+	}
+
+	return r0
+}
+
+// GetState provides a mock function with given fields:
+func (_m *MessageMain) GetState() types.MainState {
+	ret := _m.Called()
+
+	var r0 types.MainState
+	if rf, ok := ret.Get(0).(func() types.MainState); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(types.MainState)
+	}
+
+	return r0
+}
+
+// Start provides a mock function with given fields:
+func (_m *MessageMain) Start() {
+	_m.Called()
+}
+
+// Stop provides a mock function with given fields:
+func (_m *MessageMain) Stop() {
+	_m.Called()
 }
 
 // NewMessageMain creates a new instance of MessageMain. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
