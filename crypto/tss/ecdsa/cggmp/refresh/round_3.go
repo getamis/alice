@@ -20,6 +20,7 @@ import (
 
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/ecdsa/cggmp"
 	paillierzkproof "github.com/getamis/alice/crypto/zkproof/paillier"
@@ -33,8 +34,11 @@ type round3Data struct {
 }
 
 type Result struct {
-	refreshShare     *big.Int
-	sumpartialPubKey map[string]*pt.ECPoint
+	refreshShare         *big.Int
+	refreshPaillierKey   *paillier.Paillier
+	refreshPartialPubKey map[string]*pt.ECPoint
+	y                    map[string]*pt.ECPoint
+	pedParameter         map[string]*paillierzkproof.PederssenOpenParameter
 }
 
 type round3Handler struct {
@@ -194,20 +198,18 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 func (p *round3Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	curve := p.pubKey.GetCurve()
 	refreshShare := new(big.Int).Set(p.refreshShare)
-	sumpartialPubKey := pt.ScalarBaseMult(curve, p.refreshShare)
 	partialPubKey := make(map[string]*pt.ECPoint)
-	var err error
+	Y := make(map[string]*pt.ECPoint)
+	ped := make(map[string]*paillierzkproof.PederssenOpenParameter)
 	for _, peer := range p.peers {
 		plaintextShareBig := peer.round3.plaintextShareBig
 		refreshShare = refreshShare.Add(refreshShare, plaintextShareBig)
-		sumpartialPubKey, err = sumpartialPubKey.Add(pt.ScalarBaseMult(curve, plaintextShareBig))
+	}
+	for _, peer1 := range p.peers {
+		tempSum, err := p.partialPubKey[peer1.Id].Add(pt.ScalarBaseMult(curve, peer1.round2.share))
 		if err != nil {
 			return nil, err
 		}
-	}
-	partialPubKey[p.peerManager.SelfID()] = sumpartialPubKey
-	for _, peer1 := range p.peers {
-		tempSum := pt.ScalarBaseMult(curve, peer1.round2.share)
 		for _, peer2 := range p.peers {
 			tempSum, err = tempSum.Add(peer2.round3.partialRefreshPubKey[peer1.Id])
 			if err != nil {
@@ -215,10 +217,25 @@ func (p *round3Handler) Finalize(logger log.Logger) (types.Handler, error) {
 			}
 		}
 		partialPubKey[peer1.Id] = tempSum
+		Y[peer1.Id] = peer1.round2.y
+		ped[peer1.Id] = peer1.round2.pederssenPara
 	}
+	// Add old share to obtain the new share and renew the set of all data
+	selfID := p.peerManager.SelfID()
+	refreshShare.Add(p.oldShare, refreshShare)
+	refreshShare.Mod(refreshShare, curve.Params().N)
+	partialPubKey[selfID] = pt.ScalarBaseMult(curve, refreshShare)
+	Y[selfID] = pt.ScalarBaseMult(curve, p.y)
+	ped[selfID] = p.ped.PedersenOpenParameter
 	p.result = &Result{
-		refreshShare:     refreshShare,
-		sumpartialPubKey: partialPubKey,
+		// new Share
+		refreshShare:       refreshShare,
+		refreshPaillierKey: p.paillierKey,
+		// refreshPartialPubKey: X
+		refreshPartialPubKey: partialPubKey,
+		y:                    Y,
+		// pedParameter: N, s, t
+		pedParameter: ped,
 	}
 	return nil, nil
 }
