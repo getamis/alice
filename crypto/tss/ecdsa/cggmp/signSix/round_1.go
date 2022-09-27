@@ -55,8 +55,9 @@ type round1Data struct {
 	gammaCiphertext *big.Int
 	kCiphertext     *big.Int
 
-	Z1 *pt.ECPoint
-	Z2 *pt.ECPoint
+	Z1        *pt.ECPoint
+	Z2        *pt.ECPoint
+	round2Msg types.Message
 }
 
 type round1Handler struct {
@@ -280,27 +281,29 @@ func (p *round1Handler) HandleMessage(logger log.Logger, message types.Message) 
 
 		Z1: Z1,
 		Z2: Z2,
-	}
-
-	// logstar proof for the secret gamma, mu: M(prove,Πlog,(sid,i),(Iε,Gi,Γi,g);(γi,νi)).
-	p.peerManager.MustSend(id, &Message{
-		Id:   p.own.Id,
-		Type: Type_Round2,
-		Body: &Message_Round2{
-			Round2: &Round2Msg{
-				D:      D.Bytes(),
-				F:      F.Bytes(),
-				Dhat:   Dhat,
-				Fhat:   Fhat.Bytes(),
-				Psi:    phiProof,
-				Psihat: psihatProof,
+		// logstar proof for the secret gamma, mu: M(prove,Πlog,(sid,i),(Iε,Gi,Γi,g);(γi,νi)).
+		round2Msg: &Message{
+			Id:   p.own.Id,
+			Type: Type_Round2,
+			Body: &Message_Round2{
+				Round2: &Round2Msg{
+					D:      D.Bytes(),
+					F:      F.Bytes(),
+					Dhat:   Dhat,
+					Fhat:   Fhat.Bytes(),
+					Psi:    phiProof,
+					Psihat: psihatProof,
+				},
 			},
 		},
-	})
+	}
 	return peer.AddMessage(msg)
 }
 
 func (p *round1Handler) Finalize(logger log.Logger) (types.Handler, error) {
+	for id, peer := range p.peers {
+		p.peerManager.MustSend(id, peer.round1Data.round2Msg)
+	}
 	return newRound2Handler(p)
 }
 

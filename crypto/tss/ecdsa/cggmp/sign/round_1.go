@@ -55,6 +55,7 @@ type round1Data struct {
 	Fhat            *big.Int
 	gammaCiphertext *big.Int
 	kCiphertext     *big.Int
+	round2Msg       types.Message
 }
 
 type round1Handler struct {
@@ -225,6 +226,13 @@ func (p *round1Handler) HandleMessage(logger log.Logger, message types.Message) 
 		return err
 	}
 
+	// logstar proof for the secret gamma, mu: M(prove,Πlog,(sid,i),(Iε,Gi,Γi,g);(γi,νi)).
+	G := pt.NewBase(curve)
+	psipaiProof, err := paillierzkproof.NewKnowExponentAndPaillierEncryption(parameter, p.own.ssidWithBk, p.gamma, p.mu, p.gammaCiphertext, p.paillierKey.GetN(), peerPed, Gamma, G)
+	if err != nil {
+		return err
+	}
+
 	peer.round1Data = &round1Data{
 		countDelta:      countDelta,
 		beta:            negBeta,
@@ -241,34 +249,30 @@ func (p *round1Handler) HandleMessage(logger log.Logger, message types.Message) 
 		shat:       shat,
 		Dhat:       Dhat,
 		Fhat:       Fhat,
-	}
-
-	// logstar proof for the secret gamma, mu: M(prove,Πlog,(sid,i),(Iε,Gi,Γi,g);(γi,νi)).
-	G := pt.NewBase(curve)
-	psipaiProof, err := paillierzkproof.NewKnowExponentAndPaillierEncryption(parameter, p.own.ssidWithBk, p.gamma, p.mu, p.gammaCiphertext, p.paillierKey.GetN(), peerPed, Gamma, G)
-	if err != nil {
-		return err
-	}
-	p.peerManager.MustSend(id, &Message{
-		Id:   p.own.Id,
-		Type: Type_Round2,
-		Body: &Message_Round2{
-			Round2: &Round2Msg{
-				D:      D,
-				F:      F.Bytes(),
-				Dhat:   Dhat,
-				Fhat:   Fhat.Bytes(),
-				Psi:    phiProof,
-				Psihat: psihatProof,
-				Psipai: psipaiProof,
-				Gamma:  msgGamma,
+		round2Msg: &Message{
+			Id:   p.own.Id,
+			Type: Type_Round2,
+			Body: &Message_Round2{
+				Round2: &Round2Msg{
+					D:      D,
+					F:      F.Bytes(),
+					Dhat:   Dhat,
+					Fhat:   Fhat.Bytes(),
+					Psi:    phiProof,
+					Psihat: psihatProof,
+					Psipai: psipaiProof,
+					Gamma:  msgGamma,
+				},
 			},
 		},
-	})
+	}
 	return peer.AddMessage(msg)
 }
 
 func (p *round1Handler) Finalize(logger log.Logger) (types.Handler, error) {
+	for id, peer := range p.peers {
+		p.peerManager.MustSend(id, peer.round1Data.round2Msg)
+	}
 	return newRound2Handler(p)
 }
 
