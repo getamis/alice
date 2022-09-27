@@ -16,10 +16,6 @@ git:
 notifications:
   email: false
 
-branches:
-  only: 
-    - master
-
 before_install:
   - |
       echo "Checking if a CI run is needed post commit: ${TRAVIS_COMMIT_RANGE}"
