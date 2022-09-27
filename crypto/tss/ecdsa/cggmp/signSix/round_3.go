@@ -25,9 +25,10 @@ import (
 )
 
 type round3Data struct {
-	delta *big.Int
-	z1hat *pt.ECPoint
-	z2hat *pt.ECPoint
+	delta     *big.Int
+	z1hat     *pt.ECPoint
+	z2hat     *pt.ECPoint
+	round4Msg types.Message
 }
 
 type round3Handler struct {
@@ -90,22 +91,24 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 		delta: otherDelta,
 		z1hat: z1hat,
 		z2hat: z2hat,
-	}
 
-	p.peerManager.MustSend(id, &Message{
-		Id:   p.own.Id,
-		Type: Type_Round4,
-		Body: &Message_Round4{
-			Round4: &Round4Msg{
-				Gamma:  p.msgGamma,
-				Psipai: phipai,
+		round4Msg: &Message{
+			Id:   p.own.Id,
+			Type: Type_Round4,
+			Body: &Message_Round4{
+				Round4: &Round4Msg{
+					Gamma:  p.msgGamma,
+					Psipai: phipai,
+				},
 			},
 		},
-	})
-
+	}
 	return peer.AddMessage(msg)
 }
 
 func (p *round3Handler) Finalize(logger log.Logger) (types.Handler, error) {
+	for id, peer := range p.peers {
+		p.peerManager.MustSend(id, peer.round3Data.round4Msg)
+	}
 	return newRound4Handler(p)
 }
