@@ -36,14 +36,34 @@ func (m *Message) GetMessageType() types.MessageType {
 	return types.MessageType(m.Type)
 }
 
-func (m *Message) Hash() ([]byte, error) {
+func (m *Message) EchoHash() ([]byte, error) {
+	echoMsg := m.GetEchoMessage()
+	if echoMsg == nil {
+		return nil, nil
+	}
 	// NOTE: there's an issue if there's a map field in the message
 	// https://developers.google.com/protocol-buffers/docs/encoding#implications
 	// Deterministic serialization only guarantees the same byte output for a particular binary.
-	bs, err := proto.Marshal(m)
+	bs, err := proto.Marshal(echoMsg.(*Message))
 	if err != nil {
 		return nil, err
 	}
 	got := blake2b.Sum256(bs)
 	return got[:], nil
+}
+
+func (m *Message) GetEchoMessage() types.Message {
+	mm := &Message{
+		Type: m.Type,
+		Id:   m.Id,
+	}
+	switch m.Type {
+	case Type_Round1:
+		mm.Body = &Message_Round1{
+			Round1: &Round1Msg{
+				Commitment: m.GetRound1().GetCommitment(),
+			},
+		}
+	}
+	return nil
 }

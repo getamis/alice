@@ -36,7 +36,7 @@ func NewRefresh(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, 
 		return nil, err
 	}
 	ms := message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_Round1), types.MessageType(Type_Round2), types.MessageType(Type_Round3))
-	msgMainer := message.NewEchoMsgMain(ms, peerManager, types.MessageType(Type_Round1), types.MessageType(Type_Round2))
+	msgMainer := message.NewEchoMsgMain(ms, peerManager)
 	return &Refresh{
 		ph:          ph,
 		MessageMain: msgMainer,

@@ -100,7 +100,7 @@ var _ = Describe("DKG", func() {
 		for _, d := range dkgs {
 			d.Start()
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(2 * time.Second)
 
 		secret := big.NewInt(0)
 		for i := 0; i < len(dkgs); i++ {

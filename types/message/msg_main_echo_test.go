@@ -18,24 +18,26 @@ import (
 	"github.com/getamis/alice/types/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ = FDescribe("EchoMsgMain", func() {
 	var (
-		msgMain         types.MessageMain
+		msgMain         *EchoMsgMain
 		mockMessageMain *mocks.MessageMain
 		mockPeerManager *mocks.PeerManager
 		mockMsg         *mMocks.EchoMessage
 
-		echoMsgType    = types.MessageType(10)
-		nonEchoMsgType = types.MessageType(11)
-		hash           = []byte("hash")
+		echoMsgType = types.MessageType(10)
 	)
 	BeforeEach(func() {
 		mockMsg = new(mMocks.EchoMessage)
 		mockMessageMain = new(mocks.MessageMain)
 		mockPeerManager = new(mocks.PeerManager)
-		msgMain = NewEchoMsgMain(mockMessageMain, mockPeerManager, echoMsgType)
+		msgMain = NewEchoMsgMain(mockMessageMain, mockPeerManager)
+		msgMain.marshalFunc = func(m proto.Message) ([]byte, error) {
+			return nil, nil
+		}
 	})
 
 	AfterEach(func() {
@@ -47,7 +49,8 @@ var _ = FDescribe("EchoMsgMain", func() {
 	Context("AddMessage", func() {
 		msgId := "id"
 		It("should be ok for not echo message", func() {
-			mockMsg.On("GetMessageType").Return(nonEchoMsgType).Once()
+			var nilMsg types.Message
+			mockMsg.On("GetEchoMessage").Return(nilMsg).Once()
 			mockMessageMain.On("AddMessage", msgId, mockMsg).Return(nil).Once()
 			err := msgMain.AddMessage(msgId, mockMsg)
 			Expect(err).Should(BeNil())
@@ -58,8 +61,7 @@ var _ = FDescribe("EchoMsgMain", func() {
 			otherPeerId := "other-id"
 			It("should be ok for the first message", func() {
 				mockMsg.On("GetMessageType").Return(echoMsgType).Once()
-				mockMsg.On("EchoHash").Return(hash, nil).Once()
-				mockMsg.On("GetEchoMessage").Return(mockMsg).Once()
+				mockMsg.On("GetEchoMessage").Return(mockMsg).Twice()
 				mockMsg.On("GetId").Return(msgId).Twice()
 				mockPeerManager.On("PeerIDs").Return([]string{msgId, otherPeerId}).Once()
 				mockPeerManager.On("MustSend", otherPeerId, mockMsg).Maybe()
@@ -71,32 +73,13 @@ var _ = FDescribe("EchoMsgMain", func() {
 
 			It("should be ok for the first message but not handle", func() {
 				mockMsg.On("GetMessageType").Return(echoMsgType).Once()
-				mockMsg.On("EchoHash").Return(hash, nil).Once()
-				mockMsg.On("GetEchoMessage").Return(mockMsg).Once()
+				mockMsg.On("GetEchoMessage").Return(mockMsg).Twice()
 				mockMsg.On("GetId").Return(msgId).Once()
 				mockPeerManager.On("PeerIDs").Return([]string{msgId, otherPeerId}).Once()
 				mockPeerManager.On("MustSend", otherPeerId, mockMsg).Maybe()
 				mockPeerManager.On("NumPeers").Return(uint32(2)).Once()
 				err := msgMain.AddMessage(msgId, mockMsg)
 				Expect(err).Should(BeNil())
-			})
-
-			It("different hash", func() {
-				mockMsg.On("GetMessageType").Return(echoMsgType).Once()
-				mockMsg.On("EchoHash").Return(hash, nil).Once()
-				mockMsg.On("GetEchoMessage").Return(mockMsg).Once()
-				mockMsg.On("GetId").Return(msgId).Once()
-				mockPeerManager.On("PeerIDs").Return([]string{msgId, otherPeerId}).Once()
-				mockPeerManager.On("MustSend", otherPeerId, mockMsg).Maybe()
-				mockPeerManager.On("NumPeers").Return(uint32(2)).Once()
-				err := msgMain.AddMessage(msgId, mockMsg)
-				Expect(err).Should(BeNil())
-
-				mockMsg.On("GetMessageType").Return(echoMsgType).Once()
-				mockMsg.On("EchoHash").Return([]byte("wrong hash"), nil).Once()
-				mockMsg.On("GetId").Return(msgId).Once()
-				err = msgMain.AddMessage(msgId, mockMsg)
-				Expect(err).Should(Equal(ErrDifferentHash))
 			})
 		})
 	})

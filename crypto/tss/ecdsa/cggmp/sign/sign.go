@@ -39,7 +39,7 @@ func NewSign(threshold uint32, ssid []byte, share *big.Int, pubKey *pt.ECPoint, 
 		return nil, err
 	}
 	ms := message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_Round1), types.MessageType(Type_Round2), types.MessageType(Type_Round3), types.MessageType(Type_Round4))
-	msgMainer := message.NewEchoMsgMain(ms, peerManager, types.MessageType(Type_Round4))
+	msgMainer := message.NewEchoMsgMain(ms, peerManager)
 	return &Sign{
 		ph:          ph,
 		MessageMain: msgMainer,

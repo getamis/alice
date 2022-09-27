@@ -59,7 +59,7 @@ func newDKGWithHandler(peerManager types.PeerManager, threshold uint32, rank uin
 		return nil, err
 	}
 	ms := message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_Peer), types.MessageType(Type_Decommit), types.MessageType(Type_Verify), types.MessageType(Type_Result))
-	msgMainer := message.NewEchoMsgMain(ms, peerManager, types.MessageType(Type_Peer), types.MessageType(Type_Decommit), types.MessageType(Type_Result))
+	msgMainer := message.NewEchoMsgMain(ms, peerManager)
 	return &DKG{
 		ph:          ph,
 		MessageMain: msgMainer,
