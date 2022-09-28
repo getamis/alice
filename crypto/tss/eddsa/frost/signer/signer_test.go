@@ -120,7 +120,7 @@ var _ = Describe("Signer", func() {
 
 	It("Verify failure case: computeB", func() {
 		D := ecpointgrouplaw.ScalarBaseMult(curve, big2)
-		E := ecpointgrouplaw.ScalarBaseMult(elliptic.Secp256k1(), big2)	
+		E := ecpointgrouplaw.ScalarBaseMult(elliptic.Secp256k1(), big2)
 		got, err := computeB(nil, D, E)
 		Expect(got).Should(BeNil())
 		Expect(err).ShouldNot(BeNil())
