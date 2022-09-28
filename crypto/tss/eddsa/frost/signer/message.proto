@@ -47,5 +47,5 @@ message BodyRound2 {
 message BMessage {
     bytes x = 1;
     bytes D = 2;
-	bytes E = 3;
+    bytes E = 3;
 }
