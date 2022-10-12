@@ -198,78 +198,84 @@ func (p *round1Handler) HandleMessage(logger log.Logger, message types.Message) 
 		return tss.ErrPeerNotFound
 	}
 
-	curve := p.pubKey.GetCurve()
-	// Compute Gamma = gamma*G
-	Gamma := pt.ScalarBaseMult(curve, p.gamma)
-	msgGamma, err := Gamma.ToEcPointMessage()
-	if err != nil {
-		return err
-	}
-
 	round1 := msg.GetRound1()
 	ownPed := p.own.para
 	peerPed := peer.para
 	n := peerPed.Getn()
 
 	// verify Proof_enc
-	err = round1.Psi.Verify(parameter, p.own.ssidWithBk, round1.KCiphertext, n, ownPed)
+	err := round1.Psi.Verify(parameter, p.own.ssidWithBk, round1.KCiphertext, n, ownPed)
 	if err != nil {
 		return err
-	}
-	negBeta, countDelta, r, s, D, F, phiProof, err := cggmp.MtaWithProofAff_g(p.own.ssidWithBk, peer.para, p.paillierKey, round1.KCiphertext, p.gamma, Gamma)
-	if err != nil {
-		return err
-	}
-	// psihat share proof: M(prove,Πaff-g,(sid,i),(Iε,Jε,Dˆj,i,Kj,Fˆj,i,Xi);(xi,βˆi,j,sˆi,j,rˆi,j)).
-	negBetahat, countSigma, rhat, shat, Dhat, Fhat, psihatProof, err := cggmp.MtaWithProofAff_g(p.own.ssidWithBk, peer.para, p.paillierKey, round1.KCiphertext, p.bkMulShare, p.bkpartialPubKey)
-	if err != nil {
-		return err
-	}
-
-	// logstar proof for the secret gamma, mu: M(prove,Πlog,(sid,i),(Iε,Gi,Γi,g);(γi,νi)).
-	G := pt.NewBase(curve)
-	psipaiProof, err := paillierzkproof.NewKnowExponentAndPaillierEncryption(parameter, p.own.ssidWithBk, p.gamma, p.mu, p.gammaCiphertext, p.paillierKey.GetN(), peerPed, Gamma, G)
-	if err != nil {
-		return err
-	}
-
-	peer.round1Data = &round1Data{
-		countDelta:      countDelta,
-		beta:            negBeta,
-		r:               r,
-		s:               s,
-		D:               D,
-		F:               F,
-		gammaCiphertext: new(big.Int).SetBytes(round1.GammaCiphertext),
-		kCiphertext:     new(big.Int).SetBytes(round1.KCiphertext),
-
-		countSigma: countSigma,
-		betahat:    negBetahat,
-		rhat:       rhat,
-		shat:       shat,
-		Dhat:       Dhat,
-		Fhat:       Fhat,
-		round2Msg: &Message{
-			Id:   p.own.Id,
-			Type: Type_Round2,
-			Body: &Message_Round2{
-				Round2: &Round2Msg{
-					D:      D,
-					F:      F.Bytes(),
-					Dhat:   Dhat,
-					Fhat:   Fhat.Bytes(),
-					Psi:    phiProof,
-					Psihat: psihatProof,
-					Psipai: psipaiProof,
-					Gamma:  msgGamma,
-				},
-			},
-		},
 	}
 	return peer.AddMessage(msg)
 }
 
 func (p *round1Handler) Finalize(logger log.Logger) (types.Handler, error) {
+	// Compute Gamma = gamma*G
+	curve := p.pubKey.GetCurve()
+	Gamma := pt.ScalarBaseMult(curve, p.gamma)
+	msgGamma, err := Gamma.ToEcPointMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	// Compute round2Msgs
+	for _, peer := range p.peers {
+		peerPed := peer.para
+		msg := getMessage(peer.GetMessage(types.MessageType(Type_Round1)))
+		round1 := msg.GetRound1()
+		negBeta, countDelta, r, s, D, F, phiProof, err := cggmp.MtaWithProofAff_g(p.own.ssidWithBk, peer.para, p.paillierKey, round1.KCiphertext, p.gamma, Gamma)
+		if err != nil {
+			return nil, err
+		}
+		// psihat share proof: M(prove,Πaff-g,(sid,i),(Iε,Jε,Dˆj,i,Kj,Fˆj,i,Xi);(xi,βˆi,j,sˆi,j,rˆi,j)).
+		negBetahat, countSigma, rhat, shat, Dhat, Fhat, psihatProof, err := cggmp.MtaWithProofAff_g(p.own.ssidWithBk, peer.para, p.paillierKey, round1.KCiphertext, p.bkMulShare, p.bkpartialPubKey)
+		if err != nil {
+			return nil, err
+		}
+
+		// logstar proof for the secret gamma, mu: M(prove,Πlog,(sid,i),(Iε,Gi,Γi,g);(γi,νi)).
+		G := pt.NewBase(curve)
+		psipaiProof, err := paillierzkproof.NewKnowExponentAndPaillierEncryption(parameter, p.own.ssidWithBk, p.gamma, p.mu, p.gammaCiphertext, p.paillierKey.GetN(), peerPed, Gamma, G)
+		if err != nil {
+			return nil, err
+		}
+		peer.round1Data = &round1Data{
+			countDelta:      countDelta,
+			beta:            negBeta,
+			r:               r,
+			s:               s,
+			D:               D,
+			F:               F,
+			gammaCiphertext: new(big.Int).SetBytes(round1.GammaCiphertext),
+			kCiphertext:     new(big.Int).SetBytes(round1.KCiphertext),
+
+			countSigma: countSigma,
+			betahat:    negBetahat,
+			rhat:       rhat,
+			shat:       shat,
+			Dhat:       Dhat,
+			Fhat:       Fhat,
+			round2Msg: &Message{
+				Id:   p.own.Id,
+				Type: Type_Round2,
+				Body: &Message_Round2{
+					Round2: &Round2Msg{
+						D:      D,
+						F:      F.Bytes(),
+						Dhat:   Dhat,
+						Fhat:   Fhat.Bytes(),
+						Psi:    phiProof,
+						Psihat: psihatProof,
+						Psipai: psipaiProof,
+						Gamma:  msgGamma,
+					},
+				},
+			},
+		}
+	}
+
 	for id, peer := range p.peers {
 		p.peerManager.MustSend(id, peer.round1Data.round2Msg)
 	}
