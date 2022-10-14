@@ -350,7 +350,7 @@ var _ = Describe("Utils", func() {
 	})
 
 	Context("ExtendHashOutput()", func() {
-		FIt("It is OK", func() {
+		It("It is OK", func() {
 			// Notice that: Exp
 			ExpectOutputByteLength := 32
 			N := big.NewInt(101 * 109)
