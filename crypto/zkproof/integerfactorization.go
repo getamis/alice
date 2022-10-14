@@ -169,18 +169,17 @@ func (msg *IntegerFactorizationProofMessage) Verify() error {
 }
 
 func generateZ(N *big.Int, index *big.Int, maxTry int) (*big.Int, error) {
-	var result *big.Int
+	inputData := index.Bytes()
+	desireBitModular := new(big.Int).Lsh(big1, uint(N.BitLen()))
 	for i := 0; i < maxTry; i++ {
 		for j := 0; j < maxTry; j++ {
-			inputData := utils.ExtnedHashOuput(index.Bytes(), N.Bytes(), N.BitLen())
-			result = new(big.Int).SetBytes(inputData)
+			inputData = utils.ExtendHashOutput(inputData, N.Bytes(), N.BitLen())
+			result := new(big.Int).SetBytes(inputData)
+			result.Mod(result, desireBitModular)
 			err := utils.InRange(result, big2, new(big.Int).Sub(N, big1))
-			if err == nil {
-				break
+			if err == nil && utils.IsRelativePrime(result, N) {
+				return result, nil
 			}
-		}
-		if utils.IsRelativePrime(result, N) {
-			return result, nil
 		}
 	}
 	return nil, ErrExceedMaxRetry

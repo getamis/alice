@@ -293,8 +293,13 @@ func RandomAbsoluteRangeInt(n *big.Int) (*big.Int, error) {
 
 // RandomAbsoluteRangeIntBySeed generates a random number in (-2^q.bit, 2^q.bit) with seed.
 func RandomAbsoluteRangeIntBySeed(salt []byte, message []byte, q *big.Int) *big.Int {
-	expendResult := ExtnedHashOuput(salt, message, q.BitLen()+1)
+	desireBitLength := uint(q.BitLen() + 1)
+	ByteLength := int(math.Ceil(float64(desireBitLength) / 8))
+	expendResult := ExtendHashOutput(salt, message, ByteLength)
+	// expectResult Mod 2^(desireBitLength)
+	mod := new(big.Int).Lsh(big1, desireBitLength)
 	result := new(big.Int).SetBytes(expendResult)
+	result.Mod(result, mod)
 	translate := new(big.Int).Lsh(big1, uint(q.BitLen()))
 	return result.Sub(result, translate)
 }
@@ -375,10 +380,10 @@ func ReverseByte(s []byte) []byte {
 	return result
 }
 
-// Let n := outputBitLength / 256. The hash result is Hash(salt + "," + message +"," + "0") | Hash(salt + "," + message + "," + "1") | .... | Hash(salt + "," + message + "," + "n") | the remainder part.
-func ExtnedHashOuput(salt, message []byte, outputBitLength int) []byte {
+// The hash result is Hash(salt + "," + message +"," + "0") | Hash(salt + "," + message + "," + "1") | .... | Hash(salt + "," + message + "," + "n-1"). Here n := Ceil (outputByteLength/32)
+func ExtendHashOutput(salt, message []byte, outputByteLength int) []byte {
 	separation := []byte(",")
-	Up := int(math.Ceil(float64(outputBitLength) / 256))
+	Up := int(math.Ceil(float64(outputByteLength) / 32))
 	result := make([]byte, Up<<5)
 	for i := 0; i < Up; i++ {
 		input := append(salt, separation...)
@@ -391,5 +396,5 @@ func ExtnedHashOuput(salt, message []byte, outputBitLength int) []byte {
 			result[up+j] = temp[j]
 		}
 	}
-	return new(big.Int).Rsh(new(big.Int).SetBytes(result), uint((Up<<8)-outputBitLength)).Bytes()
+	return result
 }
