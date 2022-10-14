@@ -18,6 +18,7 @@ import (
 	"math/big"
 	"testing"
 
+	"github.com/getamis/alice/crypto/utils"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
@@ -55,6 +56,13 @@ var _ = Describe("Integerfactorization flow", func() {
 		msg, err := NewIntegerFactorizationProofMessage(primeFactor, publicKey)
 		Expect(msg).To(BeNil())
 		Expect(err).Should(Equal(ErrSmallPublicKeySize))
+	})
+
+	It("generateZ", func() {
+		N := big.NewInt(15)
+		res, err := generateZ(N, big1, 100)
+		Expect(err).Should(BeNil())
+		Expect(utils.InRange(res, big2, new(big.Int).Sub(N, big1))).Should(BeNil())
 	})
 
 	Context("negative cases", func() {

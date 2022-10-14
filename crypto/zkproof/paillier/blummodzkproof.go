@@ -16,6 +16,7 @@ package paillier
 
 import (
 	"errors"
+	"math"
 	"math/big"
 
 	"github.com/getamis/alice/crypto/utils"
@@ -173,12 +174,15 @@ func (msg *PaillierBlumMessage) Verify(ssidInfo []byte, n *big.Int) error {
 
 func computeyByRejectSampling(w *big.Int, n *big.Int, salt []byte, ssidInfo []byte) (*big.Int, []byte, error) {
 	var yi *big.Int
+	ByteLength := int( math.Ceil(float64( n.BitLen())/8))
+	desireModular := new(big.Int).Lsh(big1, uint(n.BitLen()))
 	for j := 0; j < maxRetry; j++ {
 		yiSeed, err := utils.HashProtos(salt, utils.GetAnyMsg(ssidInfo, n.Bytes(), w.Bytes())...)
 		if err != nil {
 			return nil, nil, err
 		}
-		yi = new(big.Int).SetBytes(utils.ExtnedHashOuput(salt, yiSeed, n.BitLen()))
+		yi = new(big.Int).SetBytes(utils.ExtendHashOutput(salt, yiSeed, ByteLength))
+		yi.Mod(yi, desireModular)
 		if yi.Cmp(n) > -1 || utils.Gcd(yi, n).Cmp(big1) != 0 {
 			salt, err = utils.GenRandomBytes(128)
 			if err != nil {
