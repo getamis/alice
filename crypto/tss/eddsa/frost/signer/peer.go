@@ -38,7 +38,7 @@ type peer struct {
 	ri  *ecpointgrouplaw.ECPoint
 
 	// round 2
-	si *big.Int
+	zi *big.Int
 }
 
 type peers []*peer

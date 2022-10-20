@@ -77,6 +77,6 @@ func (s *Signer) GetResult() (*Result, error) {
 
 	return &Result{
 		R: rh.r,
-		S: new(big.Int).Set(rh.s),
+		S: new(big.Int).Set(rh.z),
 	}, nil
 }

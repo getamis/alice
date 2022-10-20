@@ -37,11 +37,11 @@ message Message {
 message BodyRound1 {
 	ecpointgrouplaw.EcPointMessage D = 1;
 	ecpointgrouplaw.EcPointMessage E = 2;
-	ecpointgrouplaw.EcPointMessage sG = 3;
+	ecpointgrouplaw.EcPointMessage zG = 3;
 }
 
 message BodyRound2 {
-	bytes si = 1;
+	bytes zi = 1;
 }
 
 message BMessage {
