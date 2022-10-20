@@ -41,6 +41,7 @@ const (
 var (
 	bit254 = new(big.Int).Lsh(big.NewInt(1), 253)
 	big0   = big.NewInt(0)
+	big1   = big.NewInt(1)
 
 	//ErrExceedMaxRetry is returned if we retried over times
 	ErrExceedMaxRetry = errors.New("exceed max retries")
@@ -137,7 +138,7 @@ func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, t
 			Round1: &BodyRound1{
 				D:  msgD,
 				E:  msgE,
-				SG: msgY,
+				ZG: msgY,
 			},
 		},
 	}
@@ -217,8 +218,8 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	nodes := p.getOrderedNodes()
 	for _, node := range nodes {
 		msgBody := node.GetMessage(types.MessageType(Type_Round1)).(*Message).GetRound1()
-		x := []byte(node.bk.String())
-		tempsG, err := msgBody.SG.ToPoint()
+		x := node.bk.GetX().Bytes()
+		tempsG, err := msgBody.ZG.ToPoint()
 		if err != nil {
 			logger.Debug("Failed ot ToPoint", "err", err)
 			return nil, err
@@ -233,7 +234,7 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 
 	for _, node := range nodes {
 		x := node.bk.GetX().Bytes()
-		ell, err := computeElli(x, node.E, p.message, B, p.curveN)
+		ell, err := computeRhoElli(x, node.E, p.message, B, p.curveN)
 		if err != nil {
 			logger.Debug("Failed ot computeElli", "err", err)
 			return nil, err
@@ -261,14 +262,14 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 	p.r = R
 
-	// Compute own si = di+ ei*li + c bi xi
+	// Compute own zi = di+ ei*li + c bi xi
 	selfNode := p.nodes[p.peerManager.SelfID()]
-	s := new(big.Int).Mul(p.e, selfNode.ell)
+	z := new(big.Int).Mul(p.e, selfNode.ell)
 	temp := new(big.Int).Mul(p.c, selfNode.coBk)
 	temp = temp.Mul(temp, p.share)
-	s.Add(s, temp)
-	s.Add(s, p.d)
-	s.Mod(s, p.curveN)
+	z.Add(z, temp)
+	z.Add(z, p.d)
+	z.Mod(z, p.curveN)
 
 	// Broadcast round2 message
 	round2Msg := &Message{
@@ -276,7 +277,7 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 		Type: Type_Round2,
 		Body: &Message_Round2{
 			Round2: &BodyRound2{
-				Si: s.Bytes(),
+				Zi: z.Bytes(),
 			},
 		},
 	}
@@ -369,7 +370,7 @@ func computeRi(D, E *ecpointgrouplaw.ECPoint, ell *big.Int) (*ecpointgrouplaw.EC
 	return temp, nil
 }
 
-func computeElli(x []byte, E *ecpointgrouplaw.ECPoint, message []byte, B []byte, fieldOrder *big.Int) (*big.Int, error) {
+func computeRhoElli(x []byte, E *ecpointgrouplaw.ECPoint, message []byte, B []byte, fieldOrder *big.Int) (*big.Int, error) {
 	temp, err := utils.HashProtosToInt(x, &any.Any{
 		Value: message,
 	}, &any.Any{
@@ -378,28 +379,22 @@ func computeElli(x []byte, E *ecpointgrouplaw.ECPoint, message []byte, B []byte,
 	if err != nil {
 		return nil, err
 	}
-	tempMod := new(big.Int).Mod(temp, bit254)
-	if tempMod.Cmp(fieldOrder) >= 0 {
-		upBd := maxRetry - 2
-		for j := 0; j < maxRetry; j++ {
-			if j > upBd {
-				return nil, ErrExceedMaxRetry
-			}
-			temp, err = utils.HashProtosToInt(temp.Bytes(), &any.Any{
-				Value: temp.Bytes(),
-			}, &any.Any{
-				Value: B,
-			})
-			tempMod = new(big.Int).Mod(temp, bit254)
-			if err != nil {
-				return nil, err
-			}
-			if tempMod.Cmp(fieldOrder) < 0 {
-				return temp, nil
-			}
+	for j := 0; j < maxRetry; j++ {
+		tempMod := new(big.Int).Mod(temp, bit254)
+		if utils.InRange(tempMod, big1, fieldOrder) == nil {
+			return tempMod, nil
+		}
+		tempBytes := temp.Bytes()
+		temp, err = utils.HashProtosToInt(tempBytes, &any.Any{
+			Value: tempBytes,
+		}, &any.Any{
+			Value: B,
+		})
+		if err != nil {
+			return nil, err
 		}
 	}
-	return temp, nil
+	return nil, ErrExceedMaxRetry
 }
 
 func (p *round1) getOrderedNodes() peers {
