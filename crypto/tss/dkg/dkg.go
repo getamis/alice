@@ -18,10 +18,9 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/getamis/alice/crypto/elliptic"
-
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/types"
@@ -38,6 +37,7 @@ type Result struct {
 	PublicKey *ecpointgrouplaw.ECPoint
 	Share     *big.Int
 	Bks       map[string]*birkhoffinterpolation.BkParameter
+	Ys        map[string]*ecpointgrouplaw.ECPoint
 }
 
 func NewDKG(curve elliptic.Curve, peerManager types.PeerManager, threshold uint32, rank uint32, listener types.StateChangedListener) (*DKG, error) {
@@ -93,14 +93,22 @@ func (d *DKG) GetResult() (*Result, error) {
 	}
 
 	bks := make(map[string]*birkhoffinterpolation.BkParameter, d.ph.peerManager.NumPeers()+1)
+	ys := make(map[string]*ecpointgrouplaw.ECPoint, d.ph.peerManager.NumPeers()+1)
 	bks[d.ph.peerManager.SelfID()] = d.ph.bk
+	var err error
+	ys[d.ph.peerManager.SelfID()], err = rh.siGProofMsg.V.ToPoint()
+	if err != nil {
+		return nil, err
+	}
 	for id, peer := range d.ph.peers {
 		bks[id] = peer.peer.bk
+		ys[id] = peer.result.result
 	}
 	return &Result{
 		PublicKey: rh.publicKey,
 		Share:     rh.share,
 		Bks:       bks,
+		Ys:        ys,
 	}, nil
 }
 

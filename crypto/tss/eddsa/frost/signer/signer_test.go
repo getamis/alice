@@ -22,6 +22,7 @@ import (
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/types"
 	"github.com/getamis/alice/types/mocks"
@@ -46,7 +47,12 @@ var _ = Describe("Signer", func() {
 		expPublic := ecpointgrouplaw.ScalarBaseMult(curve, privateKey)
 		threshold := len(ss)
 		message := []byte("8077818")
-		signers, listeners := newSigners(curve, expPublic, ss, message)
+		numberShare := len(ss)
+		Y := make([]*ecpointgrouplaw.ECPoint, numberShare)
+		for i := 0; i < len(Y); i++ {
+			Y[i] = ecpointgrouplaw.ScalarBaseMult(curve, ss[i][1])
+		}
+		signers, listeners := newSigners(curve, expPublic, ss, Y, message)
 		doneChs := make([]chan struct{}, threshold)
 		i := 0
 		for _, l := range listeners {
@@ -127,7 +133,7 @@ var _ = Describe("Signer", func() {
 	})
 })
 
-func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][]*big.Int, msg []byte) (map[string]*Signer, map[string]*mocks.StateChangedListener) {
+func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][]*big.Int, Y []*ecpointgrouplaw.ECPoint, msg []byte) (map[string]*Signer, map[string]*mocks.StateChangedListener) {
 	threshold := len(ss)
 	signers := make(map[string]*Signer, threshold)
 	signersMain := make(map[string]types.MessageMain, threshold)
@@ -135,10 +141,15 @@ func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][
 	listeners := make(map[string]*mocks.StateChangedListener, threshold)
 
 	bks := make(map[string]*birkhoffinterpolation.BkParameter, threshold)
+	Ys := make(map[string]*ecpointgrouplaw.ECPoint, threshold)
 	for i := 0; i < threshold; i++ {
 		bks[tss.GetTestID(i)] = birkhoffinterpolation.NewBkParameter(ss[i][0], uint32(ss[i][2].Uint64()))
+		Ys[tss.GetTestID(i)] = Y[i]
 	}
-
+	dkgData := &dkg.Result{
+		Bks: bks,
+		Ys:  Ys,
+	}
 	var err error
 	for i := 0; i < threshold; i++ {
 		id := tss.GetTestID(i)
@@ -146,7 +157,7 @@ func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][
 		pm.Set(signersMain)
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
-		signers[id], err = NewSigner(expPublic, peerManagers[i], uint32(threshold), ss[i][1], bks, msg, listeners[id])
+		signers[id], err = NewSigner(expPublic, peerManagers[i], uint32(threshold), ss[i][1], dkgData, msg, listeners[id])
 		Expect(err).Should(BeNil())
 		signersMain[id] = signers[id]
 		r, err := signers[id].GetResult()
