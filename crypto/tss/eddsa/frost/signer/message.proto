@@ -43,3 +43,9 @@ message BodyRound1 {
 message BodyRound2 {
 	bytes si = 1;
 }
+
+message BMessage {
+    bytes x = 1;
+    bytes D = 2;
+    bytes E = 3;
+}
