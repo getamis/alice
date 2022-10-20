@@ -60,7 +60,7 @@ var (
    The following interactive protocol comes from the paper: "Short Proofs of Knowledge for Factoring".
    In our case, N is the public key
    Step 1: A prover generates
-   - The prover randomly chooses an integer r in [1,A-1] and z in [2,N-2] in Z_N^ast with z = Hash(big1, publicKey). If z = 0,1, or -1, we interate it by z = Hash( Hash(big1, publicKey), publicKey).
+   - The prover randomly chooses an integer r in [1,A-1] and z in [2,N-2] in Z_N^ast with z = Hash(big1, publicKey). If z = 0,1, or -1, we iterate it by z = Hash( Hash(big1, publicKey), publicKey).
    - The prover computes x = z^r mod N.
    - The prover computes e := H(x, z, N) mod B
    - The prover computes y:= r+(N-phi(N))*e. The resulting proof is the (x, y, z)
@@ -169,17 +169,14 @@ func (msg *IntegerFactorizationProofMessage) Verify() error {
 }
 
 func generateZ(N *big.Int, index *big.Int, maxTry int) (*big.Int, error) {
-	var result *big.Int
-	for i := 0; i < maxTry; i++ {
-		for j := 0; j < maxTry; j++ {
-			inputData := utils.ExtnedHashOuput(index.Bytes(), N.Bytes(), N.BitLen())
-			result = new(big.Int).SetBytes(inputData)
-			err := utils.InRange(result, big2, new(big.Int).Sub(N, big1))
-			if err == nil {
-				break
-			}
-		}
-		if utils.IsRelativePrime(result, N) {
+	inputData := index.Bytes()
+	desireBitModular := new(big.Int).Lsh(big1, uint(N.BitLen()))
+	for j := 0; j < maxTry; j++ {
+		inputData = utils.ExtendHashOutput(inputData, N.Bytes(), N.BitLen())
+		result := new(big.Int).SetBytes(inputData)
+		result.Mod(result, desireBitModular)
+		err := utils.InRange(result, big2, new(big.Int).Sub(N, big1))
+		if err == nil && utils.IsRelativePrime(result, N) {
 			return result, nil
 		}
 	}
