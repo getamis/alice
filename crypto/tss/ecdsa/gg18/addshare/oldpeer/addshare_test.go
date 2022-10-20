@@ -67,7 +67,7 @@ var _ = Describe("AddShare", func() {
 			},
 		}
 		for _, addShare := range addShares {
-			Expect(addShare.AddMessage(newBkMsg)).Should(BeNil())
+			Expect(addShare.AddMessage(newPeerID, newBkMsg)).Should(BeNil())
 		}
 		time.Sleep(1 * time.Second)
 
@@ -98,7 +98,7 @@ var _ = Describe("AddShare", func() {
 			},
 		}
 		for _, addShare := range addShares {
-			Expect(addShare.AddMessage(verifyMsg)).Should(BeNil())
+			Expect(addShare.AddMessage(newPeerID, verifyMsg)).Should(BeNil())
 		}
 		time.Sleep(1 * time.Second)
 

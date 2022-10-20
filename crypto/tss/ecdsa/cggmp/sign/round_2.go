@@ -107,16 +107,6 @@ func (p *round2Handler) HandleMessage(logger log.Logger, message types.Message) 
 		logger.Debug("Failed to verify", "err", err)
 		return err
 	}
-	alpha, err := p.paillierKey.Decrypt(round2.D)
-	if err != nil {
-		logger.Debug("Failed to decrypt", "err", err)
-		return err
-	}
-	alphahat, err := p.paillierKey.Decrypt(round2.Dhat)
-	if err != nil {
-		logger.Debug("Failed to decrypt", "err", err)
-		return err
-	}
 
 	peer.round2Data = &round2Data{
 		psiProof:      round2.Psi,
@@ -125,8 +115,6 @@ func (p *round2Handler) HandleMessage(logger log.Logger, message types.Message) 
 		psihatProoof:  round2.Psihat,
 		dhat:          new(big.Int).SetBytes(round2.Dhat),
 		fhat:          new(big.Int).SetBytes(round2.Fhat),
-		alpha:         new(big.Int).SetBytes(alpha),
-		alphahat:      new(big.Int).SetBytes(alphahat),
 		allGammaPoint: Gamma,
 	}
 	return peer.AddMessage(msg)
@@ -142,6 +130,18 @@ func (p *round2Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	chi := new(big.Int).Mul(p.bkMulShare, p.k)
 	for id, peer := range p.peers {
 		logger = logger.New("peerId", id)
+		alpha, err := p.paillierKey.Decrypt(peer.round2Data.d.Bytes())
+		if err != nil {
+			logger.Debug("Failed to decrypt", "err", err)
+			return nil, err
+		}
+		peer.round2Data.alpha = new(big.Int).SetBytes(alpha)
+		alphahat, err := p.paillierKey.Decrypt(peer.round2Data.dhat.Bytes())
+		if err != nil {
+			logger.Debug("Failed to decrypt", "err", err)
+			return nil, err
+		}
+		peer.round2Data.alphahat = new(big.Int).SetBytes(alphahat)
 		sumGamma, err = sumGamma.Add(peer.round2Data.allGammaPoint)
 		if err != nil {
 			logger.Debug("Failed to add gamma", "err")

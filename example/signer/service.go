@@ -81,7 +81,7 @@ func (p *service) Handle(s network.Stream) {
 	}
 
 	log.Info("Received request", "from", s.Conn().RemotePeer())
-	err = p.signer.AddMessage(data)
+	err = p.signer.AddMessage(data.GetId(), data)
 	if err != nil {
 		log.Warn("Cannot add message to signer", "err", err)
 		return

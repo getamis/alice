@@ -16,8 +16,6 @@ package sign
 
 import (
 	"github.com/getamis/alice/types"
-	"github.com/minio/blake2b-simd"
-	"google.golang.org/protobuf/proto"
 )
 
 func (m *Message) IsValid() bool {
@@ -42,14 +40,21 @@ func (m *Message) GetMessageType() types.MessageType {
 	return types.MessageType(m.Type)
 }
 
-func (m *Message) Hash() ([]byte, error) {
-	// NOTE: there's an issue if there's a map field in the message
-	// https://developers.google.com/protocol-buffers/docs/encoding#implications
-	// Deterministic serialization only guarantees the same byte output for a particular binary.
-	bs, err := proto.Marshal(m)
-	if err != nil {
-		return nil, err
+func (m *Message) GetEchoMessage() types.Message {
+	mm := &Message{
+		Type: m.Type,
+		Id:   m.Id,
 	}
-	got := blake2b.Sum256(bs)
-	return got[:], nil
+	switch m.Type {
+	case Type_Round1:
+		mm.Body = &Message_Round1{
+			Round1: &Round1Msg{
+				KCiphertext:     m.GetRound1().GetKCiphertext(),
+				GammaCiphertext: m.GetRound1().GetGammaCiphertext(),
+				// Not broadcast to all in echo protocol
+				// Psi:             m.GetRound1().GetPsi(),
+			},
+		}
+	}
+	return nil
 }

@@ -87,7 +87,7 @@ var _ = Describe("AddShare", func() {
 				},
 			},
 		}
-		Expect(addShare.AddMessage(oldPeerMsg)).Should(BeNil())
+		Expect(addShare.AddMessage(oldPeerID, oldPeerMsg)).Should(BeNil())
 		time.Sleep(1 * time.Second)
 
 		// Expect that the peer handler handled the message but the result handler hasn't handled the message yet.
@@ -115,7 +115,7 @@ var _ = Describe("AddShare", func() {
 				},
 			},
 		}
-		Expect(addShare.AddMessage(resultMsg)).Should(BeNil())
+		Expect(addShare.AddMessage(oldPeerID, resultMsg)).Should(BeNil())
 		time.Sleep(1 * time.Second)
 
 		// Expect that the result handler handled the message and the result is correct.

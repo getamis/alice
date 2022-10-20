@@ -21,77 +21,124 @@ import (
 
 	"github.com/getamis/alice/types"
 	"github.com/getamis/sirius/log"
+	"github.com/minio/blake2b-simd"
+	"google.golang.org/protobuf/proto"
 )
 
+// Message defines the message interface
+//go:generate mockery --name=EchoMessage
+type EchoMessage interface {
+	proto.Message
+	types.Message
+	// GetEchoMessage() return the message to broadcast in echo protocol
+	GetEchoMessage() types.Message
+}
+
 var (
+	ErrNotEchoMsg    = errors.New("not a echo message")
 	ErrDifferentHash = errors.New("different hash")
 )
 
 type EchoMsgMain struct {
+	types.MessageMain
+
 	logger log.Logger
 	pm     types.PeerManager
 	mu     sync.Mutex
-	// keep msgs
+	// keep echo msgs
+	// map[message type][the message id]
 	echoMsgs map[types.MessageType]map[string]*echoMessage
-	next     types.MessageMain
+
+	marshalFunc func(m proto.Message) ([]byte, error)
 }
 
 type echoMessage struct {
-	hash  []byte
-	count uint32
+	hash        []byte
+	msgMap      map[string]struct{}
+	originalMsg types.Message
 }
 
-func NewEchoMsgMain(next types.MessageMain, pm types.PeerManager, ts ...types.MessageType) types.MessageMain {
+func NewEchoMsgMain(next types.MessageMain, pm types.PeerManager) *EchoMsgMain {
 	msgs := make(map[types.MessageType]map[string]*echoMessage)
-	for _, t := range ts {
-		msgs[t] = make(map[string]*echoMessage)
-	}
 	return &EchoMsgMain{
-		logger:   log.New("service", "EchoMsgMain"),
-		pm:       pm,
-		echoMsgs: msgs,
-		next:     next,
+		MessageMain: next,
+
+		logger:      log.New("service", "EchoMsgMain"),
+		pm:          pm,
+		echoMsgs:    msgs,
+		marshalFunc: proto.Marshal,
 	}
 }
 
 // NOTE: Avoid duplicate messages from the same peer should be handled in the caller
-func (t *EchoMsgMain) AddMessage(msg types.Message) error {
+func (t *EchoMsgMain) AddMessage(senderId string, msg types.Message) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	// Check if not echo messages
-	echoMsg, ok := t.echoMsgs[msg.GetMessageType()]
+	eMsg, ok := msg.(EchoMessage)
 	if !ok {
-		return t.next.AddMessage(msg)
+		return ErrNotEchoMsg
 	}
 
-	hash, err := msg.Hash()
+	hash, err := t.echoHash(eMsg)
 	if err != nil {
 		return err
 	}
-	mId := msg.GetId()
-	m, ok := echoMsg[mId]
+	if hash == nil {
+		return t.MessageMain.AddMessage(senderId, msg)
+	}
+
+	// Init echo messages
+	msgType := msg.GetMessageType()
+	echoMsg, ok := t.echoMsgs[msgType]
 	if !ok {
-		// Broadcast to other peers
+		echoMsg = make(map[string]*echoMessage)
+		t.echoMsgs[msgType] = echoMsg
+	}
+	msgId := msg.GetId()
+	// Broadcast to other peers for the first message
+	m, ok := echoMsg[msgId]
+	if !ok {
 		for _, id := range t.pm.PeerIDs() {
-			if mId != id {
-				go t.pm.MustSend(id, msg)
+			if msgId != id {
+				go t.pm.MustSend(id, eMsg.GetEchoMessage())
 			}
 		}
-		echoMsg[mId] = &echoMessage{
-			hash: hash,
+		echoMsg[msgId] = &echoMessage{
+			hash:   hash,
+			msgMap: make(map[string]struct{}),
 		}
-		m = echoMsg[mId]
+		m = echoMsg[msgId]
 	} else if !bytes.Equal(m.hash, hash) {
 		return ErrDifferentHash
 	}
-	m.count++
 
+	// If it's an original message
+	if senderId == msgId && m.originalMsg == nil {
+		m.originalMsg = msg
+	}
+	m.msgMap[senderId] = struct{}{}
 	// Not handle if the message count is not enough
-	if m.count < t.pm.NumPeers() {
+	if len(m.msgMap) < int(t.pm.NumPeers()) || m.originalMsg == nil {
 		return nil
 	}
 	// Clear count
-	m.count = 0
-	return t.next.AddMessage(msg)
+	m.msgMap = make(map[string]struct{})
+	return t.MessageMain.AddMessage(m.originalMsg.GetId(), m.originalMsg)
+}
+
+func (t *EchoMsgMain) echoHash(m EchoMessage) ([]byte, error) {
+	echoMsg := m.GetEchoMessage()
+	if echoMsg == nil {
+		return nil, nil
+	}
+	// NOTE: there's an issue if there's a map field in the message
+	// https://developers.google.com/protocol-buffers/docs/encoding#implications
+	// Deterministic serialization only guarantees the same byte output for a particular binary.
+	bs, err := t.marshalFunc(echoMsg.(proto.Message))
+	if err != nil {
+		return nil, err
+	}
+	got := blake2b.Sum256(bs)
+	return got[:], nil
 }
