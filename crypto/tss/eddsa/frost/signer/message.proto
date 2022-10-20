@@ -37,7 +37,6 @@ message Message {
 message BodyRound1 {
 	ecpointgrouplaw.EcPointMessage D = 1;
 	ecpointgrouplaw.EcPointMessage E = 2;
-	ecpointgrouplaw.EcPointMessage zG = 3;
 }
 
 message BodyRound2 {

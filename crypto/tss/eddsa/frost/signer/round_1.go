@@ -25,6 +25,7 @@ import (
 	"github.com/getamis/alice/crypto/commitment"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo"
+	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/crypto/tss/ecdsa/cggmp"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/types"
@@ -75,7 +76,6 @@ type round1 struct {
 
 	e *big.Int
 	d *big.Int
-	Y *ecpointgrouplaw.ECPoint
 
 	round1Msg *Message
 
@@ -84,7 +84,9 @@ type round1 struct {
 	c *big.Int
 }
 
-func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, share *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, message []byte) (*round1, error) {
+func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, share *big.Int, dkgResult *dkg.Result, message []byte) (*round1, error) {
+	bks := dkgResult.Bks
+	ys := dkgResult.Ys
 	selfId := peerManager.SelfID()
 	ownbk := bks[selfId]
 	curve := pubKey.GetCurve()
@@ -94,7 +96,7 @@ func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, t
 	i := 0
 	for id, bk := range bks {
 		bbks[i] = bk
-		nodes[id] = newPeer(id, i, bk)
+		nodes[id] = newPeer(id, i, bk, ys[id])
 		i++
 	}
 	coBks, err := bbks.ComputeBkCoefficient(threshold, curveN)
@@ -124,11 +126,6 @@ func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, t
 	if err != nil {
 		return nil, err
 	}
-	YPoint := ecpointgrouplaw.ScalarBaseMult(curve, share)
-	msgY, err := YPoint.ToEcPointMessage()
-	if err != nil {
-		return nil, err
-	}
 
 	// Build and add self round1 message
 	round1Msg := &Message{
@@ -136,9 +133,8 @@ func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, t
 		Type: Type_Round1,
 		Body: &Message_Round1{
 			Round1: &BodyRound1{
-				D:  msgD,
-				E:  msgE,
-				ZG: msgY,
+				D: msgD,
+				E: msgE,
 			},
 		},
 	}
@@ -157,7 +153,6 @@ func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, t
 
 		e:         e,
 		d:         d,
-		Y:         YPoint,
 		round1Msg: round1Msg,
 	}
 	err = r.HandleMessage(log.New(), round1Msg)
@@ -217,14 +212,7 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	// Get ordered nodes
 	nodes := p.getOrderedNodes()
 	for _, node := range nodes {
-		msgBody := node.GetMessage(types.MessageType(Type_Round1)).(*Message).GetRound1()
 		x := node.bk.GetX().Bytes()
-		tempsG, err := msgBody.ZG.ToPoint()
-		if err != nil {
-			logger.Debug("Failed ot ToPoint", "err", err)
-			return nil, err
-		}
-		node.Y = tempsG
 		subBPart, err := computeB(x, node.D, node.E)
 		if err != nil {
 			return nil, err
