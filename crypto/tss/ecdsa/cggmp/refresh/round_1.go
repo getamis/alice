@@ -41,11 +41,13 @@ var (
 )
 
 type round1Handler struct {
-	ssid        []byte
-	paillierKey *paillier.Paillier
-	pubKey      *ecpointgrouplaw.ECPoint
-	threshold   uint32
-	ownBK       *birkhoffinterpolation.BkParameter
+	ssid          []byte
+	oldShare      *big.Int
+	partialPubKey map[string]*ecpointgrouplaw.ECPoint
+	paillierKey   *paillier.Paillier
+	pubKey        *ecpointgrouplaw.ECPoint
+	threshold     uint32
+	ownBK         *birkhoffinterpolation.BkParameter
 
 	y              *big.Int
 	tau            *big.Int // Schnorr commitment of y
@@ -65,7 +67,7 @@ type round1Handler struct {
 	peers       map[string]*peer
 }
 
-func newRound1Handler(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, bks map[string]*birkhoffinterpolation.BkParameter, keySize int, ssid []byte) (*round1Handler, error) {
+func newRound1Handler(oldShare *big.Int, pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, partialPubKey map[string]*ecpointgrouplaw.ECPoint, bks map[string]*birkhoffinterpolation.BkParameter, keySize int, ssid []byte) (*round1Handler, error) {
 	numPeers := peerManager.NumPeers()
 	// curve := pubKey.GetCurve()
 	// Generate 4*kappa long safe primes p, q with N = p*q
@@ -80,12 +82,14 @@ func newRound1Handler(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerMan
 	}
 
 	p := &round1Handler{
-		ssid:        ssid,
-		paillierKey: paillierKey,
-		pubKey:      pubKey,
-		threshold:   threshold,
-		bks:         bks,
-		ownBK:       bks[peerManager.SelfID()],
+		ssid:          ssid,
+		oldShare:      oldShare,
+		paillierKey:   paillierKey,
+		pubKey:        pubKey,
+		threshold:     threshold,
+		bks:           bks,
+		ownBK:         bks[peerManager.SelfID()],
+		partialPubKey: partialPubKey,
 
 		peerNum:     numPeers,
 		peers:       buildPeers(peerManager),

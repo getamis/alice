@@ -15,6 +15,8 @@
 package refresh
 
 import (
+	"math/big"
+
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
@@ -29,9 +31,9 @@ type Refresh struct {
 	types.MessageMain
 }
 
-func NewRefresh(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, bks map[string]*birkhoffinterpolation.BkParameter, keySize int, ssid []byte, listener types.StateChangedListener) (*Refresh, error) {
+func NewRefresh(oldShare *big.Int, pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, partialPubKey map[string]*ecpointgrouplaw.ECPoint, bks map[string]*birkhoffinterpolation.BkParameter, keySize int, ssid []byte, listener types.StateChangedListener) (*Refresh, error) {
 	peerNum := peerManager.NumPeers()
-	ph, err := newRound1Handler(pubKey, peerManager, threshold, bks, keySize, ssid)
+	ph, err := newRound1Handler(oldShare, pubKey, peerManager, threshold, partialPubKey, bks, keySize, ssid)
 	if err != nil {
 		return nil, err
 	}
