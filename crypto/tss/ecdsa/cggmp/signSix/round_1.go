@@ -55,8 +55,9 @@ type round1Data struct {
 	gammaCiphertext *big.Int
 	kCiphertext     *big.Int
 
-	Z1 *pt.ECPoint
-	Z2 *pt.ECPoint
+	Z1        *pt.ECPoint
+	Z2        *pt.ECPoint
+	round2Msg types.Message
 }
 
 type round1Handler struct {
@@ -245,62 +246,68 @@ func (p *round1Handler) HandleMessage(logger log.Logger, message types.Message) 
 	if err != nil {
 		return err
 	}
-	beta, r, s, D, F, phiProof, err := cggmp.MtaWithProofAff_p(p.own.ssidWithBk, peer.para, p.paillierKey, round1.KCiphertext, p.gamma, p.nu, p.gammaCiphertext)
-	if err != nil {
-		return err
-	}
-	// psihat share proof: M(prove,Πaff-g,(sid,i),(Iε,Jε,Dˆj,i,Kj,Fˆj,i,Xi);(xi,βˆi,j,sˆi,j,rˆi,j)).
-	betahat, countSigma, rhat, shat, Dhat, Fhat, psihatProof, err := cggmp.MtaWithProofAff_g(p.own.ssidWithBk, peer.para, p.paillierKey, round1.KCiphertext, p.bkMulShare, p.bkpartialPubKey)
-	if err != nil {
-		return err
-	}
-	Z1, err := round1.Z1.ToPoint()
-	if err != nil {
-		return err
-	}
-	Z2, err := round1.Z2.ToPoint()
-	if err != nil {
-		return err
-	}
-	peer.round1Data = &round1Data{
-		beta:            beta,
-		r:               r,
-		s:               s,
-		D:               D,
-		F:               F,
-		gammaCiphertext: new(big.Int).SetBytes(round1.GammaCiphertext),
-		kCiphertext:     new(big.Int).SetBytes(round1.KCiphertext),
-
-		countSigma: countSigma,
-		betahat:    betahat,
-		rhat:       rhat,
-		shat:       shat,
-		Dhat:       Dhat,
-		Fhat:       Fhat,
-
-		Z1: Z1,
-		Z2: Z2,
-	}
-
-	// logstar proof for the secret gamma, mu: M(prove,Πlog,(sid,i),(Iε,Gi,Γi,g);(γi,νi)).
-	p.peerManager.MustSend(id, &Message{
-		Id:   p.own.Id,
-		Type: Type_Round2,
-		Body: &Message_Round2{
-			Round2: &Round2Msg{
-				D:      D.Bytes(),
-				F:      F.Bytes(),
-				Dhat:   Dhat,
-				Fhat:   Fhat.Bytes(),
-				Psi:    phiProof,
-				Psihat: psihatProof,
-			},
-		},
-	})
 	return peer.AddMessage(msg)
 }
 
 func (p *round1Handler) Finalize(logger log.Logger) (types.Handler, error) {
+	for _, peer := range p.peers {
+		msg := getMessage(peer.GetMessage(types.MessageType(Type_Round1)))
+		round1 := msg.GetRound1()
+		beta, r, s, D, F, phiProof, err := cggmp.MtaWithProofAff_p(p.own.ssidWithBk, peer.para, p.paillierKey, round1.KCiphertext, p.gamma, p.nu, p.gammaCiphertext)
+		if err != nil {
+			return nil, err
+		}
+		// psihat share proof: M(prove,Πaff-g,(sid,i),(Iε,Jε,Dˆj,i,Kj,Fˆj,i,Xi);(xi,βˆi,j,sˆi,j,rˆi,j)).
+		betahat, countSigma, rhat, shat, Dhat, Fhat, psihatProof, err := cggmp.MtaWithProofAff_g(p.own.ssidWithBk, peer.para, p.paillierKey, round1.KCiphertext, p.bkMulShare, p.bkpartialPubKey)
+		if err != nil {
+			return nil, err
+		}
+		Z1, err := round1.Z1.ToPoint()
+		if err != nil {
+			return nil, err
+		}
+		Z2, err := round1.Z2.ToPoint()
+		if err != nil {
+			return nil, err
+		}
+		peer.round1Data = &round1Data{
+			beta:            beta,
+			r:               r,
+			s:               s,
+			D:               D,
+			F:               F,
+			gammaCiphertext: new(big.Int).SetBytes(round1.GammaCiphertext),
+			kCiphertext:     new(big.Int).SetBytes(round1.KCiphertext),
+
+			countSigma: countSigma,
+			betahat:    betahat,
+			rhat:       rhat,
+			shat:       shat,
+			Dhat:       Dhat,
+			Fhat:       Fhat,
+
+			Z1: Z1,
+			Z2: Z2,
+			// logstar proof for the secret gamma, mu: M(prove,Πlog,(sid,i),(Iε,Gi,Γi,g);(γi,νi)).
+			round2Msg: &Message{
+				Id:   p.own.Id,
+				Type: Type_Round2,
+				Body: &Message_Round2{
+					Round2: &Round2Msg{
+						D:      D.Bytes(),
+						F:      F.Bytes(),
+						Dhat:   Dhat,
+						Fhat:   Fhat.Bytes(),
+						Psi:    phiProof,
+						Psihat: psihatProof,
+					},
+				},
+			},
+		}
+	}
+	for id, peer := range p.peers {
+		p.peerManager.MustSend(id, peer.round1Data.round2Msg)
+	}
 	return newRound2Handler(p)
 }
 

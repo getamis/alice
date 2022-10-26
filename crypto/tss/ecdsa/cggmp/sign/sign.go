@@ -29,9 +29,7 @@ import (
 
 type Sign struct {
 	ph *round1Handler
-	*message.MsgMain
-
-	msgMainer types.MessageMain
+	types.MessageMain
 }
 
 func NewSign(threshold uint32, ssid []byte, share *big.Int, pubKey *pt.ECPoint, partialPubKey, allY map[string]*pt.ECPoint, paillierKey *paillier.Paillier, ped map[string]*paillierzkproof.PederssenOpenParameter, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, peerManager types.PeerManager, listener types.StateChangedListener) (*Sign, error) {
@@ -41,11 +39,10 @@ func NewSign(threshold uint32, ssid []byte, share *big.Int, pubKey *pt.ECPoint, 
 		return nil, err
 	}
 	ms := message.NewMsgMain(peerManager.SelfID(), peerNum, listener, ph, types.MessageType(Type_Round1), types.MessageType(Type_Round2), types.MessageType(Type_Round3), types.MessageType(Type_Round4))
-	msgMainer := message.NewEchoMsgMain(ms, peerManager, types.MessageType(Type_Round4))
+	msgMainer := message.NewEchoMsgMain(ms, peerManager)
 	return &Sign{
-		ph:        ph,
-		MsgMain:   ms,
-		msgMainer: msgMainer,
+		ph:          ph,
+		MessageMain: msgMainer,
 	}, nil
 }
 
@@ -65,12 +62,8 @@ func (d *Sign) GetResult() (*Result, error) {
 	return rh.result, nil
 }
 
-func (d *Sign) AddMessage(msg types.Message) error {
-	return d.msgMainer.AddMessage(msg)
-}
-
 func (d *Sign) Start() {
-	d.MsgMain.Start()
+	d.MessageMain.Start()
 
 	d.ph.sendRound1Messages()
 }

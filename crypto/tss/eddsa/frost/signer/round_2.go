@@ -25,7 +25,7 @@ import (
 type round2 struct {
 	*round1
 
-	s *big.Int
+	z *big.Int
 }
 
 func newRound2(r *round1) (*round2, error) {
@@ -63,17 +63,17 @@ func (p *round2) HandleMessage(logger log.Logger, message types.Message) error {
 }
 
 func (p *round2) Finalize(logger log.Logger) (types.Handler, error) {
-	s := big.NewInt(0)
+	z := big.NewInt(0)
 	G := ecpointgrouplaw.NewBase(p.pubKey.GetCurve())
 
 	for _, node := range p.nodes {
 		// Calculate S
 		msgBody := node.GetMessage(types.MessageType(Type_Round2)).(*Message).GetRound2()
-		node.si = new(big.Int).SetBytes(msgBody.Si)
-		s.Add(s, node.si)
+		node.zi = new(big.Int).SetBytes(msgBody.Zi)
+		z.Add(z, node.zi)
 
 		// Calculate S
-		siG := G.ScalarMult(node.si)
+		ziG := G.ScalarMult(node.zi)
 		ri := node.ri
 		cbi := new(big.Int).Mul(node.coBk, p.c)
 		cbi.Mod(cbi, p.pubKey.GetCurve().Params().N)
@@ -82,13 +82,13 @@ func (p *round2) Finalize(logger log.Logger) (types.Handler, error) {
 			logger.Debug("Failed to ScalarMult", "err", err)
 			return nil, err
 		}
-		if !comparePart.Equal(siG) {
-			logger.Debug("Inconsistent siG", "comparePart", comparePart, "siG", siG)
+		if !comparePart.Equal(ziG) {
+			logger.Debug("Inconsistent ziG", "comparePart", comparePart, "ziG", ziG)
 			return nil, ErrVerifyFailure
 		}
 	}
-	p.s = s.Mod(s, p.curveN)
-	if p.s.Cmp(big0) == 0 {
+	p.z = z.Mod(z, p.curveN)
+	if p.z.Cmp(big0) == 0 {
 		return nil, ErrTrivialSignature
 	}
 	return nil, nil

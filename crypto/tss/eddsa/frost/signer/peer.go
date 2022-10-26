@@ -29,16 +29,16 @@ type peer struct {
 	index int
 	bk    *birkhoffinterpolation.BkParameter
 	coBk  *big.Int
+	Y     *ecpointgrouplaw.ECPoint
 
 	// round 1
 	D   *ecpointgrouplaw.ECPoint
 	E   *ecpointgrouplaw.ECPoint
-	Y   *ecpointgrouplaw.ECPoint
 	ell *big.Int
 	ri  *ecpointgrouplaw.ECPoint
 
 	// round 2
-	si *big.Int
+	zi *big.Int
 }
 
 type peers []*peer
@@ -47,10 +47,11 @@ func (p peers) Len() int           { return len(p) }
 func (p peers) Less(i, j int) bool { return p[i].bk.GetX().Cmp(p[j].bk.GetX()) < 0 }
 func (p peers) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-func newPeer(id string, index int, bk *birkhoffinterpolation.BkParameter) *peer {
+func newPeer(id string, index int, bk *birkhoffinterpolation.BkParameter, Y *ecpointgrouplaw.ECPoint) *peer {
 	return &peer{
 		Peer:  message.NewPeer(id),
 		index: index,
 		bk:    bk,
+		Y:     Y,
 	}
 }

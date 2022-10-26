@@ -25,11 +25,13 @@ import (
 	"github.com/getamis/alice/crypto/commitment"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo"
+	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/crypto/tss/ecdsa/cggmp"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/types"
 	"github.com/getamis/sirius/log"
 	"github.com/golang/protobuf/ptypes/any"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -40,6 +42,7 @@ const (
 var (
 	bit254 = new(big.Int).Lsh(big.NewInt(1), 253)
 	big0   = big.NewInt(0)
+	big1   = big.NewInt(1)
 
 	//ErrExceedMaxRetry is returned if we retried over times
 	ErrExceedMaxRetry = errors.New("exceed max retries")
@@ -49,6 +52,8 @@ var (
 	ErrPeerNotFound = errors.New("peer message not found")
 	//ErrTrivialSignature is returned if obtain trivial signature.
 	ErrTrivialSignature = errors.New("obtain trivial signature")
+	//ErrTrivialShaResult is returned if the output of SHAPoint is trivial.
+	ErrTrivialShaResult = errors.New("the output of SHAPoint is trivial")
 )
 
 type pubkeyData struct {
@@ -71,7 +76,6 @@ type round1 struct {
 
 	e *big.Int
 	d *big.Int
-	Y *ecpointgrouplaw.ECPoint
 
 	round1Msg *Message
 
@@ -80,7 +84,9 @@ type round1 struct {
 	c *big.Int
 }
 
-func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, share *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, message []byte) (*round1, error) {
+func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, share *big.Int, dkgResult *dkg.Result, message []byte) (*round1, error) {
+	bks := dkgResult.Bks
+	ys := dkgResult.Ys
 	selfId := peerManager.SelfID()
 	ownbk := bks[selfId]
 	curve := pubKey.GetCurve()
@@ -90,7 +96,7 @@ func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, t
 	i := 0
 	for id, bk := range bks {
 		bbks[i] = bk
-		nodes[id] = newPeer(id, i, bk)
+		nodes[id] = newPeer(id, i, bk, ys[id])
 		i++
 	}
 	coBks, err := bbks.ComputeBkCoefficient(threshold, curveN)
@@ -120,11 +126,6 @@ func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, t
 	if err != nil {
 		return nil, err
 	}
-	YPoint := ecpointgrouplaw.ScalarBaseMult(curve, share)
-	msgY, err := YPoint.ToEcPointMessage()
-	if err != nil {
-		return nil, err
-	}
 
 	// Build and add self round1 message
 	round1Msg := &Message{
@@ -132,9 +133,8 @@ func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, t
 		Type: Type_Round1,
 		Body: &Message_Round1{
 			Round1: &BodyRound1{
-				D:  msgD,
-				E:  msgE,
-				SG: msgY,
+				D: msgD,
+				E: msgE,
 			},
 		},
 	}
@@ -153,7 +153,6 @@ func newRound1(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, t
 
 		e:         e,
 		d:         d,
-		Y:         YPoint,
 		round1Msg: round1Msg,
 	}
 	err = r.HandleMessage(log.New(), round1Msg)
@@ -209,23 +208,21 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	identify := ecpointgrouplaw.NewIdentity(p.pubKey.GetCurve())
 	R := identify.Copy()
 	var B []byte
+	var err error
 	// Get ordered nodes
 	nodes := p.getOrderedNodes()
 	for _, node := range nodes {
-		msgBody := node.GetMessage(types.MessageType(Type_Round1)).(*Message).GetRound1()
 		x := node.bk.GetX().Bytes()
-		tempsG, err := msgBody.SG.ToPoint()
+		subBPart, err := computeB(x, node.D, node.E)
 		if err != nil {
-			logger.Debug("Failed ot ToPoint", "err", err)
 			return nil, err
 		}
-		node.Y = tempsG
-		B = append(B, computeB(x, node.D, node.E)...)
+		B = append(B, subBPart...)
 	}
 
 	for _, node := range nodes {
 		x := node.bk.GetX().Bytes()
-		ell, err := computeElli(x, node.E, p.message, B, p.curveN)
+		ell, err := computeRhoElli(x, node.E, p.message, B, p.curveN)
 		if err != nil {
 			logger.Debug("Failed ot computeElli", "err", err)
 			return nil, err
@@ -247,17 +244,20 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	if R.Equal(identify) {
 		return nil, ErrTrivialSignature
 	}
-	p.c = SHAPoints(p.pubKey, R, p.message)
+	p.c, err = SHAPoints(p.pubKey, R, p.message)
+	if err != nil {
+		return nil, err
+	}
 	p.r = R
 
-	// Compute own si = di+ ei*li + c bi xi
+	// Compute own zi = di+ ei*li + c bi xi
 	selfNode := p.nodes[p.peerManager.SelfID()]
-	s := new(big.Int).Mul(p.e, selfNode.ell)
+	z := new(big.Int).Mul(p.e, selfNode.ell)
 	temp := new(big.Int).Mul(p.c, selfNode.coBk)
 	temp = temp.Mul(temp, p.share)
-	s.Add(s, temp)
-	s.Add(s, p.d)
-	s.Mod(s, p.curveN)
+	z.Add(z, temp)
+	z.Add(z, p.d)
+	z.Mod(z, p.curveN)
 
 	// Broadcast round2 message
 	round2Msg := &Message{
@@ -265,7 +265,7 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 		Type: Type_Round2,
 		Body: &Message_Round2{
 			Round2: &BodyRound2{
-				Si: s.Bytes(),
+				Zi: z.Bytes(),
 			},
 		},
 	}
@@ -286,7 +286,7 @@ func getMessage(messsage types.Message) *Message {
 	return messsage.(*Message)
 }
 
-func SHAPoints(pubKey, R *ecpointgrouplaw.ECPoint, message []byte) *big.Int {
+func SHAPoints(pubKey, R *ecpointgrouplaw.ECPoint, message []byte) (*big.Int, error) {
 	encodedR := ecpointEncoding(R)
 	encodedPubKey := ecpointEncoding(pubKey)
 	h := sha512.New()
@@ -296,7 +296,12 @@ func SHAPoints(pubKey, R *ecpointgrouplaw.ECPoint, message []byte) *big.Int {
 	h.Write(message)
 	digest := h.Sum(nil)
 	result := new(big.Int).SetBytes(utils.ReverseByte(digest))
-	return result.Mod(result, R.GetCurve().Params().N)
+	result = result.Mod(result, R.GetCurve().Params().N)
+	if result.Cmp(big0) == 0 {
+		return nil, ErrTrivialShaResult
+	}
+
+	return result, nil
 }
 
 func ecpointEncoding(pt *ecpointgrouplaw.ECPoint) *[32]byte {
@@ -326,16 +331,22 @@ func ecpointEncoding(pt *ecpointgrouplaw.ECPoint) *[32]byte {
 }
 
 // Get xi,Di,Ei,.......
-func computeB(x []byte, D, E *ecpointgrouplaw.ECPoint) []byte {
-	var result []byte
-	separationSign := []byte(",")
-	result = append(result, x...)
-	result = append(result, separationSign...)
-	result = append(result, D.GetX().Bytes()...)
-	result = append(result, separationSign...)
-	result = append(result, E.GetY().Bytes()...)
-	result = append(result, separationSign...)
-	return result
+func computeB(x []byte, D, E *ecpointgrouplaw.ECPoint) ([]byte, error) {
+	if !D.IsSameCurve(E) {
+		return nil, ecpointgrouplaw.ErrDifferentCurve
+	}
+	encodingD := ecpointEncoding(D)[:]
+	encodingE := ecpointEncoding(E)[:]
+	bMsg := &BMessage{
+		X: x,
+		D: encodingD,
+		E: encodingE,
+	}
+	result, err := proto.Marshal(bMsg)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 func computeRi(D, E *ecpointgrouplaw.ECPoint, ell *big.Int) (*ecpointgrouplaw.ECPoint, error) {
@@ -347,7 +358,7 @@ func computeRi(D, E *ecpointgrouplaw.ECPoint, ell *big.Int) (*ecpointgrouplaw.EC
 	return temp, nil
 }
 
-func computeElli(x []byte, E *ecpointgrouplaw.ECPoint, message []byte, B []byte, fieldOrder *big.Int) (*big.Int, error) {
+func computeRhoElli(x []byte, E *ecpointgrouplaw.ECPoint, message []byte, B []byte, fieldOrder *big.Int) (*big.Int, error) {
 	temp, err := utils.HashProtosToInt(x, &any.Any{
 		Value: message,
 	}, &any.Any{
@@ -356,28 +367,22 @@ func computeElli(x []byte, E *ecpointgrouplaw.ECPoint, message []byte, B []byte,
 	if err != nil {
 		return nil, err
 	}
-	tempMod := new(big.Int).Mod(temp, bit254)
-	if tempMod.Cmp(fieldOrder) >= 0 {
-		upBd := maxRetry - 2
-		for j := 0; j < maxRetry; j++ {
-			if j > upBd {
-				return nil, ErrExceedMaxRetry
-			}
-			temp, err = utils.HashProtosToInt(temp.Bytes(), &any.Any{
-				Value: temp.Bytes(),
-			}, &any.Any{
-				Value: B,
-			})
-			tempMod = new(big.Int).Mod(temp, bit254)
-			if err != nil {
-				return nil, err
-			}
-			if tempMod.Cmp(fieldOrder) < 0 {
-				return temp, nil
-			}
+	for j := 0; j < maxRetry; j++ {
+		tempMod := new(big.Int).Mod(temp, bit254)
+		if utils.InRange(tempMod, big1, fieldOrder) == nil {
+			return tempMod, nil
+		}
+		tempBytes := temp.Bytes()
+		temp, err = utils.HashProtosToInt(tempBytes, &any.Any{
+			Value: tempBytes,
+		}, &any.Any{
+			Value: B,
+		})
+		if err != nil {
+			return nil, err
 		}
 	}
-	return temp, nil
+	return nil, ErrExceedMaxRetry
 }
 
 func (p *round1) getOrderedNodes() peers {

@@ -172,15 +172,15 @@ func (p *round5Handler) buildErr1Msg() error {
 		muij.Mul(muij, peer.round2Data.d)
 		muNthPower := new(big.Int).Mod(muij, nsquare)
 		mu := muij.Exp(muNthPower, nthRoot, nsquare)
-		muNPower := muNthPower
-		psiMuProof, err := paillierzkproof.NewNthRoot(paillierzkproof.NewS256(), p.own.ssidWithBk, mu, muNPower, n)
+		mu.Mod(mu, n)
+		psiMuProof, err := paillierzkproof.NewNthRoot(paillierzkproof.NewS256(), p.own.ssidWithBk, mu, muNthPower, n)
 		if err != nil {
 			return err
 		}
 
 		peersMsg[peer.Id] = &Err1PeerMsg{
 			Alpha:      peer.round2Data.alpha.Bytes(),
-			MuNPower:   muNPower.Bytes(),
+			MuNPower:   muNthPower.Bytes(),
 			PsiMuProof: psiMuProof,
 		}
 	}

@@ -17,9 +17,9 @@ package signer
 import (
 	"math/big"
 
-	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
+	"github.com/getamis/alice/crypto/tss/dkg"
 	"github.com/getamis/alice/crypto/tss/ecdsa/cggmp"
 	"github.com/getamis/alice/types"
 	"github.com/getamis/alice/types/message"
@@ -36,9 +36,9 @@ type Signer struct {
 	*message.MsgMain
 }
 
-func NewSigner(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, share *big.Int, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, listener types.StateChangedListener) (*Signer, error) {
+func NewSigner(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, share *big.Int, dkgResult *dkg.Result, msg []byte, listener types.StateChangedListener) (*Signer, error) {
 	numPeers := peerManager.NumPeers()
-	ph, err := newRound1(pubKey, peerManager, threshold, share, bks, msg)
+	ph, err := newRound1(pubKey, peerManager, threshold, share, dkgResult, msg)
 	if err != nil {
 		log.Warn("Failed to new a public key handler", "err", err)
 		return nil, err
@@ -77,6 +77,6 @@ func (s *Signer) GetResult() (*Result, error) {
 
 	return &Result{
 		R: rh.r,
-		S: new(big.Int).Set(rh.s),
+		S: new(big.Int).Set(rh.z),
 	}, nil
 }

@@ -106,5 +106,5 @@ func (p *TestPeerManager) MustSend(id string, message interface{}) {
 		return
 	}
 	msg := message.(types.Message)
-	d.AddMessage(msg)
+	d.AddMessage(p.id, msg)
 }

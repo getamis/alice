@@ -101,23 +101,12 @@ func (p *round2Handler) HandleMessage(logger log.Logger, message types.Message) 
 		logger.Debug("Failed to verify", "err", err)
 		return err
 	}
-
-	alpha, err := p.paillierKey.Decrypt(round2.D)
-	if err != nil {
-		return err
-	}
-	alphahat, err := p.paillierKey.Decrypt(round2.Dhat)
-	if err != nil {
-		return err
-	}
 	peer.round2Data = &round2Data{
 		d:            new(big.Int).SetBytes(round2.D),
 		f:            new(big.Int).SetBytes(round2.F),
 		psihatProoof: round2.Psihat,
 		dhat:         new(big.Int).SetBytes(round2.Dhat),
 		fhat:         new(big.Int).SetBytes(round2.Fhat),
-		alpha:        new(big.Int).SetBytes(alpha),
-		alphahat:     new(big.Int).SetBytes(alphahat),
 	}
 	return peer.AddMessage(msg)
 }
@@ -134,6 +123,16 @@ func (p *round2Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	for id, peer := range p.peers {
 		logger = logger.New("peerId", id)
 		// Use this value in Failure part.
+		alpha, err := p.paillierKey.Decrypt(peer.round2Data.d.Bytes())
+		if err != nil {
+			return nil, err
+		}
+		peer.round2Data.alpha = new(big.Int).SetBytes(alpha)
+		alphahat, err := p.paillierKey.Decrypt(peer.round2Data.dhat.Bytes())
+		if err != nil {
+			return nil, err
+		}
+		peer.round2Data.alphahat = new(big.Int).SetBytes(alphahat)
 		sumMTAAlpha.Add(sumMTAAlpha, peer.round2Data.alpha)
 
 		delta.Add(delta, peer.round2Data.alpha)
