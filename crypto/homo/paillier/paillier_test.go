@@ -22,7 +22,6 @@ import (
 	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/utils"
-	zkproof "github.com/getamis/alice/crypto/zkproof"
 	zkPaillier "github.com/getamis/alice/crypto/zkproof/paillier"
 	"github.com/golang/protobuf/proto"
 	. "github.com/onsi/ginkgo"
@@ -131,7 +130,7 @@ var _ = Describe("Paillier test", func() {
 	Context("GetMtaProof()/VerifyMtaProof()", func() {
 		curve := elliptic.Secp256k1()
 		beta := big.NewInt(2)
-		alpha := big.NewInt(8)
+		alpha := big.NewInt(12)
 		b := big.NewInt(2)
 		k := big.NewInt(5)
 		It("should be ok", func() {
@@ -140,20 +139,6 @@ var _ = Describe("Paillier test", func() {
 			point, err := p.VerifyMtaProof(bs, curve, alpha, k)
 			Expect(err).Should(BeNil())
 			Expect(point.Equal(pt.ScalarBaseMult(curve, b))).Should(BeTrue())
-		})
-
-		It("invalid message", func() {
-			bs, err := proto.Marshal(&zkproof.SchnorrProofMessage{})
-			Expect(err).Should(BeNil())
-			p, err := p.VerifyMtaProof(bs, curve, alpha, k)
-			Expect(err).ShouldNot(BeNil())
-			Expect(p).Should(BeNil())
-		})
-
-		It("empty bytes", func() {
-			p, err := p.VerifyMtaProof([]byte{}, curve, alpha, k)
-			Expect(err).ShouldNot(BeNil())
-			Expect(p).Should(BeNil())
 		})
 
 		It("invalid message bytes", func() {

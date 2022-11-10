@@ -24,3 +24,8 @@ message PubKeyMessage {
     zkproof.IntegerFactorizationProofMessage proof = 1;
     bytes g = 2;
 }
+
+message zkBetaAndBMessage {
+    zkproof.SchnorrProofMessage proofB = 1;
+    zkproof.SchnorrProofMessage proofBeta = 2;
+ }

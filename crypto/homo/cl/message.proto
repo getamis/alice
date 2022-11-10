@@ -19,7 +19,7 @@ package cl;
 option go_package = "github.com/getamis/alice/crypto/homo/cl";
 
 import "github.com/getamis/alice/crypto/binaryquadraticform/message.proto";
-import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
+import "github.com/getamis/alice/crypto/zkproof/message.proto";
 
 message PubKeyMessage {
     bytes p = 1;
@@ -48,8 +48,8 @@ message ProofMessage {
 }
 
 message VerifyMtaMessage {
-    ecpointgrouplaw.EcPointMessage betaG = 1;
-    ecpointgrouplaw.EcPointMessage bG = 2;
+    zkproof.SchnorrProofMessage proofBeta = 1;
+    zkproof.SchnorrProofMessage proofB = 2;
 }
 
 message Hash {

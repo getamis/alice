@@ -90,6 +90,61 @@ func (x *PubKeyMessage) GetG() []byte {
 	return nil
 }
 
+type ZkBetaAndBMessage struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	ProofB    *zkproof.SchnorrProofMessage `protobuf:"bytes,1,opt,name=proofB,proto3" json:"proofB,omitempty"`
+	ProofBeta *zkproof.SchnorrProofMessage `protobuf:"bytes,2,opt,name=proofBeta,proto3" json:"proofBeta,omitempty"`
+}
+
+func (x *ZkBetaAndBMessage) Reset() {
+	*x = ZkBetaAndBMessage{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_github_com_getamis_alice_crypto_homo_paillier_message_proto_msgTypes[1]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ZkBetaAndBMessage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ZkBetaAndBMessage) ProtoMessage() {}
+
+func (x *ZkBetaAndBMessage) ProtoReflect() protoreflect.Message {
+	mi := &file_github_com_getamis_alice_crypto_homo_paillier_message_proto_msgTypes[1]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ZkBetaAndBMessage.ProtoReflect.Descriptor instead.
+func (*ZkBetaAndBMessage) Descriptor() ([]byte, []int) {
+	return file_github_com_getamis_alice_crypto_homo_paillier_message_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *ZkBetaAndBMessage) GetProofB() *zkproof.SchnorrProofMessage {
+	if x != nil {
+		return x.ProofB
+	}
+	return nil
+}
+
+func (x *ZkBetaAndBMessage) GetProofBeta() *zkproof.SchnorrProofMessage {
+	if x != nil {
+		return x.ProofBeta
+	}
+	return nil
+}
+
 var File_github_com_getamis_alice_crypto_homo_paillier_message_proto protoreflect.FileDescriptor
 
 var file_github_com_getamis_alice_crypto_homo_paillier_message_proto_rawDesc = []byte{
@@ -106,11 +161,19 @@ var file_github_com_getamis_alice_crypto_homo_paillier_message_proto_rawDesc = [
 	0x2e, 0x7a, 0x6b, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x49, 0x6e, 0x74, 0x65, 0x67, 0x65, 0x72,
 	0x46, 0x61, 0x63, 0x74, 0x6f, 0x72, 0x69, 0x7a, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x50, 0x72, 0x6f,
 	0x6f, 0x66, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x05, 0x70, 0x72, 0x6f, 0x6f, 0x66,
-	0x12, 0x0c, 0x0a, 0x01, 0x67, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x01, 0x67, 0x42, 0x2f,
-	0x5a, 0x2d, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x67, 0x65, 0x74,
-	0x61, 0x6d, 0x69, 0x73, 0x2f, 0x61, 0x6c, 0x69, 0x63, 0x65, 0x2f, 0x63, 0x72, 0x79, 0x70, 0x74,
-	0x6f, 0x2f, 0x68, 0x6f, 0x6d, 0x6f, 0x2f, 0x70, 0x61, 0x69, 0x6c, 0x6c, 0x69, 0x65, 0x72, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x12, 0x0c, 0x0a, 0x01, 0x67, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x01, 0x67, 0x22, 0x85,
+	0x01, 0x0a, 0x11, 0x7a, 0x6b, 0x42, 0x65, 0x74, 0x61, 0x41, 0x6e, 0x64, 0x42, 0x4d, 0x65, 0x73,
+	0x73, 0x61, 0x67, 0x65, 0x12, 0x34, 0x0a, 0x06, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x18, 0x01,
+	0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e, 0x7a, 0x6b, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x53,
+	0x63, 0x68, 0x6e, 0x6f, 0x72, 0x72, 0x50, 0x72, 0x6f, 0x6f, 0x66, 0x4d, 0x65, 0x73, 0x73, 0x61,
+	0x67, 0x65, 0x52, 0x06, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x42, 0x12, 0x3a, 0x0a, 0x09, 0x70, 0x72,
+	0x6f, 0x6f, 0x66, 0x42, 0x65, 0x74, 0x61, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1c, 0x2e,
+	0x7a, 0x6b, 0x70, 0x72, 0x6f, 0x6f, 0x66, 0x2e, 0x53, 0x63, 0x68, 0x6e, 0x6f, 0x72, 0x72, 0x50,
+	0x72, 0x6f, 0x6f, 0x66, 0x4d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x52, 0x09, 0x70, 0x72, 0x6f,
+	0x6f, 0x66, 0x42, 0x65, 0x74, 0x61, 0x42, 0x2f, 0x5a, 0x2d, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
+	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x67, 0x65, 0x74, 0x61, 0x6d, 0x69, 0x73, 0x2f, 0x61, 0x6c, 0x69,
+	0x63, 0x65, 0x2f, 0x63, 0x72, 0x79, 0x70, 0x74, 0x6f, 0x2f, 0x68, 0x6f, 0x6d, 0x6f, 0x2f, 0x70,
+	0x61, 0x69, 0x6c, 0x6c, 0x69, 0x65, 0x72, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -125,18 +188,22 @@ func file_github_com_getamis_alice_crypto_homo_paillier_message_proto_rawDescGZI
 	return file_github_com_getamis_alice_crypto_homo_paillier_message_proto_rawDescData
 }
 
-var file_github_com_getamis_alice_crypto_homo_paillier_message_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_github_com_getamis_alice_crypto_homo_paillier_message_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_github_com_getamis_alice_crypto_homo_paillier_message_proto_goTypes = []interface{}{
 	(*PubKeyMessage)(nil),                            // 0: paillier.PubKeyMessage
-	(*zkproof.IntegerFactorizationProofMessage)(nil), // 1: zkproof.IntegerFactorizationProofMessage
+	(*ZkBetaAndBMessage)(nil),                        // 1: paillier.zkBetaAndBMessage
+	(*zkproof.IntegerFactorizationProofMessage)(nil), // 2: zkproof.IntegerFactorizationProofMessage
+	(*zkproof.SchnorrProofMessage)(nil),              // 3: zkproof.SchnorrProofMessage
 }
 var file_github_com_getamis_alice_crypto_homo_paillier_message_proto_depIdxs = []int32{
-	1, // 0: paillier.PubKeyMessage.proof:type_name -> zkproof.IntegerFactorizationProofMessage
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	2, // 0: paillier.PubKeyMessage.proof:type_name -> zkproof.IntegerFactorizationProofMessage
+	3, // 1: paillier.zkBetaAndBMessage.proofB:type_name -> zkproof.SchnorrProofMessage
+	3, // 2: paillier.zkBetaAndBMessage.proofBeta:type_name -> zkproof.SchnorrProofMessage
+	3, // [3:3] is the sub-list for method output_type
+	3, // [3:3] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_github_com_getamis_alice_crypto_homo_paillier_message_proto_init() }
@@ -157,6 +224,18 @@ func file_github_com_getamis_alice_crypto_homo_paillier_message_proto_init() {
 				return nil
 			}
 		}
+		file_github_com_getamis_alice_crypto_homo_paillier_message_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ZkBetaAndBMessage); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
@@ -164,7 +243,7 @@ func file_github_com_getamis_alice_crypto_homo_paillier_message_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_github_com_getamis_alice_crypto_homo_paillier_message_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

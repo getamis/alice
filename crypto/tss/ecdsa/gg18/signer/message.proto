@@ -63,7 +63,8 @@ message BodyEncK {
 message BodyMta {
     bytes encAiAlpha = 1;
     bytes encWiAlpha = 2;
-    bytes wiProof = 3;
+    bytes aiProof = 3;
+    bytes wiProof = 4;
 }
 
 message BodyDelta {

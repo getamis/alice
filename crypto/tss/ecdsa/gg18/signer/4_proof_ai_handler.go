@@ -99,7 +99,11 @@ func (p *proofAiHandler) HandleMessage(logger log.Logger, message types.Message)
 		logger.Warn("Failed to verify aig schnorr proof", "err", err)
 		return err
 	}
-
+	// verify aiG and meta gammaG are the same.
+	if !peer.mta.gammaG.Equal(agPoint) {
+		logger.Debug("aig and gammaG are different", "err", err)
+		return err
+	}
 	peer.proofAi = &proofAiData{
 		aiG: agPoint,
 	}
