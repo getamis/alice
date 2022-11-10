@@ -82,10 +82,10 @@ func (p *mtaHandler) HandleMessage(logger log.Logger, message types.Message) err
 		return err
 	}
 	gammaG, err := p.aiMta.VerifyProofWithCheck(body.AiProof, p.getCurve(), aiAlpha)
- 	if err != nil {
- 		logger.Debug("Failed to verify ai beta proof", "err", err)
- 		return err
- 	}
+	if err != nil {
+		logger.Debug("Failed to verify ai beta proof", "err", err)
+		return err
+	}
 	wiAlpha, err := p.wiMta.Decrypt(new(big.Int).SetBytes(body.EncWiAlpha))
 	if err != nil {
 		logger.Warn("Failed to decrypt EncWiAlpha", "err", err)

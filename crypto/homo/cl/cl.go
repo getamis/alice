@@ -23,9 +23,9 @@ import (
 
 	bqForm "github.com/getamis/alice/crypto/binaryquadraticform"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	zkproof "github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/utils"
+	zkproof "github.com/getamis/alice/crypto/zkproof"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -405,13 +405,13 @@ func (c *CL) GetMtaProof(curve elliptic.Curve, beta *big.Int, b *big.Int) ([]byt
 		return nil, err
 	}
 	betaModOrder := new(big.Int).Mod(beta, curve.Params().N)
- 	proofMsgBeta, err := zkproof.NewBaseSchorrMessage(curve, betaModOrder)
+	proofMsgBeta, err := zkproof.NewBaseSchorrMessage(curve, betaModOrder)
 	if err != nil {
 		return nil, err
 	}
 	proofMsg := &VerifyMtaMessage{
 		ProofBeta: proofMsgBeta,
- 		ProofB:    proofMsgB,
+		ProofB:    proofMsgB,
 	}
 	return proto.Marshal(proofMsg)
 }
@@ -427,20 +427,20 @@ func (c *CL) VerifyMtaProof(bs []byte, curve elliptic.Curve, alpha *big.Int, k *
 		return nil, err
 	}
 	err = msg.ProofBeta.Verify(pt.NewBase(curve))
- 	if err != nil {
- 		return nil, err
- 	}
- 	B, err := msg.ProofB.V.ToPoint()
- 	if err != nil {
- 		return nil, err
- 	}
- 	Beta, err := msg.ProofBeta.V.ToPoint()
+	if err != nil {
+		return nil, err
+	}
+	B, err := msg.ProofB.V.ToPoint()
+	if err != nil {
+		return nil, err
+	}
+	Beta, err := msg.ProofBeta.V.ToPoint()
 	if err != nil {
 		return nil, err
 	}
 	alphaG := pt.ScalarBaseMult(curve, alpha)
 	compare := B.ScalarMult(k)
- 	compare, err = compare.Add(Beta)
+	compare, err = compare.Add(Beta)
 	if err != nil {
 		return nil, err
 	}
