@@ -7,10 +7,6 @@ One of references of HTSS is
 2. [Introduction to Hierarchical Threshold Signature(revised version)](https://medium.com/getamis/introduction-to-hierarchical-threshold-signature-revised-version-7446719bf427)
 3. [Example](#Example).
 
-
-## Audit Report:
-Alice has been audited by [Kudelski Security](https://www.kudelskisecurity.com). The details can be found in [here](REPORT_2020-05-19.pdf).
-
 ## Table of Contents:
 
 *	[Implementations](#implementation)

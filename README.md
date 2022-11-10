@@ -25,11 +25,20 @@ Now, Alice supports two parts:
 ### Audited Part :
 
 1. [HTSS(A variant of GG18 and CCLST): ECDSA](./crypto/tss/ecdsa/gg18/README.md).
+2. [HTSS(A variant of CGGMP): ECDSA](./crypto/tss/ecdsa/cggmp/README.md).
+3. [HTSS(A variant of FROST): EdDSA](./crypto/tss/eddsa/frost/README.md).
+
+
+## Audit Report:
+ Alice has been audited by [Kudelski Security](https://www.kudelskisecurity.com). 
+1. (GG18 And CCLST) The details can be found in [here](./REPORT_2020-05-19.pdf).
+2. (FROST And CGGMP) The details can be found in [here](./REPORT_2022.pdf).
+
+
+
 
 ### Preparation : 
-1. [HTSS(A variant of CGGMP): ECDSA](./crypto/tss/ecdsa/cggmp/README.md).
-2. [HTSS(A variant of FROST): EdDSA](./crypto/tss/eddsa/frost/README.md).
-3. [2-party Bip32](./crypto/bip32/README.md).
+1. [2-party Bip32](./crypto/bip32/README.md).
 
 
 
