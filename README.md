@@ -28,36 +28,51 @@ Now, Alice supports two parts:
 2. [HTSS(A variant of CGGMP): ECDSA](./crypto/tss/ecdsa/cggmp/README.md).
 3. [HTSS(A variant of FROST): EdDSA](./crypto/tss/eddsa/frost/README.md).
 
-
-## Audit Report:
- Alice has been audited by [Kudelski Security](https://www.kudelskisecurity.com). 
-1. (GG18 And CCLST) The details can be found in [here](./REPORT_2020-05-19.pdf).
-2. (FROST And CGGMP) The details can be found in [here](./REPORT_2022.pdf).
-
-
-
-
 ### Preparation : 
 1. [2-party Bip32](./crypto/bip32/README.md).
 
 
+## Audit Report:
+ Alice has been audited by [Kudelski Security](https://www.kudelskisecurity.com). 
+1. (GG18 And CCLST) The details can be found in [here](./REPORT_2020-05-19.pdf).
+    
+    Algorithm: The algorithms can be downloaded in [here](./GG18AndCCLST.pdf).
+2. (FROST And CGGMP) The details can be found in [here](./REPORT_2022.pdf).
 
-## Warning:
+
+### Warning:
 Although the fist part of Alice has been audited, you should still be careful to use it. 
 1. Using end-to-end encryption to transfer messages between two parties is necessary. 
 2. If any error messages occur during execution Alice, you should stop and restart it. **Never restart in the middle flow.**
-3. **(IMPORTANT)** Now, GG18 is insecure, so you SHOULD replace Paillier homomorphic encryption into CL homomorphic encryption (i.e. USE CCLST protocol). Our version is the fast version of GG18 (i.e. without range proofs). The merit of CL homomorphic encryption does not any range proofs.
+3. Now, the version of our GG18 is secure according to Theorem 2 in the [GG18](https://eprint.iacr.org/2019/114.pdf). We follow the suggestion of GG18 to substitute sMTA for mta and mta with check.
 
 
 If you have more questions, you can connect [us](https://www.am.is/) directly without any hesitation.
 
-<h3 id="usefulLibrary">Useful Cryptography Libraries in this Repository:</h3>
 
-1. [Binary quadratic forms for class groups of imaginary quadratic fields](https://github.com/getamis/alice/tree/master/crypto/binaryquadraticform)
-2. [Castagnos and Laguillaumie homomorphic Scheme](https://github.com/getamis/alice/tree/master/crypto/homo/cl)
-3. [Paillier homomorphic cryptosystem](https://github.com/getamis/alice/tree/master/crypto/homo/paillier)
+
+## The Explanation of Packages
+1. **binaryfield**: support some basic operation of binary fields.
+2. **binaryquadratic**: support operations  ideal class group of quadratic imaginary field over the rational number Q (ref.[here](https://math.stanford.edu/~conrad/676Page/handouts/picgroup.pdf)).
+3. **bip32**: support two-party computation of [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki).
+4. **birkhoffinterpolation**: support the [birkhoff interpolation](https://en.wikipedia.org/wiki/Birkhoff_interpolation) (i.e. a generization of Lagrange interpolation).
+5. **circuit**: support the loading of [bristol fashion](https://homes.esat.kuleuven.be/~nsmart/MPC/) and garbled this circuit (ref. [Two Halves Make a Whole: Reducing Data Transfer in Garbled Circuits using Half Gates](https://eprint.iacr.org/2014/756)).
+6. **commitment**: support [Section 2.4: hash commitment](https://eprint.iacr.org/2019/114.pdf), [Section 2.6:Feldman’s VSS parotocol](https://eprint.iacr.org/2019/114.pdf), and [Pedersen Commitment](https://research.nccgroup.com/2021/06/15/on-the-use-of-pedersen-commitments-for-confidential-payments/).
+7. **dbnssystem**: write a positive integer to [The Double-Base Number expression](https://link.springer.com/chapter/10.1007/978-3-540-70500-0_32).
+8. **ecpointgrouplaw**: an interface of group operations of elliptic curve group.
+9. **elliptic**: support groups of of elliptic curve group.
+10. **homo**: support addtivie homomorphic encryptions: [Castagnos and Laguillaumie homomorphic Scheme](https://github.com/getamis/alice/tree/master/crypto/homo/cl) and [Paillier homomorphic cryptosystem](https://github.com/getamis/alice/tree/master/crypto/homo/paillier).
+11. **matrix**: support some operations of matrices over finite field.
+12. **mta**: special package used in the sign algorithm of ECDSA.
+13. **oprf**: support a hash function mapping to the point of secp256k1. (ref. [Shallue-van de Woestijne Method: Hashing to Elliptic Curves](https://tools.ietf.org/html/draft-irtf-cfrg-hash-to-curve-04#section-6.9.1))
+14. **ot**: support an [Oblivious transfer](https://en.wikipedia.org/wiki/Oblivious_transfer) protocol (ref. [our implementation: Blazing Fast OT for Three-round UC OT Extension](https://link.springer.com/chapter/10.1007/978-3-030-45388-6_11)).
+15. **polynomial**: support some operations of polynomials over finite fields.
+16. **tss**: support ECDSA: [GG18](https://eprint.iacr.org/2019/114.pdf), [CCLST](https://link.springer.com/chapter/10.1007/978-3-030-45388-6_10), and [CGGMP](https://eprint.iacr.org/2021/060). And EdDSA: [FROST](https://link.springer.com/chapter/10.1007/978-3-030-81652-0_2).
+17. **utils**: support some commonly used functions.
+18. **zkrpoof**: support some zero knowledge proofs e.x. Schnorr's proof, factorization proof and so on.
 
 
 ## Acknowledgments:
 Thanks to 
 1. [Filipe Casal from Trail of Bits](https://www.trailofbits.com) for indicating the potential issues of integer factorization proof.
+2. [Coinbase Developer grant](https://www.coinbase.com/blog/announcing-our-second-developer-grant-winners)
