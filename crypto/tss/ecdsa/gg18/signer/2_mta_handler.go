@@ -33,6 +33,7 @@ type mtaData struct {
 	aiAlpha *big.Int
 	wiAlpha *big.Int
 	wiG     *pt.ECPoint
+	gammaG  *pt.ECPoint
 }
 
 type mtaHandler struct {
@@ -80,6 +81,11 @@ func (p *mtaHandler) HandleMessage(logger log.Logger, message types.Message) err
 		logger.Warn("Failed to decrypt EncAiAlpha", "err", err)
 		return err
 	}
+	gammaG, err := p.aiMta.VerifyProofWithCheck(body.AiProof, p.getCurve(), aiAlpha)
+	if err != nil {
+		logger.Debug("Failed to verify ai beta proof", "err", err)
+		return err
+	}
 	wiAlpha, err := p.wiMta.Decrypt(new(big.Int).SetBytes(body.EncWiAlpha))
 	if err != nil {
 		logger.Warn("Failed to decrypt EncWiAlpha", "err", err)
@@ -94,6 +100,7 @@ func (p *mtaHandler) HandleMessage(logger log.Logger, message types.Message) err
 		aiAlpha: aiAlpha,
 		wiAlpha: wiAlpha,
 		wiG:     wiG,
+		gammaG:  gammaG,
 	}
 	return peer.AddMessage(msg)
 }

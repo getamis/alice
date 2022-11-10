@@ -25,6 +25,7 @@ import (
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/utils"
+	zkproof "github.com/getamis/alice/crypto/zkproof"
 	"github.com/golang/protobuf/proto"
 )
 
@@ -399,17 +400,18 @@ func (pubKey *PublicKey) GetPubKeyProof() *ProofMessage {
 }
 
 func (c *CL) GetMtaProof(curve elliptic.Curve, beta *big.Int, b *big.Int) ([]byte, error) {
-	betaG, err := pt.ScalarBaseMult(curve, beta).ToEcPointMessage()
+	proofMsgB, err := zkproof.NewBaseSchorrMessage(curve, b)
 	if err != nil {
 		return nil, err
 	}
-	bg, err := pt.ScalarBaseMult(curve, b).ToEcPointMessage()
+	betaModOrder := new(big.Int).Mod(beta, curve.Params().N)
+	proofMsgBeta, err := zkproof.NewBaseSchorrMessage(curve, betaModOrder)
 	if err != nil {
 		return nil, err
 	}
 	proofMsg := &VerifyMtaMessage{
-		BetaG: betaG,
-		BG:    bg,
+		ProofBeta: proofMsgBeta,
+		ProofB:    proofMsgB,
 	}
 	return proto.Marshal(proofMsg)
 }
@@ -420,24 +422,33 @@ func (c *CL) VerifyMtaProof(bs []byte, curve elliptic.Curve, alpha *big.Int, k *
 	if err != nil {
 		return nil, err
 	}
-	betaG, err := msg.GetBetaG().ToPoint()
+	err = msg.ProofB.Verify(pt.NewBase(curve))
 	if err != nil {
 		return nil, err
 	}
-	bg, err := msg.GetBG().ToPoint()
+	err = msg.ProofBeta.Verify(pt.NewBase(curve))
+	if err != nil {
+		return nil, err
+	}
+	B, err := msg.ProofB.V.ToPoint()
+	if err != nil {
+		return nil, err
+	}
+	Beta, err := msg.ProofBeta.V.ToPoint()
 	if err != nil {
 		return nil, err
 	}
 	alphaG := pt.ScalarBaseMult(curve, alpha)
-	alphaGBetaG, err := alphaG.Add(betaG)
+	compare := B.ScalarMult(k)
+	compare, err = compare.Add(Beta)
 	if err != nil {
 		return nil, err
 	}
-	aBg := bg.ScalarMult(k)
-	if !aBg.Equal(alphaGBetaG) {
-		return nil, ErrFailedVerify
+	// Simplify MTA: check alphaG = a*B + Beta. New Theorem.
+	if !alphaG.Equal(compare) {
+		return nil, ErrInvalidMessage
 	}
-	return bg, nil
+	return B, nil
 }
 
 func (c *CL) NewPubKeyFromBytes(bs []byte) (homo.Pubkey, error) {

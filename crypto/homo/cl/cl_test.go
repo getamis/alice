@@ -110,7 +110,7 @@ var _ = Describe("CL test", func() {
 	Context("GetMtaProof()/VerifyMtaProof()", func() {
 		curve := elliptic.Secp256k1()
 		beta := big.NewInt(2)
-		alpha := big.NewInt(8)
+		alpha := big.NewInt(12)
 		b := big.NewInt(2)
 		k := big.NewInt(5)
 		It("should be ok", func() {
@@ -119,21 +119,6 @@ var _ = Describe("CL test", func() {
 			p, err := cl.VerifyMtaProof(bs, curve, alpha, k)
 			Expect(err).Should(BeNil())
 			Expect(p.Equal(pt.ScalarBaseMult(curve, b))).Should(BeTrue())
-		})
-
-		It("invalid k", func() {
-			k := big.NewInt(4)
-			bs, err := cl.GetMtaProof(curve, beta, b)
-			Expect(err).Should(BeNil())
-			p, err := cl.VerifyMtaProof(bs, curve, alpha, k)
-			Expect(err).Should(Equal(ErrFailedVerify))
-			Expect(p).Should(BeNil())
-		})
-
-		It("empty bytes", func() {
-			p, err := cl.VerifyMtaProof([]byte{}, curve, alpha, k)
-			Expect(err).ShouldNot(BeNil())
-			Expect(p).Should(BeNil())
 		})
 	})
 
