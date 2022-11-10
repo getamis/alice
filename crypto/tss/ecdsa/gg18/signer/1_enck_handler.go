@@ -87,12 +87,17 @@ func (p *encKHandler) HandleMessage(logger log.Logger, message types.Message) er
 		logger.Warn("Failed to compute for ai mta", "err", err)
 		return err
 	}
+	aiProof, err := p.aiMta.GetProofWithCheck(p.getCurve(), new(big.Int).Abs(aiBeta))
+	if err != nil {
+		logger.Debug("Failed to compute beta proof", "err", err)
+		return err
+	}
 	encWiAlpha, wiBeta, err := p.wiMta.Compute(peer.pubkey.publicKey, body.Enck)
 	if err != nil {
 		logger.Warn("Failed to compute for wi mta", "err", err)
 		return err
 	}
-	wiProof, err := p.wiMta.GetProofWithCheck(p.getCurve(), wiBeta)
+	wiProof, err := p.wiMta.GetProofWithCheck(p.getCurve(), new(big.Int).Abs(wiBeta))
 	if err != nil {
 		logger.Warn("Failed to compute beta proof", "err", err)
 		return err
@@ -109,6 +114,7 @@ func (p *encKHandler) HandleMessage(logger log.Logger, message types.Message) er
 					EncAiAlpha: encAiAlpha.Bytes(),
 					EncWiAlpha: encWiAlpha.Bytes(),
 					WiProof:    wiProof,
+					AiProof:    aiProof,
 				},
 			},
 		},

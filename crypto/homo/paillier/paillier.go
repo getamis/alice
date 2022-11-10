@@ -247,27 +247,57 @@ func (p *Paillier) NewPubKeyFromBytes(bs []byte) (homo.Pubkey, error) {
 	return msg.ToPubkey()
 }
 
-func (p *Paillier) GetMtaProof(curve elliptic.Curve, _ *big.Int, a *big.Int) ([]byte, error) {
-	proofMsg, err := zkproof.NewBaseSchorrMessage(curve, a)
+func (p *Paillier) GetMtaProof(curve elliptic.Curve, beta *big.Int, b *big.Int) ([]byte, error) {
+	proofMsgB, err := zkproof.NewBaseSchorrMessage(curve, b)
 	if err != nil {
 		return nil, err
 	}
-	return proto.Marshal(proofMsg)
+	betaModOrder := new(big.Int).Mod(beta, curve.Params().N)
+	proofMsgBeta, err := zkproof.NewBaseSchorrMessage(curve, betaModOrder)
+	if err != nil {
+		return nil, err
+	}
+	zkBetaAndBProof := &ZkBetaAndBMessage{
+		ProofB:    proofMsgB,
+		ProofBeta: proofMsgBeta,
+	}
+	return proto.Marshal(zkBetaAndBProof)
 }
 
-func (p *Paillier) VerifyMtaProof(bs []byte, curve elliptic.Curve, _ *big.Int, _ *big.Int) (*pt.ECPoint, error) {
-	msg := &zkproof.SchnorrProofMessage{}
+func (p *Paillier) VerifyMtaProof(bs []byte, curve elliptic.Curve, alpha *big.Int, a *big.Int) (*pt.ECPoint, error) {
+	msg := &ZkBetaAndBMessage{}
 	err := proto.Unmarshal(bs, msg)
 	if err != nil {
 		return nil, err
 	}
-
-	err = msg.Verify(pt.NewBase(curve))
+	err = msg.ProofB.Verify(pt.NewBase(curve))
 	if err != nil {
 		return nil, err
 	}
-
-	return msg.V.ToPoint()
+	err = msg.ProofBeta.Verify(pt.NewBase(curve))
+	if err != nil {
+		return nil, err
+	}
+	B, err := msg.ProofB.V.ToPoint()
+	if err != nil {
+		return nil, err
+	}
+	Beta, err := msg.ProofBeta.V.ToPoint()
+	if err != nil {
+		return nil, err
+	}
+	G := pt.NewBase(B.GetCurve())
+	alphaG := G.ScalarMult(alpha)
+	compare := B.ScalarMult(a)
+	compare, err = compare.Add(Beta)
+	if err != nil {
+		return nil, err
+	}
+	// Simplify MTA: check alphaG = a*B + Beta. New Theorem.
+	if !alphaG.Equal(compare) {
+		return nil, ErrInvalidMessage
+	}
+	return B, nil
 }
 
 // getNAndLambda returns N and lambda.
