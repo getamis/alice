@@ -8,9 +8,6 @@ One of references of HTSS is
 3. [Example](#Example).
 
 
-## Audit Report:
-Preparation
-
 ## Table of Contents:
 
 *	[Implementations](#implementation)
@@ -60,14 +57,14 @@ The other combinations of shares can not recover the secret (e.g. 1, 1, 2).
 
 <h3 id="DKG">DKG:</h3>
 
-We implement a modified version of DKG in [Fast Multiparty Threshold ECDSA with Fast Trustless Setup](https://eprint.iacr.org/2019/114.pdf) without generating a pair Paillier key. More details can be found in the DKG of GG18.
-We point out the different part:
-* Replace Lagrange interpolation with [Birkhoff interpolation](https://en.wikipedia.org/wiki/Birkhoff_interpolation) and generate own x-coordinate respectively.
+Use the same DKG in [Fast Multiparty Threshold ECDSA with Fast Trustless Setup](https://eprint.iacr.org/2019/114.pdf).
 
 <h3 id="Signer">Signer:</h3>
 
 Our implementation is [FROST: Flexible Round-Optimized Schnorr Threshold Signatures](https://eprint.iacr.org/2020/852.pdf).
 
+<h2 id ="Example">EXAMPLE:<h2>
+In progress...
 
 <h2 id="reference">References:</h2>
 
