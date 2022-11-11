@@ -11,10 +11,15 @@ One of references of HTSS is
 
 *	[Implementations](#implementation)
 	*	[DKG](#DKG)
+		*	[GG18 & CCLST](#GG18)
+		*	[CGGMP](#CGGMP)
     *	[Signer](#Signer)
-		*	[GG18(Insecure)](#GG18)
+		*	[GG18 with sMTA](#GG18)
 		*	[CCLST](#CCLST)
+		*	[CGGMP](#CGGMP)
     *	[Reshare](#Reshare)
+		*	[GG18 & CCLST](#GG18)
+		*	[CGGMP](#CGGMP)
 *	[Usage](#usage)
     *	[Peer](#peerusage)
     *   [Listener](#listenerusage)
@@ -32,6 +37,7 @@ One of references of HTSS is
 *	[Benchmarks](#benchmark)
 	*	[GG18](#gg18benchmark)
 	*	[CCLST](#cclstbenchmark)
+	*	[CGGMP](#cggmpbenchmark)
 *	[Appendix](#appendix)
 	*	[Security levels of two homomorphic schemes](#securitylevel)
 *	[References](#reference)
@@ -79,10 +85,18 @@ The other combinations of shares can not recover the secret (e.g. 1, 1, 2).
 
 <h3 id="DKG">DKG:</h3>
 
+<h4 id="GG18">GG18 & CCLST:</h4>
 We implement a modified version of DKG in [Fast Multiparty Threshold ECDSA with Fast Trustless Setup](https://eprint.iacr.org/2019/114.pdf).
 We point out the different parts:
 * Replace Lagrange interpolation with [Birkhoff interpolation](https://en.wikipedia.org/wiki/Birkhoff_interpolation) and generate own x-coordinate respectively.
 * We do not generate a private key and the corresponding public key of homomorphic encryptions (i.e. Paillier cryptosystem or CL Scheme) in the key-generation. Move it to the beginning of Signer.
+
+
+<h4 id="CGGMP">CGGMP:</h4>
+We implement a modified version of DKG in 
+[UC Non-Interactive, Proactive, Threshold ECDSA with Identifiable Aborts](https://eprint.iacr.org/2021/060.pdf) including echo protocol.
+We point out the different part:
+* Replace replacing the n-n threshold with [Birkhoff interpolation](https://en.wikipedia.org/wiki/Birkhoff_interpolation) and generate own x-coordinate respectively.
 
 <h3 id="Signer">Signer:</h3>
 
@@ -106,9 +120,26 @@ Our version is the algorithm of GG18 without doing range proofs in sMtA(cf. [Sec
  protocol, all participants use the same parameters but different key-pairs, which are generated in DKG.
 * All zero-knowledge proofs are non-interactive version. 
 
+
+<h4 id="CGGMP">CGGMP:</h4>
+Our implementation involves two algorithms: three-rounds and six rounds in [UC Non-Interactive, Proactive, Threshold ECDSA with Identifiable Aborts](https://eprint.iacr.org/2021/060.pdf) including echo protocol.
+
+* Replace Lagrange interpolation with [Birkhoff interpolation](https://en.wikipedia.org/wiki/Birkhoff_interpolation).
+* All zero-knowledge proofs are non-interactive version. 
+
 <h3 id="Reshare">Reshare:</h3>
 
+<h4 id="GG18">GG18 & CCLST:</h4>
 It is the standard algorithm replacing Lagrange interpolation with [Birkhoff interpolation](https://en.wikipedia.org/wiki/Birkhoff_interpolation).
+
+<h4 id="CGGMP">CGGMP:</h4>
+Our implementation is the Key-Refresh & Auxiliary Information algorithm in [UC Non-Interactive, Proactive, Threshold ECDSA with Identifiable Aborts](https://eprint.iacr.org/2021/060.pdf) including echo protocol.
+
+* Replace Lagrange interpolation with [Birkhoff interpolation](https://en.wikipedia.org/wiki/Birkhoff_interpolation).
+* All zero-knowledge proofs are non-interactive version. 
+
+
+
 
 <h2 id="usage">Usage:</h2>
 
@@ -446,6 +477,12 @@ Our benchmarks were in local computation and ran on an Intel qualcore-i5 CPU 2.3
 |          2.452s |                   3.754s |              3.229s ± 0.396s |
 +-----------------+--------------------------+------------------------------+
 ```
+
+<h3 id="cggmpbenchmark">For CGGMP:</h3>
+In progress
+
+
+
 <h2 id="appendix">Appendix:</h2>
 
 <h3 id="securitylevel">Security levels of two homomorphic schemes:</h3>
