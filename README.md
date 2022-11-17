@@ -43,7 +43,8 @@ Now, Alice supports two parts:
     
     Algorithm: The algorithms can be downloaded in [here](./GG18AndCCLST.pdf).
 2. (FROST And CGGMP) The details can be found in [here](./REPORT_2022.pdf).
-
+    
+    Algorithm: The algorithms can be downloaded in [here](./cggmpAndfrostFlow.pdf).
 
 ### Warning:
 Although the fist part of Alice has been audited, you should still be careful to use it. 
