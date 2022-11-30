@@ -48,6 +48,7 @@ require (
 	github.com/jackpal/go-nat-pmp v1.0.1 // indirect
 	github.com/jbenet/go-temp-err-catcher v0.0.0-20150120210811-aac704a3f4f2 // indirect
 	github.com/jbenet/goprocess v0.1.4 // indirect
+	github.com/kilic/bls12-381 v0.1.0 // indirect
 	github.com/koron/go-ssdp v0.0.0-20191105050749-2e1c40ed0b5d // indirect
 	github.com/libp2p/go-addr-util v0.0.1 // indirect
 	github.com/libp2p/go-buffer-pool v0.0.2 // indirect
