@@ -76,16 +76,20 @@ var _ = Describe("Birkhoff Interpolation", func() {
 		err := ps.CheckValid(uint32(3), bigPrime)
 		Expect(err).Should(BeNil())
 	},
+		Entry("BK:(x,rank):(1,0),(2,0),(3,0),(5,0),(4,0)",
+			[]*BkParameter{NewBkParameter(big.NewInt(1), 0), NewBkParameter(big.NewInt(2), 0),
+				NewBkParameter(big.NewInt(3), 0), NewBkParameter(big.NewInt(5), 0), NewBkParameter(big.NewInt(4), 0)},
+		),
+		Entry("BK:(x,rank):(1,1),(2,0),(3,2),(5,0),(4,0)",
+			[]*BkParameter{NewBkParameter(big.NewInt(1), 1), NewBkParameter(big.NewInt(2), 0),
+				NewBkParameter(big.NewInt(3), 2), NewBkParameter(big.NewInt(5), 0), NewBkParameter(big.NewInt(4), 0)},
+		),
 		Entry("BK:(x,rank):(1,0),(2,1),(3,2),(5,4),(4,3)",
 			[]*BkParameter{NewBkParameter(big.NewInt(1), 0), NewBkParameter(big.NewInt(2), 1),
 				NewBkParameter(big.NewInt(3), 2), NewBkParameter(big.NewInt(5), 4), NewBkParameter(big.NewInt(4), 3)},
 		),
 		Entry("BK:(x,rank):(1,0),(2,3),(3,0),(5,0),(4,0)",
 			[]*BkParameter{NewBkParameter(big.NewInt(1), 0), NewBkParameter(big.NewInt(2), 3),
-				NewBkParameter(big.NewInt(3), 0), NewBkParameter(big.NewInt(5), 0), NewBkParameter(big.NewInt(4), 0)},
-		),
-		Entry("BK:(x,rank):(1,0),(2,0),(3,0),(5,0),(4,0)",
-			[]*BkParameter{NewBkParameter(big.NewInt(1), 0), NewBkParameter(big.NewInt(2), 0),
 				NewBkParameter(big.NewInt(3), 0), NewBkParameter(big.NewInt(5), 0), NewBkParameter(big.NewInt(4), 0)},
 		),
 		Entry("BK:(x,rank):(1,1),(2,1),(3,1),(5,0),(4,0)",
@@ -123,14 +127,12 @@ var _ = Describe("Birkhoff Interpolation", func() {
 
 	// The problem is that (1,0) and (2,1) and (3,0) can not recover secret.
 	It("Expect Enough Rank but not have", func() {
-		ps := make(BkParameters, 5)
-		ps[3] = NewBkParameter(big.NewInt(4), 0)
-		ps[4] = NewBkParameter(big.NewInt(5), 0)
+		ps := make(BkParameters, 3)
 		ps[0] = NewBkParameter(big.NewInt(1), 0)
 		ps[1] = NewBkParameter(big.NewInt(2), 1)
 		ps[2] = NewBkParameter(big.NewInt(3), 0)
 		err := ps.CheckValid(uint32(3), bigPrime)
-		Expect(err).Should(Equal(ErrInvalidBks))
+		Expect(err).Should(Equal(ErrNoValidBks))
 	})
 
 	Context("ComputeBkCoefficient()", func() {
