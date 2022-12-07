@@ -29,10 +29,10 @@ import (
 var (
 	//ErrEqualOrLargerThreshold is returned if threshold is equal or larger than the length of Bk parameters
 	ErrEqualOrLargerThreshold = errors.New("equal or larger threshold")
-	//ErrInvalidBks is returned if it exists a pair of invalid bks
-	ErrInvalidBks = errors.New("invalid bks")
 	//ErrNoValidBks is returned if there's no valid bk
 	ErrNoValidBks = errors.New("no valid bks")
+	//ErrInvalidBks is returned if it exists a pair of invalid bks
+	ErrInvalidBks = errors.New("invalid bks")
 	//ErrNoExistBk is returned if there does not exist bk
 	ErrNoExistBk          = errors.New("no exist bk")
 	ErrInconsistentPubKey = errors.New("inconsistent public key")
@@ -120,9 +120,23 @@ func (bks BkParameters) Swap(i, j int) {
 	bks[i], bks[j] = bks[j], bks[i]
 }
 
+// If there exists one bks such that we can recover the secret key, then this check will pass.
 func (bks BkParameters) CheckValid(threshold uint32, fieldOrder *big.Int) error {
 	if err := bks.ensureRankAndOrder(threshold, fieldOrder); err != nil {
 		return err
+	}
+
+	bkMap := make(map[string]uint32)
+	for i := 0; i < bks.Len(); i++ {
+		xString := bks[i].x.String()
+		v, ok := bkMap[xString]
+		if ok {
+			if v == bks[i].rank {
+				return ErrInvalidBks
+			}
+		} else {
+			bkMap[xString] = bks[i].rank
+		}
 	}
 
 	// Deep copy and sort the pk slice
@@ -131,19 +145,12 @@ func (bks BkParameters) CheckValid(threshold uint32, fieldOrder *big.Int) error 
 	sort.Sort(sortedBks)
 
 	// Get all combinations of C(threshold, len(ps)).
-	enoughRank := false
 	combination := combin.Combinations(sortedBks.Len(), int(threshold))
 	for i := 0; i < len(combination); i++ {
 		tempBks := BkParameters{}
 		for j := 0; j < len(combination[i]); j++ {
 			tempBks = append(tempBks, sortedBks[combination[i][j]])
 		}
-		// Ensuring the set of shares with enough rank and enough threshold has ability to recover secret.
-		if !tempBks.isEnoughRank() {
-			continue
-		}
-
-		enoughRank = true
 		birkhoffMatrix, err := tempBks.getLinearEquationCoefficientMatrix(threshold, fieldOrder)
 		if err != nil {
 			return err
@@ -152,24 +159,11 @@ func (bks BkParameters) CheckValid(threshold uint32, fieldOrder *big.Int) error 
 		if err != nil {
 			return err
 		}
-		if rankBirkhoffMatrix != uint64(threshold) {
-			return ErrInvalidBks
+		if rankBirkhoffMatrix >= uint64(threshold) {
+			return nil
 		}
 	}
-	if !enoughRank {
-		return ErrNoValidBks
-	}
-	return nil
-}
-
-// isEnoughRank checks if the set of ranks can recover secret
-func (bks BkParameters) isEnoughRank() bool {
-	for i := 0; i < bks.Len(); i++ {
-		if bks[i].rank > uint32(i) {
-			return false
-		}
-	}
-	return true
+	return ErrNoValidBks
 }
 
 // ComputeBkCoefficient returns the bk coefficients from parameters
