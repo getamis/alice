@@ -22,6 +22,7 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 )
 
@@ -62,6 +63,8 @@ type shareManager struct {
 	// 32 bytes
 	chainCode []byte
 	depth     byte
+
+	bks birkhoffinterpolation.BkParameters
 }
 
 type childShare struct {
@@ -69,16 +72,34 @@ type childShare struct {
 	translate *big.Int
 }
 
-func NewShareManager(share *big.Int, pubKey *ecpointgrouplaw.ECPoint, chainCode []byte, depth byte) (*shareManager, error) {
+func NewShareManager(share *big.Int, pubKey *ecpointgrouplaw.ECPoint, chainCode []byte, depth byte, bks map[string]*birkhoffinterpolation.BkParameter, selfId string) (*shareManager, error) {
 	n := pubKey.GetCurve().Params().N
 	if n.Cmp(share) < 1 {
 		return nil, ErrNotCorrectShare
 	}
+	// Consider bk coefficients
+	bbks := make(birkhoffinterpolation.BkParameters, len(bks))
+	bbks[0] = bks[selfId]
+	i := 1
+	for id, bk := range bks {
+		if id != selfId {
+			bbks[i] = bk
+			i++
+		}
+	}
+	cos, err := bbks.ComputeBkCoefficient(uint32(len(bks)), n)
+	if err != nil {
+		return nil, err
+	}
+	share = new(big.Int).Mul(share, cos[0])
+	share = new(big.Int).Mod(share, n)
+
 	return &shareManager{
 		share:     share,
 		publicKey: pubKey,
 		chainCode: chainCode,
 		depth:     depth,
+		bks:       bbks,
 	}, nil
 }
 
@@ -116,8 +137,14 @@ func (sHolder *shareManager) ComputeHardenedChildShare(childIndex uint32, second
 	if childPubKey.IsIdentity() {
 		return nil, ErrIdentityChildPublicKey
 	}
+	cos, err := sHolder.bks.ComputeBkCoefficient(uint32(len(sHolder.bks)), curveN)
+	if err != nil {
+		return nil, err
+	}
 
 	cs := new(big.Int).Add(sHolder.share, halfTranslate)
+	// Set bk coefficients
+	cs = new(big.Int).Mul(cs, new(big.Int).ModInverse(cos[0], curveN))
 	cs = cs.Mod(cs, curveN)
 	return &childShare{
 		translate: translate,
@@ -126,6 +153,7 @@ func (sHolder *shareManager) ComputeHardenedChildShare(childIndex uint32, second
 			chainCode: hashResult[32:],
 			depth:     sHolder.depth + 1,
 			publicKey: childPubKey,
+			bks:       sHolder.bks,
 		},
 	}, nil
 }
@@ -158,8 +186,14 @@ func (sHolder *shareManager) ComputeNonHardenedChildShare(childIndex uint32) (*c
 	}
 
 	// TODO: need to define how to add translate in each party
-	cs := new(big.Int).Add(sHolder.share, translate)
-	cs = cs.Mod(cs, sHolder.publicKey.GetCurve().Params().N)
+	cos, err := sHolder.bks.ComputeBkCoefficient(uint32(len(sHolder.bks)), curveN)
+	if err != nil {
+		return nil, err
+	}
+	modifytranslate := new(big.Int).Mul(translate, new(big.Int).ModInverse(big2, curveN))
+	modifytranslate = new(big.Int).Mul(modifytranslate, new(big.Int).ModInverse(cos[0], curveN))
+	cs := new(big.Int).Add(sHolder.share, modifytranslate)
+	cs.Mod(cs, curveN)
 	return &childShare{
 		translate: translate,
 		shareManager: &shareManager{
@@ -167,6 +201,7 @@ func (sHolder *shareManager) ComputeNonHardenedChildShare(childIndex uint32) (*c
 			share:     cs,
 			chainCode: hashResult[32:],
 			depth:     sHolder.depth + 1,
+			bks:       sHolder.bks,
 		},
 	}, nil
 }
