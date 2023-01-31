@@ -117,25 +117,8 @@ func newChildKeyFunc(startIndex int, garbleStart int, garbleEnd int, parseResult
 		peerNum := peerManager.NumPeers()
 		selfId := peerManager.SelfID()
 
-		// Consider bk coefficients
-		bbks := make(birkhoffinterpolation.BkParameters, len(bks))
-		bbks[0] = bks[selfId]
-		i := 1
-		for id, bk := range bks {
-			if id != selfId {
-				bbks[i] = bk
-				i++
-			}
-		}
-		cos, err := bbks.ComputeBkCoefficient(peerNum+1, secp256k1N)
-		if err != nil {
-			return nil, err
-		}
-		share = new(big.Int).Mul(share, cos[0])
-		share = new(big.Int).Mod(share, secp256k1N)
-
 		// Build share manager
-		sm, err := NewShareManager(share, pubKey, chainCode, depth)
+		sm, err := NewShareManager(share, pubKey, chainCode, depth, bks, selfId)
 		if err != nil {
 			return nil, err
 		}
@@ -150,7 +133,7 @@ func newChildKeyFunc(startIndex int, garbleStart int, garbleEnd int, parseResult
 
 		shareBits := make([]uint8, 512)
 		for i := 0; i < len(shareBits); i++ {
-			shareBits[i] = uint8(share.Bit(i))
+			shareBits[i] = uint8(sm.share.Bit(i))
 		}
 		garcir, garMsg, err := cir.Garbled(bip32.Kappa, shareBits, circuit.EncryptFunc(startIndex))
 		if err != nil {
@@ -167,7 +150,7 @@ func newChildKeyFunc(startIndex int, garbleStart int, garbleEnd int, parseResult
 			return nil, err
 		}
 
-		shareGProof, err := zkproof.NewBaseSchorrMessage(curve, share)
+		shareGProof, err := zkproof.NewBaseSchorrMessage(curve, sm.share)
 		if err != nil {
 			return nil, err
 		}
@@ -190,7 +173,7 @@ func newChildKeyFunc(startIndex int, garbleStart int, garbleEnd int, parseResult
 			garcircuit:  garcir,
 			otExtSender: otExtS,
 			share:       share,
-			shareG:      ecpointgrouplaw.ScalarBaseMult(curve, share),
+			shareG:      ecpointgrouplaw.ScalarBaseMult(curve, sm.share),
 			shareBits:   shareBits,
 			homoKey:     homoKey,
 			initialMessage: &Message{
