@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package signer;
+package getamis.alice.crypto.tss.ecdsa.gg18.signer;
 
 option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/gg18/signer";
 

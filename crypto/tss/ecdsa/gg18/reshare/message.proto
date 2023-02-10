@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package reshare;
+package getamis.alice.crypto.tss.ecdsa.gg18.reshare;
 
 option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/gg18/reshare";
 

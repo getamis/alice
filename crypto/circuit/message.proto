@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package circuit;
+package getamis.alice.crypto.circuit;
 
 option go_package = "github.com/getamis/alice/crypto/circuit";
 

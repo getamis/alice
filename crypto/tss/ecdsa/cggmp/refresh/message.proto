@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package refresh;
+package getamis.alice.crypto.tss.ecdsa.cggmp.refresh;
 
 option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/cggmp/refresh";
 
@@ -43,7 +43,7 @@ message Message {
 message HashMsg {
     commitment.PointCommitmentMessage pointCommitment = 1;
     ecpointgrouplaw.EcPointMessage Y = 2;
-    paillier.RingPederssenParameterMessage pedPar = 3;
+    getamis.alice.crypto.zkproof.paillier.RingPederssenParameterMessage pedPar = 3;
     bytes rho = 4; 
     bytes u = 5;
     bytes ssid = 6;
@@ -61,8 +61,8 @@ message Round2Msg {
 }
 
 message Round3Msg {
-    paillier.PaillierBlumMessage modProof = 1;
-    paillier.NoSmallFactorMessage facProof = 2;
+    getamis.alice.crypto.zkproof.paillier.PaillierBlumMessage modProof = 1;
+    getamis.alice.crypto.zkproof.paillier.NoSmallFactorMessage facProof = 2;
     zkproof.SchnorrProofMessage yschnorrProof = 3;
     bytes encshare = 4;
     zkproof.SchnorrProofMessage shareschnorrProof = 5;

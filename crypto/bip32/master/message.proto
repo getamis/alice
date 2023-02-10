@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package master;
+package getamis.alice.crypto.bip32.master;
 
 option go_package = "github.com/getamis/alice/crypto/bip32/master";
 
