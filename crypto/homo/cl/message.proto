@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package cl;
+package getamis.alice.crypto.homo.cl;
 
 option go_package = "github.com/getamis/alice/crypto/homo/cl";
 

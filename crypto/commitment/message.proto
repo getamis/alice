@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package commitment;
+package getamis.alice.crypto.commitment;
 
 option go_package = "github.com/getamis/alice/crypto/commitment";
 

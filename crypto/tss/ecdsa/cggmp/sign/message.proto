@@ -14,13 +14,12 @@
 
 syntax = "proto3";
 
-package sign;
+package getamis.alice.crypto.tss.ecdsa.cggmp.sign;
 
 option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/cggmp/sign";
 
 import "github.com/getamis/alice/crypto/ecpointgrouplaw/point.proto";
 import "github.com/getamis/alice/crypto/zkproof/paillier/message.proto";
-
 
 enum Type {
     Round1 = 0;
@@ -50,7 +49,7 @@ message Message {
 message Round1Msg {
     bytes kCiphertext = 1;
     bytes gammaCiphertext = 2;
-    paillier.EncryptRangeMessage psi = 3; 
+    getamis.alice.crypto.zkproof.paillier.EncryptRangeMessage psi = 3; 
 }
 
 message Round2Msg {
@@ -58,16 +57,16 @@ message Round2Msg {
     bytes F = 2;
     bytes Dhat = 3;
     bytes Fhat = 4;
-    paillier.PaillierAffAndGroupRangeMessage psi = 5;
-    paillier.PaillierAffAndGroupRangeMessage psihat = 6;
-    paillier.LogStarMessage psipai = 7;
+    getamis.alice.crypto.zkproof.paillier.PaillierAffAndGroupRangeMessage psi = 5;
+    getamis.alice.crypto.zkproof.paillier.PaillierAffAndGroupRangeMessage psihat = 6;
+    getamis.alice.crypto.zkproof.paillier.LogStarMessage psipai = 7;
     ecpointgrouplaw.EcPointMessage Gamma = 8;
 }
 
 message Round3Msg {
     string delta = 1;
     ecpointgrouplaw.EcPointMessage bigDelta = 2;
-    paillier.LogStarMessage psidoublepai = 3;
+    getamis.alice.crypto.zkproof.paillier.LogStarMessage psidoublepai = 3;
 }
 
 message Round4Msg {
@@ -76,7 +75,7 @@ message Round4Msg {
 
 message Err1Msg {
     bytes kgammaCiphertext = 1;
-    paillier.MulMessage mulProof = 2;
+    getamis.alice.crypto.zkproof.paillier.MulMessage mulProof = 2;
     bytes productrCiphertext = 3;
     // key => id
     map<string, Err1PeerMsg> peers = 4;
@@ -84,7 +83,7 @@ message Err1Msg {
 }
 
 message Err1PeerMsg {
-    paillier.DecryMessage decryProoof = 1;
+    getamis.alice.crypto.zkproof.paillier.DecryMessage decryProoof = 1;
     bytes count = 2;
 }
 
@@ -96,7 +95,7 @@ message Err2Msg {
 }
 
 message Err2PeerMsg {
-    paillier.MulStarMessage mulStarProof = 1;
-    paillier.DecryMessage decryProoof = 2;
+    getamis.alice.crypto.zkproof.paillier.MulStarMessage mulStarProof = 1;
+    getamis.alice.crypto.zkproof.paillier.DecryMessage decryProoof = 2;
     bytes count = 3;
 }

@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package child;
+package getamis.alice.crypto.bip32.child;
 
 option go_package = "github.com/getamis/alice/crypto/bip32/child";
 

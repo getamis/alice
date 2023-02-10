@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package addshare;
+package getamis.alice.crypto.tss.ecdsa.gg18.addshare;
 
 option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/gg18/addshare";
 

@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package utils;
+package getamis.alice.crypto.utils;
 
 option go_package = "github.com/getamis/alice/crypto/utils";
 

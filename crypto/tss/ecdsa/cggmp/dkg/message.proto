@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package dkg;
+package getamis.alice.crypto.tss.ecdsa.cggmp.dkg;
 
 option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/cggmp/dkg";
 
