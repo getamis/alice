@@ -54,6 +54,7 @@ message BodyInitial {
     circuit.garbleCircuitMessage garcirMsg = 2;
     repeated bytes otherInfoWire =3;
     birkhoffinterpolation.BkParameterMessage bk = 4;
+    bytes ridi = 5;
 }
 
 message BodyOtReceiver {
