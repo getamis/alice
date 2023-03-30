@@ -44,8 +44,8 @@ func NewPedersenCommitmenter(threshold uint32, hiddingPoint *pt.ECPoint, secrets
 }
 
 /*
-   Given two values secret and salt, Pedersen commitment is defined by secret*G + salt*H,
-   where H is the hidding point which is determined by Distributed Pedersen Hidding Point Generation and G is the base point of the hidding point.
+Given two values secret and salt, Pedersen commitment is defined by secret*G + salt*H,
+where H is the hidding point which is determined by Distributed Pedersen Hidding Point Generation and G is the base point of the hidding point.
 */
 func computePoint(hiddingPoint *pt.ECPoint, secret *big.Int, salt *big.Int) (*pt.ECPoint, error) {
 	curve := hiddingPoint.GetCurve()

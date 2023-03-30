@@ -125,8 +125,10 @@ func (m *Matrix) GetNumberRow() uint64 {
 
 // GetColumn gets column at the index
 // Assume matrixA = [ 1, 2, 3 ]
-//                  [ 2, 4, 5 ]
-//                  [ 5, 10, 3]
+//
+//	[ 2, 4, 5 ]
+//	[ 5, 10, 3]
+//
 // Then the output of GetColumn(matrixA, nIndex) is the indicated column.
 // Ex: GetColumn(matrixA, 2)= [3, 5, 3], GetColumn(matrixA, 1)=[2, 4, 10]
 func (m *Matrix) GetColumn(nIndex uint64) ([]*big.Int, error) {
@@ -143,8 +145,10 @@ func (m *Matrix) GetColumn(nIndex uint64) ([]*big.Int, error) {
 
 // GetRow gets row at the index
 // Assume matrixA = [ 1, 2, 3 ]
-//                  [ 2, 4, 5 ]
-//                  [ 5, 10, 3]
+//
+//	[ 2, 4, 5 ]
+//	[ 5, 10, 3]
+//
 // Then the output of GetColumn(matrixA, nIndex ) is the indicated row.
 // Ex: GetRow(matrixA, 2)= [5, 10, 3], GetRow(matrixA, 1)=[2, 4, 5]
 func (m *Matrix) GetRow(nIndex uint64) ([]*big.Int, error) {
@@ -187,7 +191,8 @@ func (m *Matrix) modInverse(i, j uint64) *big.Int {
 // This function give the transpose of input.
 // Ex: A =[ 1, 2  ] (i.e. 1X2 matrix)
 // output is [ 1 ] (i.e. 2X1 matrix)
-//           [ 2 ]
+//
+//	[ 2 ]
 func (m *Matrix) Transpose() *Matrix {
 	transposeMatrix := make([][]*big.Int, m.numberColumn)
 	for i := uint64(0); i < m.numberColumn; i++ {
@@ -241,9 +246,12 @@ func (m *Matrix) multiply(matrix *Matrix) (*Matrix, error) {
 
 // All components of a matrix modulus a fieldOrder.
 // Ex: A = [10, 9]    and fieldOrder = 7
-//         [23, 14]
+//
+//	[23, 14]
+//
 // Then output is [3, 2]
-//                [2, 0]
+//
+//	[2, 0]
 func (m *Matrix) modulus() *Matrix {
 	for i := uint64(0); i < m.numberRow; i++ {
 		for j := uint64(0); j < m.numberColumn; j++ {
@@ -255,9 +263,12 @@ func (m *Matrix) modulus() *Matrix {
 
 // Interchange two rows of a given matrix.
 // Ex: A = [10, 9]    and fieldOrder = 7
-//         [23, 14]
+//
+//	[23, 14]
+//
 // SwapRow(A,0,1) = [23, 14]
-//                  [10, 9]
+//
+//	[10, 9]
 func (m *Matrix) swapRow(nIndexRow1 uint64, nIndexRow2 uint64) (*Matrix, error) {
 	if m.numberRow <= nIndexRow1 || m.numberRow <= nIndexRow2 {
 		return nil, ErrOutOfRange

@@ -233,7 +233,7 @@ func (p *round3Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	bks := make(birkhoffinterpolation.BkParameters, len(p.bks))
 	sgs := make([]*pt.ECPoint, len(p.bks))
 	i := 0
-	for k, _ := range p.bks {
+	for k := range p.bks {
 		bks[i] = p.bks[k]
 		sgs[i] = partialPubKey[k]
 		i++
