@@ -23,7 +23,7 @@ import (
 const (
 	LFactor          = 1
 	LpaiFactor       = 5
-	MINIMALCHALLENGE = 10
+	MINIMALCHALLENGE = 80
 	epsilonFactor    = 2
 )
 

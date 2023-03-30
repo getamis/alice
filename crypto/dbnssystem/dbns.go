@@ -29,11 +29,13 @@ var (
 	ErrPositiveInteger = errors.New("not a negative integer")
 )
 
-/* This algorithm comes from: A Tree-Based Approach for Computing Double-Base Chains: Algorithm 1. Tree-based DB-chain search.
-   This implementation maybe be improved.
-   ex: We write 841232 = 2^7*3^8+2^6*3^3-2^5*3^2-2^4.
-   Use ExpansionBase2And will get the output is (2-exponent, 3-exponent, sign) = (7,8,1) & (6,3,1) & (5,2,-1) & (4,0,-1).
-   Note that: This representations is not unique.
+/*
+This algorithm comes from: A Tree-Based Approach for Computing Double-Base Chains: Algorithm 1. Tree-based DB-chain search.
+
+	This implementation maybe be improved.
+	ex: We write 841232 = 2^7*3^8+2^6*3^3-2^5*3^2-2^4.
+	Use ExpansionBase2And will get the output is (2-exponent, 3-exponent, sign) = (7,8,1) & (6,3,1) & (5,2,-1) & (4,0,-1).
+	Note that: This representations is not unique.
 */
 type expansion23 struct {
 	exponent2 int

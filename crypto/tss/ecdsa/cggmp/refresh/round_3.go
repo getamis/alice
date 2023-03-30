@@ -18,6 +18,7 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo/paillier"
@@ -227,6 +228,21 @@ func (p *round3Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	partialPubKey[selfID] = pt.ScalarBaseMult(curve, refreshShare)
 	Y[selfID] = pt.ScalarBaseMult(curve, p.y)
 	ped[selfID] = p.ped.PedersenOpenParameter
+
+	// check the correctness of new shares.
+	bks := make(birkhoffinterpolation.BkParameters, len(p.bks))
+	sgs := make([]*pt.ECPoint, len(p.bks))
+	i := 0
+	for k := range p.bks {
+		bks[i] = p.bks[k]
+		sgs[i] = partialPubKey[k]
+		i++
+	}
+	err := bks.ValidatePublicKey(sgs, p.threshold, p.pubKey)
+	if err != nil {
+		return nil, err
+	}
+
 	p.result = &Result{
 		// new Share
 		refreshShare:       refreshShare,
