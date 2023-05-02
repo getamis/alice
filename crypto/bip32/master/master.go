@@ -46,6 +46,7 @@ type Result struct {
 	Bks       map[string]*birkhoffinterpolation.BkParameter
 	Seed      []byte
 	ChainCode []byte
+	Rid       []byte
 }
 
 type Master struct {
@@ -135,5 +136,6 @@ func (m *Master) GetResult() (*Result, error) {
 		Bks:       bks,
 		ChainCode: rh.chiancode,
 		Seed:      rh.seed,
+		Rid:       rh.rid,
 	}, nil
 }

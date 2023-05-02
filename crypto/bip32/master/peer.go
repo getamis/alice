@@ -28,6 +28,7 @@ type peer struct {
 	aG            *pt.ECPoint
 	randomChooseG *pt.ECPoint
 	randomSeedG   *pt.ECPoint
+	ridi          []byte
 }
 
 func newPeer(id string) *peer {

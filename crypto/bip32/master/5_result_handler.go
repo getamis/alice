@@ -18,6 +18,7 @@ import (
 	"math/big"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/alice/types"
 	"github.com/getamis/sirius/log"
@@ -28,6 +29,7 @@ type resultHandler struct {
 
 	share  *big.Int
 	shareG *pt.ECPoint
+	rid    []byte
 }
 
 func newResultHandler(oh *decommitmentHandler) *resultHandler {
@@ -76,10 +78,11 @@ func (s *resultHandler) HandleMessage(logger log.Logger, message types.Message) 
 		logger.Warn("Failed to verify", "err", err)
 		return err
 	}
+	s.rid = utils.Xor(s.ridi, peer.ridi)
 	s.share = new(big.Int).Add(s.poly.Evaluate(s.bk.GetX()), new(big.Int).SetBytes(body.GetResult().Evaluation))
 	s.share = s.share.Mul(s.share, big2Inver)
 	s.share = s.share.Mod(s.share, secp256k1N)
-	shareGMsg, err := zkproof.NewBaseSchorrMessage(curve, s.share)
+	shareGMsg, err := zkproof.NewBaseSchorrMessage(curve, s.share, s.rid)
 	if err != nil {
 		logger.Warn("Failed to get share G message", "err", err)
 		return err
