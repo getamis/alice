@@ -29,7 +29,7 @@ func TestEllipticcurve(t *testing.T) {
 }
 
 var (
-	curveList = []elliptic.Curve{elliptic.Secp256k1(), elliptic.Ed25519()}
+	curveList = []elliptic.Curve{elliptic.Secp256k1(), elliptic.Ed25519(), elliptic.P256()}
 )
 
 var _ = Describe("Elliptic curves", func() {
