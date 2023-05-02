@@ -15,15 +15,16 @@
 package elliptic
 
 import (
-	"github.com/btcsuite/btcd/btcec/v2"
+	"crypto/elliptic"
+	"math/big"
 )
 
-var (
-	secp256k1Curve = &ellipticCurve{
-		Curve: btcec.S256(),
-	}
-)
+type ellipticCurve struct {
+	elliptic.Curve
+}
 
-func Secp256k1() *ellipticCurve {
-	return secp256k1Curve
+// Warn: does not deal with the original point
+func (c *ellipticCurve) Neg(x, y *big.Int) (*big.Int, *big.Int) {
+	NegY := new(big.Int).Neg(y)
+	return new(big.Int).Set(x), NegY.Mod(NegY, c.Curve.Params().P)
 }
