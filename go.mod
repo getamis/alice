@@ -1,6 +1,6 @@
 module github.com/getamis/alice
 
-go 1.17
+go 1.19
 
 require (
 	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412
