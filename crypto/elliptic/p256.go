@@ -15,15 +15,15 @@
 package elliptic
 
 import (
-	"github.com/btcsuite/btcd/btcec/v2"
+	"crypto/elliptic"
 )
 
 var (
-	secp256k1Curve = &ellipticCurve{
-		Curve: btcec.S256(),
+	p256Curve = &ellipticCurve{
+		Curve: elliptic.P256(),
 	}
 )
 
-func Secp256k1() *ellipticCurve {
-	return secp256k1Curve
+func P256() *ellipticCurve {
+	return p256Curve
 }
