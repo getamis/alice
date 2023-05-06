@@ -17,7 +17,7 @@ import (
 	"github.com/getamis/alice/example/peer"
 	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
-	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p/core/network"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
