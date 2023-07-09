@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//   http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,15 +16,17 @@ package signer
 import (
 	"errors"
 	"math/big"
+	"sync"
 	"time"
+
+	"github.com/getamis/sirius/log"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 
 	mtaMocks "github.com/getamis/alice/crypto/mta/mocks"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/types"
 	"github.com/getamis/alice/types/mocks"
-	"github.com/getamis/sirius/log"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("enck handler, negative cases", func() {
@@ -182,6 +184,7 @@ type stopPeerManager struct {
 
 	stopMessageType Type
 	isStopped       bool
+	mu              sync.RWMutex
 }
 
 func newStopPeerManager(stopMessageType Type, p types.PeerManager) *stopPeerManager {
@@ -193,15 +196,22 @@ func newStopPeerManager(stopMessageType Type, p types.PeerManager) *stopPeerMana
 }
 
 func (p *stopPeerManager) MustSend(id string, message interface{}) {
+	p.mu.RLock()
 	if p.isStopped {
+		p.mu.RUnlock()
 		return
 	}
+	p.mu.RUnlock()
 
 	// Stop peer manager if we try to send the next
 	msg := message.(*Message)
 	if msg.Type >= p.stopMessageType {
+		p.mu.Lock()
 		p.isStopped = true
+		p.mu.Unlock()
 		return
 	}
+	p.mu.RLock()
 	p.PeerManager.MustSend(id, message)
+	p.mu.RUnlock()
 }

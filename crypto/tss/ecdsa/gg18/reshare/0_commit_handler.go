@@ -16,6 +16,10 @@ package reshare
 
 import (
 	"math/big"
+	"sync"
+
+	"github.com/getamis/sirius/log"
+	proto "github.com/golang/protobuf/proto"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/commitment"
@@ -24,8 +28,6 @@ import (
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/types"
-	"github.com/getamis/sirius/log"
-	proto "github.com/golang/protobuf/proto"
 )
 
 type peerData struct {
@@ -44,9 +46,10 @@ type commitHandler struct {
 	threshold           uint32
 	feldmanCommitmenter *commitment.FeldmanCommitmenter
 
-	peerManager types.PeerManager
-	peerNum     uint32
-	peers       map[string]*peer
+	peerManagerMu sync.RWMutex
+	peerManager   types.PeerManager
+	peerNum       uint32
+	peers         map[string]*peer
 }
 
 func newCommitHandler(publicKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, oldShare *big.Int, bks map[string]*birkhoffinterpolation.BkParameter) (*commitHandler, error) {
@@ -124,8 +127,13 @@ func (p *commitHandler) HandleMessage(logger log.Logger, message types.Message) 
 }
 
 func (p *commitHandler) Finalize(logger log.Logger) (types.Handler, error) {
-	for id, peer := range p.peers {
-		p.peerManager.MustSend(id, peer.peer.verifyMessage)
+	p.peerManagerMu.RLock()
+	pm := p.peerManager
+	peers := p.peers
+	p.peerManagerMu.RUnlock()
+
+	for id, peer := range peers {
+		pm.MustSend(id, peer.peer.verifyMessage)
 	}
 	return newVerifyHandler(p), nil
 }

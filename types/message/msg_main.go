@@ -19,8 +19,9 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/getamis/alice/types"
 	"github.com/getamis/sirius/log"
+
+	"github.com/getamis/alice/types"
 )
 
 var (
@@ -35,7 +36,7 @@ type MsgMain struct {
 	peerNum        uint32
 	msgChs         *MsgChans
 	state          types.MainState
-	currentHandler types.Handler
+	currentHandler *types.HandlerWrapper
 	listener       types.StateChangedListener
 
 	lock   sync.RWMutex
@@ -48,7 +49,7 @@ func NewMsgMain(id string, peerNum uint32, listener types.StateChangedListener, 
 		peerNum:        peerNum,
 		msgChs:         NewMsgChans(peerNum, msgTypes...),
 		state:          types.StateInit,
-		currentHandler: initHandler,
+		currentHandler: types.NewHandlerWrapper(initHandler),
 		listener:       listener,
 	}
 }
@@ -82,7 +83,7 @@ func (t *MsgMain) AddMessage(senderId string, msg types.Message) error {
 		t.logger.Debug("Different sender", "senderId", senderId, "msgId", msg.GetId())
 		return ErrBadMsg
 	}
-	currentMsgType := t.currentHandler.MessageType()
+	currentMsgType := t.currentHandler.Handler().MessageType()
 	newMessageType := msg.GetMessageType()
 	if currentMsgType > newMessageType {
 		t.logger.Debug("Ignore old message", "currentMsgType", currentMsgType, "newMessageType", newMessageType)
@@ -92,7 +93,7 @@ func (t *MsgMain) AddMessage(senderId string, msg types.Message) error {
 }
 
 func (t *MsgMain) GetHandler() types.Handler {
-	return t.currentHandler
+	return t.currentHandler.Handler()
 }
 
 func (t *MsgMain) GetState() types.MainState {
@@ -112,7 +113,7 @@ func (t *MsgMain) messageLoop(ctx context.Context) (err error) {
 	}()
 
 	handler := t.currentHandler
-	msgType := handler.MessageType()
+	msgType := handler.Handler().MessageType()
 	msgCount := uint32(0)
 	for {
 		// 1. Pop messages
@@ -127,23 +128,23 @@ func (t *MsgMain) messageLoop(ctx context.Context) (err error) {
 		}
 		id := msg.GetId()
 		logger := t.logger.New("msgType", msgType, "fromId", id)
-		if handler.IsHandled(logger, id) {
+		if handler.Handler().IsHandled(logger, id) {
 			logger.Warn("The message is handled before")
 			return ErrDupMsg
 		}
 
-		err = handler.HandleMessage(logger, msg)
+		err = handler.Handler().HandleMessage(logger, msg)
 		if err != nil {
 			logger.Warn("Failed to save message", "err", err)
 			return err
 		}
 
 		msgCount++
-		if msgCount < handler.GetRequiredMessageCount() {
+		if msgCount < handler.Handler().GetRequiredMessageCount() {
 			continue
 		}
 
-		nextHandler, err := handler.Finalize(logger)
+		nextHandler, err := handler.Handler().Finalize(logger)
 		if err != nil {
 			logger.Warn("Failed to go to next handler", "err", err)
 			return err
@@ -152,9 +153,9 @@ func (t *MsgMain) messageLoop(ctx context.Context) (err error) {
 		if nextHandler == nil {
 			return nil
 		}
-		t.currentHandler = nextHandler
-		handler = t.currentHandler
-		newType := handler.MessageType()
+		t.currentHandler.SetHandler(nextHandler)
+		handler.SetHandler(nextHandler)
+		newType := handler.Handler().MessageType()
 		logger.Info("Change handler", "oldType", msgType, "newType", newType)
 		msgType = newType
 		msgCount = uint32(0)
