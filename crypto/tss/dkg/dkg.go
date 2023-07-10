@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/getamis/sirius/log"
+
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/elliptic"
@@ -25,7 +27,6 @@ import (
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/types"
 	"github.com/getamis/alice/types/message"
-	"github.com/getamis/sirius/log"
 )
 
 type DKG struct {
@@ -117,4 +118,8 @@ func (d *DKG) Start() {
 
 	// Send the first message to new peer
 	d.ph.broadcast(d.ph.getPeerMessage())
+}
+
+func (d *DKG) GetPeerMessage() *Message {
+	return d.ph.getPeerMessage()
 }

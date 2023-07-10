@@ -17,13 +17,14 @@ package signer
 import (
 	"math/big"
 
+	"github.com/getamis/sirius/log"
+
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/types"
 	"github.com/getamis/alice/types/message"
-	"github.com/getamis/sirius/log"
 )
 
 type Result struct {
@@ -87,4 +88,16 @@ func (s *Signer) GetResult() (*Result, error) {
 		R: new(big.Int).Set(rh.r.GetX()),
 		S: new(big.Int).Set(rh.s),
 	}, nil
+}
+
+func (s *Signer) GetN() *big.Int {
+	return s.ph.getN()
+}
+
+func (s *Signer) GetPublicKey() *pt.ECPoint {
+	return s.ph.publicKey
+}
+
+func (s *Signer) GetPubkeyMessage() *Message {
+	return s.ph.getPubkeyMessage()
 }
