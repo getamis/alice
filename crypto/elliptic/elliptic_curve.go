@@ -1,4 +1,4 @@
-// Copyright © 2020 AMIS Technologies
+// Copyright © 2021 AMIS Technologies
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+package elliptic
 
-package getamis.alice.crypto.utils;
+import (
+	"crypto/elliptic"
+	"math/big"
+)
 
-option go_package = "github.com/getamis/alice/crypto/utils";
+type ellipticCurve struct {
+	elliptic.Curve
+}
 
-import "google/protobuf/any.proto";
-
-message Hash {
-    repeated google.protobuf.Any msgs=1;
+// Warn: does not deal with the original point
+func (c *ellipticCurve) Neg(x, y *big.Int) (*big.Int, *big.Int) {
+	NegY := new(big.Int).Neg(y)
+	return new(big.Int).Set(x), NegY.Mod(NegY, c.Curve.Params().P)
 }

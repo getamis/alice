@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package binaryquadraticform;
+package getamis.alice.crypto.binaryquadraticform;
 
 option go_package = "github.com/getamis/alice/crypto/binaryquadraticform";
 

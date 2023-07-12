@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package ecpointgrouplaw;
+package getamis.alice.crypto.ecpointgrouplaw;
 
 option go_package = "github.com/getamis/alice/crypto/ecpointgrouplaw";
 

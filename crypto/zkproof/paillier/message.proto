@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package paillier;
+package getamis.alice.crypto.zkproof.paillier;
 
 option go_package = "github.com/getamis/alice/crypto/zkproof/paillier";
 

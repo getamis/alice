@@ -261,6 +261,8 @@ func (c EcPointMessage_Curve) GetEllipticCurve() (elliptic.Curve, error) {
 		return elliptic.Secp256k1(), nil
 	case EcPointMessage_EDWARD25519:
 		return elliptic.Ed25519(), nil
+	case EcPointMessage_P256:
+		return elliptic.P256(), nil
 	}
 	return nil, ErrInvalidCurve
 }
@@ -271,6 +273,8 @@ func ToCurve(c elliptic.Curve) (EcPointMessage_Curve, error) {
 		return EcPointMessage_S256, nil
 	case elliptic.Ed25519():
 		return EcPointMessage_EDWARD25519, nil
+	case elliptic.P256():
+		return EcPointMessage_P256, nil
 	}
 	return 0, ErrInvalidCurve
 }

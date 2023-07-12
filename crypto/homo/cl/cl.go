@@ -62,15 +62,15 @@ var (
 )
 
 /*
- * Paper: Linearly Homomorphic Encryption from DDH & Bandwidth-efficient threshold EC-DSA
- * s : an upper bound of 1/π(ln|ΔK|)|ΔK|^(1/2) i.e. In this implementation, we set it to be Ceil(1/π(ln|ΔK|))*([|ΔK|^(1/2)]+1).
- * p : message space (μ bits prime)
- * a : s*2^(distributionDistance)
- * o : an element in ideal class group of quadratic order
- * f : a generator of the subgroup of order p of ideal class group of quadratic order
- * g : o^b for some random b in [1,2^(distributionDistance)*s)
- * h : g^x, where x is the chosen private key, h is the public key
- Note: a = s*2^(40), d = 40, C = 1024.
+* Paper: Linearly Homomorphic Encryption from DDH & Bandwidth-efficient threshold EC-DSA
+* s : an upper bound of 1/π(ln|ΔK|)|ΔK|^(1/2) i.e. In this implementation, we set it to be Ceil(1/π(ln|ΔK|))*([|ΔK|^(1/2)]+1).
+* p : message space (μ bits prime)
+* a : s*2^(distributionDistance)
+* o : an element in ideal class group of quadratic order
+* f : a generator of the subgroup of order p of ideal class group of quadratic order
+* g : o^b for some random b in [1,2^(distributionDistance)*s)
+* h : g^x, where x is the chosen private key, h is the public key
+Note: a = s*2^(40), d = 40, C = 1024.
 */
 type PublicKey struct {
 	p     *big.Int // message space

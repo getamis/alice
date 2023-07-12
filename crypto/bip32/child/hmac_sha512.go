@@ -27,9 +27,9 @@ import (
 )
 
 /*
-	We implement a version of "garbled circuit" according to paper: "Better Concrete Security for Half-Gates Garbling"
-	and "Two Halves Make a Whole Reducing data Transfer in Garbled Circuits using Half Gates".
-	We support the parse of Bristol fashion ref: https://homes.esat.kuleuven.be/~nsmart/MPC/
+We implement a version of "garbled circuit" according to paper: "Better Concrete Security for Half-Gates Garbling"
+and "Two Halves Make a Whole Reducing data Transfer in Garbled Circuits using Half Gates".
+We support the parse of Bristol fashion ref: https://homes.esat.kuleuven.be/~nsmart/MPC/
 */
 const (
 	MAXUINT32       = 2147483647

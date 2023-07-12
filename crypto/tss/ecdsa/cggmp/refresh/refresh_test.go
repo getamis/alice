@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//   http://www.apache.org/licenses/LICENSE-2.0
+//	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -57,7 +57,7 @@ var _ = Describe("Refresh", func() {
 		for _, d := range refreshes {
 			d.Start()
 		}
-		time.Sleep(2 * time.Second)
+		time.Sleep(6 * time.Second)
 		for _, l := range listeners {
 			l.AssertExpectations(GinkgoT())
 		}

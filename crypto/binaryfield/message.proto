@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package binaryfield;
+package getamis.alice.crypto.binaryfield;
 
 option go_package = "github.com/getamis/alice/crypto/binaryfield";
 

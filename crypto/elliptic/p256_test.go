@@ -11,32 +11,23 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package utils
+package elliptic
 
 import (
-	"crypto/rand"
+	"math/big"
 
 	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Prime", func() {
-	DescribeTable("SafePrime()", func(size int) {
-		safePrime, err := GenerateRandomSafePrime(rand.Reader, size)
-		Expect(err).Should(BeNil())
-		Expect(safePrime.P.ProbablyPrime(1)).Should(BeTrue())
-		Expect(safePrime.Q.ProbablyPrime(1)).Should(BeTrue())
-	},
-		Entry("size = 37", 33),
-		Entry("size = 1024", 1024),
-	)
-
-	Context("SafePrime()", func() {
-		It("it does not work", func() {
-			safePrime, err := GenerateRandomSafePrime(rand.Reader, 2)
-			Expect(safePrime).Should(BeNil())
-			Expect(err).Should(Equal(ErrSmallSafePrime))
+var _ = Describe("P256", func() {
+	Context("Negative Point", func() {
+		It("It is OK", func() {
+			p256 := P256()
+			negX, negY := p256.Neg(p256.Params().Gx, p256.Params().Gy)
+			scalX, scalY := p256.ScalarBaseMult(new(big.Int).Sub(p256.Params().N, big.NewInt(1)).Bytes())
+			Expect(negX.Cmp(scalX) == 0).Should(BeTrue())
+			Expect(negY.Cmp(scalY) == 0).Should(BeTrue())
 		})
 	})
 })

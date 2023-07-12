@@ -1,4 +1,4 @@
-// Copyright © 2020 AMIS Technologies
+// Copyright © 2021 AMIS Technologies
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,14 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+package elliptic
 
-package getamis.alice.crypto.utils;
+import (
+	"crypto/elliptic"
+)
 
-option go_package = "github.com/getamis/alice/crypto/utils";
+var (
+	p256Curve = &ellipticCurve{
+		Curve: elliptic.P256(),
+	}
+)
 
-import "google/protobuf/any.proto";
-
-message Hash {
-    repeated google.protobuf.Any msgs=1;
+func P256() *ellipticCurve {
+	return p256Curve
 }

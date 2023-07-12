@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package dkg;
+package getamis.alice.crypto.tss.dkg;
 
 option go_package = "github.com/getamis/alice/crypto/tss/dkg";
 

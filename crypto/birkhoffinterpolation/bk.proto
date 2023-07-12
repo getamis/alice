@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package birkhoffinterpolation;
+package getamis.alice.crypto.birkhoffinterpolation;
 
 option go_package = "github.com/getamis/alice/crypto/birkhoffinterpolation";
 

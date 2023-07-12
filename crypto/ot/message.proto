@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package ot;
+package getamis.alice.crypto.ot;
 
 option go_package = "github.com/getamis/alice/crypto/ot";
 

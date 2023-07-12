@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package signSix;
+package getamis.alice.crypto.tss.ecdsa.cggmp.signSix;
 
 option go_package = "github.com/getamis/alice/crypto/tss/ecdsa/cggmp/signSix";
 
@@ -57,7 +57,7 @@ message Round1Msg {
     bytes gammaCiphertext = 2;
     ecpointgrouplaw.EcPointMessage z1 = 3;
     ecpointgrouplaw.EcPointMessage z2 = 4;
-    paillier.EncElgMessage psi = 5;
+    getamis.alice.crypto.zkproof.paillier.EncElgMessage psi = 5;
 }
 
 message Round2Msg {
@@ -65,8 +65,8 @@ message Round2Msg {
     bytes F = 2;
     bytes Dhat = 3;
     bytes Fhat = 4;
-    paillier.PaillierOperationAndCommitmentMessage psi = 5;
-    paillier.PaillierAffAndGroupRangeMessage psihat = 6;   
+    getamis.alice.crypto.zkproof.paillier.PaillierOperationAndCommitmentMessage psi = 5;
+    getamis.alice.crypto.zkproof.paillier.PaillierAffAndGroupRangeMessage psihat = 6;   
 }
 
 message Round3Msg {
@@ -77,17 +77,17 @@ message Round3Msg {
 
 message Round4Msg {
     ecpointgrouplaw.EcPointMessage gamma = 1;
-    paillier.LogStarMessage psipai = 2;
+    getamis.alice.crypto.zkproof.paillier.LogStarMessage psipai = 2;
 }
 
 message Round5Msg {
     ecpointgrouplaw.EcPointMessage delta = 1;
-    paillier.ELogMessage psi = 2;
+    getamis.alice.crypto.zkproof.paillier.ELogMessage psi = 2;
 }
 
 message Round6Msg {
     ecpointgrouplaw.EcPointMessage s = 1;
-    paillier.ELogMessage pi = 2;
+    getamis.alice.crypto.zkproof.paillier.ELogMessage pi = 2;
 }
 
 message Round7Msg {
@@ -97,7 +97,7 @@ message Round7Msg {
 message Err1Msg {
     bytes k = 1;
     bytes rhoNPower = 2;
-    paillier.NthRootMessage psiRhoProof = 3;
+    getamis.alice.crypto.zkproof.paillier.NthRootMessage psiRhoProof = 3;
     bytes gamma = 4;
     // key => id
     map<string, Err1PeerMsg> peers = 6;
@@ -106,15 +106,15 @@ message Err1Msg {
 message Err1PeerMsg {
     bytes alpha = 1;
     bytes muNPower = 2;
-    paillier.NthRootMessage  psiMuProof = 3;
+    getamis.alice.crypto.zkproof.paillier.NthRootMessage  psiMuProof = 3;
 }
 
 message Err2Msg {
     bytes k = 1;
     bytes rhoNPower = 2;
-    paillier.NthRootMessage psiRhoProof = 3;
+    getamis.alice.crypto.zkproof.paillier.NthRootMessage psiRhoProof = 3;
     ecpointgrouplaw.EcPointMessage ytilde = 4;
-    paillier.LogMessage psipaiProof = 5;
+    getamis.alice.crypto.zkproof.paillier.LogMessage psipaiProof = 5;
     // key => id
     map<string, Err2PeerMsg> peers = 6;
 } 
@@ -122,5 +122,5 @@ message Err2Msg {
 message Err2PeerMsg {
     bytes alphahat = 1;
     bytes muhatNPower = 2;
-    paillier.NthRootMessage  psiMuProof = 3;
+    getamis.alice.crypto.zkproof.paillier.NthRootMessage  psiMuProof = 3;
 }
