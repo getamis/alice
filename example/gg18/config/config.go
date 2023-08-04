@@ -14,7 +14,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 
 	"gopkg.in/yaml.v2"
 )
@@ -34,5 +34,5 @@ func WriteYamlFile(yamlData interface{}, filePath string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filePath, data, 0600)
+	return os.WriteFile(filePath, data, 0600)
 }
