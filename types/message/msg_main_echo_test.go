@@ -21,7 +21,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-var _ = FDescribe("EchoMsgMain", func() {
+var _ = Describe("EchoMsgMain", func() {
 	var (
 		msgMain         *EchoMsgMain
 		mockMessageMain *mocks.MessageMain

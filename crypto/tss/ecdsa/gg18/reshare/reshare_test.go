@@ -16,9 +16,9 @@ package reshare
 import (
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/getamis/alice/crypto/elliptic"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
@@ -41,14 +41,21 @@ var _ = Describe("Reshare", func() {
 	curve := elliptic.Secp256k1()
 	DescribeTable("NewReshare()", func(c elliptic.Curve, threshold uint32, bks []*birkhoffinterpolation.BkParameter) {
 		reshares, listeners := newReshares(c, threshold, bks)
+		doneChs := []chan struct{}{}
 		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
+			ch := make(chan struct{})
+			doneChs = append(doneChs, ch)
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Run(func(_ mock.Arguments) {
+				close(ch)
+			}).Once()
 		}
 
 		for _, r := range reshares {
 			r.Start()
 		}
-		time.Sleep(1 * time.Second)
+		for _, ch := range doneChs {
+			<-ch
+		}
 
 		for _, d := range reshares {
 			d.Stop()

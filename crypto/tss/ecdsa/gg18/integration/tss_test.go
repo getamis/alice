@@ -17,7 +17,6 @@ import (
 	"crypto/ecdsa"
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
@@ -67,13 +66,18 @@ var _ = Describe("TSS", func() {
 		dkgs := make(map[string]*dkg.DKG, lens)
 		msgMain := make(map[string]types.MessageMain, lens)
 		dkgPeerManagers := make([]types.PeerManager, lens)
+		doneChs := []chan struct{}{}
 		for i := 0; i < lens; i++ {
 			id := tss.GetTestID(i)
 			pm := tss.NewTestPeerManager(i, lens)
 			pm.Set(msgMain)
 			dkgPeerManagers[i] = pm
+			ch := make(chan struct{})
+			doneChs = append(doneChs, ch)
 			listener[i] = new(mocks.StateChangedListener)
-			listener[i].On("OnStateChanged", types.StateInit, types.StateDone).Once()
+			listener[i].On("OnStateChanged", types.StateInit, types.StateDone).Run(func(_ mock.Arguments) {
+				close(ch)
+			}).Once()
 			var err error
 			dkgs[id], err = gDkg.NewDKG(dkgPeerManagers[i], threshold, ranks[i], listener[i])
 			Expect(err).Should(BeNil())
@@ -86,7 +90,9 @@ var _ = Describe("TSS", func() {
 		for _, d := range dkgs {
 			d.Start()
 		}
-		time.Sleep(1 * time.Second)
+		for _, ch := range doneChs {
+			<-ch
+		}
 
 		// Stop DKG process and record the result.
 		var r *result
@@ -118,12 +124,17 @@ var _ = Describe("TSS", func() {
 		reshares := make(map[string]*reshare.Reshare, lens)
 		msgMain = make(map[string]types.MessageMain, lens)
 		resharePeerManagers := make([]types.PeerManager, lens)
+		doneChs = []chan struct{}{}
 		for i := 0; i < lens; i++ {
 			id := tss.GetTestID(i)
 			pm := tss.NewTestPeerManager(i, lens)
 			pm.Set(msgMain)
 			resharePeerManagers[i] = pm
-			listener[i].On("OnStateChanged", types.StateInit, types.StateDone).Once()
+			ch := make(chan struct{})
+			doneChs = append(doneChs, ch)
+			listener[i].On("OnStateChanged", types.StateInit, types.StateDone).Run(func(_ mock.Arguments) {
+				close(ch)
+			}).Once()
 			var err error
 			reshares[id], err = reshare.NewReshare(resharePeerManagers[i], threshold, r.publicKey, r.share[id], r.bks, listener[i])
 			Expect(err).Should(BeNil())
@@ -136,7 +147,9 @@ var _ = Describe("TSS", func() {
 		for _, r := range reshares {
 			r.Start()
 		}
-		time.Sleep(1 * time.Second)
+		for _, ch := range doneChs {
+			<-ch
+		}
 
 		// Stop Reshare process and update the share.
 		for id, reshare := range reshares {
@@ -173,13 +186,18 @@ var _ = Describe("TSS", func() {
 
 		pmOlds := make([]types.PeerManager, lens)
 		listenersOld := make([]*mocks.StateChangedListener, lens)
+		doneChs = []chan struct{}{}
 		for i := 0; i < lens; i++ {
 			id := tss.GetTestID(i)
 			pm := tss.NewTestPeerManager(i, lens)
 			pm.Set(msgMain)
 			pmOlds[i] = pm
 			listenersOld[i] = new(mocks.StateChangedListener)
-			listenersOld[i].On("OnStateChanged", types.StateInit, types.StateDone).Once()
+			ch := make(chan struct{})
+			doneChs = append(doneChs, ch)
+			listenersOld[i].On("OnStateChanged", types.StateInit, types.StateDone).Run(func(_ mock.Arguments) {
+				close(ch)
+			}).Once()
 			var err error
 			addSharesForOld[id], err = oldpeer.NewAddShare(pmOlds[i], r.publicKey, threshold, r.share[id], r.bks, newPeerID, listenersOld[i])
 			Expect(err).Should(BeNil())
@@ -193,7 +211,9 @@ var _ = Describe("TSS", func() {
 		for _, fromA := range addSharesForOld {
 			fromA.Start()
 		}
-		time.Sleep(1 * time.Second)
+		for _, ch := range doneChs {
+			<-ch
+		}
 
 		// Stop add share process and check the result.
 		for id, addshare := range addSharesForOld {

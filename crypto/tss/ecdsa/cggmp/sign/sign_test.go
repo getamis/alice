@@ -16,7 +16,6 @@ package sign
 import (
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
@@ -28,6 +27,7 @@ import (
 	"github.com/getamis/alice/types/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestSign3Round(t *testing.T) {
@@ -46,13 +46,20 @@ var (
 var _ = Describe("Refresh", func() {
 	It("should be ok", func() {
 		signs, _, listeners := newSigns()
+		doneChs := []chan struct{}{}
 		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
+			ch := make(chan struct{})
+			doneChs = append(doneChs, ch)
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Run(func(_ mock.Arguments) {
+				close(ch)
+			}).Once()
 		}
 		for _, d := range signs {
 			d.Start()
 		}
-		time.Sleep(2 * time.Second)
+		for _, ch := range doneChs {
+			<-ch
+		}
 		for _, l := range listeners {
 			l.AssertExpectations(GinkgoT())
 		}
