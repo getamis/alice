@@ -16,6 +16,7 @@ package message
 
 import (
 	"errors"
+	"sync"
 
 	"github.com/getamis/alice/types"
 )
@@ -26,8 +27,9 @@ var (
 )
 
 type Peer struct {
-	Id       string
-	Messages map[types.MessageType]types.Message
+	Id           string
+	Messages     map[types.MessageType]types.Message
+	messagesLock sync.RWMutex
 }
 
 func NewPeer(id string) *Peer {
@@ -42,6 +44,8 @@ func (p *Peer) AddMessage(msg types.Message) error {
 		return ErrNotYours
 	}
 	t := msg.GetMessageType()
+	p.messagesLock.Lock()
+	defer p.messagesLock.Unlock()
 	_, ok := p.Messages[t]
 	if ok {
 		return ErrDupMessage
@@ -51,5 +55,7 @@ func (p *Peer) AddMessage(msg types.Message) error {
 }
 
 func (p *Peer) GetMessage(t types.MessageType) types.Message {
+	p.messagesLock.RLock()
+	defer p.messagesLock.RUnlock()
 	return p.Messages[t]
 }
