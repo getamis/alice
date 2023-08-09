@@ -38,8 +38,9 @@ type MsgMain struct {
 	currentHandler types.Handler
 	listener       types.StateChangedListener
 
-	lock   sync.RWMutex
-	cancel context.CancelFunc
+	lock        sync.RWMutex
+	handlerLock sync.RWMutex
+	cancel      context.CancelFunc
 }
 
 func NewMsgMain(id string, peerNum uint32, listener types.StateChangedListener, initHandler types.Handler, msgTypes ...types.MessageType) *MsgMain {
@@ -82,7 +83,7 @@ func (t *MsgMain) AddMessage(senderId string, msg types.Message) error {
 		t.logger.Debug("Different sender", "senderId", senderId, "msgId", msg.GetId())
 		return ErrBadMsg
 	}
-	currentMsgType := t.currentHandler.MessageType()
+	currentMsgType := t.GetHandler().MessageType()
 	newMessageType := msg.GetMessageType()
 	if currentMsgType > newMessageType {
 		t.logger.Debug("Ignore old message", "currentMsgType", currentMsgType, "newMessageType", newMessageType)
@@ -92,6 +93,9 @@ func (t *MsgMain) AddMessage(senderId string, msg types.Message) error {
 }
 
 func (t *MsgMain) GetHandler() types.Handler {
+	t.handlerLock.RLock()
+	defer t.handlerLock.RUnlock()
+
 	return t.currentHandler
 }
 
@@ -111,7 +115,7 @@ func (t *MsgMain) messageLoop(ctx context.Context) (err error) {
 		t.Stop()
 	}()
 
-	handler := t.currentHandler
+	handler := t.GetHandler()
 	msgType := handler.MessageType()
 	msgCount := uint32(0)
 	for {
@@ -152,8 +156,10 @@ func (t *MsgMain) messageLoop(ctx context.Context) (err error) {
 		if nextHandler == nil {
 			return nil
 		}
+		t.handlerLock.Lock()
 		t.currentHandler = nextHandler
 		handler = t.currentHandler
+		t.handlerLock.Unlock()
 		newType := handler.MessageType()
 		logger.Info("Change handler", "oldType", msgType, "newType", newType)
 		msgType = newType

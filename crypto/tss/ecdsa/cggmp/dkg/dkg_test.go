@@ -16,7 +16,6 @@ package dkg
 import (
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
@@ -29,6 +28,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestDKG(t *testing.T) {
@@ -42,13 +42,20 @@ var _ = Describe("DKG", func() {
 	DescribeTable("NewDKG()", func(c elliptic.Curve, threshold uint32, ranks []uint32) {
 		// new peer managers and dkgs
 		dkgs, listeners := newDKGs(c, sid, threshold, ranks)
+		doneChs := []chan struct{}{}
 		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
+			ch := make(chan struct{})
+			doneChs = append(doneChs, ch)
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Run(func(_ mock.Arguments) {
+				close(ch)
+			}).Once()
 		}
 		for _, d := range dkgs {
 			d.Start()
 		}
-		time.Sleep(1 * time.Second)
+		for _, ch := range doneChs {
+			<-ch
+		}
 
 		// Build public key
 		secret := big.NewInt(0)
@@ -87,6 +94,7 @@ var _ = Describe("DKG", func() {
 	DescribeTable("newDKGWithHandler", func(c elliptic.Curve, threshold uint32, coefficients [][]*big.Int, x []*big.Int, ranks []uint32, expectShare []*big.Int, expPubKey *ecpointgrouplaw.ECPoint) {
 		sid := make([]byte, 1)
 		dkgs, listeners := newDKGWithPeerHandler(c, sid, threshold, ranks, x, coefficients)
+		doneChs := []chan struct{}{}
 		// new peer managers and dkgs
 		lens := len(ranks)
 		bks := make(map[string]*birkhoffinterpolation.BkParameter, lens)
@@ -95,12 +103,18 @@ var _ = Describe("DKG", func() {
 			bks[id] = birkhoffinterpolation.NewBkParameter(x[i], ranks[i])
 		}
 		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
+			ch := make(chan struct{})
+			doneChs = append(doneChs, ch)
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Run(func(_ mock.Arguments) {
+				close(ch)
+			}).Once()
 		}
 		for _, d := range dkgs {
 			d.Start()
 		}
-		time.Sleep(2 * time.Second)
+		for _, ch := range doneChs {
+			<-ch
+		}
 
 		secret := big.NewInt(0)
 		for i := 0; i < len(dkgs); i++ {
@@ -324,13 +338,20 @@ var _ = Describe("DKG", func() {
 		sid := make([]byte, 1)
 		// new peer managers and dkgs
 		dkgs, listeners := newDKGWithPeerHandler(c, sid, threshold, ranks, x, coefficients)
+		doneChs := []chan struct{}{}
+		for _, l := range listeners {
+			ch := make(chan struct{})
+			doneChs = append(doneChs, ch)
+			l.On("OnStateChanged", types.StateInit, types.StateFailed).Run(func(_ mock.Arguments) {
+				close(ch)
+			}).Once()
+		}
 		for _, d := range dkgs {
 			d.Start()
 		}
-		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateFailed).Once()
+		for _, ch := range doneChs {
+			<-ch
 		}
-		time.Sleep(time.Second)
 		for _, l := range listeners {
 			l.AssertExpectations(GinkgoT())
 		}

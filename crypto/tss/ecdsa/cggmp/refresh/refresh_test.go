@@ -16,7 +16,6 @@ package refresh
 import (
 	"math/big"
 	"testing"
-	"time"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
@@ -28,6 +27,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestRefresh(t *testing.T) {
@@ -51,13 +51,20 @@ var _ = Describe("Refresh", func() {
 
 		// new peer managers and dkgs
 		refreshes, bks, listeners := newRefreshes(threshold, totalParty, shares, bksSlice)
+		doneChs := []chan struct{}{}
 		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
+			ch := make(chan struct{})
+			doneChs = append(doneChs, ch)
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Run(func(_ mock.Arguments) {
+				close(ch)
+			}).Once()
 		}
 		for _, d := range refreshes {
 			d.Start()
 		}
-		time.Sleep(6 * time.Second)
+		for _, ch := range doneChs {
+			<-ch
+		}
 		for _, l := range listeners {
 			l.AssertExpectations(GinkgoT())
 		}

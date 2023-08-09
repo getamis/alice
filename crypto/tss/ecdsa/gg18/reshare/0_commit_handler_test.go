@@ -27,6 +27,7 @@ import (
 	"github.com/getamis/sirius/log"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"go.uber.org/atomic"
 )
 
 var _ = Describe("commit handler, negative cases", func() {
@@ -163,26 +164,26 @@ type stopPeerManager struct {
 	types.PeerManager
 
 	stopMessageType Type
-	isStopped       bool
+	isStopped       atomic.Bool
 }
 
 func newStopPeerManager(stopMessageType Type, p types.PeerManager) *stopPeerManager {
 	return &stopPeerManager{
 		PeerManager:     p,
 		stopMessageType: stopMessageType,
-		isStopped:       false,
+		isStopped:       *atomic.NewBool(false),
 	}
 }
 
 func (p *stopPeerManager) MustSend(id string, message interface{}) {
-	if p.isStopped {
+	if p.isStopped.Load() {
 		return
 	}
 
 	// Stop peer manager if we try to send the next
 	msg := message.(*Message)
 	if msg.Type >= p.stopMessageType {
-		p.isStopped = true
+		p.isStopped.Store(true)
 		return
 	}
 	p.PeerManager.MustSend(id, message)

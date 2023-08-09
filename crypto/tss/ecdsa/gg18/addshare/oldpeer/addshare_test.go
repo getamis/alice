@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/getamis/alice/crypto/elliptic"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
@@ -46,9 +47,14 @@ var _ = Describe("AddShare", func() {
 	newPeerID := "new-peer"
 
 	DescribeTable("NewAddShare", func(threshold uint32, bks []*birkhoffinterpolation.BkParameter, newPeerRank uint32) {
+		doneChs := []chan struct{}{}
 		addShares, listeners := newAddShares(curve, threshold, bks, newPeerID)
 		for _, l := range listeners {
-			l.On("OnStateChanged", types.StateInit, types.StateDone).Once()
+			ch := make(chan struct{})
+			doneChs = append(doneChs, ch)
+			l.On("OnStateChanged", types.StateInit, types.StateDone).Run(func(_ mock.Arguments) {
+				close(ch)
+			}).Once()
 		}
 
 		// Build the new bk.
@@ -100,7 +106,9 @@ var _ = Describe("AddShare", func() {
 		for _, addShare := range addShares {
 			Expect(addShare.AddMessage(newPeerID, verifyMsg)).Should(BeNil())
 		}
-		time.Sleep(1 * time.Second)
+		for _, ch := range doneChs {
+			<-ch
+		}
 
 		for _, addShare := range addShares {
 			// Expect that the verify handler handled the message and the result is not empty.
