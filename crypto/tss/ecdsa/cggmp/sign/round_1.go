@@ -132,17 +132,10 @@ func newRound1Handler(threshold uint32, ssid []byte, share *big.Int, pubKey *pt.
 	if err != nil {
 		return nil, err
 	}
-
-	k = big.NewInt(1)
-
-
 	gamma, err := utils.RandomInt(curveN)
 	if err != nil {
 		return nil, err
 	}
-
-
-	gamma = big.NewInt(2)
 	// Gi = enc_i(γ, mu), and Ki = enc(k, ρ)
 	kCiphertext, rho, err := paillierKey.EncryptWithOutputSalt(k)
 	if err != nil {
