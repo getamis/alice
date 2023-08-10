@@ -70,6 +70,7 @@ func (p *mtaHandler) HandleMessage(logger log.Logger, message types.Message) err
 	msg := getMessage(message)
 	id := msg.GetId()
 	peer, ok := p.peers[id]
+	curveN := p.getCurve().Params().N
 	if !ok {
 		logger.Warn("Peer not found")
 		return ErrPeerNotFound
@@ -77,6 +78,7 @@ func (p *mtaHandler) HandleMessage(logger log.Logger, message types.Message) err
 
 	body := msg.GetMta()
 	aiAlpha, err := p.aiMta.Decrypt(new(big.Int).SetBytes(body.EncAiAlpha))
+	aiAlpha.Mod(aiAlpha, curveN)
 	if err != nil {
 		logger.Warn("Failed to decrypt EncAiAlpha", "err", err)
 		return err
@@ -87,6 +89,7 @@ func (p *mtaHandler) HandleMessage(logger log.Logger, message types.Message) err
 		return err
 	}
 	wiAlpha, err := p.wiMta.Decrypt(new(big.Int).SetBytes(body.EncWiAlpha))
+	wiAlpha.Mod(wiAlpha, curveN)
 	if err != nil {
 		logger.Warn("Failed to decrypt EncWiAlpha", "err", err)
 		return err

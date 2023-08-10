@@ -52,6 +52,8 @@ var (
 	ErrInvalidMessage = errors.New("invalid message")
 	//ErrSmallPublicKeySize is returned if the size of public key is small
 	ErrSmallPublicKeySize = errors.New("small public key")
+	//ErrSmallFactorPubKey is returned if there exist small factor of a public key
+	ErrSmallFactorPubKey = errors.New("there exist small factor of a public key")
 
 	big0 = big.NewInt(0)
 	big1 = big.NewInt(1)
@@ -244,7 +246,17 @@ func (p *Paillier) NewPubKeyFromBytes(bs []byte) (homo.Pubkey, error) {
 	if err != nil {
 		return nil, err
 	}
-	return msg.ToPubkey()
+	// Check no small factor
+	pubKey, err := msg.ToPubkey()
+	if err != nil {
+		return nil, err
+	}
+	for i:=0; i < len(primes); i++ {
+		if new(big.Int).Mod(pubKey.n, big.NewInt(primes[i])).Cmp(big0) == 0 {
+			return nil, ErrSmallFactorPubKey
+		}
+	}
+	return pubKey, nil
 }
 
 func (p *Paillier) GetMtaProof(curve elliptic.Curve, beta *big.Int, b *big.Int) ([]byte, error) {
