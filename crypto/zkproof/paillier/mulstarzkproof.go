@@ -51,15 +51,7 @@ func NewMulStarMessage(config *CurveConfig, ssidInfo []byte, x, rho, N0, C, D *b
 
 	G := pt.NewBase(X.GetCurve())
 	Bx := G.ScalarMult(alpha)
-	msgG, err := G.ToEcPointMessage()
-	if err != nil {
-		return nil, err
-	}
 	msgBx, err := Bx.ToEcPointMessage()
-	if err != nil {
-		return nil, err
-	}
-	msgX, err := X.ToEcPointMessage()
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +63,8 @@ func NewMulStarMessage(config *CurveConfig, ssidInfo []byte, x, rho, N0, C, D *b
 	S := new(big.Int).Mul(new(big.Int).Exp(peds, x, pedN), new(big.Int).Exp(pedt, m, pedN))
 	S.Mod(S, pedN)
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), N0.Bytes(), C.Bytes(), D.Bytes(), A.Bytes(), E.Bytes(), S.Bytes()), msgG, msgX, msgBx)
+	msgs := utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), N0.Bytes(), C.Bytes(), D.Bytes(), A.Bytes(), E.Bytes(), S.Bytes(), 
+	        G.GetX().Bytes(), G.GetY().Bytes(), X.GetX().Bytes(), X.GetY().Bytes(), Bx.GetX().Bytes(), Bx.GetY().Bytes())
 	e, salt, err := GetE(G.GetCurve().Params().N, msgs...)
 	if err != nil {
 		return nil, err
@@ -101,21 +94,13 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 	pedN := ped.Getn()
 	peds := ped.Gets()
 	pedt := ped.Gett()
-	msgG, err := G.ToEcPointMessage()
-	if err != nil {
-		return err
-	}
-	msgX, err := X.ToEcPointMessage()
-	if err != nil {
-		return err
-	}
 	Bx, err := msg.B.ToPoint()
 	if err != nil {
 		return err
 	}
 	curveOrder := X.GetCurve().Params().N
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), N0.Bytes(), C.Bytes(), D.Bytes(), msg.A, msg.E, msg.S), msgG, msgX, msg.B)
+	msgs := utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), N0.Bytes(), C.Bytes(), D.Bytes(), msg.A, msg.E, msg.S, G.GetX().Bytes(), G.GetY().Bytes(), X.GetX().Bytes(), X.GetY().Bytes(), Bx.GetX().Bytes(), Bx.GetY().Bytes())
 	seed, err := utils.HashProtos(msg.Salt, msgs...)
 	if err != nil {
 		return err

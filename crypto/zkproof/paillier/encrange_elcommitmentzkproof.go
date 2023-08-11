@@ -78,28 +78,13 @@ func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, 
 	if err != nil {
 		return nil, err
 	}
-	msgX, err := X.ToEcPointMessage()
-	if err != nil {
-		return nil, err
-	}
 	msgZ, err := Z.ToEcPointMessage()
 	if err != nil {
 		return nil, err
 	}
-	msgG, err := G.ToEcPointMessage()
-	if err != nil {
-		return nil, err
-	}
-	msgA, err := A.ToEcPointMessage()
-	if err != nil {
-		return nil, err
-	}
-	msgB, err := B.ToEcPointMessage()
-	if err != nil {
-		return nil, err
-	}
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), ciphertext.Bytes(), S.Bytes(), T.Bytes(), D.Bytes(), N.Bytes()), msgY, msgZ, msgA, msgB, msgG, msgX)
+	msgs := utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), ciphertext.Bytes(), S.Bytes(), T.Bytes(), D.Bytes(), N.Bytes(), Y.GetX().Bytes(), Y.GetY().Bytes(), Z.GetX().Bytes(), Z.GetY().Bytes(),
+	            A.GetX().Bytes(), A.GetY().Bytes(), B.GetX().Bytes(), B.GetY().Bytes(), G.GetX().Bytes(), G.GetY().Bytes(),X.GetX().Bytes(), X.GetY().Bytes())
 	e, salt, err := GetE(curveN, msgs...)
 	if err != nil {
 		return nil, err
@@ -188,24 +173,9 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 		return ErrVerifyFailure
 	}
 	z3, _ := new(big.Int).SetString(msg.Z3, 10)
-	msgA, err := A.ToEcPointMessage()
-	if err != nil {
-		return err
-	}
-	msgB, err := B.ToEcPointMessage()
-	if err != nil {
-		return err
-	}
-	msgX, err := X.ToEcPointMessage()
-	if err != nil {
-		return err
-	}
-	msgG, err := G.ToEcPointMessage()
-	if err != nil {
-		return err
-	}
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), ciphertext.Bytes(), S.Bytes(), T.Bytes(), D.Bytes(), N.Bytes()), msg.Y, msg.Z, msgA, msgB, msgG, msgX)
+	msgs := utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), ciphertext.Bytes(), S.Bytes(), T.Bytes(), D.Bytes(), N.Bytes(), Y.GetX().Bytes(), Y.GetY().Bytes(), Z.GetX().Bytes(), Z.GetY().Bytes(),
+	        A.GetX().Bytes(), A.GetY().Bytes(), B.GetX().Bytes(), B.GetY().Bytes(), G.GetX().Bytes(), G.GetY().Bytes(),X.GetX().Bytes(), X.GetY().Bytes())
 	seed, err := utils.HashProtos(msg.Salt, msgs...)
 	if err != nil {
 		return err

@@ -90,21 +90,13 @@ func NewPaillierAffAndGroupRangeMessage(config *CurveConfig, ssidInfo []byte, x 
 	T := new(big.Int).Mul(new(big.Int).Exp(peds, y, pedN), new(big.Int).Exp(pedt, mu, pedN))
 	T.Mod(T, pedN)
 
-	msgG, err := G.ToEcPointMessage()
-	if err != nil {
-		return nil, err
-	}
-	msgX, err := X.ToEcPointMessage()
-	if err != nil {
-		return nil, err
-	}
 	msgBx, err := Bx.ToEcPointMessage()
 	if err != nil {
 		return nil, err
 	}
 
 	// e in ±q.
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), n0.Bytes(), n1.Bytes(), C.Bytes(), D.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), By.Bytes(), E.Bytes(), F.Bytes()), msgG, msgX, msgBx)
+	msgs := utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), n0.Bytes(), n1.Bytes(), C.Bytes(), D.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), By.Bytes(), E.Bytes(), F.Bytes(), G.GetX().Bytes(), G.GetY().Bytes(), X.GetX().Bytes(), X.GetY().Bytes(), Bx.GetX().Bytes(), Bx.GetY().Bytes())
 	e, salt, err := GetE(curveN, msgs...)
 	if err != nil {
 		return nil, err
@@ -229,16 +221,8 @@ func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo
 	if err != nil {
 		return err
 	}
-	msgG, err := G.ToEcPointMessage()
-	if err != nil {
-		return err
-	}
-	msgX, err := X.ToEcPointMessage()
-	if err != nil {
-		return err
-	}
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), n0.Bytes(), n1.Bytes(), C.Bytes(), D.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), By.Bytes(), E.Bytes(), F.Bytes()), msgG, msgX, msg.Bx)
+	msgs := utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), n0.Bytes(), n1.Bytes(), C.Bytes(), D.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), By.Bytes(), E.Bytes(), F.Bytes(), G.GetX().Bytes(), G.GetY().Bytes(), X.GetX().Bytes(), X.GetY().Bytes(), Bx.GetX().Bytes(), Bx.GetY().Bytes())
 	seed, err := utils.HashProtos(msg.Salt, msgs...)
 	if err != nil {
 		return err
