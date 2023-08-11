@@ -29,6 +29,24 @@ type BK struct {
 	Rank uint32 `yaml:"rank"`
 }
 
+type PeersConfig struct {
+	Libp2pKeys map[string]string `yaml:"libp2p-keys"`
+}
+
+func ReadPeersConfig(filaPath string) (*PeersConfig, error) {
+	c := &PeersConfig{}
+	yamlFile, err := ioutil.ReadFile(filaPath)
+	if err != nil {
+		return nil, err
+	}
+	err = yaml.Unmarshal(yamlFile, c)
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
 func WriteYamlFile(yamlData interface{}, filePath string) error {
 	data, err := yaml.Marshal(yamlData)
 	if err != nil {

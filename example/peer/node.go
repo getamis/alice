@@ -15,18 +15,19 @@ package peer
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
 	"fmt"
-	"math/rand"
 
+	"github.com/getamis/alice/example/config"
+	"github.com/getamis/alice/example/utils"
 	"github.com/getamis/sirius/log"
 	"github.com/golang/protobuf/proto"
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/helpers"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/multiformats/go-multiaddr"
 )
 
@@ -47,7 +48,7 @@ func MakeBasicHost(port int64) (host.Host, error) {
 		libp2p.Identity(priv),
 	}
 
-	basicHost, err := libp2p.New(context.Background(), opts...)
+	basicHost, err := libp2p.New(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -69,14 +70,21 @@ func getPeerAddr(port int64) (string, error) {
 	return fmt.Sprintf("/ip4/127.0.0.1/tcp/%d/p2p/%s", port, pid), nil
 }
 
-// generateIdentity generates a fixed key pair by using port as random source.
+// generateIdentity generates a fixed key pair by reading from file
 func generateIdentity(port int64) (crypto.PrivKey, error) {
-	// Use the port as the randomness source in this example.
-	// #nosec: G404: Use of weak random number generator (math/rand instead of crypto/rand)
-	r := rand.New(rand.NewSource(port))
-
-	// Generate a key pair for this host.
-	priv, _, err := crypto.GenerateKeyPairWithReader(crypto.ECDSA, 2048, r)
+	cfg, err := config.ReadPeersConfig("./peers.yaml")
+	if err != nil {
+		return nil, err
+	}
+	privateKeyHex, found := cfg.Libp2pKeys[utils.GetPeerIDFromPort(port)]
+	if !found {
+		return nil, fmt.Errorf("not found libp2p key for %s", utils.GetPeerIDFromPort(port))
+	}
+	byteArray, err := hex.DecodeString(privateKeyHex)
+	if err != nil {
+		return nil, err
+	}
+	priv, err := crypto.UnmarshalPrivateKey(byteArray)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +129,8 @@ func send(ctx context.Context, host host.Host, target string, data interface{}, 
 		log.Warn("Cannot write message to IO", "err", err)
 		return err
 	}
-	err = helpers.FullClose(s)
+
+	err = s.Close()
 	if err != nil {
 		log.Warn("Cannot close the stream", "err", err)
 		return err
