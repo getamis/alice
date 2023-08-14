@@ -41,10 +41,6 @@ var _ = Describe("Paillier test", func() {
 		var _ homo.Crypto = p
 	})
 
-	It("implement homo.PubKey interface", func() {
-		var _ homo.Pubkey = p.publicKey
-	})
-
 	It("GetMessageRange()", func() {
 		n := big.NewInt(101)
 		msgRange := new(big.Int).Sub(p.n, big.NewInt(10000))

@@ -70,6 +70,7 @@ func (p *mtaHandler) HandleMessage(logger log.Logger, message types.Message) err
 	msg := getMessage(message)
 	id := msg.GetId()
 	peer, ok := p.peers[id]
+	curveN := p.getCurve().Params().N
 	if !ok {
 		logger.Warn("Peer not found")
 		return ErrPeerNotFound
@@ -81,6 +82,7 @@ func (p *mtaHandler) HandleMessage(logger log.Logger, message types.Message) err
 		logger.Warn("Failed to decrypt EncAiAlpha", "err", err)
 		return err
 	}
+	aiAlpha.Mod(aiAlpha, curveN)
 	gammaG, err := p.aiMta.VerifyProofWithCheck(body.AiProof, p.getCurve(), aiAlpha)
 	if err != nil {
 		logger.Debug("Failed to verify ai beta proof", "err", err)
@@ -91,6 +93,7 @@ func (p *mtaHandler) HandleMessage(logger log.Logger, message types.Message) err
 		logger.Warn("Failed to decrypt EncWiAlpha", "err", err)
 		return err
 	}
+	wiAlpha.Mod(wiAlpha, curveN)
 	wiG, err := p.wiMta.VerifyProofWithCheck(body.WiProof, p.getCurve(), wiAlpha)
 	if err != nil {
 		logger.Warn("Failed to verify wi beta proof", "err", err)
