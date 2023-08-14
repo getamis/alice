@@ -26,6 +26,7 @@ import (
 )
 
 // Message defines the message interface
+//
 //go:generate mockery --name=EchoMessage
 type EchoMessage interface {
 	proto.Message

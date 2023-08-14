@@ -19,6 +19,7 @@ import (
 )
 
 // PeerManager defines the peer interface
+//
 //go:generate mockery --name=PeerManager
 type PeerManager interface {
 	NumPeers() uint32
@@ -28,6 +29,7 @@ type PeerManager interface {
 }
 
 // Handler defines the message handler
+//
 //go:generate mockery --name=Handler
 type Handler interface {
 	// MessageType return the message type which the handler want to collect
@@ -47,6 +49,7 @@ type Handler interface {
 type MessageType int32
 
 // Message defines the message interface
+//
 //go:generate mockery --name=Message
 type Message interface {
 	// GetId returns the message id
@@ -58,6 +61,7 @@ type Message interface {
 }
 
 // MessageMain defines the message main interface
+//
 //go:generate mockery --name=MessageMain
 type MessageMain interface {
 	AddMessage(senderId string, msg Message) error
