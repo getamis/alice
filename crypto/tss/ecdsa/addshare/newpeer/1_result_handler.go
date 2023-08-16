@@ -20,7 +20,7 @@ import (
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/addshare"
+	"github.com/getamis/alice/crypto/tss/ecdsa/addshare"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/crypto/zkproof"
 	"github.com/getamis/alice/types"
@@ -35,6 +35,7 @@ type resultHandler struct {
 	*peerHandler
 
 	share *big.Int
+	siG   *ecpointgrouplaw.ECPoint
 	bk    *birkhoffinterpolation.BkParameter
 	bks   birkhoffinterpolation.BkParameters
 	sgs   []*ecpointgrouplaw.ECPoint
@@ -98,7 +99,7 @@ func (r *resultHandler) Finalize(logger log.Logger) (types.Handler, error) {
 	}
 	share.Mod(share, r.fieldOrder)
 	siG := ecpointgrouplaw.ScalarBaseMult(curve, share)
-
+	r.siG = siG
 	// bks = old peer bk + self bk
 	// sgs = old peer siG + new siG
 	bks := append(r.bks, r.bk)

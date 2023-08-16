@@ -20,7 +20,7 @@ import (
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
-	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/addshare"
+	"github.com/getamis/alice/crypto/tss/ecdsa/addshare"
 	"github.com/getamis/alice/types"
 	"github.com/getamis/alice/types/message"
 	"github.com/getamis/sirius/log"
@@ -32,9 +32,10 @@ type AddShare struct {
 }
 
 type Result struct {
-	PublicKey *ecpointgrouplaw.ECPoint
-	Share     *big.Int
-	Bks       map[string]*birkhoffinterpolation.BkParameter
+	PartialPublicKeys map[string]*ecpointgrouplaw.ECPoint
+	PublicKey         *ecpointgrouplaw.ECPoint
+	Share             *big.Int
+	Bks               map[string]*birkhoffinterpolation.BkParameter
 }
 
 func NewAddShare(peerManager types.PeerManager, pubkey *ecpointgrouplaw.ECPoint, threshold, newPeerRank uint32, listener types.StateChangedListener) *AddShare {
@@ -60,13 +61,20 @@ func (a *AddShare) GetResult() (*Result, error) {
 
 	// Total bks = peer bks + self bk
 	bks := make(map[string]*birkhoffinterpolation.BkParameter, a.ph.peerManager.NumPeers()+1)
+	pks := make(map[string]*ecpointgrouplaw.ECPoint, a.ph.peerManager.NumPeers()+1)
+
 	bks[a.ph.peerManager.SelfID()] = rh.bk
+	pks[a.ph.peerManager.SelfID()] = rh.siG
+
 	for id, peer := range a.ph.peers {
 		bks[id] = peer.peer.bk
+		pks[id] = peer.peer.siG
 	}
+
 	return &Result{
-		PublicKey: rh.pubkey,
-		Share:     rh.share,
-		Bks:       bks,
+		PartialPublicKeys: pks,
+		PublicKey:         rh.pubkey,
+		Share:             rh.share,
+		Bks:               bks,
 	}, nil
 }
