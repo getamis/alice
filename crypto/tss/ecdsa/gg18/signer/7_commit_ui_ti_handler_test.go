@@ -35,7 +35,7 @@ var _ = Describe("commit ui ti handler, negative cases", func() {
 		signers, listeners = newTestSigners()
 		// Override peer manager
 		for _, s := range signers {
-			p := newStopPeerManager(Type_CommitUiTi, s.ph.peerManager)
+			p := tss.NewStopPeerManager[Type](Type_CommitUiTi, s.ph.peerManager)
 			s.ph.peerManager = p
 		}
 

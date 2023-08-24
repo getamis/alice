@@ -17,6 +17,7 @@ package tss
 import (
 	"errors"
 	"fmt"
+	"sync/atomic"
 
 	"github.com/getamis/alice/types"
 )
@@ -107,4 +108,39 @@ func (p *TestPeerManager) MustSend(id string, message interface{}) {
 	}
 	msg := message.(types.Message)
 	d.AddMessage(p.id, msg)
+}
+
+type Message[Type ~int32] interface {
+	GetType() Type
+}
+
+type StopPeerManager[Type ~int32] struct {
+	types.PeerManager
+
+	stopMessageType Type
+	isStopped       *atomic.Bool
+}
+
+func NewStopPeerManager[Type ~int32](stopMessageType Type, p types.PeerManager) *StopPeerManager[Type] {
+	isStopped := &atomic.Bool{}
+	isStopped.Store(false)
+	return &StopPeerManager[Type]{
+		PeerManager:     p,
+		stopMessageType: stopMessageType,
+		isStopped:       isStopped,
+	}
+}
+
+func (p *StopPeerManager[Type]) MustSend(id string, message interface{}) {
+	if p.isStopped.Load() {
+		return
+	}
+
+	// Stop peer manager if we try to send the next
+	msg := message.(Message[Type])
+	if msg.GetType() >= p.stopMessageType {
+		p.isStopped.Store(true)
+		return
+	}
+	p.PeerManager.MustSend(id, message)
 }
