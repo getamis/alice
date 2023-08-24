@@ -36,6 +36,27 @@ Now, Alice supports two parts:
 ## Preparation : 
 1. [2-party Bip32](./crypto/bip32/README.md).
 
+## Security issues update:
+1. [verichanis, tssshock](https://www.verichains.io/tsshock/):
+    They mentioned three security issues.
+
+    a. Weaknesses in using ambiguous encoding scheme (alpha shuffle):
+    Our implementation of GG18 and CGGMP adapts the Google protobuf, so our implementation is essentially immune to this attack.
+
+    b. c-split:
+    The version of our GG18 is secure according to Theorem 2 in the [GG18](https://eprint.iacr.org/2019/114.pdf). We follow the suggestion of GG18 to substitute sMTA for mta and mta with check. So, we do not implement
+    this proof in our GG18.
+    
+
+    c. c-guess:
+    We do not implement dlnproof in GG18 as described in the case b.
+    Our iteration of the zkproof in CGGMP is at least 80. ref [here](https://github.com/getamis/alice/blob/cf43552c510499e5e797bc06e855a8f2086408b0/crypto/homo/paillier/paillier.go#L43). If necessary, this value can be adjusted to 128. However, in practical terms, using 80 or above is considered reasonable. 
+
+
+2. [GG18 and GG20 Paillier Key Vulnerability [CVE-2023-33241]: Technical Report](https://www.fireblocks.com/blog/gg18-and-gg20-paillier-key-vulnerability-technical-report):
+    In GG18 case, we have added a check: For any Paillier public key, it must not be divisible by the first three thousand prime numbers. 
+    For the CGGMP case, we have implemented a zero-knowledge proof named "Nosmallfactoezkproof" for Paillier that corresponds to this issue.
+    
 
 ## Audit Report:
  Alice has been audited by [Kudelski Security](https://www.kudelskisecurity.com). 
