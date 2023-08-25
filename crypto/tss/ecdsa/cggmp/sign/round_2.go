@@ -85,7 +85,7 @@ func (p *round2Handler) HandleMessage(logger log.Logger, message types.Message) 
 	}
 
 	ownPed := p.own.para
-	n := peer.para.Getn()
+	n := peer.para.GetN()
 	// Verify psi
 	err = round2.Psi.Verify(parameter, peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, new(big.Int).SetBytes(round2.D), new(big.Int).SetBytes(round2.F), ownPed, Gamma)
 	if err != nil {
@@ -173,7 +173,7 @@ func (p *round2Handler) Finalize(logger log.Logger) (types.Handler, error) {
 		logger = logger.New("peerId", id)
 		peerPed := peer.para
 		// Compute proof phi''
-		psidoublepaiProof, err := paillierzkproof.NewKnowExponentAndPaillierEncryption(parameter, p.own.ssidWithBk, p.k, p.rho, p.kCiphertext, p.own.para.Getn(), peerPed, Delta, sumGamma)
+		psidoublepaiProof, err := paillierzkproof.NewKnowExponentAndPaillierEncryption(parameter, p.own.ssidWithBk, p.k, p.rho, p.kCiphertext, p.own.para.GetN(), peerPed, Delta, sumGamma)
 		if err != nil {
 			logger.Debug("Failed to NewKnowExponentAndPaillierEncryption", "err", err)
 			return nil, err

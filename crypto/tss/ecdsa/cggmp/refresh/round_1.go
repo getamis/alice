@@ -129,7 +129,7 @@ func newRound1Handler(oldShare *big.Int, pubKey *ecpointgrouplaw.ECPoint, peerMa
 		return nil, err
 	}
 	// Generate psi^hat := prm zk proof
-	pedPar, err := paillierzkproof.NewRingPederssenParameterMessage(cggmp.ComputeZKSsid(ssid, p.ownBK), ped.GetEulerValue(), ped.PedersenOpenParameter.Getn(), ped.PedersenOpenParameter.Gets(), ped.PedersenOpenParameter.Gett(), ped.Getlambda(), paillierzkproof.MINIMALCHALLENGE)
+	pedPar, err := paillierzkproof.NewRingPederssenParameterMessage(cggmp.ComputeZKSsid(ssid, p.ownBK), ped.GetEulerValue(), ped.PedersenOpenParameter.GetN(), ped.PedersenOpenParameter.GetS(), ped.PedersenOpenParameter.GetT(), ped.Getlambda(), paillierzkproof.MINIMALCHALLENGE)
 	if err != nil {
 		return nil, err
 	}

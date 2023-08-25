@@ -25,9 +25,9 @@ func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, 
 	curve := A.GetCurve()
 	curveN := curve.Params().N
 	G := pt.NewBase(curve)
-	pedN := ped.Getn()
-	peds := ped.Gets()
-	pedt := ped.Gett()
+	pedN := ped.GetN()
+	peds := ped.GetS()
+	pedt := ped.GetT()
 
 	// Sample α in ± 2^{l+ε}
 	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
@@ -136,9 +136,9 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	curveN := curve.Params().N
 	NSqaure := new(big.Int).Mul(N, N)
 	G := pt.NewBase(curve)
-	pedN := ped.Getn()
-	peds := ped.Gets()
-	pedt := ped.Gett()
+	pedN := ped.GetN()
+	peds := ped.GetS()
+	pedt := ped.GetT()
 	// check D in Z_{N0^2}^\ast, S,T in Z_{\hat{N}}^\ast, w in [0,q), e in (-q, q), and z_2 in Z_{N}^\ast.
 	S := new(big.Int).SetBytes(msg.S)
 	err := utils.InRange(S, big0, pedN)

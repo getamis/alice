@@ -117,7 +117,7 @@ func (p *round4Handler) buildSigmaVerifyFailureMsg() error {
 	// A: Reprove that {Dhatj,i}j ̸=i are well-formed according to prod_ell^aff-g , for l ̸= j,i.
 	for _, peer := range p.peers {
 		ownPed := p.own.para
-		n := peer.para.Getn()
+		n := peer.para.GetN()
 		// Verify psi
 		bkPartialKey := peer.partialPubKey.ScalarMult(peer.bkcoefficient)
 		err := peer.round2Data.psihatProoof.Verify(paillierzkproof.NewS256(), peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, peer.round2Data.dhat, peer.round2Data.fhat, ownPed, bkPartialKey)
@@ -177,7 +177,7 @@ func (p *round4Handler) buildSigmaVerifyFailureMsg() error {
 	// Build DecryProoof
 	for _, peer := range p.peers {
 		ped := peer.para
-		translateBeta := new(big.Int).Exp(new(big.Int).Add(p.paillierKey.GetN(), big1), new(big.Int).Mul(new(big.Int).Neg(new(big.Int).Mul(p.R.GetX(), peer.round1Data.countSigma)), ped.Getn()), p.paillierKey.GetNSquare())
+		translateBeta := new(big.Int).Exp(new(big.Int).Add(p.paillierKey.GetN(), big1), new(big.Int).Mul(new(big.Int).Neg(new(big.Int).Mul(p.R.GetX(), peer.round1Data.countSigma)), ped.GetN()), p.paillierKey.GetNSquare())
 		ciphertext.Mul(ciphertext, translateBeta)
 		ciphertext.Mod(ciphertext, nSquare)
 

@@ -211,7 +211,7 @@ func (p *round6Handler) ProcessErr2Msg(msgs []*Message) (map[string]struct{}, er
 			errPeers[peerId] = struct{}{}
 			continue
 		}
-		n := peer.para.Getn()
+		n := peer.para.GetN()
 		nSquare := new(big.Int).Mul(n, n)
 		biY, err := msg.Ytilde.ToPoint()
 		if err != nil {

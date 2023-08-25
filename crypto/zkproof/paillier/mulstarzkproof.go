@@ -22,9 +22,9 @@ import (
 )
 
 func NewMulStarMessage(config *CurveConfig, ssidInfo []byte, x, rho, N0, C, D *big.Int, ped *PederssenOpenParameter, X *pt.ECPoint) (*MulStarMessage, error) {
-	pedN := ped.Getn()
-	peds := ped.Gets()
-	pedt := ped.Gett()
+	pedN := ped.GetN()
+	peds := ped.GetS()
+	pedt := ped.GetT()
 	// Sample α in ± 2^{l+ε}
 	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
 	if err != nil {
@@ -98,9 +98,9 @@ func NewMulStarMessage(config *CurveConfig, ssidInfo []byte, x, rho, N0, C, D *b
 func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D *big.Int, ped *PederssenOpenParameter, X *pt.ECPoint) error {
 	G := pt.NewBase(X.GetCurve())
 	N0Square := new(big.Int).Mul(N0, N0)
-	pedN := ped.Getn()
-	peds := ped.Gets()
-	pedt := ped.Gett()
+	pedN := ped.GetN()
+	peds := ped.GetS()
+	pedt := ped.GetT()
 	msgG, err := G.ToEcPointMessage()
 	if err != nil {
 		return err

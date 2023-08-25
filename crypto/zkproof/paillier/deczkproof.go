@@ -21,9 +21,9 @@ import (
 )
 
 func NewDecryMessage(config *CurveConfig, ssidInfo []byte, y, rho, N0, C, x *big.Int, ped *PederssenOpenParameter) (*DecryMessage, error) {
-	pedN := ped.Getn()
-	peds := ped.Gets()
-	pedt := ped.Gett()
+	pedN := ped.GetN()
+	peds := ped.GetS()
+	pedt := ped.GetT()
 	// Sample α in ± 2^{l+ε}.
 	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
 	if err != nil {
@@ -85,9 +85,9 @@ func NewDecryMessage(config *CurveConfig, ssidInfo []byte, y, rho, N0, C, x *big
 func (msg *DecryMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, x *big.Int, ped *PederssenOpenParameter) error {
 	fieldOrder := config.Curve.Params().N
 	N0Square := new(big.Int).Mul(N0, N0)
-	pedN := ped.Getn()
-	peds := ped.Gets()
-	pedt := ped.Gett()
+	pedN := ped.GetN()
+	peds := ped.GetS()
+	pedt := ped.GetT()
 	seed, err := utils.HashProtos(msg.Salt, utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), msg.A, msg.Gamma, msg.S, msg.T, N0.Bytes(), C.Bytes(), x.Bytes(), fieldOrder.Bytes())...)
 	if err != nil {
 		return err

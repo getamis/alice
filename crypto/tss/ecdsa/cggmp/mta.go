@@ -36,7 +36,7 @@ func MtaWithProofAff_g(ownssidwithbk []byte, peerPed *paillierzkproof.PederssenO
 		return nil, nil, nil, nil, nil, nil, nil, err
 	}
 	peerPaillierKey := paillier.ToPaillierPubKeyWithSpecialG(peerPed)
-	proof, err := paillierzkproof.NewPaillierAffAndGroupRangeMessage(parameter, ownssidwithbk, x, beta, s, r, peerPed.Getn(), paillierKey.GetN(), new(big.Int).SetBytes(msgCipher), D, F, peerPed, ecPoint)
+	proof, err := paillierzkproof.NewPaillierAffAndGroupRangeMessage(parameter, ownssidwithbk, x, beta, s, r, peerPed.GetN(), paillierKey.GetN(), new(big.Int).SetBytes(msgCipher), D, F, peerPed, ecPoint)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, nil, err
 	}
@@ -49,11 +49,11 @@ func MtaWithProofAff_p(ownssidwithbk []byte, peerPed *paillierzkproof.PederssenO
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}
-	proof, err := paillierzkproof.NewPaillierOperationAndPaillierCommitment(parameter, ownssidwithbk, gamma, beta, s, mu, r, peerPed.Getn(), paillierKey.GetN(), gammaCiphertext, F, new(big.Int).SetBytes(msgKCipher), D, peerPed)
+	proof, err := paillierzkproof.NewPaillierOperationAndPaillierCommitment(parameter, ownssidwithbk, gamma, beta, s, mu, r, peerPed.GetN(), paillierKey.GetN(), gammaCiphertext, F, new(big.Int).SetBytes(msgKCipher), D, peerPed)
 	if err != nil {
 		return nil, nil, nil, nil, nil, nil, err
 	}
-	adjustBeta, _ := computeBeta(beta, peerPed.Getn(), big.NewInt(0))
+	adjustBeta, _ := computeBeta(beta, peerPed.GetN(), big.NewInt(0))
 	return adjustBeta, r, s, D, F, proof, nil
 }
 

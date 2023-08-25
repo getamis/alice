@@ -87,7 +87,7 @@ func (ped *PederssenParameter) GetEulerValue() *big.Int {
 
 func ToPaillierPubKeyWithSpecialG(ped *zkPaillier.PederssenOpenParameter) *publicKey {
 	// special g = 1+ n (ref. definition 2.2 in cggmp)
-	n := ped.Getn()
+	n := ped.GetN()
 	return &publicKey{
 		n:       n,
 		g:       new(big.Int).Add(big1, n),

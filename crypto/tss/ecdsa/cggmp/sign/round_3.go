@@ -80,7 +80,7 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 		logger.Debug("Failed to ToPoint", "err", err)
 		return err
 	}
-	err = round3.Psidoublepai.Verify(parameter, peer.ssidWithBk, peer.round1Data.kCiphertext, peer.para.Getn(), ownPed, Delta, p.sumGamma)
+	err = round3.Psidoublepai.Verify(parameter, peer.ssidWithBk, peer.round1Data.kCiphertext, peer.para.GetN(), ownPed, Delta, p.sumGamma)
 	if err != nil {
 		logger.Debug("Failed to Verify", "err", err)
 		return err
@@ -156,7 +156,7 @@ func (p *round3Handler) buildDeltaVerifyFailureMsg() error {
 	curveN := curve.Params().N
 	for _, peer := range p.peers {
 		ownPed := p.own.para
-		n := peer.para.Getn()
+		n := peer.para.GetN()
 		// Verify psi
 		err := peer.round2Data.psiProof.Verify(paillier.NewS256(), peer.ssidWithBk, p.paillierKey.GetN(), n, p.kCiphertext, peer.round2Data.d, peer.round2Data.f, ownPed, peer.round2Data.allGammaPoint)
 		if err != nil {
@@ -207,7 +207,7 @@ func (p *round3Handler) buildDeltaVerifyFailureMsg() error {
 	peersMsg := make(map[string]*Err1PeerMsg)
 	for _, peer := range p.peers {
 		ped := peer.para
-		translateBeta := new(big.Int).Exp(alphaDeltaWithSaltOne, new(big.Int).Mul(new(big.Int).Neg(peer.round1Data.countDelta), ped.Getn()), p.paillierKey.GetNSquare())
+		translateBeta := new(big.Int).Exp(alphaDeltaWithSaltOne, new(big.Int).Mul(new(big.Int).Neg(peer.round1Data.countDelta), ped.GetN()), p.paillierKey.GetNSquare())
 		deltaCiphertext.Mul(deltaCiphertext, translateBeta)
 		deltaCiphertext.Mod(deltaCiphertext, p.paillierKey.GetNSquare())
 

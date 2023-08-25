@@ -79,7 +79,7 @@ func (p *round4Handler) HandleMessage(logger log.Logger, message types.Message) 
 	curve := p.pubKey.GetCurve()
 	G := pt.NewBase(curve)
 	ownPed := p.own.para
-	n := peer.para.Getn()
+	n := peer.para.GetN()
 	Gamma, err := round4.Gamma.ToPoint()
 	if err != nil {
 		logger.Warn("Failed to ToPoint", "err", err)

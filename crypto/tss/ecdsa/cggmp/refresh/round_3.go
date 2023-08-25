@@ -99,7 +99,7 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 	err = commitment.FeldmanVerify(curve, p.ownBK, polyPoint, p.threshold-1, plaintextShareBig)
 	if err != nil {
 		// mu = (cipherShare * (1+n)^(-share))(^1/n) mod n^2.
-		n := ped.Getn()
+		n := ped.GetN()
 		mu := new(big.Int).Add(big1, n)
 		mu.Exp(mu, new(big.Int).Neg(plaintextShareBig), p.paillierKey.GetNSquare())
 		mu.Mul(mu, new(big.Int).SetBytes(round3Msg.Encshare))
@@ -129,13 +129,13 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 	ssidSumRho = append(ssidSumRho, p.sumrho...)
 	// Verify factor proof
 	err = round3Msg.FacProof.Verify(paillierzkproof.NewS256(),
-		ssidSumRho, p.sumrho, peer.round2.pederssenPara.Getn(), ped)
+		ssidSumRho, p.sumrho, peer.round2.pederssenPara.GetN(), ped)
 	if err != nil {
 		return err
 	}
 
 	// Verify mod Proof
-	err = round3Msg.ModProof.Verify(ssidSumRho, peer.round2.pederssenPara.Getn())
+	err = round3Msg.ModProof.Verify(ssidSumRho, peer.round2.pederssenPara.GetN())
 	if err != nil {
 		return err
 	}

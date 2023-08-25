@@ -92,9 +92,9 @@ var _ = Describe("Refresh", func() {
 				Expect(v.Equal(r.Y[k])).Should(BeTrue())
 			}
 			for k, v := range r0.PedParameter {
-				Expect(v.Getn().Cmp(r.PedParameter[k].Getn()) == 0).Should(BeTrue())
-				Expect(v.Gets().Cmp(r.PedParameter[k].Gets()) == 0).Should(BeTrue())
-				Expect(v.Gett().Cmp(r.PedParameter[k].Gett()) == 0).Should(BeTrue())
+				Expect(v.GetN().Cmp(r.PedParameter[k].GetN()) == 0).Should(BeTrue())
+				Expect(v.GetS().Cmp(r.PedParameter[k].GetS()) == 0).Should(BeTrue())
+				Expect(v.GetT().Cmp(r.PedParameter[k].GetT()) == 0).Should(BeTrue())
 			}
 		}
 
@@ -105,7 +105,7 @@ var _ = Describe("Refresh", func() {
 			otherIndex := (i + 1) % len(shares)
 			rpai, err := refreshes[tss.GetTestID(otherIndex)].GetResult()
 			Expect(err).Should(BeNil())
-			Expect(r.PaillierKey.GetN().Cmp(rpai.PedParameter[tss.GetTestID(i)].Getn()) == 0).Should(BeTrue())
+			Expect(r.PaillierKey.GetN().Cmp(rpai.PedParameter[tss.GetTestID(i)].GetN()) == 0).Should(BeTrue())
 		}
 
 		allBks := make(birkhoffinterpolation.BkParameters, len(shares))
