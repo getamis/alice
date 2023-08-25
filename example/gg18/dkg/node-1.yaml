@@ -1,0 +1,10 @@
+port: 10001
+identity: CAMSeTB3AgEBBCADTRFtapXCL1jD0HBkymsyQ7zivD41FRQ9zKPgL+X9MaAKBggqhkjOPQMBB6FEA0IABGxK+P4V0qqLYf2aaGiekigU+/QJsOqcTeb29ygN/cpyfyJ+YKaj9AS9yLxxzvXN+yiufU/T4x02PNxls44KYjs=
+peers:
+  - id: QmUmf4xxZYPS8vXzz2uAAaNpogxEugYpmPDnnu9saon4c5
+    port: 10002
+  - id: QmaLCt3WyUrbjqKtwKNaSdKiQnyhwGJyFsLHxhnsuQ1XRB
+    port: 10003
+rank: 0
+threshold: 3
+

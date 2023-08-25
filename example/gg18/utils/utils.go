@@ -15,27 +15,21 @@ package utils
 
 import (
 	"errors"
-	"fmt"
 	"math/big"
+
+	"github.com/getamis/sirius/log"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/tss/dkg"
-	"github.com/getamis/alice/example/config"
-	"github.com/getamis/sirius/log"
+	"github.com/getamis/alice/example/gg18/config"
 )
 
 var (
 	// ErrConversion for big int conversion error
 	ErrConversion = errors.New("conversion error")
 )
-
-// GetPeerIDFromPort gets peer ID from port.
-func GetPeerIDFromPort(port int64) string {
-	// For convenience, we set peer ID as "id-" + port
-	return fmt.Sprintf("id-%d", port)
-}
 
 // GetCurve returns the curve we used in this example.
 func GetCurve() elliptic.Curve {
