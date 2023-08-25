@@ -135,18 +135,19 @@ func newRound1Handler(oldShare *big.Int, pubKey *ecpointgrouplaw.ECPoint, peerMa
 	}
 	Ai := make(map[string]*big.Int)
 	msgAi := make(map[string]*pt.EcPointMessage)
-	for i := 0; i < len(peerManager.PeerIDs()); i++ {
+
+	for _, peerId := range peerManager.PeerIDs() {
 		temp, err := utils.RandomInt(curve.Params().N)
 		if err != nil {
 			return nil, err
 		}
-		Ai[peerManager.PeerIDs()[i]] = temp
+		Ai[peerId] = temp
 		tempPoint := pt.ScalarBaseMult(curve, temp)
 		MsgTempPoint, err := tempPoint.ToEcPointMessage()
 		if err != nil {
 			return nil, err
 		}
-		msgAi[peerManager.PeerIDs()[i]] = MsgTempPoint
+		msgAi[peerId] = MsgTempPoint
 	}
 
 	// Sample rho, u in {0,1}^kappa
