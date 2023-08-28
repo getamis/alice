@@ -23,9 +23,9 @@ import (
 func NewEncryptRangeMessage(config *CurveConfig, ssidInfo []byte, ciphertext *big.Int, proverN *big.Int, k *big.Int, rho *big.Int, ped *PederssenOpenParameter) (*EncryptRangeMessage, error) {
 	groupOrder := config.Curve.Params().N
 	proverNSquare := new(big.Int).Exp(proverN, big2, nil)
-	pedN := ped.Getn()
-	peds := ped.Gets()
-	pedt := ped.Gett()
+	pedN := ped.GetN()
+	peds := ped.GetS()
+	pedt := ped.GetT()
 	// Sample α in ± 2^{l+ε}
 	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
 	if err != nil {
@@ -83,9 +83,9 @@ func NewEncryptRangeMessage(config *CurveConfig, ssidInfo []byte, ciphertext *bi
 
 func (msg *EncryptRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertext []byte, proveN *big.Int, ped *PederssenOpenParameter) error {
 	groupOrder := config.Curve.Params().N
-	pedN := ped.Getn()
-	peds := ped.Gets()
-	pedt := ped.Gett()
+	pedN := ped.GetN()
+	peds := ped.GetS()
+	pedt := ped.GetT()
 	// check S, C ∈ Z_{pedN}^\ast
 	S := new(big.Int).SetBytes(msg.S)
 	err := utils.InRange(S, big0, pedN)

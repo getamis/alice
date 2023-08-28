@@ -183,14 +183,14 @@ func (p *round2Handler) Finalize(logger log.Logger) (types.Handler, error) {
 		// Compute facProof phi
 		// FIXME: select curveconfig
 		var err error
-		peer.round2.factorProof, err = paillierzkproof.NewNoSmallFactorMessage(paillierzkproof.NewS256(), ssidSumRho, p.sumrho, p.ped.GetP(), p.ped.GetQ(), p.ped.PedersenOpenParameter.Getn(), temp)
+		peer.round2.factorProof, err = paillierzkproof.NewNoSmallFactorMessage(paillierzkproof.NewS256(), ssidSumRho, p.sumrho, p.ped.GetP(), p.ped.GetQ(), p.ped.PedersenOpenParameter.GetN(), temp)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Generate modProof psi
-	modProof, err := paillierzkproof.NewPaillierBlumMessage(ssidSumRho, p.ped.GetP(), p.ped.GetQ(), p.ped.PedersenOpenParameter.Getn(), paillierzkproof.MINIMALCHALLENGE)
+	modProof, err := paillierzkproof.NewPaillierBlumMessage(ssidSumRho, p.ped.GetP(), p.ped.GetQ(), p.ped.PedersenOpenParameter.GetN(), paillierzkproof.MINIMALCHALLENGE)
 	if err != nil {
 		return nil, err
 	}

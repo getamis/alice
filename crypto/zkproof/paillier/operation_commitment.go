@@ -24,9 +24,9 @@ func NewPaillierOperationAndPaillierCommitment(config *CurveConfig, ssidInfo []b
 	n0Square := new(big.Int).Exp(n0, big2, nil)
 	n1Square := new(big.Int).Exp(n1, big2, nil)
 	fieldOrder := config.Curve.Params().N
-	pedN := ped.Getn()
-	peds := ped.Gets()
-	pedt := ped.Gett()
+	pedN := ped.GetN()
+	peds := ped.GetS()
+	pedt := ped.GetT()
 	// Sample α in ± 2^{l+ε}, β in ±2^{l'+ε}.
 	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
 	if err != nil {
@@ -128,9 +128,9 @@ func (msg *PaillierOperationAndCommitmentMessage) Verify(config *CurveConfig, ss
 	n0Square := new(big.Int).Exp(n0, big2, nil)
 	n1Square := new(big.Int).Exp(n1, big2, nil)
 	fieldOrder := config.Curve.Params().N
-	pedN := ped.Getn()
-	peds := ped.Gets()
-	pedt := ped.Gett()
+	pedN := ped.GetN()
+	peds := ped.GetS()
+	pedt := ped.GetT()
 	// check A in Z_{N0^2}^\ast, By, Bx in Z_{N1^2}^\ast, E,S,T,F in Z_{\hat{N}}^\ast, w in Z_{N0}^\ast, and wx, wy in Z_{N1}^\ast.
 	S := new(big.Int).SetBytes(msg.S)
 	err := utils.InRange(S, big0, pedN)

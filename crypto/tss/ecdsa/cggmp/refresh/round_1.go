@@ -129,24 +129,25 @@ func newRound1Handler(oldShare *big.Int, pubKey *ecpointgrouplaw.ECPoint, peerMa
 		return nil, err
 	}
 	// Generate psi^hat := prm zk proof
-	pedPar, err := paillierzkproof.NewRingPederssenParameterMessage(cggmp.ComputeZKSsid(ssid, p.ownBK), ped.GetEulerValue(), ped.PedersenOpenParameter.Getn(), ped.PedersenOpenParameter.Gets(), ped.PedersenOpenParameter.Gett(), ped.Getlambda(), paillierzkproof.MINIMALCHALLENGE)
+	pedPar, err := paillierzkproof.NewRingPederssenParameterMessage(cggmp.ComputeZKSsid(ssid, p.ownBK), ped.GetEulerValue(), ped.PedersenOpenParameter.GetN(), ped.PedersenOpenParameter.GetS(), ped.PedersenOpenParameter.GetT(), ped.Getlambda(), paillierzkproof.MINIMALCHALLENGE)
 	if err != nil {
 		return nil, err
 	}
 	Ai := make(map[string]*big.Int)
 	msgAi := make(map[string]*pt.EcPointMessage)
-	for i := 0; i < len(peerManager.PeerIDs()); i++ {
+
+	for _, peerId := range peerManager.PeerIDs() {
 		temp, err := utils.RandomInt(curve.Params().N)
 		if err != nil {
 			return nil, err
 		}
-		Ai[peerManager.PeerIDs()[i]] = temp
+		Ai[peerId] = temp
 		tempPoint := pt.ScalarBaseMult(curve, temp)
 		MsgTempPoint, err := tempPoint.ToEcPointMessage()
 		if err != nil {
 			return nil, err
 		}
-		msgAi[peerManager.PeerIDs()[i]] = MsgTempPoint
+		msgAi[peerId] = MsgTempPoint
 	}
 
 	// Sample rho, u in {0,1}^kappa

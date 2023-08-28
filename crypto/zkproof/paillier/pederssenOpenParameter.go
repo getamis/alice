@@ -32,14 +32,14 @@ func NewPedersenOpenParameter(n, s, t *big.Int) *PederssenOpenParameter {
 	}
 }
 
-func (ped *PederssenOpenParameter) Getn() *big.Int {
+func (ped *PederssenOpenParameter) GetN() *big.Int {
 	return ped.n
 }
 
-func (ped *PederssenOpenParameter) Gets() *big.Int {
+func (ped *PederssenOpenParameter) GetS() *big.Int {
 	return ped.s
 }
 
-func (ped *PederssenOpenParameter) Gett() *big.Int {
+func (ped *PederssenOpenParameter) GetT() *big.Int {
 	return ped.t
 }

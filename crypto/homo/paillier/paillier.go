@@ -19,13 +19,13 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/getamis/alice/crypto/elliptic"
+	"google.golang.org/protobuf/proto"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
+	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/getamis/alice/crypto/homo"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/getamis/alice/crypto/zkproof"
-	"github.com/golang/protobuf/proto"
 )
 
 const (
@@ -154,7 +154,6 @@ func NewPaillierSafePrime(keySize int) (*Paillier, error) {
 	return NewPaillierUnSafe(keySize, true)
 }
 
-// Warning: Only use in test.
 func NewPaillierWithGivenPrimes(p, q *big.Int) (*Paillier, error) {
 	n := new(big.Int).Mul(p, q)
 	g := new(big.Int).Add(n, big1)
@@ -496,4 +495,8 @@ func (p *Paillier) GetNthRoot() (*big.Int, error) {
 		return nil, err
 	}
 	return new(big.Int).ModInverse(p.n, eulerValue), nil
+}
+
+func (p *Paillier) GetPQ() (*big.Int, *big.Int) {
+	return p.privateKey.p, p.privateKey.q
 }

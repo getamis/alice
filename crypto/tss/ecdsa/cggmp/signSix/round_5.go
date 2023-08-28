@@ -217,7 +217,7 @@ func (p *round5Handler) ProcessErr1Msg(msgs []*Message) (map[string]struct{}, er
 			errPeers[peerId] = struct{}{}
 			continue
 		}
-		n := peer.para.Getn()
+		n := peer.para.GetN()
 		nSquare := new(big.Int).Mul(n, n)
 
 		rhoNPower := new(big.Int).SetBytes(msg.RhoNPower)

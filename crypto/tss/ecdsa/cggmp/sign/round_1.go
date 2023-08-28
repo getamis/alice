@@ -201,7 +201,7 @@ func (p *round1Handler) HandleMessage(logger log.Logger, message types.Message) 
 	round1 := msg.GetRound1()
 	ownPed := p.own.para
 	peerPed := peer.para
-	n := peerPed.Getn()
+	n := peerPed.GetN()
 
 	// verify Proof_enc
 	err := round1.Psi.Verify(parameter, p.own.ssidWithBk, round1.KCiphertext, n, ownPed)

@@ -24,9 +24,9 @@ func NewNoSmallFactorMessage(config *CurveConfig, ssidInfo, rho []byte, p *big.I
 	sqrtN := new(big.Int).Sqrt(n)
 	groupOrder := config.Curve.Params().N
 	twoellAddepsionSqrtN := new(big.Int).Lsh(sqrtN, uint(config.LAddEpsilon))
-	pedN := ped.Getn()
-	peds := ped.Gets()
-	pedt := ped.Gett()
+	pedN := ped.GetN()
+	peds := ped.GetS()
+	pedt := ped.GetT()
 	// Sample α,β in ±2^{l+ε}·N0^1/2
 	alpha, err := utils.RandomAbsoluteRangeInt(twoellAddepsionSqrtN)
 	if err != nil {
@@ -109,9 +109,9 @@ func NewNoSmallFactorMessage(config *CurveConfig, ssidInfo, rho []byte, p *big.I
 
 func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byte, n *big.Int, ped *PederssenOpenParameter) error {
 	groupOrder := config.Curve.Params().N
-	pedN := ped.Getn()
-	peds := ped.Gets()
-	pedt := ped.Gett()
+	pedN := ped.GetN()
+	peds := ped.GetS()
+	pedt := ped.GetT()
 	P := new(big.Int).SetBytes(msg.P)
 	Q := new(big.Int).SetBytes(msg.Q)
 	A := new(big.Int).SetBytes(msg.A)

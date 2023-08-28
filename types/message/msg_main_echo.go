@@ -55,7 +55,7 @@ type EchoMsgMain struct {
 
 type echoMessage struct {
 	hash        []byte
-	msgMap      map[string]struct{}
+	count       int
 	originalMsg types.Message
 }
 
@@ -63,8 +63,7 @@ func NewEchoMsgMain(next types.MessageMain, pm types.PeerManager) *EchoMsgMain {
 	msgs := make(map[types.MessageType]map[string]*echoMessage)
 	return &EchoMsgMain{
 		MessageMain: next,
-
-		logger:      log.New("service", "EchoMsgMain"),
+		logger:      log.New(),
 		pm:          pm,
 		echoMsgs:    msgs,
 		marshalFunc: proto.Marshal,
@@ -106,26 +105,21 @@ func (t *EchoMsgMain) AddMessage(senderId string, msg types.Message) error {
 			}
 		}
 		echoMsg[msgId] = &echoMessage{
-			hash:   hash,
-			msgMap: make(map[string]struct{}),
+			hash: hash,
 		}
 		m = echoMsg[msgId]
+		m.originalMsg = msg
 	} else if !bytes.Equal(m.hash, hash) {
 		return ErrDifferentHash
 	}
 
-	// If it's an original message
-	if senderId == msgId && m.originalMsg == nil {
-		m.originalMsg = msg
+	m.count++
+	if m.count == int(t.pm.NumPeers()) {
+		delete(t.echoMsgs[msgType], msgId)
+		return t.MessageMain.AddMessage(m.originalMsg.GetId(), m.originalMsg)
 	}
-	m.msgMap[senderId] = struct{}{}
-	// Not handle if the message count is not enough
-	if len(m.msgMap) < int(t.pm.NumPeers()) || m.originalMsg == nil {
-		return nil
-	}
-	// Clear count
-	m.msgMap = make(map[string]struct{})
-	return t.MessageMain.AddMessage(m.originalMsg.GetId(), m.originalMsg)
+
+	return nil
 }
 
 func (t *EchoMsgMain) echoHash(m EchoMessage) ([]byte, error) {

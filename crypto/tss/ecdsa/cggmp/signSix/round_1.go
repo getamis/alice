@@ -229,7 +229,7 @@ func (p *round1Handler) HandleMessage(logger log.Logger, message types.Message) 
 	round1 := msg.GetRound1()
 	ownPed := p.own.para
 	peerPed := peer.para
-	n := peerPed.Getn()
+	n := peerPed.GetN()
 
 	kciphertext := new(big.Int).SetBytes(round1.KCiphertext)
 	A := peer.allY

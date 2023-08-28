@@ -18,28 +18,20 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/getamis/sirius/log"
+
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/crypto/commitment"
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
-	"github.com/getamis/alice/crypto/homo/paillier"
 	"github.com/getamis/alice/crypto/tss"
 	"github.com/getamis/alice/crypto/tss/ecdsa/cggmp"
 	paillierzkproof "github.com/getamis/alice/crypto/zkproof/paillier"
 	"github.com/getamis/alice/types"
-	"github.com/getamis/sirius/log"
 )
 
 type round3Data struct {
 	plaintextShareBig    *big.Int
 	partialRefreshPubKey map[string]*pt.ECPoint
-}
-
-type Result struct {
-	refreshShare         *big.Int
-	refreshPaillierKey   *paillier.Paillier
-	refreshPartialPubKey map[string]*pt.ECPoint
-	y                    map[string]*pt.ECPoint
-	pedParameter         map[string]*paillierzkproof.PederssenOpenParameter
 }
 
 type round3Handler struct {
@@ -107,7 +99,7 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 	err = commitment.FeldmanVerify(curve, p.ownBK, polyPoint, p.threshold-1, plaintextShareBig)
 	if err != nil {
 		// mu = (cipherShare * (1+n)^(-share))(^1/n) mod n^2.
-		n := ped.Getn()
+		n := ped.GetN()
 		mu := new(big.Int).Add(big1, n)
 		mu.Exp(mu, new(big.Int).Neg(plaintextShareBig), p.paillierKey.GetNSquare())
 		mu.Mul(mu, new(big.Int).SetBytes(round3Msg.Encshare))
@@ -137,13 +129,13 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 	ssidSumRho = append(ssidSumRho, p.sumrho...)
 	// Verify factor proof
 	err = round3Msg.FacProof.Verify(paillierzkproof.NewS256(),
-		ssidSumRho, p.sumrho, peer.round2.pederssenPara.Getn(), ped)
+		ssidSumRho, p.sumrho, peer.round2.pederssenPara.GetN(), ped)
 	if err != nil {
 		return err
 	}
 
 	// Verify mod Proof
-	err = round3Msg.ModProof.Verify(ssidSumRho, peer.round2.pederssenPara.Getn())
+	err = round3Msg.ModProof.Verify(ssidSumRho, peer.round2.pederssenPara.GetN())
 	if err != nil {
 		return err
 	}
@@ -245,13 +237,13 @@ func (p *round3Handler) Finalize(logger log.Logger) (types.Handler, error) {
 
 	p.result = &Result{
 		// new Share
-		refreshShare:       refreshShare,
-		refreshPaillierKey: p.paillierKey,
+		Share:       refreshShare,
+		PaillierKey: p.paillierKey,
 		// refreshPartialPubKey: X
-		refreshPartialPubKey: partialPubKey,
-		y:                    Y,
+		PartialPubKey: partialPubKey,
+		Y:             Y,
 		// pedParameter: N, s, t
-		pedParameter: ped,
+		PedParameter: ped,
 	}
 	return nil, nil
 }
