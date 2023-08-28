@@ -146,7 +146,7 @@ var _ = Describe("Child test", func() {
 		Expect(grandChildManager2.publicKey.Equal(grandChildManager1.publicKey)).Should(BeTrue())
 	},
 		// ref : https://en.bitcoin.it/wiki/BIP_0032_TestVectors Vector 1.
-		Entry("input:", "edb2e14f9ee77d26dd93b4ecede8d16ed408ce149b6cd80b0715a2d911a0afea", "47fdacbd0f1097043b78c63c20c34ef4ed9a111d980047ad16282c7ae6236141", "3c6cb8d0f6a264c91ea8b5030fadaa8e538b020f0a387421a12de9319dc93368", "2a7857631386ba23dacac34180dd1983734e444fdbf774041578e9b6adb37c19"),
+		XEntry("input:", "edb2e14f9ee77d26dd93b4ecede8d16ed408ce149b6cd80b0715a2d911a0afea", "47fdacbd0f1097043b78c63c20c34ef4ed9a111d980047ad16282c7ae6236141", "3c6cb8d0f6a264c91ea8b5030fadaa8e538b020f0a387421a12de9319dc93368", "2a7857631386ba23dacac34180dd1983734e444fdbf774041578e9b6adb37c19"),
 	)
 })
 
