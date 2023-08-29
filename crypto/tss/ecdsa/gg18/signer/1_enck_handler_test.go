@@ -39,7 +39,7 @@ var _ = Describe("enck handler, negative cases", func() {
 		signers, listeners = newTestSigners()
 		// Override peer manager
 		for _, s := range signers {
-			p := newStopPeerManager(Type_EncK, s.ph.peerManager)
+			p := tss.NewStopPeerManager[Type](Type_EncK, s.ph.peerManager)
 			s.ph.peerManager = p
 		}
 
@@ -176,32 +176,3 @@ var _ = Describe("enck handler, negative cases", func() {
 		})
 	})
 })
-
-type stopPeerManager struct {
-	types.PeerManager
-
-	stopMessageType Type
-	isStopped       bool
-}
-
-func newStopPeerManager(stopMessageType Type, p types.PeerManager) *stopPeerManager {
-	return &stopPeerManager{
-		PeerManager:     p,
-		stopMessageType: stopMessageType,
-		isStopped:       false,
-	}
-}
-
-func (p *stopPeerManager) MustSend(id string, message interface{}) {
-	if p.isStopped {
-		return
-	}
-
-	// Stop peer manager if we try to send the next
-	msg := message.(*Message)
-	if msg.Type >= p.stopMessageType {
-		p.isStopped = true
-		return
-	}
-	p.PeerManager.MustSend(id, message)
-}
