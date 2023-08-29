@@ -33,7 +33,6 @@ type peer struct {
 	bkcoefficient *big.Int
 	para          *zkpaillier.PederssenOpenParameter
 	partialPubKey *pt.ECPoint
-	allY          *pt.ECPoint
 
 	round1Data *round1Data
 	round2Data *round2Data
@@ -41,7 +40,7 @@ type peer struct {
 	round4Data *round4Data
 }
 
-func newPeer(id string, ssid []byte, bk *birkhoffinterpolation.BkParameter, bkcoefficient *big.Int, para *zkpaillier.PederssenOpenParameter, partialPubKey *pt.ECPoint, allY *pt.ECPoint) *peer {
+func newPeer(id string, ssid []byte, bk *birkhoffinterpolation.BkParameter, bkcoefficient *big.Int, para *zkpaillier.PederssenOpenParameter, partialPubKey *pt.ECPoint) *peer {
 	ssidWithBk := cggmp.ComputeZKSsid(ssid, bk)
 	return &peer{
 		Peer:          message.NewPeer(id),
@@ -50,6 +49,5 @@ func newPeer(id string, ssid []byte, bk *birkhoffinterpolation.BkParameter, bkco
 		bkcoefficient: bkcoefficient,
 		para:          para,
 		partialPubKey: partialPubKey,
-		allY:          allY,
 	}
 }

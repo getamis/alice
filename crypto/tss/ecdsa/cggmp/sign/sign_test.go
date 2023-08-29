@@ -108,9 +108,6 @@ func newSigns() (map[string]*Sign, map[string]*birkhoffinterpolation.BkParameter
 	partialPubKey := make(map[string]*pt.ECPoint)
 	partialPubKey[tss.GetTestID(0)] = pt.ScalarBaseMult(curve, shares[0])
 	partialPubKey[tss.GetTestID(1)] = pt.ScalarBaseMult(curve, shares[1])
-	allY := make(map[string]*pt.ECPoint)
-	allY[tss.GetTestID(0)] = pt.ScalarBaseMult(curve, big.NewInt(100))
-	allY[tss.GetTestID(1)] = pt.ScalarBaseMult(curve, big.NewInt(200))
 	allPed := make(map[string]*paillierzkproof.PederssenOpenParameter)
 	allPed[tss.GetTestID(0)] = pedA.PedersenOpenParameter
 	allPed[tss.GetTestID(1)] = pedB.PedersenOpenParameter
@@ -122,7 +119,7 @@ func newSigns() (map[string]*Sign, map[string]*birkhoffinterpolation.BkParameter
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
 		var err error
-		signs[id], err = NewSign(threshold, ssidInfo, shares[i], publicKey, partialPubKey, allY, paillierKey[i], allPed, bks, msg, peerManagers[i], listeners[id])
+		signs[id], err = NewSign(threshold, ssidInfo, shares[i], publicKey, partialPubKey, paillierKey[i], allPed, bks, msg, peerManagers[i], listeners[id])
 		Expect(err).Should(BeNil())
 		signsMain[id] = signs[id]
 		r, err := signs[id].GetResult()
