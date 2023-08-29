@@ -78,7 +78,7 @@ var _ = Describe("result handler, negative cases", func() {
 			dkgs, listeners = newDKGs(curve, threshold, ranks)
 			// Override peer manager
 			for _, d := range dkgs {
-				p := newStopPeerManager(Type_Result, d.ph.peerManager)
+				p := tss.NewStopPeerManager[Type](Type_Result, d.ph.peerManager)
 				d.ph.peerManager = p
 			}
 

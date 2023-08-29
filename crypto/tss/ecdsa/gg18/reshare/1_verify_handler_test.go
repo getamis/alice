@@ -37,7 +37,7 @@ var _ = Describe("verify handler, negative cases", func() {
 		reshares, listeners = newTestReshares()
 		// Override peer manager
 		for _, r := range reshares {
-			p := newStopPeerManager(Type_Verify, r.ch.peerManager)
+			p := tss.NewStopPeerManager[Type](Type_Verify, r.ch.peerManager)
 			r.ch.peerManager = p
 		}
 

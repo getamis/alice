@@ -68,7 +68,7 @@ var _ = Describe("decommit handler, negative cases", func() {
 			dkgs, listeners = newDKGs(curve, threshold, ranks)
 			// Override peer manager
 			for _, d := range dkgs {
-				p := newStopPeerManager(Type_Decommit, d.ph.peerManager)
+				p := tss.NewStopPeerManager[Type](Type_Decommit, d.ph.peerManager)
 				d.ph.peerManager = p
 			}
 			for _, d := range dkgs {
@@ -133,32 +133,3 @@ var _ = Describe("decommit handler, negative cases", func() {
 		})
 	})
 })
-
-type stopPeerManager struct {
-	types.PeerManager
-
-	stopMessageType Type
-	isStopped       bool
-}
-
-func newStopPeerManager(stopMessageType Type, p types.PeerManager) *stopPeerManager {
-	return &stopPeerManager{
-		PeerManager:     p,
-		stopMessageType: stopMessageType,
-		isStopped:       false,
-	}
-}
-
-func (p *stopPeerManager) MustSend(id string, message interface{}) {
-	if p.isStopped {
-		return
-	}
-
-	// Stop peer manager if we try to send the next
-	msg := message.(*Message)
-	if msg.Type >= p.stopMessageType {
-		p.isStopped = true
-		return
-	}
-	p.PeerManager.MustSend(id, message)
-}
