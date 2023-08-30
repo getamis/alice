@@ -40,6 +40,7 @@ type Result struct {
 	PartialPubKey map[string]*pt.ECPoint
 	Y             map[string]*pt.ECPoint
 	PedParameter  map[string]*paillierzkproof.PederssenOpenParameter
+	YSecret       *big.Int
 }
 
 func NewRefresh(oldShare *big.Int, pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, partialPubKey map[string]*ecpointgrouplaw.ECPoint, bks map[string]*birkhoffinterpolation.BkParameter, keySize int, ssid []byte, listener types.StateChangedListener) (*Refresh, error) {

@@ -88,7 +88,7 @@ type round1Handler struct {
 	own         *peer
 }
 
-func newRound1Handler(threshold uint32, ssid []byte, share *big.Int, pubKey *pt.ECPoint, partialPubKey, allY map[string]*pt.ECPoint, paillierKey *paillier.Paillier, ped map[string]*paillierzkproof.PederssenOpenParameter, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, peerManager types.PeerManager) (*round1Handler, error) {
+func newRound1Handler(threshold uint32, ssid []byte, share *big.Int, pubKey *pt.ECPoint, partialPubKey map[string]*pt.ECPoint, paillierKey *paillier.Paillier, ped map[string]*paillierzkproof.PederssenOpenParameter, bks map[string]*birkhoffinterpolation.BkParameter, msg []byte, peerManager types.PeerManager) (*round1Handler, error) {
 	curveN := pubKey.GetCurve().Params().N
 	// Establish BK Coefficient:
 	selfId := peerManager.SelfID()
@@ -121,7 +121,7 @@ func newRound1Handler(threshold uint32, ssid []byte, share *big.Int, pubKey *pt.
 		if id == selfId {
 			continue
 		}
-		peers[id] = newPeer(id, ssid, bks[id], bkcoefficient[i], ped[id], partialPubKey[id], allY[id])
+		peers[id] = newPeer(id, ssid, bks[id], bkcoefficient[i], ped[id], partialPubKey[id])
 	}
 	bkShare := new(big.Int).Mul(share, bkcoefficient[0])
 	bkShare.Mod(bkShare, curveN)
@@ -147,7 +147,7 @@ func newRound1Handler(threshold uint32, ssid []byte, share *big.Int, pubKey *pt.
 	}
 
 	// Set data
-	own := newPeer(selfId, ssid, ownBK, bkcoefficient[0], ped[selfId], partialPubKey[selfId], allY[selfId])
+	own := newPeer(selfId, ssid, ownBK, bkcoefficient[0], ped[selfId], partialPubKey[selfId])
 	return &round1Handler{
 		bkMulShare:      bkShare,
 		pubKey:          pubKey,

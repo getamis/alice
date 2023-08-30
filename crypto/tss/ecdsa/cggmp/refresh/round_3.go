@@ -244,6 +244,7 @@ func (p *round3Handler) Finalize(logger log.Logger) (types.Handler, error) {
 		Y:             Y,
 		// pedParameter: N, s, t
 		PedParameter: ped,
+		YSecret:      p.y,
 	}
 	return nil, nil
 }
