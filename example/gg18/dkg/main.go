@@ -27,9 +27,9 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/getamis/alice/crypto/tss/dkg"
-	"github.com/getamis/alice/example/gg18/config"
-	"github.com/getamis/alice/example/gg18/node"
+	"github.com/getamis/alice/example/config"
 	"github.com/getamis/alice/example/gg18/utils"
+	"github.com/getamis/alice/example/node"
 )
 
 type DKGConfig struct {
