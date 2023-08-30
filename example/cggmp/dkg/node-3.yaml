@@ -1,0 +1,10 @@
+port: 10003
+identity: CAMSeTB3AgEBBCAUgw2Vfzm0bcP4NmoPU/X3Ia1vyVjYi1dx7gFiMkFGO6AKBggqhkjOPQMBB6FEA0IABE6dj1n+g346V6rltAERNF74hgFhxS/X8DWxdduCRa1ANS33vkvXF3TNObawmUwviOvkYtSbEMWM/sa3JVC5NYY=
+peers:
+  - id: QmYhhVHmpU5X62Qxs3C7JsN1mmbqG435vCbon2qH75C7EW
+    port: 10001
+  - id: QmUmf4xxZYPS8vXzz2uAAaNpogxEugYpmPDnnu9saon4c5
+    port: 10002
+rank: 0
+threshold: 3
+sessionId: example-session
