@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/getamis/sirius/log"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -149,7 +151,7 @@ var Cmd = &cobra.Command{
 
 			log.Debug("Received partial public key", "peer", peerId, "point", p.String())
 
-			if len(partialPublicKeys) == int(cfg.Threshold) {
+			if len(partialPublicKeys) == int(pm.NumPeers()+1) {
 				done <- struct{}{}
 			}
 		})
@@ -200,6 +202,16 @@ var Cmd = &cobra.Command{
 		fmt.Println()
 		rawResult, _ := yaml.Marshal(dkgResult)
 		fmt.Println(string(rawResult))
+
+		var sigs = make(chan os.Signal, 1)
+		defer close(sigs)
+
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+		defer signal.Stop(sigs)
+
+		for sig := range sigs {
+			log.Info("received signal", "sig", sig)
+		}
 
 		return nil
 	},
