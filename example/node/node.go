@@ -19,7 +19,7 @@ import (
 	"reflect"
 
 	"github.com/getamis/sirius/log"
-	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p/core/network"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/getamis/alice/types"
