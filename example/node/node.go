@@ -58,7 +58,7 @@ func (n *node[M, R]) Handle(s network.Stream) {
 		return
 	}
 
-	log.Info("Received request", "from", s.Conn().RemotePeer())
+	// log.Info("Received request", "from", s.Conn().RemotePeer())
 	err = n.backend.AddMessage(data.GetId(), data)
 	if err != nil {
 		log.Warn("Cannot add message to DKG", "err", err)

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package dkg
+package signer
 
 import (
 	"encoding/base64"
@@ -26,37 +26,22 @@ import (
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"
 
-	"github.com/getamis/alice/crypto/tss/dkg"
-	"github.com/getamis/alice/example/config"
-	"github.com/getamis/alice/example/gg18/utils"
+	"github.com/getamis/alice/crypto/tss/ecdsa/cggmp"
+	signer "github.com/getamis/alice/crypto/tss/ecdsa/cggmp/signSix"
+	"github.com/getamis/alice/example/cggmp/utils"
 	"github.com/getamis/alice/example/node"
 )
 
-type DKGConfig struct {
-	node.PeerConfig `yaml:",omitempty,inline"`
-
-	Rank      uint32 `yaml:"rank"`
-	Threshold uint32 `yaml:"threshold"`
-}
-
-type DKGResult struct {
-	Share  string               `yaml:"share"`
-	Pubkey config.Pubkey        `yaml:"pubkey"`
-	BKs    map[string]config.BK `yaml:"bks"`
-}
-
-const dkgProtocol = "/dkg/1.0.0"
-
-var Cmd = &cobra.Command{
-	Use:  "dkg",
-	Long: `Distributed key generation for creating secret shares without any dealer.`,
+var SixRoundCmd = &cobra.Command{
+	Use:  "signer6",
+	Long: `Signing for using the secret shares to generate a signature.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		yamlFile, err := os.ReadFile(viper.GetString("config"))
 		if err != nil {
 			return err
 		}
 
-		cfg := DKGConfig{}
+		cfg := SignerConfig{}
 		err = yaml.Unmarshal(yamlFile, &cfg)
 		if err != nil {
 			return err
@@ -79,7 +64,7 @@ var Cmd = &cobra.Command{
 		log.Debug("my ID", "id", selfId, "addr", host.Addrs())
 
 		// Create a new peer manager.
-		pm := node.NewPeerManager(selfId, host, dkgProtocol)
+		pm := node.NewPeerManager(selfId, host, signerProtocol)
 
 		for _, p := range cfg.Peers {
 			pm.AddPeer(p.Id, node.GetPeerAddr(p.Port, p.Id))
@@ -87,50 +72,69 @@ var Cmd = &cobra.Command{
 
 		l := node.NewListener()
 
-		// Create dkg
-		dkgCore, err := dkg.NewDKG(utils.GetCurve(), pm, cfg.Threshold, cfg.Rank, l)
+		dkgResult, err := utils.ConvertDKGResult(cfg.Pubkey, cfg.Share, cfg.BKs, cfg.Rid)
 		if err != nil {
-			log.Warn("Cannot create a new DKG", "config", cfg, "err", err)
+			log.Warn("Cannot get DKG result", "err", err)
 			return err
 		}
 
-		// Create a new service.
-		node := node.New[*dkg.Message, *dkg.Result](dkgCore, l, pm)
+		// Signer needs results from DKG and reshare.
+		reshareResult, err := utils.ConvertReshareResult(cfg.Share, cfg.PaillierKey, cfg.YSecret, cfg.PartialPublicKeys, cfg.Y, cfg.PedParameters)
+		if err != nil {
+			log.Warn("Cannot get DKG result", "err", err)
+			return err
+		}
+
+		ssid := cggmp.ComputeSSID([]byte(cfg.SessionId), []byte(dkgResult.Bks[selfId].String()), dkgResult.Rid)
+
+		// Create signer
+		signerCore, err := signer.NewSign(
+			cfg.Threshold,
+			ssid,
+			reshareResult.Share,
+			reshareResult.YSecret,
+			dkgResult.PublicKey,
+			reshareResult.PartialPubKey,
+			reshareResult.Y,
+			dkgResult.Bks,
+			reshareResult.PaillierKey,
+			reshareResult.PedParameter,
+			[]byte(cfg.Message),
+			pm,
+			l,
+		)
+		if err != nil {
+			log.Warn("Cannot create a new signer", "err", err)
+			return err
+		}
+
+		// Create a new node.
+		node := node.New[*signer.Message, *signer.Result](signerCore, l, pm)
 		if err != nil {
 			log.Crit("Failed to new service", "err", err)
 		}
 
 		// Set a stream handler on the host.
-		host.SetStreamHandler(dkgProtocol, func(s network.Stream) {
+		host.SetStreamHandler(signerProtocol, func(s network.Stream) {
 			node.Handle(s)
 		})
 
-		// Ensure all peers are connected before starting DKG process.
+		// Ensure all peers are connected before starting signing process.
 		pm.EnsureAllConnected()
 
-		// Start DKG process.
+		// Start the signing process.
 		result, err := node.Process()
 		if err != nil {
 			return err
 		}
 
-		dkgResult := &DKGResult{
-			Share: result.Share.String(),
-			Pubkey: config.Pubkey{
-				X: result.PublicKey.GetX().String(),
-				Y: result.PublicKey.GetY().String(),
-			},
-			BKs: make(map[string]config.BK),
-		}
-		for peerID, bk := range result.Bks {
-			dkgResult.BKs[peerID] = config.BK{
-				X:    bk.GetX().String(),
-				Rank: bk.GetRank(),
-			}
+		signerResult := &SignerResult{
+			R: result.R.String(),
+			S: result.S.String(),
 		}
 
 		fmt.Println()
-		rawResult, _ := yaml.Marshal(dkgResult)
+		rawResult, _ := yaml.Marshal(signerResult)
 		fmt.Println(string(rawResult))
 
 		return nil

@@ -28,8 +28,8 @@ import (
 
 	"github.com/getamis/alice/crypto/tss/ecdsa/gg18/reshare"
 	"github.com/getamis/alice/example/gg18/dkg"
-	"github.com/getamis/alice/example/gg18/node"
 	"github.com/getamis/alice/example/gg18/utils"
+	"github.com/getamis/alice/example/node"
 )
 
 type ReshareConfig struct {
