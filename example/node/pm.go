@@ -20,10 +20,9 @@ import (
 	"time"
 
 	"github.com/getamis/sirius/log"
-	"github.com/libp2p/go-libp2p-core/helpers"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
-	"github.com/libp2p/go-libp2p-core/protocol"
+	"github.com/libp2p/go-libp2p/core/host"
+	"github.com/libp2p/go-libp2p/core/peer"
+	"github.com/libp2p/go-libp2p/core/protocol"
 	"github.com/multiformats/go-multiaddr"
 	"google.golang.org/protobuf/proto"
 )
@@ -106,7 +105,7 @@ func (p *peerManager) MustSend(peerId string, message interface{}) {
 		return
 	}
 
-	err = helpers.FullClose(s)
+	err = s.Close()
 	if err != nil {
 		p.logger.Warn("Cannot close the stream", "err", err)
 		return
@@ -148,8 +147,8 @@ func (p *peerManager) EnsureAllConnected() {
 				log.Warn("Failed to get peer protocols", "err", err)
 			}
 
-			for _, prootocol := range protocols {
-				if prootocol == string(p.protocol) {
+			for _, protocol := range protocols {
+				if protocol == p.protocol {
 					return nil
 				}
 			}

@@ -14,12 +14,11 @@
 package node
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p/core/crypto"
+	"github.com/libp2p/go-libp2p/core/host"
 	"github.com/multiformats/go-multiaddr"
 )
 
@@ -35,7 +34,7 @@ func MakeBasicHost(port int64, priv crypto.PrivKey) (host.Host, error) {
 		libp2p.Identity(priv),
 	}
 
-	basicHost, err := libp2p.New(context.Background(), opts...)
+	basicHost, err := libp2p.New(opts...)
 	if err != nil {
 		return nil, err
 	}
