@@ -208,6 +208,18 @@ func GenerateRandomSafePrime(rand io.Reader, pbits int) (*SafePrime, error) {
 	}
 }
 
+func CheckDivisible(m *big.Int) bool {
+	for i :=0; i < len(primeProducts); i++ {
+		temp := new(big.Int).Mod(m, primeProducts[i]).Uint64()
+		for j:=0; j < len(primes[i]); j++ {
+			if temp % primes[i][j] == 0 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func checkSafePrimes(m *big.Int, product *big.Int, primes []uint64) bool {
 	mm := new(big.Int).Mod(m, product).Uint64()
 	for _, prime := range primes {
