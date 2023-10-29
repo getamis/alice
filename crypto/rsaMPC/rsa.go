@@ -21,11 +21,12 @@ import (
 	mathRandom "math/rand"
 
 	dbns "github.com/getamis/alice/crypto/dbnssystem"
+	"github.com/getamis/alice/crypto/polynomial"
 	"github.com/getamis/alice/crypto/utils"
 )
 
 const (
-	maxRetry = 100
+	maxRetry = 500
 	deepTree = 1
 )
 
@@ -1309,6 +1310,7 @@ var (
 )
 
 type BiPrimeManage struct {
+	n          int
 	pij        []int64
 	qij        []int64
 	Nj         []int64
@@ -1320,8 +1322,17 @@ type BiPrimeManage struct {
 	epsilonP   *big.Int
 	epsilonQ   *big.Int
 	epsilonN   *big.Int
+	pMod4      int64
+	qMod4      int64
 	isPartyOne bool
 	ell        int64
+
+	UsendShuffle []*big.Int
+	VsendShuffle []*big.Int
+	allSShares   []*big.Int
+
+	u *big.Int
+	v *big.Int
 }
 
 func NewBFSampling(n int, numberOfPrime int, isOdd bool) (*BiPrimeManage, error) {
@@ -1341,6 +1352,7 @@ func NewBFSampling(n int, numberOfPrime int, isOdd bool) (*BiPrimeManage, error)
 	Nj := make([]int64, len(primeList))
 
 	return &BiPrimeManage{
+		n:          n,
 		pij:        pij,
 		qij:        qij,
 		Nj:         Nj,
@@ -1412,11 +1424,11 @@ func specialMul(a1, b1, a2, b2, D, N *big.Int) (*big.Int, *big.Int) {
 	return u, v
 }
 
-func shuffleElement(u, v, D, N *big.Int, n int) ([]*big.Int, []*big.Int) {
-	uList := make([]*big.Int, n)
-	vList := make([]*big.Int, n)
+func (m *BiPrimeManage) shuffleElement(u, v, D, N *big.Int) {
+	uList := make([]*big.Int, m.n)
+	vList := make([]*big.Int, m.n)
 	totalU, totalV := big.NewInt(1), big.NewInt(0)
-	upperBound := n - 1
+	upperBound := m.n - 1
 	for i := 0; i < upperBound; i++ {
 		tempU, _ := utils.RandomCoprimeInt(N)
 		tempV, _ := utils.RandomCoprimeInt(N)
@@ -1425,8 +1437,10 @@ func shuffleElement(u, v, D, N *big.Int, n int) ([]*big.Int, []*big.Int) {
 		totalU, totalV = specialMul(totalU, totalV, tempU, tempV, D, N)
 	}
 	totalU, totalV = specialInverse(totalU, totalV, D, N)
-	totalU, totalV = specialMul(totalU, totalV, u, v, D, N)
-	return uList, vList
+	uList[upperBound], vList[upperBound] = specialMul(totalU, totalV, u, v, D, N)
+	m.UsendShuffle = uList
+	m.VsendShuffle = vList
+	return
 }
 
 func specialInverse(a, b, D, N *big.Int) (*big.Int, *big.Int) {
@@ -1590,6 +1604,73 @@ func specialExp(a, b, D, N, exp *big.Int) (*big.Int, *big.Int) {
 	return resultalphaU, resultalphaV
 }
 
+func PerformMPCMultiply(share1List, share2List, LagrangeCoefficient []*big.Int, D *big.Int) []*big.Int {
+	// Generate all shares
+	n := len(share1List)
+	allShareList := make([][]*big.Int, n)
+	for x := 0; x < n; x++ {
+		allShareList[x] = make([]*big.Int, n)
+	}
+
+	for x := 0; x < n; x++ {
+		for y := 0; y <= x; y++ {
+			if x == y {
+				if allShareList[x][x] == nil {
+					allShareList[x][x] = new(big.Int).Mul(share1List[x], share2List[x])
+					allShareList[x][x].Mod(allShareList[x][x], D)
+				}
+
+				continue
+			}
+			// x -> y
+			shareX := generateAllMulShares(share1List[x], share2List[y], D)
+			ownShare := new(big.Int).Mul(shareX[0], LagrangeCoefficient[0])
+			ownShare.Mod(ownShare, D)
+			otherShare := new(big.Int).Mul(shareX[1], LagrangeCoefficient[1])
+			otherShare.Add(otherShare, new(big.Int).Mul(shareX[2], LagrangeCoefficient[2]))
+			otherShare.Mod(otherShare, D)
+
+			// y -> x
+			shareY := generateAllMulShares(share1List[y], share2List[x], D)
+			ownShareY := new(big.Int).Mul(shareY[0], LagrangeCoefficient[0])
+			ownShareY.Mod(ownShareY, D)
+			otherShareY := new(big.Int).Mul(shareY[1], LagrangeCoefficient[1])
+			otherShareY.Add(otherShareY, new(big.Int).Mul(shareY[2], LagrangeCoefficient[2]))
+			otherShareY.Mod(otherShareY, D)
+
+			allShareList[x][y] = new(big.Int).Add(ownShare, otherShareY)
+			allShareList[x][y].Mod(allShareList[x][y], D)
+			allShareList[y][x] = new(big.Int).Add(otherShare, ownShareY)
+			allShareList[y][x].Mod(allShareList[y][x], D)
+		}
+	}
+	result := make([]*big.Int, n)
+	// sum own shares
+	for z := 0; z < n; z++ {
+		temp := big.NewInt(0)
+		for y := 0; y < n; y++ {
+			temp.Add(temp, allShareList[z][y])
+		}
+		result[z] = temp
+		result[z].Mod(result[z], D)
+	}
+	return result
+}
+
+func generateAllMulShares(a, b, Mod *big.Int) []*big.Int {
+	product := new(big.Int).Mul(a, b)
+	product.Mod(product, Mod)
+	degree := 1
+	p, _ := polynomial.RandomPolynomial(Mod, uint32(degree))
+	p.SetConstant(product)
+	upBd := degree << 1
+	shares := make([]*big.Int, upBd+1)
+	for i := 1; i <= len(shares); i++ {
+		shares[i-1] = p.Evaluate(big.NewInt(int64(i)))
+	}
+	return shares
+}
+
 func randomPolynomial(constantTerm int64, degree int, prime int64) []int64 {
 	result := make([]int64, degree+1)
 	for i := 1; i < len(result); i++ {
@@ -1613,64 +1694,67 @@ func polynomialEvaluate(poly []int64, x int64, prime int64) int64 {
 	return result
 }
 
+func (m *BiPrimeManage) generateD(bitLength int, N *big.Int) *big.Int {
+	dShares, _ := rand.Prime(rand.Reader, bitLength)
+	return dShares
+}
+
 // lowBitLength -> 2N, upBitLength -> 4N
-func generateRamdonDandP(bitLength int, epsilonP int, sSquareP, N *big.Int) (*big.Int, *big.Int, int, error) {
-	inverse4 := new(big.Int).ModInverse(big4, N)
-	count := 0
-	for i := 0; i < maxRetry; i++ {
-		// for k := 0; k < len(primes[i]); k++ {
-		// 	D = new(big.Int).SetUint64(primes[i][k])
-		// 	negD := new(big.Int).Neg(D)
-		// 	if big.Jacobi(negD, N) == -1 {
+func generateRamdonP(bitLength, pmod4 int, D *big.Int, p, N *big.Int) (*big.Int, error) {
+	// for k := 0; k < len(primes[i]); k++ {
+	// 	D = new(big.Int).SetUint64(primes[i][k])
+	// 	negD := new(big.Int).Neg(D)
+	// 	if big.Jacobi(negD, N) == -1 {
 
-		// 		continue
-		// 	}
-		// 	count++
-		// 	if big.Jacobi(negD, sSquareP) == -1 {
-		// 		P, err := utils.RandomInt(N)
-		// 		if err != nil {
-		// 			return nil, nil, 0, err
-		// 		}
-		// 		Q := new(big.Int).Exp(P, big2, N)
-		// 		Q = Q.Sub(Q, D)
-		// 		if utils.Gcd(Q, N).Cmp(big1) == 0 {
-		// 			Q.Mul(Q, inverse4)
-		// 			Q.Mod(Q, N)
-		// 			return P, D, count, nil
-		// 		}
-		// 	}
-		// }
+	// 		continue
+	// 	}
+	// 	count++
+	// 	if big.Jacobi(negD, sSquareP) == -1 {
+	// 		P, err := utils.RandomInt(N)
+	// 		if err != nil {
+	// 			return nil, nil, 0, err
+	// 		}
+	// 		Q := new(big.Int).Exp(P, big2, N)
+	// 		Q = Q.Sub(Q, D)
+	// 		if utils.Gcd(Q, N).Cmp(big1) == 0 {
+	// 			Q.Mul(Q, inverse4)
+	// 			Q.Mod(Q, N)
+	// 			return P, D, count, nil
+	// 		}
+	// 	}
+	// }
 
-		D, err := rand.Prime(rand.Reader, bitLength)
+	// D, err := rand.Prime(rand.Reader, bitLength)
+	// if err != nil {
+	// 	return nil, nil, 0, err
+	// }
+
+	// D, err := utils.RandomCoprimeInt(N)
+	// if err != nil {
+	// 	return nil, nil, 0, err
+	// }
+	// sSquarep := big.NewInt(0)
+	// for i := 0; i < len(sSquarepList); i++ {
+	// 	sSquarep.Add(sSquarep, sSquarepList[i])
+	// }
+	// sSquarep.Mod(sSquarep, D)
+	sign := -1
+	if pmod4 == 3 && new(big.Int).Mod(D, big4).Cmp(big1) == 0 {
+		sign = 1
+	}
+
+	if big.Jacobi(p, D) == sign {
+		P, err := utils.RandomInt(N)
 		if err != nil {
-			return nil, nil, 0, err
+			return nil, err
 		}
-
-		// D, err := utils.RandomCoprimeInt(N)
-		// if err != nil {
-		// 	return nil, nil, 0, err
-		// }
-		negD := new(big.Int).Neg(D)
-		if big.Jacobi(negD, N) == -1 {
-
-			continue
-		}
-		count++
-		if big.Jacobi(negD, sSquareP) == -1 {
-			P, err := utils.RandomInt(N)
-			if err != nil {
-				return nil, nil, 0, err
-			}
-			Q := new(big.Int).Exp(P, big2, N)
-			Q = Q.Sub(Q, D)
-			if utils.Gcd(Q, N).Cmp(big1) == 0 {
-				Q.Mul(Q, inverse4)
-				Q.Mod(Q, N)
-				return P, D, count, nil
-			}
+		Q := new(big.Int).Exp(P, big2, N)
+		Q = Q.Sub(Q, D)
+		if utils.Gcd(Q, N).Cmp(big1) == 0 {
+			return P, nil
 		}
 	}
-	return nil, nil, 0, ErrExceedMaxRetry
+	return nil, ErrExceedMaxRetry
 }
 
 func (m *BiPrimeManage) computeLucasMatrice(D, P *big.Int) (*big.Int, *big.Int) {
