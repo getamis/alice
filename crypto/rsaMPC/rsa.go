@@ -418,121 +418,121 @@ var (
 	// without prime 3
 	primes = [][]uint64{
 		{
-			5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53,
+			5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, // 0
 		},
 		{
-			59, 61, 67, 71, 73, 79, 83, 89, 97,
+			59, 61, 67, 71, 73, 79, 83, 89, 97, // 1
 		},
 		{
-			101, 103, 107, 109, 113, 127, 131, 137, 139,
+			101, 103, 107, 109, 113, 127, 131, 137, 139, // 2
 		},
 		{
-			149, 151, 157, 163, 167, 173, 179, 181,
+			149, 151, 157, 163, 167, 173, 179, 181, // 3
 		},
 		{
-			191, 193, 197, 199, 211, 223, 227, 229,
+			191, 193, 197, 199, 211, 223, 227, 229, // 4
 		},
 		{
-			233, 239, 241, 251, 257, 263, 269,
+			233, 239, 241, 251, 257, 263, 269, // 5
 		},
 		{
-			271, 277, 281, 283, 293, 307, 311,
+			271, 277, 281, 283, 293, 307, 311, // 6
 		},
 		{
-			317, 331, 337, 347, 349, 353, 359,
+			317, 331, 337, 347, 349, 353, 359, // 7
 		},
 		{
-			367, 373, 379, 383, 389, 397, 401,
+			367, 373, 379, 383, 389, 397, 401, // 8
 		},
 		{
-			409, 419, 421, 431, 433, 439, 443,
+			409, 419, 421, 431, 433, 439, 443, // 9
 		},
 		{
-			449, 457, 461, 463, 467, 479, 487,
+			449, 457, 461, 463, 467, 479, 487, // 10
 		},
 		{
-			491, 499, 503, 509, 521, 523, 541,
+			491, 499, 503, 509, 521, 523, 541, // 11
 		},
 		{
-			557, 563, 569, 571, 577, 587,
+			557, 563, 569, 571, 577, 587, // 12
 		},
 		{
-			593, 599, 601, 607, 613, 617,
+			593, 599, 601, 607, 613, 617, // 13
 		},
 		{
-			619, 631, 641, 643, 647, 653,
+			619, 631, 641, 643, 647, 653, // 14
 		},
 		{
-			659, 661, 673, 677, 683, 691,
+			659, 661, 673, 677, 683, 691, // 15
 		},
 		{
-			701, 709, 719, 727, 733, 739,
+			701, 709, 719, 727, 733, 739, // 16
 		},
 		{
-			743, 751, 757, 761, 769, 773,
+			743, 751, 757, 761, 769, 773, // 17
 		},
 		{
-			787, 797, 809, 811, 821, 823,
+			787, 797, 809, 811, 821, 823, // 18
 		},
 		{
-			827, 829, 839, 853, 857, 859,
+			827, 829, 839, 853, 857, 859, // 19
 		},
 		{
-			863, 877, 881, 883, 887, 907,
+			863, 877, 881, 883, 887, 907, // 20
 		},
 		{
-			911, 919, 929, 937, 941, 947,
+			911, 919, 929, 937, 941, 947, // 21
 		},
 		{
-			953, 967, 971, 977, 983, 991,
+			953, 967, 971, 977, 983, 991, // 22
 		},
 		{
-			997, 1009, 1013, 1019, 1021, 1031,
+			997, 1009, 1013, 1019, 1021, 1031, // 23
 		},
 		{
-			1033, 1039, 1049, 1051, 1061, 1063,
+			1033, 1039, 1049, 1051, 1061, 1063, // 24
 		},
 		{
-			1069, 1087, 1091, 1093, 1097, 1103,
+			1069, 1087, 1091, 1093, 1097, 1103, // 25
 		},
 		{
-			1109, 1117, 1123, 1129, 1151, 1153,
+			1109, 1117, 1123, 1129, 1151, 1153, // 26
 		},
 		{
-			1163, 1171, 1181, 1187, 1193, 1201,
+			1163, 1171, 1181, 1187, 1193, 1201, // 27
 		},
 		{
-			1213, 1217, 1223, 1229, 1231, 1237,
+			1213, 1217, 1223, 1229, 1231, 1237, // 28
 		},
 		{
-			1249, 1259, 1277, 1279, 1283, 1289,
+			1249, 1259, 1277, 1279, 1283, 1289, // 29
 		},
 		{
-			1291, 1297, 1301, 1303, 1307, 1319,
+			1291, 1297, 1301, 1303, 1307, 1319, // 30
 		},
 		{
-			1321, 1327, 1361, 1367, 1373, 1381,
+			1321, 1327, 1361, 1367, 1373, 1381, // 31
 		},
 		{
-			1399, 1409, 1423, 1427, 1429, 1433,
+			1399, 1409, 1423, 1427, 1429, 1433, // 32
 		},
 		{
-			1439, 1447, 1451, 1453, 1459,
+			1439, 1447, 1451, 1453, 1459, // 33
 		},
 		{
-			1471, 1481, 1483, 1487, 1489,
+			1471, 1481, 1483, 1487, 1489, // 34
 		},
 		{
-			1493, 1499, 1511, 1523, 1531,
+			1493, 1499, 1511, 1523, 1531, // 35
 		},
 		{
-			1543, 1549, 1553, 1559, 1567,
+			1543, 1549, 1553, 1559, 1567, // 36
 		},
 		{
-			1571, 1579, 1583, 1597, 1601,
+			1571, 1579, 1583, 1597, 1601, // 37
 		},
 		{
-			1607, 1609, 1613, 1619, 1621,
+			1607, 1609, 1613, 1619, 1621, // 38
 		},
 		{
 			1627, 1637, 1657, 1663, 1667,
@@ -1380,8 +1380,8 @@ func chineseRecover(numberOfPrime int) ([]*big.Int, *big.Int) {
 	return result, product
 }
 
-func checkDivisible(x *big.Int, numberOfPrime int) bool {
-	for i := 17; i < len(primes); i++ {
+func checkDivisible(x *big.Int, startIndex int) bool {
+	for i := startIndex; i < len(primes); i++ {
 		residue := new(big.Int).Mod(x, primeProducts[i]).Uint64()
 		for j := 0; j < len(primes[i]); j++ {
 			if residue%primes[i][j] == 0 {
@@ -1795,64 +1795,64 @@ func (m *BiPrimeManage) CheckLucasCongruence(uList []*big.Int, vList []*big.Int,
 	return ErrNonPrime
 }
 
-// MPC Mul
-// func (m *BiPrimeManage) computeLucasMatrice(D, P *big.Int) (*matrix.Matrix, error) {
-// 	inverse2 := new(big.Int).ModInverse(big2, m.N)
-// 	inverse2.Mod(inverse2, m.N)
-// 	exp := new(big.Int).Mul(m.pi, m.epsilonQ)
-// 	exp.Add(exp, new(big.Int).Mul(m.qi, m.epsilonP))
-// 	exp.Neg(exp)
-// 	if m.isPartyOne {
-// 		exp.Add(exp, m.N)
-// 		exp.Add(exp, m.epsilonN)
-// 	}
-// 	exp.Div(exp, big2)
+func MPCMulShamir(pList, qList, LagrangeCoefficient []*big.Int, Mod *big.Int) []*big.Int {
+	n := len(pList)
+	degree := uint32(n - 1)
+	allShares := make([]*big.Int, len(LagrangeCoefficient))
+	polyP := make([]*polynomial.Polynomial, n)
+	polyQ := make([]*polynomial.Polynomial, n)
+	for i := 0; i < n; i++ {
+		temp, _ := polynomial.RandomPolynomial(Mod, degree)
+		temp.SetConstant(pList[i])
+		polyP[i] = temp
 
-// 	Pover2 := new(big.Int).Mul(P, inverse2)
-// 	Pover2.Mod(Pover2, m.N)
-// 	Dover2 := new(big.Int).Mul(D, inverse2)
-// 	Dover2.Mod(Dover2, m.N)
+		temp, _ = polynomial.RandomPolynomial(Mod, degree)
+		temp.SetConstant(qList[i])
+		polyQ[i] = temp
+	}
 
-// 	lucasMatrix, err := matrix.NewMatrix(m.N, [][]*big.Int{
-// 		{new(big.Int).Set(Pover2), new(big.Int).Set(inverse2)},
-// 		{new(big.Int).Set(Dover2), new(big.Int).Set(Pover2)},
-// 	})
+	// Evaluate: each person random two polynomial
+	for i := 0; i < len(allShares); i++ {
+		tempSumP := big.NewInt(0)
+		tempSumQ := big.NewInt(0)
+		for j := 0; j < len(polyP); j++ {
+			temp := polyP[j].Evaluate(big.NewInt(int64(i) + 1))
+			tempSumP.Add(tempSumP, temp)
 
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	result, err := lucasMatrix.Exp(exp)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return result, nil
-// }
+			temp = polyQ[j].Evaluate(big.NewInt(int64(i) + 1))
+			tempSumQ.Add(tempSumQ, temp)
+		}
+		tempSumP.Mod(tempSumP, Mod)
 
-// func (m *BiPrimeManage) CheckLucasCongruence(allLucasMatrix []*matrix.Matrix) error {
-// 	LucasMatrix := allLucasMatrix[0].Copy()
-// 	var err error
-// 	for i := 1; i < len(allLucasMatrix); i++ {
-// 		temp := allLucasMatrix[i].Copy()
-// 		LucasMatrix, err = LucasMatrix.Multiply(temp)
-// 		if err != nil {
-// 			return err
-// 		}
-// 	}
-// 	//fmt.Println(LucasMatrix.GetMatrix())
-// 	multiplyMatrix, err := matrix.NewMatrix(m.N, [][]*big.Int{
-// 		{big.NewInt(0)},
-// 		{big.NewInt(2)},
-// 	})
-// 	if err != nil {
-// 		return err
-// 	}
-// 	result, err := LucasMatrix.Multiply(multiplyMatrix)
-// 	if err != nil {
-// 		return err
-// 	}
-// 	temp := result.GetMatrix()[0][0]
-// 	if temp.Mod(temp, m.N).Cmp(big0) == 0 {
-// 		return nil
-// 	}
-// 	return ErrNonPrime
-// }
+		tempSumQ.Mod(tempSumQ, Mod)
+		allShares[i] = new(big.Int).Mul(tempSumP, tempSumQ)
+		allShares[i].Mod(allShares[i], Mod)
+	}
+	// fmt.Println("allShares:", allShares)
+
+	// // TEst
+	// test := big.NewInt(0)
+	// for i:=0; i < 5; i++ {
+	// 	test.Add(test, new(big.Int).Mul(allShares[i], LagrangeCoefficient[i]))
+
+	// }
+	// fmt.Println("test:", test.Mod(test, Mod))
+
+	result := make([]*big.Int, n)
+	upBd := n-1
+
+	// Each participants has two shares; P_n has one share.
+	for i := 0; i < upBd; i++ {
+		index := 2 * i
+
+		tempSum := new(big.Int).Mul(allShares[index], LagrangeCoefficient[index])
+		tempSum.Mod(tempSum, Mod)
+		tempSum.Add(tempSum, new(big.Int).Mul(allShares[index+1], LagrangeCoefficient[index+1]))
+		tempSum.Mod(tempSum, Mod)
+		result[i] = tempSum
+
+	}
+	result[upBd] = new(big.Int).Mul(allShares[len(allShares)-1], LagrangeCoefficient[len(allShares)-1])
+	result[upBd].Mod(result[upBd], Mod)
+	return result
+}
