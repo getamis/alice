@@ -1343,11 +1343,11 @@ func NewBFSampling(n int, numberOfPrime int, isOdd bool) (*BiPrimeManage, error)
 		qij[i] = mathRandom.Int63n(primeList[i])
 	}
 	if isOdd {
-		pij[0] = (mathRandom.Int63n(2) * 2) + 1
-		qij[0] = (mathRandom.Int63n(2) * 2) + 1
+		pij[0] = 1
+		qij[0] = 1
 	} else {
-		pij[0] = (mathRandom.Int63n(2) * 2)
-		qij[0] = (mathRandom.Int63n(2) * 2)
+		pij[0] = (mathRandom.Int63n(2) << 1)
+		qij[0] = (mathRandom.Int63n(2) << 1)
 	}
 	Nj := make([]int64, len(primeList))
 
@@ -1839,7 +1839,7 @@ func MPCMulShamir(pList, qList, LagrangeCoefficient []*big.Int, Mod *big.Int) []
 	// fmt.Println("test:", test.Mod(test, Mod))
 
 	result := make([]*big.Int, n)
-	upBd := n-1
+	upBd := n - 1
 
 	// Each participants has two shares; P_n has one share.
 	for i := 0; i < upBd; i++ {
@@ -1855,4 +1855,22 @@ func MPCMulShamir(pList, qList, LagrangeCoefficient []*big.Int, Mod *big.Int) []
 	result[upBd] = new(big.Int).Mul(allShares[len(allShares)-1], LagrangeCoefficient[len(allShares)-1])
 	result[upBd].Mod(result[upBd], Mod)
 	return result
+}
+
+// func MPCGCD(randomrList, checkList, LagrangeCoefficient []*big.Int, otherInt *big.Int) *big.Int {
+// 	productList := MPCMulShamir(randomrList, checkList, LagrangeCoefficient, otherInt)
+// 	theInt := big.NewInt(0)
+// 	for i := 0; i < len(productList); i++ {
+// 		theInt.Add(theInt, productList[i])
+// 	}
+// 	return new(big.Int).GCD(nil, nil, theInt, otherInt)
+// }
+
+func MPCGCD(randomrList, checkList, LagrangeCoefficient []*big.Int, otherInt *big.Int) *big.Int {
+	productList := MPCMulShamir(randomrList, checkList, LagrangeCoefficient, otherInt)
+	theInt := big.NewInt(0)
+	for i := 0; i < len(productList); i++ {
+		theInt.Add(theInt, productList[i])
+	}
+	return new(big.Int).GCD(nil, nil, theInt, otherInt)
 }

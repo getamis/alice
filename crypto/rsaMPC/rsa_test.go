@@ -30,14 +30,16 @@ import (
 
 var _ = Describe("Util test", func() {
 	It("zero rank", func() {
+		// 2048: 131, 235, 17; 3072: 183, 329, 25
 		var p, q, N *big.Int
 		numberOfPrime := 131
-		numberOfExtendPrime := 234
-		n := 3
+		numberOfExtendPrime := 235
+		divisibleIndex := 17
+		n := 4
 		// Chinese Recover (Compute p and q)
 		bjxj, product := chineseRecover(numberOfPrime)
 		partyList := make([]*BiPrimeManage, n)
-		tryTime := 1
+		tryTime := 10
 
 		// Chinese Recover (Now use extend)
 		bjxjExtend, exptendProduct := chineseRecover(numberOfExtendPrime)
@@ -45,6 +47,7 @@ var _ = Describe("Util test", func() {
 		timeList := make([]string, tryTime)
 		leakCountList := make([]int, tryTime)
 		LagrangeCoefficient := make([]*big.Int, (2*n)-1)
+		maxTry := 18000
 
 		for i := 0; i < len(LagrangeCoefficient); i++ {
 			bigI := big.NewInt(int64(i + 1))
@@ -64,19 +67,36 @@ var _ = Describe("Util test", func() {
 		for m := 0; m < tryTime; m++ {
 			start := time.Now()
 			// Initial all parties
-			for i := 0; i < n; i++ {
-				partyList[i], _ = NewBFSampling(n, numberOfPrime, i == 0)
+			for z := 0; z < n; z++ {
+				partyList[z], _ = NewBFSampling(n, numberOfPrime, z == 0)
 			}
-			for j := 0; j < 11000; j++ {
+			for j := 0; j < maxTry; j++ {
 				for i := 0; i < 4000; i++ {
 					for l := 0; l < numberOfPrime; l++ {
 						pi := partyList[0].pij[l]
 						qi := partyList[0].qij[l]
 
+						// piList := make([]*big.Int, n)
+						// qiList := make([]*big.Int, n)
+						// tempPrime := big.NewInt(primeList[l])
+						// rList := make([]*big.Int, n)
 						for z := 1; z < n; z++ {
+							// piList[z] = big.NewInt(partyList[z].pij[l])
+							// qiList[z] = big.NewInt(partyList[z].qij[l])
+							// rList[z], _ = utils.RandomInt(tempPrime)
 							pi += partyList[z].pij[l]
 							qi += partyList[z].qij[l]
 						}
+
+						// piqiList := MPCMulShamir(piList, qiList, LagrangeCoefficient, tempPrime)
+						// NiGCD := MPCGCD(rList, piqiList, LagrangeCoefficient, tempPrime)
+						// fmt.Println("NiGCD:", NiGCD)
+
+						// NiBig := big.NewInt(0)
+						// for z:=0; z < n;z++ {
+						// 	NiBig.Add(NiBig, piqiList[z])
+						// }
+
 						Ni := (pi * qi) % primeList[l]
 						if Ni != 0 {
 							for z := 0; z < n; z++ {
@@ -89,15 +109,15 @@ var _ = Describe("Util test", func() {
 								Refreshpij := make([]int64, n)
 								Refreshqij := make([]int64, n)
 
-								pi = 0
-								qi = 0
+								pi := int64(0)
+								qi := int64(0)
 								for z := 0; z < n; z++ {
 									Refreshpij[z] = mathRandom.Int63n(primeList[l])
 									Refreshqij[z] = mathRandom.Int63n(primeList[l])
 									pi += Refreshpij[z]
 									qi += Refreshqij[z]
 								}
-								Ni = (pi * qi) % primeList[l]
+								Ni := (pi * qi) % primeList[l]
 								if Ni != 0 {
 									// Set New state
 									for z := 0; z < n; z++ {
@@ -141,7 +161,6 @@ var _ = Describe("Util test", func() {
 					}
 
 					// MPC CRT extend
-					isDivide := false
 					for z := 0; z < n; z++ {
 						tempExpendP := make([]int64, diffNumberPrime)
 						tempExpendQ := make([]int64, diffNumberPrime)
@@ -149,28 +168,11 @@ var _ = Describe("Util test", func() {
 							startIndex := w - numberOfPrime
 							prime := big.NewInt(primeList[w])
 							tempExpendP[startIndex] = (new(big.Int).Mod(partyList[z].pi, prime)).Int64()
-							if tempExpendP[startIndex] == 0 {
-								isDivide = true
-								break
-							}
+
 							tempExpendQ[startIndex] = (new(big.Int).Mod(partyList[z].qi, prime)).Int64()
-							if tempExpendQ[startIndex] == 0 {
-								isDivide = true
-								break
-							}
-						}
-						if isDivide {
-							break
 						}
 						partyList[z].pij = append(partyList[z].pij, tempExpendP...)
 						partyList[z].qij = append(partyList[z].qij, tempExpendQ...)
-					}
-					if isDivide {
-						// Reset
-						for z := 0; z < n; z++ {
-							partyList[z], _ = NewBFSampling(n, numberOfPrime, z == 0)
-						}
-						continue
 					}
 
 					// Locally product
@@ -205,7 +207,7 @@ var _ = Describe("Util test", func() {
 						pMod4 += pMod4List[z]
 						qMod4 += qMod4List[z]
 					}
-					if !checkDivisible(N, 34) {
+					if !checkDivisible(N, divisibleIndex) {
 						for z := 0; z < n; z++ {
 							partyList[z].N = new(big.Int).Set(N)
 							partyList[z].pMod4 = pMod4
@@ -231,13 +233,43 @@ var _ = Describe("Util test", func() {
 					}
 				}
 
+				N = new(big.Int).Set(partyList[0].N)
+				// check
+				randomList := make([]*big.Int, n)
+				piqiTwist := make([]*big.Int, n)
+				for z := 0; z < n; z++ {
+					randomList[z], _ = utils.RandomInt(N)
+					temp := make([]*big.Int, n)
+					temp[z] = new(big.Int).Set(partyList[z].pi)
+					piqiTwist[z] = new(big.Int).Set(partyList[z].qi)
+
+					if partyList[0].epsilonQ.Cmp(big1) != 0 {
+						temp[z].Neg(temp[z])
+					}
+					if partyList[0].epsilonP.Cmp(big1) != 0 {
+						piqiTwist[z].Neg(piqiTwist[z])
+					}
+					piqiTwist[z] = piqiTwist[z].Add(piqiTwist[z], temp[z])
+					piqiTwist[z].Add(piqiTwist[z], partyList[z].epsilonN)
+					piqiTwist[z].Mod(piqiTwist[z], N)
+				}
+				gcdResult := MPCGCD(randomList, piqiTwist, LagrangeCoefficient, N)
+				if gcdResult.Cmp(big1) != 0 {
+					// fmt.Println("gcdResultNot1:", gcdResult)
+					// Reset
+					for z := 0; z < n; z++ {
+						partyList[z], _ = NewBFSampling(n, numberOfPrime, z == 0)
+					}
+					continue
+				}
+
 				count := 0
 				leakCount := 0
-				bigLowerLength := 20
+				bigLowerLength := 80
 				uMessageList := make([]*big.Int, n)
 				vMessageList := make([]*big.Int, n)
 				sSquarePList := make([]*big.Int, n)
-				N = new(big.Int).Set(partyList[0].N)
+
 				var err error
 				for k := 0; k < 80; k++ {
 					var P *big.Int
@@ -303,12 +335,12 @@ var _ = Describe("Util test", func() {
 						}
 					}
 					if err != nil {
-						fmt.Println("failure", j)
+						//fmt.Println("failure", j)
 						break
 					} else {
 						leakCount += countLeak
 						count++
-						fmt.Println("maybeOK")
+						//fmt.Println("maybeOK")
 						continue
 					}
 				}
@@ -318,11 +350,18 @@ var _ = Describe("Util test", func() {
 						timeList[m] = end
 						leakCountList[m] = leakCount
 					} else {
+						//timeList[m] = "failure"
 						leakCountList[m] = leakCount
 					}
+					// fmt.Println("p:", p)
+					// fmt.Println("q:", q)
 					fmt.Println("Complete", m)
 					break
 				} else {
+					if j == maxTry-2 {
+						timeList[m] = "failure"
+						leakCountList[m] = -1
+					}
 					// Reset
 					for z := 0; z < n; z++ {
 						partyList[z], _ = NewBFSampling(n, numberOfPrime, z == 0)
@@ -335,23 +374,6 @@ var _ = Describe("Util test", func() {
 	})
 
 	// FIt("Exp", func() {
-	// 	P, _ := new(big.Int).SetString("5834109160054197041406849888967019098188050229061902322665650864326996974961427172103609558931697802249049073512927249926833569096661182296567798396591108093093565575650932490315293348816198777883821708894912437254809059558193994443986810084421017533300507980425771634277300723149279292762401779746250040488361", 10)
-	// 	Q, _ := new(big.Int).SetString("10306565083257177581836484197079439206526967306293322374678336189663373223012534332354084390986709820812271259082355334307464180132168545568673519959502325811798997900643760295590210111624353376540023004091919431098744611476016779827854424030242420021873901749507260599995005956371914294960621572047445451619479", 10)
-	// 	N := new(big.Int).Mul(P, Q)
-
-	// 	D, _ := new(big.Int).SetString("802938590925802589920385902850928502385080238590328509328502985023852090238502358290358205029358025802850285020528502850285", 10)
-	// 	//N, _ := new(big.Int).SetString("80293587092502923522935802385092385205820802385023958230509358092580923850285025802358023592582058320988092385092385029850285", 10)
-	// 	//exp1 := big.NewInt(76)
-	// 	exp2, _ := new(big.Int).SetString("59879787979799869868969686969", 10)
-	// 	//u, v := specialExp(P, D, N, exp1)
-
-	// 	u2, v2 := specialExp(big.NewInt(2), big.NewInt(1), D, N, exp2)
-
-	// 	u3, v3 := ExpSquareCubic(big.NewInt(2), big.NewInt(1), D, N, exp2)
-
-	// 	//u3, v3 := Exp(big.NewInt(2), big.NewInt(1), D, N, exp2)
-	// 	//u3, v3 := Exp(big.NewInt(2), big.NewInt(1), D, N, exp2)
-	// 	fmt.Println(u2.Cmp(u3) == 0, v2.Cmp(v3) == 0)
 
 	// })
 })
