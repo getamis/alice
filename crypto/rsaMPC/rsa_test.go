@@ -32,14 +32,15 @@ var _ = Describe("Util test", func() {
 	It("zero rank", func() {
 		// 2048: 131, 235, 17; 3072: 183, 329, 25
 		var p, q, N *big.Int
-		numberOfPrime := 131
-		numberOfExtendPrime := 235
-		divisibleIndex := 17
-		n := 4
+		numberOfPrime := 183
+		numberOfExtendPrime := 329
+		divisibleIndex := 25
+		bigLowerLength := 80
+		n := 3
 		// Chinese Recover (Compute p and q)
 		bjxj, product := chineseRecover(numberOfPrime)
 		partyList := make([]*BiPrimeManage, n)
-		tryTime := 10
+		tryTime := 5
 
 		// Chinese Recover (Now use extend)
 		bjxjExtend, exptendProduct := chineseRecover(numberOfExtendPrime)
@@ -265,7 +266,6 @@ var _ = Describe("Util test", func() {
 
 				count := 0
 				leakCount := 0
-				bigLowerLength := 80
 				uMessageList := make([]*big.Int, n)
 				vMessageList := make([]*big.Int, n)
 				sSquarePList := make([]*big.Int, n)
@@ -275,11 +275,12 @@ var _ = Describe("Util test", func() {
 					var P *big.Int
 					var copyD, D *big.Int
 					countLeak := 0
-					for q := 0; q < maxRetry; q++ {
+					for q := 1; q < maxRetry; q++ {
 						D, err := rand.Prime(rand.Reader, bigLowerLength)
 						if err != nil {
 							continue
 						}
+						// D := big.NewInt(primeList[q])
 
 						negD := new(big.Int).Neg(D)
 
@@ -362,6 +363,10 @@ var _ = Describe("Util test", func() {
 						timeList[m] = "failure"
 						leakCountList[m] = -1
 					}
+					if count > 0 {
+						fmt.Println("Lier N")
+					}
+
 					// Reset
 					for z := 0; z < n; z++ {
 						partyList[z], _ = NewBFSampling(n, numberOfPrime, z == 0)
@@ -374,6 +379,69 @@ var _ = Describe("Util test", func() {
 	})
 
 	// FIt("Exp", func() {
+	// 	// 55, 103
+	// 	n1Int := int64(55)
+	// 	n2Int := int64(7)
+	// 	n1 := big.NewInt(n1Int)
+	// 	n2 := big.NewInt(n2Int)
+	// 	N := new(big.Int).Mul(n1, n2)
+	// 	numberN := n1Int * n2Int
+	// 	for i := 0; i < len(primeList); i++ {
+	// 		D := big.NewInt(primeList[i])
+	// 		count2:=0
+	// 		negD:= new(big.Int).Set(D)
+	// 		negD.Neg(negD)
+	// 		vInverse:= big.NewInt(4)
+	// 		vInverse.ModInverse(vInverse,N)
+	// 		if big.Jacobi(negD, N) == 1 {
+	// 			if big.Jacobi(negD, n1) == -1 {
+	// 				count := 0
+	// 				e := (n1Int - 1) * (n2Int - 1) / 4
+	// 				fmt.Println(utils.Gcd(N, big.NewInt(e)))
+	// 				if utils.Gcd(N, big.NewInt(e)).Cmp(big1) != 0 {
+	// 					fmt.Println("Failure!")
+	// 					break
+	// 				}
+	// 				neVector := new(big.Int).Sub(N, big1)
+	// 				for j := 1; j < int(numberN); j++ {
+	// 					P := big.NewInt(int64(j))
+	// 					pSquare := big.NewInt(int64(j))
+	// 					pSquare.Exp(pSquare, big2, N)
+	// 					pSquare.Sub(pSquare, D)
+	// 					pSquare.Mul(pSquare,vInverse)
+	// 					pSquare.Mod(pSquare, N)
+
+	// 					if utils.Gcd(pSquare, N).Cmp(big1) == 0 {
+	// 						if big.Jacobi(pSquare, N) == -1 {
+	// 							continue
+	// 						}
+	// 						u, v := big.NewInt(1), big.NewInt(0)
+	// 						u, v = specialInverse(P, big.NewInt(-1), D, N)
+	// 						u, v = specialMul(P, big1, u, v, D, N)
+
+	// 						u, v = specialExp(u, v, D, N, big.NewInt(e))
+	// 						if u.Cmp(big1) == 0 && v.Cmp(big0) == 0{
+	// 							//fmt.Println("P:", j)
+	// 							count++
+	// 						}
+	// 						if u.Cmp(neVector) == 0 && v.Cmp(big0) == 0{
+	// 							//fmt.Println("-P:", j)
+	// 							count++
+	// 						}
+	// 						u, v = specialExp(u, v, D, N, big2)
+	// 						if u.Cmp(big1) == 0 && v.Cmp(big0) == 0{
+	// 							count2++
+	// 						}
+
+	// 					}
+
+	// 				}
+	// 				fmt.Println("count:", count)
+	// 				fmt.Println("count2:", count2)
+	// 				break
+	// 			}
+	// 		}
+	// 	}
 
 	// })
 })
