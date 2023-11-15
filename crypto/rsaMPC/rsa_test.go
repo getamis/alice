@@ -48,7 +48,13 @@ var _ = Describe("Util test", func() {
 		timeList := make([]string, tryTime)
 		leakCountList := make([]int, tryTime)
 		LagrangeCoefficient := make([]*big.Int, (2*n)-1)
+		LagrangeCoefficientInt64 := make([]int64, (2*n)-1)
 		maxTry := 18000
+
+		BigPrimeList := make([]*big.Int, len(primeList))
+		for i := 0; i < len(BigPrimeList); i++ {
+			BigPrimeList[i] = big.NewInt(primeList[i])
+		}
 
 		for i := 0; i < len(LagrangeCoefficient); i++ {
 			bigI := big.NewInt(int64(i + 1))
@@ -63,6 +69,7 @@ var _ = Describe("Util test", func() {
 				}
 			}
 			LagrangeCoefficient[i] = new(big.Int).Div(tempUp, tempLower)
+			LagrangeCoefficientInt64[i] = LagrangeCoefficient[i].Int64()
 		}
 
 		for m := 0; m < tryTime; m++ {
@@ -74,36 +81,39 @@ var _ = Describe("Util test", func() {
 			for j := 0; j < maxTry; j++ {
 				for i := 0; i < 4000; i++ {
 					for l := 0; l < numberOfPrime; l++ {
-						pi := partyList[0].pij[l]
-						qi := partyList[0].qij[l]
+						piList := make([]int64, n)
+						qiList := make([]int64, n)
+						rList := make([]int64, n)
+						temppi := int64(0)
+						tempqi := int64(0)
 
-						// piList := make([]*big.Int, n)
-						// qiList := make([]*big.Int, n)
-						// tempPrime := big.NewInt(primeList[l])
-						// rList := make([]*big.Int, n)
-						for z := 1; z < n; z++ {
-							// piList[z] = big.NewInt(partyList[z].pij[l])
-							// qiList[z] = big.NewInt(partyList[z].qij[l])
-							// rList[z], _ = utils.RandomInt(tempPrime)
-							pi += partyList[z].pij[l]
-							qi += partyList[z].qij[l]
+						for z := 0; z < n; z++ {
+							piList[z] = partyList[z].pij[l]
+							qiList[z] = partyList[z].qij[l]
+							rList[z] = mathRandom.Int63n(primeList[l])
+							temppi += piList[z] 
+							tempqi += qiList[z] 
 						}
 
-						// piqiList := MPCMulShamir(piList, qiList, LagrangeCoefficient, tempPrime)
-						// NiGCD := MPCGCD(rList, piqiList, LagrangeCoefficient, tempPrime)
-						// fmt.Println("NiGCD:", NiGCD)
+						piqiList := MPCMulShamirInt64(piList, qiList, LagrangeCoefficientInt64, primeList[l])
+						NiGCD := MPCGCDInt64(rList, piqiList, LagrangeCoefficientInt64, primeList[l])
 
-						// NiBig := big.NewInt(0)
-						// for z:=0; z < n;z++ {
-						// 	NiBig.Add(NiBig, piqiList[z])
-						// }
+						Ni := int64(0)
+						if NiGCD == 1 {
+							for z := 0; z < len(piqiList); z++ {
+								Ni += piqiList[z]
+							}
+							Ni = (Ni + primeList[l]) % primeList[l]
+						}
+						Ni = (temppi*tempqi) %primeList[l]
+						//fmt.Println("Ni:", Ni)
+						//fmt.Println((temppi*tempqi) %primeList[l] )
 
-						Ni := (pi * qi) % primeList[l]
+
 						if Ni != 0 {
 							for z := 0; z < n; z++ {
 								partyList[z].Nj[l] = Ni
 							}
-
 						} else {
 							for z := 0; z < 1000; z++ {
 								// Refresh divide part
@@ -117,8 +127,21 @@ var _ = Describe("Util test", func() {
 									Refreshqij[z] = mathRandom.Int63n(primeList[l])
 									pi += Refreshpij[z]
 									qi += Refreshqij[z]
+									rList[z] = mathRandom.Int63n(primeList[l])
 								}
-								Ni := (pi * qi) % primeList[l]
+
+								piqiList := MPCMulShamirInt64(Refreshpij, Refreshqij, LagrangeCoefficientInt64, primeList[l])
+								NiGCD := MPCGCDInt64(rList, piqiList, LagrangeCoefficientInt64, primeList[l])
+								Ni := int64(0)
+								if NiGCD == 1 {
+									for z := 0; z < n; z++ {
+										Ni += piqiList[z]
+									}
+									Ni = Ni % primeList[l]
+								}
+								// fmt.Println("Ni:", Ni)
+								// fmt.Println(pi*qi %primeList[l])
+								Ni = pi*qi %primeList[l]
 								if Ni != 0 {
 									// Set New state
 									for z := 0; z < n; z++ {
@@ -167,10 +190,9 @@ var _ = Describe("Util test", func() {
 						tempExpendQ := make([]int64, diffNumberPrime)
 						for w := numberOfPrime; w < numberOfExtendPrime; w++ {
 							startIndex := w - numberOfPrime
-							prime := big.NewInt(primeList[w])
-							tempExpendP[startIndex] = (new(big.Int).Mod(partyList[z].pi, prime)).Int64()
+							tempExpendP[startIndex] = (new(big.Int).Mod(partyList[z].pi, BigPrimeList[w])).Int64()
 
-							tempExpendQ[startIndex] = (new(big.Int).Mod(partyList[z].qi, prime)).Int64()
+							tempExpendQ[startIndex] = (new(big.Int).Mod(partyList[z].qi, BigPrimeList[w])).Int64()
 						}
 						partyList[z].pij = append(partyList[z].pij, tempExpendP...)
 						partyList[z].qij = append(partyList[z].qij, tempExpendQ...)
@@ -185,14 +207,13 @@ var _ = Describe("Util test", func() {
 							pijList[z] = big.NewInt(partyList[z].pij[w])
 							qijList[z] = big.NewInt(partyList[z].qij[w])
 						}
-						prime := big.NewInt(primeList[w])
-						partyLocalProductShare := MPCMulShamir(pijList, qijList, LagrangeCoefficient, prime)
+						partyLocalProductShare := MPCMulShamir(pijList, qijList, LagrangeCoefficient, BigPrimeList[w])
 
 						Nij := big.NewInt(0)
 						for z := 0; z < n; z++ {
 							Nij.Add(partyLocalProductShare[z], Nij)
 						}
-						Nij.Mod(Nij, prime)
+						Nij.Mod(Nij, BigPrimeList[w])
 						NijList[w] = Nij
 					}
 					N := big.NewInt(0)
@@ -256,7 +277,6 @@ var _ = Describe("Util test", func() {
 				}
 				gcdResult := MPCGCD(randomList, piqiTwist, LagrangeCoefficient, N)
 				if gcdResult.Cmp(big1) != 0 {
-					// fmt.Println("gcdResultNot1:", gcdResult)
 					// Reset
 					for z := 0; z < n; z++ {
 						partyList[z], _ = NewBFSampling(n, numberOfPrime, z == 0)
@@ -280,8 +300,6 @@ var _ = Describe("Util test", func() {
 						if err != nil {
 							continue
 						}
-						// D := big.NewInt(primeList[q])
-
 						negD := new(big.Int).Neg(D)
 
 						if big.Jacobi(negD, N) == -1 {
@@ -303,9 +321,6 @@ var _ = Describe("Util test", func() {
 							sSquare.Add(sSquare, sSquarePList[z])
 						}
 						sSquare.Mod(sSquare, D)
-
-						// sSquarePList = PerformMPCMultiply(sShares, sShares, LagrangeCoefficient, D)
-						// sSquarePList = PerformMPCMultiply(sSquarePList, pList, LagrangeCoefficient, D)
 						countLeak++
 						P, err = generateRamdonP(bigLowerLength, int(partyList[0].pMod4), D, sSquare, N)
 						if err == nil {
