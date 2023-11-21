@@ -207,7 +207,7 @@ func Verify(pubKey, R *ecpointgrouplaw.ECPoint, message []byte, s *big.Int) bool
 		curveP := curveType.Params().P
 		curveN := curveType.Params().N
 		// Let P = lift_x(int(pk))
-		Px, Py, err := lift_x(pubKey.GetX(), curveType)
+		Px, Py, err := liftX(pubKey.GetX(), curveType)
 		if err != nil {
 			return false
 		}
@@ -251,14 +251,14 @@ func Verify(pubKey, R *ecpointgrouplaw.ECPoint, message []byte, s *big.Int) bool
 		edwardPubKey := edwards.NewPublicKey(edwards.Edwards(), pubKey.GetX(), pubKey.GetY())
 		test1, err := ecpointEncoding(R)
 		Expect(err).Should(BeNil())
-		test2 := *test1
+		test2 := test1
 		r := new(big.Int).SetBytes(utils.ReverseByte(test2[:]))
 		return edwards.Verify(edwardPubKey, message, r, s)
 	}
 	return false
 }
 
-func lift_x(x *big.Int, curve elliptic.Curve) (*big.Int, *big.Int, error) {
+func liftX(x *big.Int, curve elliptic.Curve) (*big.Int, *big.Int, error) {
 	curveP := curve.Params().P
 	if x.Cmp(big0) == -1 || x.Cmp(curveP) == 1 {
 		return nil, nil, ErrNotSupportCurve

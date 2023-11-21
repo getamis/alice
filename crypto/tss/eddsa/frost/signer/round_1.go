@@ -42,9 +42,8 @@ const (
 )
 
 var (
-	bit254 = new(big.Int).Lsh(big.NewInt(1), 253)
-	big0   = big.NewInt(0)
-	big1   = big.NewInt(1)
+	big0 = big.NewInt(0)
+	big1 = big.NewInt(1)
 
 	//ErrExceedMaxRetry is returned if we retried over times
 	ErrExceedMaxRetry = errors.New("exceed max retries")
@@ -260,9 +259,6 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	p.r = R
 	// Compute own zi = di+ ei*li + c bi xi
 	selfNode := p.nodes[p.peerManager.SelfID()]
-	if err != nil {
-		return nil, err
-	}
 	share := new(big.Int).Set(p.share)
 	p.d, p.e, share, err = computeDEShareTaproot(p.d, p.e, share, R, p.pubKey)
 	if err != nil {
@@ -376,14 +372,15 @@ func SHAPoints(pubKey, R *ecpointgrouplaw.ECPoint, message []byte) (*big.Int, er
 	return nil, ErrNotSupportCurve
 }
 
-func ecpointEncoding(pt *ecpointgrouplaw.ECPoint) (*[32]byte, error) {
+func ecpointEncoding(pt *ecpointgrouplaw.ECPoint) ([32]byte, error) {
 	curveType := pt.GetCurve()
+	nullSlice := [32]byte{}
 	if pt.IsIdentity() {
-		return nil, ErrTrivialPoint
+		return nullSlice, ErrTrivialPoint
 	}
 	switch curveType {
 	case elliptic.Secp256k1():
-		return (*[32]byte)(utils.Bytes32(pt.GetX())), nil
+		return ([32]byte)(utils.Bytes32(pt.GetX())), nil
 	case elliptic.Ed25519():
 		var result, X, Y [32]byte
 		var x, y edwards25519.FieldElement
@@ -407,9 +404,9 @@ func ecpointEncoding(pt *ecpointgrouplaw.ECPoint) (*[32]byte, error) {
 		edwards25519.FeFromBytes(&y, &Y)
 		edwards25519.FeToBytes(&result, &y)
 		result[31] ^= edwards25519.FeIsNegative(&x) << 7
-		return &result, nil
+		return result, nil
 	}
-	return nil, ErrNotSupportCurve
+	return nullSlice, ErrNotSupportCurve
 }
 
 // Get xi,Di,Ei,.......

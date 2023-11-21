@@ -399,8 +399,11 @@ func ExtendHashOutput(salt, message []byte, outputByteLength int) []byte {
 }
 
 func Pad(x []byte, n int) []byte {
-	pad := make([]byte, n-len(x))
-	return append(pad, x...)
+	if n-len(x) >= 0 {
+		pad := make([]byte, n-len(x))
+		return append(pad, x...)
+	}
+	return x[0:n]
 }
 
 func Bytes32(x *big.Int) []byte {
