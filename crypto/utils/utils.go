@@ -67,7 +67,6 @@ var (
 	big0 = big.NewInt(0)
 	big1 = big.NewInt(1)
 	big2 = big.NewInt(2)
-	big3 = big.NewInt(3)
 	big4 = big.NewInt(4)
 )
 
@@ -397,4 +396,13 @@ func ExtendHashOutput(salt, message []byte, outputByteLength int) []byte {
 		}
 	}
 	return result
+}
+
+func Pad(x []byte, n int) []byte {
+	pad := make([]byte, n-len(x))
+	return append(pad, x...)
+}
+
+func Bytes32(x *big.Int) []byte {
+	return Pad(x.Bytes(), 32)
 }
