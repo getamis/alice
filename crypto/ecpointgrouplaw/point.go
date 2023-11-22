@@ -75,6 +75,13 @@ func NewBase(curve elliptic.Curve) *ECPoint {
 	}
 }
 
+func (p *ECPoint) IsEvenY() bool {
+	if p.IsIdentity() {
+		return true
+	}
+	return new(big.Int).And(p.y, big1).Cmp(big1) != 0
+}
+
 // IsIdentity checks if the point is the identity element.
 func (p *ECPoint) IsIdentity() bool {
 	return isIdentity(p.x, p.y)
