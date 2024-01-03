@@ -32,14 +32,14 @@ var _ = Describe("Util test", func() {
 	It("zero rank", func() {
 		// 2048: 131, 235, 17; 3072: 183, 329, 25
 		var p, q, N *big.Int
-		numberOfPrime := 131
-		numberOfExtendPrime := 235
-		divisibleIndex := 17
-		n := 4
+		numberOfPrime := 30
+		numberOfExtendPrime := 56
+		divisibleIndex := 1
+		n := 3
 		// Chinese Recover (Compute p and q)
 		bjxj, product := chineseRecover(numberOfPrime)
 		partyList := make([]*BiPrimeManage, n)
-		tryTime := 10
+		tryTime := 5
 
 		// Chinese Recover (Now use extend)
 		bjxjExtend, exptendProduct := chineseRecover(numberOfExtendPrime)
@@ -47,6 +47,7 @@ var _ = Describe("Util test", func() {
 		timeList := make([]string, tryTime)
 		leakCountList := make([]int, tryTime)
 		LagrangeCoefficient := make([]*big.Int, (2*n)-1)
+		LagrangeCoefficientInt64 := make([]int64, (2*n)-1)
 		maxTry := 18000
 
 		for i := 0; i < len(LagrangeCoefficient); i++ {
@@ -62,6 +63,7 @@ var _ = Describe("Util test", func() {
 				}
 			}
 			LagrangeCoefficient[i] = new(big.Int).Div(tempUp, tempLower)
+			LagrangeCoefficientInt64[i] = LagrangeCoefficient[i].Int64()
 		}
 
 		for m := 0; m < tryTime; m++ {
@@ -73,31 +75,40 @@ var _ = Describe("Util test", func() {
 			for j := 0; j < maxTry; j++ {
 				for i := 0; i < 4000; i++ {
 					for l := 0; l < numberOfPrime; l++ {
-						pi := partyList[0].pij[l]
-						qi := partyList[0].qij[l]
+						//pi := int64(0)
+						//qi := int64(0)
+						// pi := partyList[0].pij[l]
+						// qi := partyList[0].qij[l]
 
-						// piList := make([]*big.Int, n)
-						// qiList := make([]*big.Int, n)
-						// tempPrime := big.NewInt(primeList[l])
-						// rList := make([]*big.Int, n)
-						for z := 1; z < n; z++ {
-							// piList[z] = big.NewInt(partyList[z].pij[l])
-							// qiList[z] = big.NewInt(partyList[z].qij[l])
-							// rList[z], _ = utils.RandomInt(tempPrime)
-							pi += partyList[z].pij[l]
-							qi += partyList[z].qij[l]
+						piList := make([]int64, n)
+						qiList := make([]int64, n)
+						//tempPrime := big.NewInt(primeList[l])
+						rList := make([]int64, n)
+						for z := 0; z < n; z++ {
+							piList[z] = partyList[z].pij[l]
+							qiList[z] = partyList[z].qij[l]
+							rList[z] = mathRandom.Int63n(primeList[l])
+							//pi += partyList[z].pij[l]
+							//qi += partyList[z].qij[l]
 						}
 
-						// piqiList := MPCMulShamir(piList, qiList, LagrangeCoefficient, tempPrime)
-						// NiGCD := MPCGCD(rList, piqiList, LagrangeCoefficient, tempPrime)
-						// fmt.Println("NiGCD:", NiGCD)
+						piqiList := MPCMulShamirInt64(piList, qiList, LagrangeCoefficientInt64, primeList[l])
 
-						// NiBig := big.NewInt(0)
-						// for z:=0; z < n;z++ {
-						// 	NiBig.Add(NiBig, piqiList[z])
+						NiGCD := MPCGCDInt64(rList, piqiList, LagrangeCoefficientInt64, primeList[l])
+						Ni := int64(0)
+						if NiGCD != 0 {
+							for z := 0; z < n; z++ {
+								Ni += piqiList[z]
+								Ni = Ni % primeList[l]
+							}
+						}
+
+						//Ni := (pi * qi) % primeList[l]
+
+						// if NiBig != Ni {
+						// 	fmt.Println(fmt.Println("FailureNi"))
 						// }
 
-						Ni := (pi * qi) % primeList[l]
 						if Ni != 0 {
 							for z := 0; z < n; z++ {
 								partyList[z].Nj[l] = Ni
@@ -109,15 +120,26 @@ var _ = Describe("Util test", func() {
 								Refreshpij := make([]int64, n)
 								Refreshqij := make([]int64, n)
 
-								pi := int64(0)
-								qi := int64(0)
+								//pi := int64(0)
+								//qi := int64(0)
 								for z := 0; z < n; z++ {
 									Refreshpij[z] = mathRandom.Int63n(primeList[l])
 									Refreshqij[z] = mathRandom.Int63n(primeList[l])
-									pi += Refreshpij[z]
-									qi += Refreshqij[z]
+									rList[z] = mathRandom.Int63n(primeList[l])
+									//pi += Refreshpij[z]
+									//qi += Refreshqij[z]
 								}
-								Ni := (pi * qi) % primeList[l]
+								piqiList := MPCMulShamirInt64(Refreshpij, Refreshqij, LagrangeCoefficientInt64, primeList[l])
+
+								NiGCD := MPCGCDInt64(rList, piqiList, LagrangeCoefficientInt64, primeList[l])
+								Ni := int64(0)
+								if NiGCD != 0 {
+									for z := 0; z < n; z++ {
+										Ni += piqiList[z]
+										Ni = Ni % primeList[l]
+									}
+								}
+								//Ni := (pi * qi) % primeList[l]
 								if Ni != 0 {
 									// Set New state
 									for z := 0; z < n; z++ {
