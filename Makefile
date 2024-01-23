@@ -4,7 +4,7 @@ SHELL := /bin/bash
 TOOL_DIR := $(CURDIR)/tools
 TOOL_BIN_DIR := $(TOOL_DIR)/bin
 TOOL_TEMP_DIR := $(TOOL_DIR)/tmp
-GOROOT := $(shell go env GOROOT)
+GOPATH := $(shell go env GOPATH)
 DIRS := \
 	$(TOOL_BIN_DIR) \
 	$(TOOL_TEMP_DIR)
