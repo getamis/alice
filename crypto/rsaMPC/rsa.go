@@ -38,10 +38,11 @@ var (
 	//ErrExceedMaxRetry is returned if we retried over times
 	ErrExceedMaxRetry = errors.New("exceed max retries")
 
-	big0 = big.NewInt(0)
-	big1 = big.NewInt(1)
-	big2 = big.NewInt(2)
-	big4 = big.NewInt(4)
+	big0      = big.NewInt(0)
+	big1      = big.NewInt(1)
+	big2      = big.NewInt(2)
+	big4      = big.NewInt(4)
+	bigMinus1 = big.NewInt(-1)
 
 	// 16294579238595022365 = 3 * primeProducts[0]
 	primeList = []int64{
@@ -3092,6 +3093,9 @@ type BiPrimeManage struct {
 
 	u *big.Int
 	v *big.Int
+
+	// Boneh-Franklin Parameter
+	gi *big.Int
 }
 
 func NewBFSampling(n int, numberOfPrime int, isOdd bool) (*BiPrimeManage, error) {
@@ -3108,6 +3112,13 @@ func NewBFSampling(n int, numberOfPrime int, isOdd bool) (*BiPrimeManage, error)
 		pij[0] = (mathRandom.Int63n(2) << 1)
 		qij[0] = (mathRandom.Int63n(2) << 1)
 	}
+	// if isOdd {
+	// 	pij[0] = 3
+	// 	qij[0] = 3
+	// } else {
+	// 	pij[0] = 0
+	// 	qij[0] = 0
+	// }
 	Nj := make([]int64, len(primeList))
 
 	return &BiPrimeManage{
@@ -3140,14 +3151,6 @@ func chineseRecover(numberOfPrime int) ([]*big.Int, *big.Int) {
 }
 
 func checkDivisible(x *big.Int, startIndex int) bool {
-	// for i := startIndex; i < 600; i++ {
-	// 	residue := new(big.Int).Mod(x, primeProducts[i]).Uint64()
-	// 	for j := 0; j < len(primes[i]); j++ {
-	// 		if residue%primes[i][j] == 0 {
-	// 			return true
-	// 		}
-	// 	}
-	// }
 	for i := startIndex; i < len(primes); i++ {
 		residue := new(big.Int).Mod(x, primeProducts[i]).Uint64()
 		for j := 0; j < len(primes[i]); j++ {
@@ -3511,6 +3514,22 @@ func (m *BiPrimeManage) computeLucasMatrice(D, P *big.Int) (*big.Int, *big.Int) 
 	u, v = Exp(u, v, D, m.N, exp.Abs(exp))
 
 	return u, v
+}
+
+func (m *BiPrimeManage) computeBonehExponent(g *big.Int) *big.Int {
+	if m.isPartyOne {
+		exponent := new(big.Int).Sub(m.N, m.pi)
+		exponent.Sub(exponent, m.qi)
+		exponent.Add(exponent,big1)
+		exponent.Div(exponent, big4)
+		return new(big.Int).Exp(g, exponent, m.N)
+	}
+
+	exponent := new(big.Int).Add(m.qi, m.pi)
+	exponent.Div(exponent, big4)
+	exponent.Neg(exponent)
+	result := new(big.Int).Exp(g, exponent, m.N)
+	return result
 }
 
 func (m *BiPrimeManage) CheckLucasCongruence(uList []*big.Int, vList []*big.Int, D *big.Int) error {
