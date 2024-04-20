@@ -3470,13 +3470,13 @@ func (m *BiPrimeManage) generateD(bitLength int, N *big.Int) *big.Int {
 }
 
 // lowBitLength -> 2N, upBitLength -> 4N
-func generateRamdonP(bitLength, pmod4 int, D *big.Int, p, N *big.Int) (*big.Int, error) {
-	sign := -1
-	if pmod4 == 3 && new(big.Int).Mod(D, big4).Cmp(big1) == 0 {
-		sign = 1
-	}
+func generateRamdonP( D *big.Int, N *big.Int) (*big.Int, error) {
+	// sign := -1
+	// if pmod4 == 3 && new(big.Int).Mod(D, big4).Cmp(big1) == 0 {
+	// 	sign = 1
+	// }
 
-	if big.Jacobi(p, D) == sign {
+	for i := 0; i < maxRetry; i++ {
 		P, err := utils.RandomInt(N)
 		if err != nil {
 			return nil, err
@@ -3520,7 +3520,7 @@ func (m *BiPrimeManage) computeBonehExponent(g *big.Int) *big.Int {
 	if m.isPartyOne {
 		exponent := new(big.Int).Sub(m.N, m.pi)
 		exponent.Sub(exponent, m.qi)
-		exponent.Add(exponent,big1)
+		exponent.Add(exponent, big1)
 		exponent.Div(exponent, big4)
 		return new(big.Int).Exp(g, exponent, m.N)
 	}
