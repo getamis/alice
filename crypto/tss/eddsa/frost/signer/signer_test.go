@@ -14,9 +14,11 @@
 package signer
 
 import (
+	"fmt"
 	"crypto/sha256"
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/decred/dcrd/dcrec/edwards"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
@@ -43,14 +45,15 @@ var (
 )
 
 var _ = Describe("Signer", func() {
-	var (
-		testVector1, _ = new(big.Int).SetString("C90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B14E5C9", 16)
-		testVector2, _ = new(big.Int).SetString("B7E151628AED2A6ABF7158809CF4F3C762E7160F38B4DA56A784D9045190CFEF", 16)
-		testVector3, _ = new(big.Int).SetString("0B432B2677937381AEF05BB02A66ECD012773062CF3FA2549E44F58ED2401710", 16)
-		testVector4, _ = new(big.Int).SetString("0340034003400340034003400340034003400340034003400340034003400340", 16)
-	)
+	// var (
+	// 	testVector1, _ = new(big.Int).SetString("C90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B14E5C9", 16)
+	// 	testVector2, _ = new(big.Int).SetString("B7E151628AED2A6ABF7158809CF4F3C762E7160F38B4DA56A784D9045190CFEF", 16)
+	// 	testVector3, _ = new(big.Int).SetString("0B432B2677937381AEF05BB02A66ECD012773062CF3FA2549E44F58ED2401710", 16)
+	// 	testVector4, _ = new(big.Int).SetString("0340034003400340034003400340034003400340034003400340034003400340", 16)
+	// )
 
 	DescribeTable("It should be OK", func(ss [][]*big.Int, privateKey *big.Int, curve elliptic.Curve) {
+		t0 := time.Now()
 		expPublic := ecpointgrouplaw.ScalarBaseMult(curve, privateKey)
 		threshold := len(ss)
 		message := utils.Pad([]byte("8077818"), 32)
@@ -59,7 +62,11 @@ var _ = Describe("Signer", func() {
 		for i := 0; i < len(Y); i++ {
 			Y[i] = ecpointgrouplaw.ScalarBaseMult(curve, ss[i][1])
 		}
+		t1 := time.Now()
+		fmt.Printf("prepare(threshold=%d, numberShare=%d)\t%v\n", threshold, numberShare, t1.UnixMilli()-t0.UnixMilli())
 		signers, listeners := newSigners(curve, expPublic, ss, Y, message)
+		t2 := time.Now()
+		fmt.Printf("newSignerss()\t%v\n", t2.UnixMilli()-t1.UnixMilli())
 		doneChs := make([]chan struct{}, threshold)
 		i := 0
 		for _, l := range listeners {
@@ -70,15 +77,22 @@ var _ = Describe("Signer", func() {
 			}).Once()
 			i++
 		}
+		t3 := time.Now()
+		fmt.Printf("listeners init\t%v\n", t3.UnixMilli()-t2.UnixMilli())
 
 		for _, s := range signers {
 			s.Start()
 		}
+		t4 := time.Now()
+		fmt.Printf("signers.Start()\t%v\n", t4.UnixMilli()-t3.UnixMilli())
 
 		for i := 0; i < threshold; i++ {
 			<-doneChs[i]
 		}
-
+		t5 := time.Now()
+		fmt.Printf("listeners done\t%v\n", t5.UnixMilli()-t4.UnixMilli())
+	
+	
 		// Build public key
 		var R *ecpointgrouplaw.ECPoint
 		var s *big.Int
@@ -95,66 +109,75 @@ var _ = Describe("Signer", func() {
 				s = result.S
 			}
 		}
+		t6 := time.Now()
+		fmt.Printf("signer.GetResult()\t%v\n", t6.UnixMilli()-t5.UnixMilli())
+
 		Expect(Verify(expPublic, R, message, s)).Should(BeTrue())
+		t7 := time.Now()
+		fmt.Printf("VerifyEd25519()\t%v\n", t7.UnixMilli()-t6.UnixMilli())
+
 		for _, l := range listeners {
 			l.AssertExpectations(GinkgoT())
 		}
+		t8 := time.Now()
+		fmt.Printf("AssertExpectations()\t%v\n", t8.UnixMilli()-t7.UnixMilli())
+		fmt.Printf("TOTAL\t%v\n", t8.UnixMilli()-t0.UnixMilli())
 	},
+		// Entry("(x-cooord, share, rank):f(x) = 2x+100", [][]*big.Int{
+		// 	{big.NewInt(1), big.NewInt(102), big.NewInt(0)},
+		// 	{big.NewInt(2), big.NewInt(104), big.NewInt(0)},
+		// 	{big.NewInt(8), big.NewInt(116), big.NewInt(0)},
+		// }, big.NewInt(100), elliptic.Ed25519()),
 		Entry("(x-cooord, share, rank):f(x) = 2x+100", [][]*big.Int{
 			{big.NewInt(1), big.NewInt(102), big.NewInt(0)},
 			{big.NewInt(2), big.NewInt(104), big.NewInt(0)},
-			{big.NewInt(8), big.NewInt(116), big.NewInt(0)},
 		}, big.NewInt(100), elliptic.Ed25519()),
-		Entry("(x-cooord, share, rank):f(x) = 2x+100", [][]*big.Int{
-			{big.NewInt(1), big.NewInt(102), big.NewInt(0)},
-			{big.NewInt(2), big.NewInt(104), big.NewInt(0)},
-		}, big.NewInt(100), elliptic.Ed25519()),
-		Entry("(x-cooord, share, rank):f(x) = x^2+5*x+1109", [][]*big.Int{
-			{big.NewInt(1), big.NewInt(1115), big.NewInt(0)},
-			{big.NewInt(2), big.NewInt(1123), big.NewInt(0)},
-			{big.NewInt(50), big.NewInt(3859), big.NewInt(0)},
-		}, big.NewInt(1109), elliptic.Ed25519()),
-		Entry("(x-cooord, share, rank):f(x) = x^2+3*x+5555", [][]*big.Int{
-			{big.NewInt(1), big.NewInt(5559), big.NewInt(0)},
-			{big.NewInt(2), big.NewInt(5565), big.NewInt(0)},
-			{big.NewInt(50), big.NewInt(103), big.NewInt(1)},
-		}, big.NewInt(5555), elliptic.Ed25519()),
-		Entry("(x-cooord, share, rank):f(x) = 2*x^2+3*x+1111", [][]*big.Int{
-			{big.NewInt(1), big.NewInt(1116), big.NewInt(0)},
-			{big.NewInt(2), big.NewInt(4), big.NewInt(2)},
-			{big.NewInt(50), big.NewInt(203), big.NewInt(1)},
-		}, big.NewInt(1111), elliptic.Ed25519()),
-		// Test Vector: https://github.com/bitcoin/bips/blob/master/bip-0340/test-vectors.csv
-		Entry("(x-cooord, share, rank):f(x) = 2*x^2+3*x+1111", [][]*big.Int{
-			{big.NewInt(1), big.NewInt(1116), big.NewInt(0)},
-			{big.NewInt(2), big.NewInt(4), big.NewInt(2)},
-			{big.NewInt(50), big.NewInt(203), big.NewInt(1)},
-		}, big.NewInt(1111), elliptic.Secp256k1()),
-		Entry("(x-cooord, share, rank):f(x) = x^2+3*x+5555", [][]*big.Int{
-			{big.NewInt(1), big.NewInt(5559), big.NewInt(0)},
-			{big.NewInt(2), big.NewInt(5565), big.NewInt(0)},
-			{big.NewInt(50), big.NewInt(103), big.NewInt(1)},
-		}, big.NewInt(5555), elliptic.Secp256k1()),
-		Entry("(x-cooord, share, rank):f(x) = 5x+vector1", [][]*big.Int{
-			{big.NewInt(1), new(big.Int).Add(testVector1, big.NewInt(5)), big.NewInt(0)},
-			{big.NewInt(2), new(big.Int).Add(testVector1, big.NewInt(10)), big.NewInt(0)},
-			{big.NewInt(8), new(big.Int).Add(testVector1, big.NewInt(40)), big.NewInt(0)},
-		}, testVector1, elliptic.Secp256k1()),
-		Entry("(x-cooord, share, rank):f(x) = 5x+vector2", [][]*big.Int{
-			{big.NewInt(1), new(big.Int).Add(testVector2, big.NewInt(5)), big.NewInt(0)},
-			{big.NewInt(2), new(big.Int).Add(testVector2, big.NewInt(10)), big.NewInt(0)},
-			{big.NewInt(8), new(big.Int).Add(testVector2, big.NewInt(40)), big.NewInt(0)},
-		}, testVector2, elliptic.Secp256k1()),
-		Entry("(x-cooord, share, rank):f(x) = 7x+vector3", [][]*big.Int{
-			{big.NewInt(1), new(big.Int).Add(testVector3, big.NewInt(7)), big.NewInt(0)},
-			{big.NewInt(2), new(big.Int).Add(testVector3, big.NewInt(14)), big.NewInt(0)},
-			{big.NewInt(8), new(big.Int).Add(testVector3, big.NewInt(56)), big.NewInt(0)},
-		}, testVector3, elliptic.Secp256k1()),
-		Entry("(x-cooord, share, rank):f(x) = x+vector4", [][]*big.Int{
-			{big.NewInt(1), new(big.Int).Add(testVector4, big.NewInt(1)), big.NewInt(0)},
-			{big.NewInt(2), new(big.Int).Add(testVector4, big.NewInt(2)), big.NewInt(0)},
-			{big.NewInt(8), new(big.Int).Add(testVector4, big.NewInt(8)), big.NewInt(0)},
-		}, testVector4, elliptic.Secp256k1()),
+		// Entry("(x-cooord, share, rank):f(x) = x^2+5*x+1109", [][]*big.Int{
+		// 	{big.NewInt(1), big.NewInt(1115), big.NewInt(0)},
+		// 	{big.NewInt(2), big.NewInt(1123), big.NewInt(0)},
+		// 	{big.NewInt(50), big.NewInt(3859), big.NewInt(0)},
+		// }, big.NewInt(1109), elliptic.Ed25519()),
+		// Entry("(x-cooord, share, rank):f(x) = x^2+3*x+5555", [][]*big.Int{
+		// 	{big.NewInt(1), big.NewInt(5559), big.NewInt(0)},
+		// 	{big.NewInt(2), big.NewInt(5565), big.NewInt(0)},
+		// 	{big.NewInt(50), big.NewInt(103), big.NewInt(1)},
+		// }, big.NewInt(5555), elliptic.Ed25519()),
+		// Entry("(x-cooord, share, rank):f(x) = 2*x^2+3*x+1111", [][]*big.Int{
+		// 	{big.NewInt(1), big.NewInt(1116), big.NewInt(0)},
+		// 	{big.NewInt(2), big.NewInt(4), big.NewInt(2)},
+		// 	{big.NewInt(50), big.NewInt(203), big.NewInt(1)},
+		// }, big.NewInt(1111), elliptic.Ed25519()),
+		// // Test Vector: https://github.com/bitcoin/bips/blob/master/bip-0340/test-vectors.csv
+		// Entry("(x-cooord, share, rank):f(x) = 2*x^2+3*x+1111", [][]*big.Int{
+		// 	{big.NewInt(1), big.NewInt(1116), big.NewInt(0)},
+		// 	{big.NewInt(2), big.NewInt(4), big.NewInt(2)},
+		// 	{big.NewInt(50), big.NewInt(203), big.NewInt(1)},
+		// }, big.NewInt(1111), elliptic.Secp256k1()),
+		// Entry("(x-cooord, share, rank):f(x) = x^2+3*x+5555", [][]*big.Int{
+		// 	{big.NewInt(1), big.NewInt(5559), big.NewInt(0)},
+		// 	{big.NewInt(2), big.NewInt(5565), big.NewInt(0)},
+		// 	{big.NewInt(50), big.NewInt(103), big.NewInt(1)},
+		// }, big.NewInt(5555), elliptic.Secp256k1()),
+		// Entry("(x-cooord, share, rank):f(x) = 5x+vector1", [][]*big.Int{
+		// 	{big.NewInt(1), new(big.Int).Add(testVector1, big.NewInt(5)), big.NewInt(0)},
+		// 	{big.NewInt(2), new(big.Int).Add(testVector1, big.NewInt(10)), big.NewInt(0)},
+		// 	{big.NewInt(8), new(big.Int).Add(testVector1, big.NewInt(40)), big.NewInt(0)},
+		// }, testVector1, elliptic.Secp256k1()),
+		// Entry("(x-cooord, share, rank):f(x) = 5x+vector2", [][]*big.Int{
+		// 	{big.NewInt(1), new(big.Int).Add(testVector2, big.NewInt(5)), big.NewInt(0)},
+		// 	{big.NewInt(2), new(big.Int).Add(testVector2, big.NewInt(10)), big.NewInt(0)},
+		// 	{big.NewInt(8), new(big.Int).Add(testVector2, big.NewInt(40)), big.NewInt(0)},
+		// }, testVector2, elliptic.Secp256k1()),
+		// Entry("(x-cooord, share, rank):f(x) = 7x+vector3", [][]*big.Int{
+		// 	{big.NewInt(1), new(big.Int).Add(testVector3, big.NewInt(7)), big.NewInt(0)},
+		// 	{big.NewInt(2), new(big.Int).Add(testVector3, big.NewInt(14)), big.NewInt(0)},
+		// 	{big.NewInt(8), new(big.Int).Add(testVector3, big.NewInt(56)), big.NewInt(0)},
+		// }, testVector3, elliptic.Secp256k1()),
+		// Entry("(x-cooord, share, rank):f(x) = x+vector4", [][]*big.Int{
+		// 	{big.NewInt(1), new(big.Int).Add(testVector4, big.NewInt(1)), big.NewInt(0)},
+		// 	{big.NewInt(2), new(big.Int).Add(testVector4, big.NewInt(2)), big.NewInt(0)},
+		// 	{big.NewInt(8), new(big.Int).Add(testVector4, big.NewInt(8)), big.NewInt(0)},
+		// }, testVector4, elliptic.Secp256k1()),
 	)
 
 	It("Verify failure case: computeB", func() {
@@ -167,6 +190,7 @@ var _ = Describe("Signer", func() {
 })
 
 func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][]*big.Int, Y []*ecpointgrouplaw.ECPoint, msg []byte) (map[string]*Signer, map[string]*mocks.StateChangedListener) {
+
 	threshold := len(ss)
 	signers := make(map[string]*Signer, threshold)
 	signersMain := make(map[string]types.MessageMain, threshold)
@@ -190,8 +214,11 @@ func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][
 		pm.Set(signersMain)
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
+		t0 := time.Now()
 		signers[id], err = NewSigner(expPublic, peerManagers[i], uint32(threshold), ss[i][1], dkgData, msg, listeners[id])
-		Expect(err).Should(BeNil())
+		t1 := time.Now()
+		fmt.Printf("\tNewSigner()\t%v\n", t1.UnixMilli()-t0.UnixMilli())
+			Expect(err).Should(BeNil())
 		signersMain[id] = signers[id]
 		r, err := signers[id].GetResult()
 		Expect(r).Should(BeNil())

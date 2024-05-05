@@ -15,7 +15,9 @@
 package signer
 
 import (
+	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/elliptic"
@@ -64,6 +66,7 @@ func (p *round2) HandleMessage(logger log.Logger, message types.Message) error {
 }
 
 func (p *round2) Finalize(logger log.Logger) (types.Handler, error) {
+	t0 := time.Now()
 	z := big.NewInt(0)
 	G := ecpointgrouplaw.NewBase(p.pubKey.GetCurve())
 	isREvenY := isYEven(p.r)
@@ -99,6 +102,8 @@ func (p *round2) Finalize(logger log.Logger) (types.Handler, error) {
 	if p.z.Cmp(big0) == 0 {
 		return nil, ErrTrivialSignature
 	}
+	t1 := time.Now()
+	fmt.Printf("\tnewRound2.Finalize()\t%v\n", t1.UnixMilli()-t0.UnixMilli())
 	return nil, nil
 }
 

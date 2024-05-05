@@ -15,7 +15,9 @@
 package signer
 
 import (
+	"fmt"
 	"math/big"
+	"time"
 
 	ecpointgrouplaw "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/tss"
@@ -38,8 +40,11 @@ type Signer struct {
 
 func NewSigner(pubKey *ecpointgrouplaw.ECPoint, peerManager types.PeerManager, threshold uint32, share *big.Int, dkgResult *dkg.Result, msg []byte, listener types.StateChangedListener) (*Signer, error) {
 	numPeers := peerManager.NumPeers()
+	t0 := time.Now()
 	ph, err := newRound1(pubKey, peerManager, threshold, share, dkgResult, msg)
-	if err != nil {
+	t1 := time.Now()
+	fmt.Printf("\tnewRound1()\t%v\n", t1.UnixMilli()-t0.UnixMilli())
+if err != nil {
 		log.Warn("Failed to new a public key handler", "err", err)
 		return nil, err
 	}

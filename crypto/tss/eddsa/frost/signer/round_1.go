@@ -18,8 +18,10 @@ import (
 	"crypto/sha256"
 	"crypto/sha512"
 	"errors"
+	"fmt"
 	"math/big"
 	"sort"
+	"time"
 
 	"github.com/agl/ed25519/edwards25519"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
@@ -211,6 +213,7 @@ func (p *round1) HandleMessage(logger log.Logger, message types.Message) error {
 }
 
 func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
+	t0 := time.Now()
 	// Build B/c/R
 	identify := ecpointgrouplaw.NewIdentity(p.pubKey.GetCurve())
 	R := identify.Copy()
@@ -226,6 +229,8 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 		}
 		B = append(B, subBPart...)
 	}
+	t1 := time.Now()
+	fmt.Printf("\tnewRound1().Finalize() getOrderedNodes loop\t%v\n", t1.UnixMilli()-t0.UnixMilli())
 
 	for _, node := range nodes {
 		x := node.bk.GetX().Bytes()
@@ -248,6 +253,9 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 			return nil, err
 		}
 	}
+	t2 := time.Now()
+	fmt.Printf("\tnewRound1().Finalize() getR loop\t%v\n", t2.UnixMilli()-t1.UnixMilli())
+
 	if R.Equal(identify) {
 		return nil, ErrTrivialSignature
 	}
@@ -261,6 +269,9 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	selfNode := p.nodes[p.peerManager.SelfID()]
 	share := new(big.Int).Set(p.share)
 	p.d, p.e, share, err = computeDEShareTaproot(p.d, p.e, share, R, p.pubKey)
+	t3 := time.Now()
+	fmt.Printf("\tnewRound1().Finalize() computeDEShareTaproot loop\t%v\n", t3.UnixMilli()-t2.UnixMilli())
+
 	if err != nil {
 		return nil, err
 	}
@@ -270,6 +281,9 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 	z.Add(z, temp)
 	z.Add(z, p.d)
 	z.Mod(z, p.curveN)
+	t4 := time.Now()
+	fmt.Printf("\tnewRound1().Finalize() 1st half\t%v\n", t4.UnixMilli()-t3.UnixMilli())
+
 	// Broadcast round2 message
 	round2Msg := &Message{
 		Id:   p.peerManager.SelfID(),
@@ -281,6 +295,9 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 		},
 	}
 	h, err := newRound2(p)
+	t5 := time.Now()
+	fmt.Printf("\tnewRound1().Finalize() newRound2()\t%v\n", t5.UnixMilli()-t4.UnixMilli())
+
 	if err != nil {
 		return nil, err
 	}
@@ -290,6 +307,10 @@ func (p *round1) Finalize(logger log.Logger) (types.Handler, error) {
 		return nil, err
 	}
 	cggmp.Broadcast(p.peerManager, round2Msg)
+	t6 := time.Now()
+	fmt.Printf("\tnewRound1.Finalize() end\t%v\n", t6.UnixMilli()-t5.UnixMilli())
+	fmt.Printf("\tnewRound1.Finalize() TOTAL\t%v\n", t6.UnixMilli()-t0.UnixMilli())
+
 	return h, nil
 }
 

@@ -16,6 +16,7 @@ package dkg
 import (
 	"math/big"
 	"testing"
+	"time"
 
 	"github.com/getamis/alice/crypto/elliptic"
 	"github.com/stretchr/testify/mock"
@@ -31,6 +32,79 @@ import (
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 )
+
+func TestDkgPerformance(t *testing.T) {
+	RegisterFailHandler(Fail)
+
+	curve := elliptic.Secp256k1()
+	threshold := uint32(2)
+	ranks := []uint32{
+		0, 0,
+	}
+	t0 := time.Now()
+	lens := len(ranks)
+	dkgs := make(map[string]*DKG, lens)
+	dkgsMain := make(map[string]types.MessageMain, lens)
+	peerManagers := make([]types.PeerManager, lens)
+	listeners := make(map[string]*mocks.StateChangedListener, lens)
+	for i := 0; i < lens; i++ {
+		id := tss.GetTestID(i)
+		pm := tss.NewTestPeerManager(i, lens)
+		pm.Set(dkgsMain)
+		peerManagers[i] = pm
+		listeners[id] = new(mocks.StateChangedListener)
+		var err error
+		dkgs[id], err = NewDKG(curve, peerManagers[i], threshold, ranks[i], listeners[id])
+		Expect(err).Should(BeNil())
+		dkgsMain[id] = dkgs[id]
+		r, err := dkgs[id].GetResult()
+		Expect(r).Should(BeNil())
+		Expect(err).Should(Equal(tss.ErrNotReady))
+	}
+	t1 := time.Now()
+	t.Logf("for loop for NewDKG()\t%v\n", t1.UnixMilli()-t0.UnixMilli())
+
+	// dkgs, listeners := newDKGs(curve, threshold, ranks)
+	chs := make(map[string]chan struct{}, len(listeners))
+	for key, l := range listeners {
+		ch := make(chan struct{})
+		chs[key] = ch
+		l.On("OnStateChanged", types.StateInit, types.StateDone).Run(func(mock.Arguments) {
+			close(ch)
+		}).Once()
+	}
+	for _, d := range dkgs {
+		d.Start()
+	}
+	for _, ch := range chs {
+		<-ch
+	}
+	t2 := time.Now()
+	t.Logf("for loop for listeners\t%v\n", t2.UnixMilli()-t1.UnixMilli())
+
+	// Build public key
+	secret := big.NewInt(0)
+	for _, d := range dkgs {
+		d.Stop()
+		secret = new(big.Int).Add(secret, d.ph.poly.Get(0))
+	}
+	pubkey := ecpointgrouplaw.ScalarBaseMult(curve, secret)
+	for _, d := range dkgs {
+		r, err := d.GetResult()
+		Expect(err).Should(BeNil())
+		Expect(r.PublicKey.Equal(pubkey)).Should(BeTrue())
+	}
+	t3 := time.Now()
+	t.Logf("for loop for publickey\t%v\n", t3.UnixMilli()-t2.UnixMilli())
+
+	for _, l := range listeners {
+		l.AssertExpectations(GinkgoT())
+	}
+	t4 := time.Now()
+	t.Logf("for loop for GinkgoT()\t%v\n", t4.UnixMilli()-t3.UnixMilli())
+	t.Logf("Total\t%v\n", t4.UnixMilli()-t0.UnixMilli())
+
+}
 
 func TestDKG(t *testing.T) {
 	RegisterFailHandler(Fail)
