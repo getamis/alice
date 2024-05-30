@@ -6,7 +6,7 @@ language: go
 # You don't need to test on very old versions of the Go compiler. It's the user's
 # responsibility to keep their compiler up to date.
 go:
-  - 1.20.x
+  - 1.22.x
 
 # Only clone the most recent commit.
 git:
