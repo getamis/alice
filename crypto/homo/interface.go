@@ -22,7 +22,7 @@ import (
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 )
 
-//go:generate mockery -name Pubkey
+//go:generate mockery --name Pubkey
 type Pubkey interface {
 	GetMessageRange(fieldOrder *big.Int) *big.Int
 	Encrypt(m []byte) ([]byte, error)
@@ -32,7 +32,7 @@ type Pubkey interface {
 	ToPubKeyBytes() []byte
 }
 
-//go:generate mockery -name Crypto
+//go:generate mockery --name Crypto
 type Crypto interface {
 	Pubkey
 	Decrypt(c []byte) ([]byte, error)

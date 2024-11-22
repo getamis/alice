@@ -24,7 +24,7 @@ import (
 	"github.com/getamis/alice/crypto/zkproof"
 )
 
-//go:generate mockery -name Mta
+//go:generate mockery --name Mta
 type Mta interface {
 	OverrideA(newA *big.Int) (Mta, error)
 	GetEncK() []byte

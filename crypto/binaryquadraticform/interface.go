@@ -18,7 +18,7 @@ import (
 	"math/big"
 )
 
-//go:generate mockery -name Exper
+//go:generate mockery --name Exper
 type Exper interface {
 	Exp(power *big.Int) (*BQuadraticForm, error)
 	ToMessage() *BQForm
