@@ -64,6 +64,7 @@ func (p *BkParameter) String() string {
 
 func (p *BkParameter) GetLinearEquationCoefficient(fieldOrder *big.Int, degreePoly uint32) []*big.Int {
 	result := make([]*big.Int, degreePoly+1)
+	// #nosec: G115: integer overflow conversion int -> uint32
 	for i := uint32(0); i < uint32(len(result)); i++ {
 		result[i] = p.getDiffMonomialCoeff(fieldOrder, i)
 	}
@@ -178,6 +179,7 @@ func (bks BkParameters) ensureRankAndOrder(threshold uint32, fieldOrder *big.Int
 	if err := utils.EnsureFieldOrder(fieldOrder); err != nil {
 		return err
 	}
+	// #nosec: G115: integer overflow conversion int -> uint32
 	if uint32(bks.Len()) < threshold {
 		return ErrEqualOrLargerThreshold
 	}
@@ -241,8 +243,10 @@ func (bks BkParameters) GetAddShareCoefficient(ownBk, newBk *BkParameter, fieldO
 		newRankFactorial = newRankFactorial.Mod(newRankFactorial, fieldOrder)
 	}
 	for i := newrank; i < uint64(threshold); i++ {
+		// #nosec: G115: integer overflow conversion int -> uint32
 		factorialCoe := new(big.Int).Binomial(int64(i), int64(i-newrank))
 		factorialCoe = factorialCoe.Mul(factorialCoe, newRankFactorial)
+		// #nosec: G115: integer overflow conversion int -> uint32
 		tempbki := birkhoffMatrix.Get(i, uint64(ownIndex))
 		tempResult := new(big.Int).Mul(factorialCoe, xPower)
 		tempResult = tempResult.Mul(tempResult, tempbki)

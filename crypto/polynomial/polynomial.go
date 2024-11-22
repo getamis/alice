@@ -68,6 +68,7 @@ func RandomPolynomial(fieldOrder *big.Int, degree uint32) (*Polynomial, error) {
 // Given f(x) is a polynomial, then output is f^(diffTime)(x) mod field order
 // Ex: f(x)=x^5+2*x^3, diffTime = 1 Then f^(1)(x)= 5*x^4+6*x^2 = 2*x^4.
 func (p *Polynomial) Differentiate(diffTime uint32) *Polynomial {
+	// #nosec: G115: integer overflow conversion int -> uint32
 	lengthPolyACoeff := uint32(p.Len())
 	reduceDegree := lengthPolyACoeff - diffTime
 	diffCoeffSlice := make([]*big.Int, reduceDegree)
@@ -125,6 +126,7 @@ func (p *Polynomial) Len() int {
 
 // Degree returns the degree of the polynomial
 func (p *Polynomial) Degree() uint32 {
+	// #nosec: G115: integer overflow conversion int -> uint32
 	return uint32(p.Len() - 1)
 }
 
@@ -154,6 +156,7 @@ func (p *Polynomial) expend(xpoint, givenPoint *big.Int) (*Polynomial, error) {
 	for i := 1; i < len(newCos); i++ {
 		newCos[i] = big.NewInt(0)
 	}
+	// #nosec: G115: integer overflow conversion int -> uint32
 	for i := uint32(1); i < uint32(len(newCos)); i++ {
 		tempResult := expandMonomial(p.coefficients[i], givenPointPower, i)
 		for j := 0; j < len(tempResult); j++ {

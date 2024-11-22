@@ -604,10 +604,13 @@ func partialGCD(R2, R1, C2, C1, bound *big.Int) (*big.Int, *big.Int, *big.Int, *
 		if T < 0 {
 			T = 0
 		}
+		// #nosec: G115: integer overflow conversion int -> uint32
 		r = new(big.Int).Rsh(R2, uint(T))
 		rr2 = r.Int64()
+		// #nosec: G115: integer overflow conversion int -> uint32
 		r = new(big.Int).Rsh(R1, uint(T))
 		rr1 = r.Int64()
+		// #nosec: G115: integer overflow conversion int -> uint32
 		r = new(big.Int).Rsh(bound, uint(T))
 		bb = r.Int64()
 

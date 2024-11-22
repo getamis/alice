@@ -46,6 +46,7 @@ func NewPeerManager(id string, host host.Host, protocol protocol.ID) *peerManage
 }
 
 func (p *peerManager) NumPeers() uint32 {
+	// #nosec: G115: integer overflow conversion int -> uint32
 	return uint32(len(p.peers))
 }
 

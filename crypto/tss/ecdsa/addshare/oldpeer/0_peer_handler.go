@@ -54,6 +54,7 @@ func newPeerHandler(peerManager types.PeerManager, pubkey *ecpointgrouplaw.ECPoi
 		log.Warn("Inconsistent peer num", "bks", len(bks), "numPeers", numPeers)
 		return nil, tss.ErrInconsistentPeerNumAndBks
 	}
+	// #nosec: G115: integer overflow conversion int -> uint32
 	if err := utils.EnsureThreshold(threshold, uint32(lenBks)); err != nil {
 		return nil, err
 	}

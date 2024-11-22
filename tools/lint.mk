@@ -4,9 +4,9 @@ GOLINT ?= $(GOTOOL_GOPATH)/bin/golangci-lint
 
 # lint
 $(GOLINT):
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOTOOL_GOPATH)/bin v1.54.1
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOTOOL_GOPATH)/bin v1.62.0
 
 PHONY += lint
 lint: $(GOLINT)
-	$(GOLINT) run --deadline 5m
+	$(GOLINT) run --timeout 5m
 

@@ -137,6 +137,7 @@ func GenerateRandomSafePrime(rand io.Reader, pbits int) (*SafePrime, error) {
 	}
 	upperbound := uint64(1024)
 	bits := pbits - 1
+	// #nosec: G115: integer overflow conversion int -> uint32
 	b := uint(bits % 8)
 	if b == 0 {
 		b = 8
@@ -149,6 +150,7 @@ func GenerateRandomSafePrime(rand io.Reader, pbits int) (*SafePrime, error) {
 		}
 
 		// Clear bits in the first byte to make sure the candidate has a size <= bits.
+		// #nosec: G115: integer overflow conversion int -> uint32
 		bytes[0] &= uint8(int(1<<b) - 1)
 		// Don't let the value be too small, i.e, set the most significant two bits.
 		// Setting the top two bits, rather than just the top bit,

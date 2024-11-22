@@ -176,6 +176,7 @@ func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][
 	bks := make(map[string]*birkhoffinterpolation.BkParameter, threshold)
 	Ys := make(map[string]*ecpointgrouplaw.ECPoint, threshold)
 	for i := 0; i < threshold; i++ {
+		// #nosec: G115: integer overflow conversion int -> uint32
 		bks[tss.GetTestID(i)] = birkhoffinterpolation.NewBkParameter(ss[i][0], uint32(ss[i][2].Uint64()))
 		Ys[tss.GetTestID(i)] = Y[i]
 	}
@@ -190,6 +191,7 @@ func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][
 		pm.Set(signersMain)
 		peerManagers[i] = pm
 		listeners[id] = new(mocks.StateChangedListener)
+		// #nosec: G115: integer overflow conversion int -> uint32
 		signers[id], err = NewSigner(expPublic, peerManagers[i], uint32(threshold), ss[i][1], dkgData, msg, listeners[id])
 		Expect(err).Should(BeNil())
 		signersMain[id] = signers[id]

@@ -213,7 +213,7 @@ func buildWiAndPeers(curveN *big.Int, bks map[string]*birkhoffinterpolation.BkPa
 		i++
 		peers[id] = newPeer(id)
 	}
-
+	// #nosec: G115: integer overflow conversion int -> uint32
 	scalars, err := allBks.ComputeBkCoefficient(uint32(lenBks), curveN)
 	if err != nil {
 		log.Warn("Failed to compute bk coefficient", "allBks", allBks, "err", err)

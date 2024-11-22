@@ -597,6 +597,7 @@ func (m *Matrix) Equal(m2 *Matrix) bool {
 	}
 	for i, mm := range m.matrix {
 		for j := range mm {
+			// #nosec: G115: integer overflow conversion int -> uint32
 			if m.Get(uint64(i), uint64(j)).Cmp(m2.Get(uint64(i), uint64(j))) != 0 {
 				return false
 			}

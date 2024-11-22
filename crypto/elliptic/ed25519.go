@@ -18,13 +18,18 @@ import (
 	"crypto/elliptic"
 	"math/big"
 
+	ED25519 "crypto/ed25519"
+
 	"github.com/decred/dcrd/dcrec/edwards"
 )
 
 var (
+	big1         = big.NewInt(1)
 	ed25519Curve = &ed25519{
 		Curve: edwards.Edwards(),
 	}
+
+	BIP32ED25519 = "bip32"
 )
 
 type ed25519 struct {
@@ -39,4 +44,22 @@ func Ed25519() *ed25519 {
 func (ed *ed25519) Neg(x, y *big.Int) (*big.Int, *big.Int) {
 	negativeX := new(big.Int).Neg(x)
 	return negativeX.Mod(negativeX, ed.Params().P), new(big.Int).Set(y)
+}
+
+func (ed *ed25519) Type() string {
+	return "ed25519"
+}
+
+func (ed *ed25519) Slip10SeedList() []byte {
+	return []byte("ed25519 seed")
+}
+
+func (ed *ed25519) CompressedPublicKey(secret *big.Int, method string) []byte {
+	if method == BIP32ED25519 {
+		x, y := edwards.Edwards().ScalarBaseMult(secret.Bytes()[:32])
+		return edwards.BigIntPointToEncodedBytes(x, y)[:]
+	} else {
+		privateKey := ED25519.NewKeyFromSeed(secret.Bytes()[:32])
+		return privateKey[32:]
+	}
 }

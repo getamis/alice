@@ -131,6 +131,7 @@ func get23ExpansionSpecialcase(numberwithout23Factor *big.Int, deepOfBranch int)
 func getGivenDepth23Expansion(number *big.Int, upperDepth int) (*big.Int, []*expansion23, error) {
 	numberList := []*big.Int{number}
 	minPosition, exp2, exp3 := 0, 0, 0
+	// #nosec: G115: integer overflow conversion int -> uint32
 	upperDepthMinus1 := uint(upperDepth - 1)
 	var bStop bool
 	minValue := new(big.Int).Set(number)
@@ -226,6 +227,7 @@ func getMax2Factor(number *big.Int) (*big.Int, int) {
 	bitLength := number.BitLen()
 	for i := 0; i < bitLength; i++ {
 		if number.Bit(i) != 0 {
+			// #nosec: G115: integer overflow conversion int -> uint32
 			number.Rsh(number, uint(i))
 			return number, i
 		}
