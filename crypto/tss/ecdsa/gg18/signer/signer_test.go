@@ -140,6 +140,7 @@ func newSigners(curve elliptic.Curve, expPublic *ecpointgrouplaw.ECPoint, ss [][
 
 	bks := make(map[string]*birkhoffinterpolation.BkParameter, threshold)
 	for i := 0; i < threshold; i++ {
+		// #nosec: G115: integer overflow conversion int -> uint32
 		bks[tss.GetTestID(i)] = birkhoffinterpolation.NewBkParameter(ss[i][0], uint32(ss[i][2].Uint64()))
 	}
 

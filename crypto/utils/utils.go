@@ -292,6 +292,7 @@ func RandomAbsoluteRangeInt(n *big.Int) (*big.Int, error) {
 
 // RandomAbsoluteRangeIntBySeed generates a random number in (-2^q.bit, 2^q.bit) with seed.
 func RandomAbsoluteRangeIntBySeed(salt []byte, message []byte, q *big.Int) *big.Int {
+	// #nosec: G115: integer overflow conversion int -> uint32
 	desireBitLength := uint(q.BitLen() + 1)
 	ByteLength := int(math.Ceil(float64(desireBitLength) / 8))
 	expendResult := ExtendHashOutput(salt, message, ByteLength)
@@ -299,6 +300,7 @@ func RandomAbsoluteRangeIntBySeed(salt []byte, message []byte, q *big.Int) *big.
 	mod := new(big.Int).Lsh(big1, desireBitLength)
 	result := new(big.Int).SetBytes(expendResult)
 	result.Mod(result, mod)
+	// #nosec: G115: integer overflow conversion int -> uint32
 	translate := new(big.Int).Lsh(big1, uint(q.BitLen()))
 	return result.Sub(result, translate)
 }
@@ -363,6 +365,7 @@ func BitsToBytes(input []uint8) ([]byte, error) {
 		temp := input[low : low+bitsPerByte]
 		tempResult := temp[7]
 		for j := 6; j >= 0; j-- {
+			// #nosec: G115: integer overflow conversion int -> uint32
 			tempResult += temp[j] << uint8(7-j)
 		}
 		result[i] = tempResult

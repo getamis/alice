@@ -333,6 +333,7 @@ func (cir *Circuit) Garbled(kBit int, input []uint8, f EncFunc) (*GarbleCircuit,
 
 	// Generate others Circuit: XOR/AND/INV/EQ
 	var F []*HalfGateMessage
+	// #nosec: G115: integer overflow conversion int -> uint32
 	for i := int32(0); i < int32(len(cir.gates)); i++ {
 		g := cir.gates[i]
 		switch g.gate {
@@ -409,6 +410,7 @@ func (cir *Circuit) Garbled(kBit int, input []uint8, f EncFunc) (*GarbleCircuit,
 func decrypt(d []int32, Y [][]byte) []uint8 {
 	result := make([]uint8, len(d))
 	for i := 0; i < len(d); i++ {
+		// #nosec: G115: integer overflow conversion int -> uint32
 		result[i] = uint8(d[i]) ^ lsb(Y[i])
 	}
 	return result
@@ -510,6 +512,7 @@ func setUint64ToBitSlice(input uint64) []uint8 {
 		result[i] = 0
 	}
 	for i := 0; i < big.BitLen(); i++ {
+		// #nosec: G115: integer overflow conversion int -> uint32
 		result[i] = uint8(big.Bit(i))
 	}
 	return result
@@ -525,6 +528,7 @@ func readText(scanner *bufio.Scanner) string {
 func Decrypt(d []int32, Y [][]byte) []uint8 {
 	result := make([]uint8, len(d))
 	for i := 0; i < len(d); i++ {
+		// #nosec: G115: integer overflow conversion int -> uint32
 		result[i] = uint8(d[i]) ^ lsb(Y[i])
 	}
 	return result

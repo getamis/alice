@@ -453,6 +453,7 @@ func computeRhoElli(x []byte, E *ecpointgrouplaw.ECPoint, message []byte, B []by
 	if err != nil {
 		return nil, err
 	}
+	// #nosec: G115: integer overflow conversion int -> uint32
 	bitUppBd := new(big.Int).Lsh(big1, uint(E.GetCurve().Params().N.BitLen()))
 	for j := 0; j < maxRetry; j++ {
 		tempMod := new(big.Int).Mod(temp, bitUppBd)

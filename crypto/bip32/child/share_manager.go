@@ -87,6 +87,7 @@ func NewShareManager(share *big.Int, pubKey *ecpointgrouplaw.ECPoint, chainCode 
 			i++
 		}
 	}
+	// #nosec: G115: integer overflow conversion int -> uint32
 	cos, err := bbks.ComputeBkCoefficient(uint32(len(bks)), n)
 	if err != nil {
 		return nil, err
@@ -137,6 +138,7 @@ func (sHolder *shareManager) ComputeHardenedChildShare(childIndex uint32, second
 	if childPubKey.IsIdentity() {
 		return nil, ErrIdentityChildPublicKey
 	}
+	// #nosec: G115: integer overflow conversion int -> uint32
 	cos, err := sHolder.bks.ComputeBkCoefficient(uint32(len(sHolder.bks)), curveN)
 	if err != nil {
 		return nil, err
@@ -186,6 +188,7 @@ func (sHolder *shareManager) ComputeNonHardenedChildShare(childIndex uint32) (*c
 	}
 
 	// TODO: need to define how to add translate in each party
+	// #nosec: G115: integer overflow conversion int -> uint32
 	cos, err := sHolder.bks.ComputeBkCoefficient(uint32(len(sHolder.bks)), curveN)
 	if err != nil {
 		return nil, err

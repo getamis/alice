@@ -72,6 +72,7 @@ func NewReceiver(sid []byte, kappa int, ell int) (*OtReceiver, error) {
 			return nil, err
 		}
 		bimsg[i] = tempMsg
+		// #nosec: G115: integer overflow conversion int -> uint32
 		b[i] = uint8(bi.Uint64())
 		a[i] = alphai
 	}

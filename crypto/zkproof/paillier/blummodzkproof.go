@@ -175,6 +175,7 @@ func (msg *PaillierBlumMessage) Verify(ssidInfo []byte, n *big.Int) error {
 func computeyByRejectSampling(w *big.Int, n *big.Int, salt []byte, ssidInfo []byte) (*big.Int, []byte, error) {
 	var yi *big.Int
 	ByteLength := int(math.Ceil(float64(n.BitLen()) / 8))
+	// #nosec: G115: integer overflow conversion int -> uint32
 	desireModular := new(big.Int).Lsh(big1, uint(n.BitLen()))
 	for j := 0; j < maxRetry; j++ {
 		yiSeed, err := utils.HashProtos(salt, utils.GetAnyMsg(ssidInfo, n.Bytes(), w.Bytes())...)

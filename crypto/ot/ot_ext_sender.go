@@ -222,6 +222,7 @@ func getMatrixR(kappa uint, p0 [][]byte, r []uint8, outputByteLength int) ([][]u
 	if err != nil {
 		return nil, err
 	}
+	// #nosec: G115: integer overflow conversion int -> uint32
 	randomrpai, err := utils.GenRandomBytes(int(kappa >> 3))
 	if err != nil {
 		return nil, err

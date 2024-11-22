@@ -133,6 +133,7 @@ func newChildKeyFunc(startIndex int, garbleStart int, garbleEnd int, parseResult
 
 		shareBits := make([]uint8, 512)
 		for i := 0; i < len(shareBits); i++ {
+			// #nosec: G115: integer overflow conversion int -> uint32
 			shareBits[i] = uint8(sm.share.Bit(i))
 		}
 		garcir, garMsg, err := cir.Garbled(bip32.Kappa, shareBits, circuit.EncryptFunc(startIndex))
@@ -289,11 +290,13 @@ func getMessage(msg types.Message) *Message {
 func computePaddingInput(childIndex uint32, firstState []uint64) ([]uint8, error) {
 	otherInfo := make([]uint8, 512)
 	for i := 0; i < 512; i++ {
+		// #nosec: G115: integer overflow conversion int -> uint32
 		otherInfo[i] = uint8(secp256k1N.Bit(i))
 	}
 	indexKey := make([]uint8, 32)
 	bigIndexKey := new(big.Int).SetUint64(uint64(childIndex))
 	for i := 0; i < 32; i++ {
+		// #nosec: G115: integer overflow conversion int -> uint32
 		indexKey[31-i] = uint8(bigIndexKey.Bit(i))
 	}
 	zeroShaPadding := make([]uint8, 717)

@@ -170,6 +170,7 @@ func (msg *IntegerFactorizationProofMessage) Verify() error {
 
 func generateZ(N *big.Int, index *big.Int, maxTry int) (*big.Int, error) {
 	inputData := index.Bytes()
+	// #nosec: G115: integer overflow conversion int -> uint32
 	desireBitModular := new(big.Int).Lsh(big1, uint(N.BitLen()))
 	for j := 0; j < maxTry; j++ {
 		inputData = utils.ExtendHashOutput(inputData, N.Bytes(), N.BitLen())

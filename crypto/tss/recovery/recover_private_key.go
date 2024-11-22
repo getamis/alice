@@ -31,6 +31,7 @@ func RecoverPrivateKey(curve elliptic.Curve, threshold uint32, pubKey *ecpointgr
 	if curve == nil {
 		return nil, ErrAbsentCurve
 	}
+	// #nosec: G115: integer overflow conversion int -> uint32
 	if err := utils.EnsureThreshold(threshold, uint32(peerNum)); err != nil {
 		return nil, err
 	}

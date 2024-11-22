@@ -511,6 +511,7 @@ func setHexToIntSlice(input string, exptected uint8) []uint8 {
 		result[i] = 0
 	}
 	for i := 0; i < big.BitLen(); i++ {
+		// #nosec: G115: integer overflow conversion int -> uint32
 		result[i] = uint8(big.Bit(i))
 	}
 	return result

@@ -40,8 +40,11 @@ type CurveConfig struct {
 func NewS256() *CurveConfig {
 	curve := elliptic.Secp256k1()
 	N := curve.Params().N
+	// #nosec: G115: integer overflow conversion int -> uint32
 	epsilon := uint(epsilonFactor * N.BitLen())
+	// #nosec: G115: integer overflow conversion int -> uint32
 	L := uint(LFactor * N.BitLen())
+	// #nosec: G115: integer overflow conversion int -> uint32
 	Lpai := uint(LpaiFactor * N.BitLen())
 	return &CurveConfig{
 		Curve:                curve,

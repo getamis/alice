@@ -89,6 +89,7 @@ func (p *TestPeerManager) Set(msgMains map[string]types.MessageMain) {
 }
 
 func (p *TestPeerManager) NumPeers() uint32 {
+	// #nosec: G115: integer overflow conversion int -> uint32
 	return uint32(len(p.peers))
 }
 
