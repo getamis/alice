@@ -50,7 +50,7 @@ func (c *ellipticCurve) Slip10SeedList() []byte {
 }
 
 // WARN: Only support P256 and Secp256k1
-func (c *ellipticCurve) CompressedPublicKey(secret *big.Int, method string) []byte {
+func (c *ellipticCurve) CompressedPublicKey(secret *big.Int, method string) ([]byte, error) {
 	/* Returns the compressed bytes for this point.
 	   If pt.y is odd, 0x03 is pre-pended to pt.x.
 	   If pt.y is even, 0x02 is pre-pended to pt.x.
@@ -72,5 +72,5 @@ func (c *ellipticCurve) CompressedPublicKey(secret *big.Int, method string) []by
 		padding[0] = 2
 		xBytePadding = append(padding, xBytePadding...)
 	}
-	return xBytePadding
+	return xBytePadding, nil
 }

@@ -18,7 +18,7 @@ import (
 	"crypto/elliptic"
 	"math/big"
 
-	ED25519 "crypto/ed25519"
+	ED25519 "github.com/getamis/alice/crypto/elliptic/ed25519prue"
 
 	"github.com/decred/dcrd/dcrec/edwards"
 )
@@ -54,12 +54,15 @@ func (ed *ed25519) Slip10SeedList() []byte {
 	return []byte("ed25519 seed")
 }
 
-func (ed *ed25519) CompressedPublicKey(secret *big.Int, method string) []byte {
+func (ed *ed25519) CompressedPublicKey(secret *big.Int, method string) ([]byte, error) {
 	if method == BIP32ED25519 {
-		x, y := edwards.Edwards().ScalarBaseMult(secret.Bytes()[:32])
-		return edwards.BigIntPointToEncodedBytes(x, y)[:]
+		pubKey, err := ED25519.PubKeyCompression(secret.Bytes())
+		if err != nil {
+			return nil, err
+		}
+		return pubKey, nil
 	} else {
 		privateKey := ED25519.NewKeyFromSeed(secret.Bytes()[:32])
-		return privateKey[32:]
+		return privateKey[32:], nil
 	}
 }

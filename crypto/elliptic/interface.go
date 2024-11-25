@@ -25,5 +25,5 @@ type Curve interface {
 	Neg(x1, y1 *big.Int) (x, y *big.Int)
 	Type() string
 	Slip10SeedList() []byte
-	CompressedPublicKey(secret *big.Int, method string) []byte
+	CompressedPublicKey(secret *big.Int, method string) ([]byte, error)
 }
