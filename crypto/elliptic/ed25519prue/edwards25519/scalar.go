@@ -248,6 +248,7 @@ func (s *Scalar) Equal(t *Scalar) int {
 	nonzero |= nonzero >> 4
 	nonzero |= nonzero >> 2
 	nonzero |= nonzero >> 1
+	// #nosec: G115: integer overflow conversion int -> uint32
 	return int(^nonzero) & 1
 }
 
@@ -276,7 +277,7 @@ func (s *Scalar) nonAdjacentForm(w uint) [256]int8 {
 	}
 
 	width := uint64(1 << w)
-	windowMask := uint64(width - 1)
+	windowMask := width - 1
 
 	pos := uint(0)
 	carry := uint64(0)

@@ -18,13 +18,14 @@ package ed25519
 import (
 	"bytes"
 	"crypto"
-	"github.com/getamis/alice/crypto/elliptic/ed25519prue/edwards25519"
 	cryptorand "crypto/rand"
 	"crypto/sha512"
 	"crypto/subtle"
 	"errors"
 	"io"
 	"strconv"
+
+	"github.com/getamis/alice/crypto/elliptic/ed25519prue/edwards25519"
 )
 
 const (

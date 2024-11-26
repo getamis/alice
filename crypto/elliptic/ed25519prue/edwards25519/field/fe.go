@@ -8,8 +8,9 @@ package field
 import (
 	"crypto/subtle"
 	"errors"
-	"github.com/getamis/alice/crypto/elliptic/ed25519prue/byte"
 	"math/bits"
+
+	byteorder "github.com/getamis/alice/crypto/elliptic/ed25519prue/byte"
 )
 
 // Element represents an element of the field GF(2^255-19). Note that this

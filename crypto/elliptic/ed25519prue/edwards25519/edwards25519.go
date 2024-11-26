@@ -5,8 +5,9 @@
 package edwards25519
 
 import (
-	"github.com/getamis/alice/crypto/elliptic/ed25519prue/edwards25519/field"
 	"errors"
+
+	"github.com/getamis/alice/crypto/elliptic/ed25519prue/edwards25519/field"
 )
 
 // Point types.
