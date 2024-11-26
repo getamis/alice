@@ -20,7 +20,7 @@ import (
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 )
 
-//go:generate mockery --name Hasher
+//go:generate go run github.com/vektra/mockery/v2 --name Hasher
 type Hasher interface {
 	GetN() *big.Int
 	Hash(input []byte) (*pt.ECPoint, error)
