@@ -90,11 +90,13 @@ func (v *nafLookupTable8) FromP3(q *Point) {
 func (v *projLookupTable) SelectInto(dest *projCached, x int8) {
 	// Compute xabs = |x|
 	xmask := x >> 7
+	// #nosec: G115: integer overflow conversion uint64 -> int8
 	xabs := uint8((x + xmask) ^ xmask)
 
 	dest.Zero()
 	for j := 1; j <= 8; j++ {
 		// Set dest = j*Q if |x| = j
+		// #nosec: G115: integer overflow conversion uint64 -> int8
 		cond := subtle.ConstantTimeByteEq(xabs, uint8(j))
 		dest.Select(&v.points[j-1], dest, cond)
 	}
@@ -106,11 +108,13 @@ func (v *projLookupTable) SelectInto(dest *projCached, x int8) {
 func (v *affineLookupTable) SelectInto(dest *affineCached, x int8) {
 	// Compute xabs = |x|
 	xmask := x >> 7
+	// #nosec: G115: integer overflow conversion uint64 -> int8
 	xabs := uint8((x + xmask) ^ xmask)
 
 	dest.Zero()
 	for j := 1; j <= 8; j++ {
 		// Set dest = j*Q if |x| = j
+		// #nosec: G115: integer overflow conversion uint64 -> int8
 		cond := subtle.ConstantTimeByteEq(xabs, uint8(j))
 		dest.Select(&v.points[j-1], dest, cond)
 	}

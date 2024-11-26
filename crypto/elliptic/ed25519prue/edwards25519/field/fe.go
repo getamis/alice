@@ -236,6 +236,7 @@ func (v *Element) bytes(out *[32]byte) []byte {
 	var buf [8]byte
 	for i, l := range [5]uint64{t.l0, t.l1, t.l2, t.l3, t.l4} {
 		bitsOffset := i * 51
+		// #nosec: G115: integer overflow conversion uint64 -> uint
 		byteorder.LePutUint64(buf[:], l<<uint(bitsOffset%8))
 		for i, bb := range buf {
 			off := bitsOffset/8 + i
@@ -256,6 +257,7 @@ func (v *Element) Equal(u *Element) int {
 }
 
 // mask64Bits returns 0xffffffff if cond is 1, and 0 otherwise.
+// #nosec: G115: integer overflow conversion uint64 -> uint64
 func mask64Bits(cond int) uint64 { return ^(uint64(cond) - 1) }
 
 // Select sets v to a if cond == 1, and to b if cond == 0.

@@ -309,9 +309,11 @@ func (s *Scalar) nonAdjacentForm(w uint) [256]int8 {
 
 		if window < width/2 {
 			carry = 0
+			// #nosec: G115: integer overflow conversion uint64 -> int8
 			naf[pos] = int8(window)
 		} else {
 			carry = 1
+			// #nosec: G115: integer overflow conversion uint64 -> int8
 			naf[pos] = int8(window) - int8(width)
 		}
 
