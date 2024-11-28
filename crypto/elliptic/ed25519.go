@@ -16,11 +16,12 @@ package elliptic
 
 import (
 	"crypto/elliptic"
+	"crypto/sha512"
 	"math/big"
 
-	ED25519 "crypto/ed25519"
+	"filippo.io/edwards25519"
 
-	"github.com/decred/dcrd/dcrec/edwards"
+	edwards "github.com/decred/dcrd/dcrec/edwards"
 )
 
 var (
@@ -56,10 +57,18 @@ func (ed *ed25519) Slip10SeedList() []byte {
 
 func (ed *ed25519) CompressedPublicKey(secret *big.Int, method string) []byte {
 	if method == BIP32ED25519 {
-		x, y := edwards.Edwards().ScalarBaseMult(secret.Bytes()[:32])
-		return edwards.BigIntPointToEncodedBytes(x, y)[:]
+		return pubKeyRFC8032Compression(secret.Bytes()[:32])
 	} else {
-		privateKey := ED25519.NewKeyFromSeed(secret.Bytes()[:32])
-		return privateKey[32:]
+		sha512 := sha512.New()
+		sha512.Write(secret.Bytes()[:32])
+		h := sha512.Sum(nil)
+		return pubKeyRFC8032Compression(h[:32])
 	}
+}
+
+func pubKeyRFC8032Compression(secret []byte) []byte {
+	s := edwards25519.NewScalar()
+	s, _ = s.SetBytesWithClamping(secret)
+	v := edwards25519.NewGeneratorPoint().ScalarMult(s, edwards25519.NewGeneratorPoint())
+	return v.Bytes()
 }
