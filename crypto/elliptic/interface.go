@@ -19,11 +19,13 @@ import (
 	"math/big"
 )
 
+type CurveType string
+
 type Curve interface {
 	elliptic.Curve
 
 	Neg(x1, y1 *big.Int) (x, y *big.Int)
-	Type() string
+	Type() CurveType
 	Slip10SeedList() []byte
-	CompressedPublicKey(secret *big.Int, method string) []byte
+	CompressedPoint(s *big.Int, isHash bool) []byte
 }

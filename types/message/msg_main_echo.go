@@ -27,7 +27,7 @@ import (
 
 // Message defines the message interface
 //
-//go:generate mockery --name=EchoMessage
+//go:generate go run github.com/vektra/mockery/v2 --name=EchoMessage
 type EchoMessage interface {
 	proto.Message
 	types.Message

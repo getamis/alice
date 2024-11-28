@@ -19,6 +19,7 @@ profile.out
 
 /tools/*
 !/tools/*.mk
+!/tools/tools.go
 
 # Exclude example binaries
 example/example

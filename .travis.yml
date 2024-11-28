@@ -28,7 +28,7 @@ notifications:
 # .golangci.yml file at the top level of your repo.
 script:
   - make tss-example || travis_terminate 1; # Build tss-example to make sure example is executable.
-  - make lint || travis_terminate 1;        # Run a bunch of code checkers/linters in parallel.
+  - make install-golinter || make lint || travis_terminate 1;        # Run a bunch of code checkers/linters in parallel.
   - make unit-test || travis_terminate 1;   # Run all the tests with the race detector enabled.
 
 after_success:

@@ -16,11 +16,16 @@ package elliptic
 
 import (
 	"crypto/elliptic"
+	"crypto/sha512"
 	"math/big"
 
-	ED25519 "crypto/ed25519"
+	"filippo.io/edwards25519"
 
-	"github.com/decred/dcrd/dcrec/edwards"
+	edwards "github.com/decred/dcrd/dcrec/edwards"
+)
+
+const (
+	CurveTypeEd25519 CurveType = "ed25519"
 )
 
 var (
@@ -28,8 +33,6 @@ var (
 	ed25519Curve = &ed25519{
 		Curve: edwards.Edwards(),
 	}
-
-	BIP32ED25519 = "bip32"
 )
 
 type ed25519 struct {
@@ -46,20 +49,27 @@ func (ed *ed25519) Neg(x, y *big.Int) (*big.Int, *big.Int) {
 	return negativeX.Mod(negativeX, ed.Params().P), new(big.Int).Set(y)
 }
 
-func (ed *ed25519) Type() string {
-	return "ed25519"
+func (ed *ed25519) Type() CurveType {
+	return CurveTypeEd25519
 }
 
 func (ed *ed25519) Slip10SeedList() []byte {
 	return []byte("ed25519 seed")
 }
 
-func (ed *ed25519) CompressedPublicKey(secret *big.Int, method string) []byte {
-	if method == BIP32ED25519 {
-		x, y := edwards.Edwards().ScalarBaseMult(secret.Bytes()[:32])
-		return edwards.BigIntPointToEncodedBytes(x, y)[:]
-	} else {
-		privateKey := ED25519.NewKeyFromSeed(secret.Bytes()[:32])
-		return privateKey[32:]
+func (ed *ed25519) CompressedPoint(s *big.Int, isHash bool) []byte {
+	if isHash {
+		sha512 := sha512.New()
+		sha512.Write(s.Bytes()[:32])
+		h := sha512.Sum(nil)
+		return pubKeyRFC8032Compression(h[:32])
 	}
+	return pubKeyRFC8032Compression(s.Bytes()[:32])
+}
+
+func pubKeyRFC8032Compression(secret []byte) []byte {
+	s := edwards25519.NewScalar()
+	s, _ = s.SetBytesWithClamping(secret)
+	v := edwards25519.NewGeneratorPoint().ScalarMult(s, edwards25519.NewGeneratorPoint())
+	return v.Bytes()
 }
