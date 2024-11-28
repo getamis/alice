@@ -24,13 +24,15 @@ import (
 	edwards "github.com/decred/dcrd/dcrec/edwards"
 )
 
+const (
+	CurveTypeEd25519 CurveType = "ed25519"
+)
+
 var (
 	big1         = big.NewInt(1)
 	ed25519Curve = &ed25519{
 		Curve: edwards.Edwards(),
 	}
-
-	BIP32ED25519 = "bip32"
 )
 
 type ed25519 struct {
@@ -47,23 +49,22 @@ func (ed *ed25519) Neg(x, y *big.Int) (*big.Int, *big.Int) {
 	return negativeX.Mod(negativeX, ed.Params().P), new(big.Int).Set(y)
 }
 
-func (ed *ed25519) Type() string {
-	return "ed25519"
+func (ed *ed25519) Type() CurveType {
+	return CurveTypeEd25519
 }
 
 func (ed *ed25519) Slip10SeedList() []byte {
 	return []byte("ed25519 seed")
 }
 
-func (ed *ed25519) CompressedPublicKey(secret *big.Int, method string) []byte {
-	if method == BIP32ED25519 {
-		return pubKeyRFC8032Compression(secret.Bytes()[:32])
-	} else {
+func (ed *ed25519) CompressedPoint(s *big.Int, isHash bool) []byte {
+	if isHash {
 		sha512 := sha512.New()
-		sha512.Write(secret.Bytes()[:32])
+		sha512.Write(s.Bytes()[:32])
 		h := sha512.Sum(nil)
 		return pubKeyRFC8032Compression(h[:32])
 	}
+	return pubKeyRFC8032Compression(s.Bytes()[:32])
 }
 
 func pubKeyRFC8032Compression(secret []byte) []byte {

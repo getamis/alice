@@ -18,12 +18,30 @@ import (
 	"github.com/btcsuite/btcd/btcec/v2"
 )
 
+const (
+	CurveTypeSecp256k1 CurveType = "secp256k1"
+)
+
 var (
-	secp256k1Curve = &ellipticCurve{
-		Curve: btcec.S256(),
+	secp256k1Curve = &secp256k1{
+		ellipticCurve: &ellipticCurve{
+			Curve: btcec.S256(),
+		},
 	}
 )
 
-func Secp256k1() *ellipticCurve {
+func Secp256k1() *secp256k1 {
 	return secp256k1Curve
+}
+
+type secp256k1 struct {
+	*ellipticCurve
+}
+
+func (c *secp256k1) Type() CurveType {
+	return CurveTypeSecp256k1
+}
+
+func (c *secp256k1) Slip10SeedList() []byte {
+	return []byte("Bitcoin seed")
 }

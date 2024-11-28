@@ -18,12 +18,30 @@ import (
 	"crypto/elliptic"
 )
 
+const (
+	CurveTypeP256 CurveType = "p256"
+)
+
 var (
-	p256Curve = &ellipticCurve{
-		Curve: elliptic.P256(),
+	p256Curve = &p256{
+		ellipticCurve: &ellipticCurve{
+			Curve: elliptic.P256(),
+		},
 	}
 )
 
-func P256() *ellipticCurve {
+func P256() *p256 {
 	return p256Curve
+}
+
+type p256 struct {
+	*ellipticCurve
+}
+
+func (c *p256) Type() CurveType {
+	return CurveTypeP256
+}
+
+func (c *p256) Slip10SeedList() []byte {
+	return []byte("Bitcoin seed")
 }
