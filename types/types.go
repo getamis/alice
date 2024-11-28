@@ -20,7 +20,7 @@ import (
 
 // PeerManager defines the peer interface
 //
-//go:generate mockery --name=PeerManager
+//go:generate go run github.com/vektra/mockery/v2 --name=PeerManager
 type PeerManager interface {
 	NumPeers() uint32
 	PeerIDs() []string
@@ -30,7 +30,7 @@ type PeerManager interface {
 
 // Handler defines the message handler
 //
-//go:generate mockery --name=Handler
+//go:generate go run github.com/vektra/mockery/v2 --name=Handler
 type Handler interface {
 	// MessageType return the message type which the handler want to collect
 	MessageType() MessageType
@@ -50,7 +50,7 @@ type MessageType int32
 
 // Message defines the message interface
 //
-//go:generate mockery --name=Message
+//go:generate go run github.com/vektra/mockery/v2 --name=Message
 type Message interface {
 	// GetId returns the message id
 	GetId() string
@@ -62,7 +62,7 @@ type Message interface {
 
 // MessageMain defines the message main interface
 //
-//go:generate mockery --name=MessageMain
+//go:generate go run github.com/vektra/mockery/v2 --name=MessageMain
 type MessageMain interface {
 	AddMessage(senderId string, msg Message) error
 	GetHandler() Handler
@@ -95,7 +95,7 @@ func (m MainState) String() string {
 	return "Unknown"
 }
 
-//go:generate mockery --name=StateChangedListener
+//go:generate go run github.com/vektra/mockery/v2 --name=StateChangedListener
 type StateChangedListener interface {
 	OnStateChanged(oldState MainState, newState MainState)
 }
