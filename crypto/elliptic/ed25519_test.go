@@ -36,7 +36,7 @@ var _ = Describe("ed25519", func() {
 	// Test vectors : https://asecuritysite.com/ecc/eddsa4
 	DescribeTable("Compressed Point", func(secrethex string, expected string, isHash bool) {
 		secret, _ := new(big.Int).SetString(secrethex, 16)
-		pubKey := Ed25519().CompressedPoint(secret, isHash)
+		pubKey := Ed25519().CompressedPoint(secret.Bytes(), isHash)
 		Expect(hex.EncodeToString(pubKey) == expected).Should(BeTrue())
 	},
 		Entry("case1:", "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60", "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a", true),

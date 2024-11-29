@@ -30,7 +30,7 @@ func (c *ellipticCurve) Neg(x, y *big.Int) (*big.Int, *big.Int) {
 }
 
 // WARN: Only support P256 and Secp256k1
-func (c *ellipticCurve) CompressedPoint(s *big.Int, isHash bool) []byte {
+func (c *ellipticCurve) CompressedPoint(s []byte, isHash bool) []byte {
 	if isHash {
 		panic("Not implemented")
 	}
@@ -40,7 +40,7 @@ func (c *ellipticCurve) CompressedPoint(s *big.Int, isHash bool) []byte {
 	   Returns:
 	       bytes: Compressed byte representation.
 	*/
-	x, y := c.ScalarBaseMult(s.Bytes())
+	x, y := c.ScalarBaseMult(s)
 	xBytePadding := x.Bytes()
 	if len(x.Bytes()) < 32 {
 		padding := make([]byte, 32-len(x.Bytes()))

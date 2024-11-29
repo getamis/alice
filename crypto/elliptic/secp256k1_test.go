@@ -37,7 +37,7 @@ var _ = Describe("secp256k1", func() {
 
 	DescribeTable("Compressed Point", func(secrethex string, expected string) {
 		secret, _ := new(big.Int).SetString(secrethex, 16)
-		pubKey := Secp256k1().CompressedPoint(secret, false)
+		pubKey := Secp256k1().CompressedPoint(secret.Bytes(), false)
 		Expect(hex.EncodeToString(pubKey) == expected).Should(BeTrue())
 	},
 		Entry("case1:", "f91d8f3a49805fff9289769247e984b355939679f3080156fe295229e00f25af", "0252972572d465d016d4c501887b8df303eee3ed602c056b1eb09260dfa0da0ab2"),

@@ -57,14 +57,14 @@ func (ed *ed25519) Slip10SeedList() []byte {
 	return []byte("ed25519 seed")
 }
 
-func (ed *ed25519) CompressedPoint(s *big.Int, isHash bool) []byte {
+func (ed *ed25519) CompressedPoint(s []byte, isHash bool) []byte {
 	if isHash {
 		sha512 := sha512.New()
-		sha512.Write(s.Bytes()[:32])
+		sha512.Write(s)
 		h := sha512.Sum(nil)
 		return pubKeyRFC8032Compression(h[:32])
 	}
-	return pubKeyRFC8032Compression(s.Bytes()[:32])
+	return pubKeyRFC8032Compression(s)
 }
 
 func pubKeyRFC8032Compression(secret []byte) []byte {
