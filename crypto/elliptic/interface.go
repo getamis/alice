@@ -27,5 +27,5 @@ type Curve interface {
 	Neg(x1, y1 *big.Int) (x, y *big.Int)
 	Type() CurveType
 	Slip10SeedList() []byte
-	CompressedPoint(s *big.Int, isHash bool) []byte
+	CompressedPoint(s []byte, isHash bool) []byte
 }
