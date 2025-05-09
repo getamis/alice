@@ -32,7 +32,8 @@ var _ = Describe("bls MPC Sign", func() {
 		It("Sign", func() {
 			threshold := uint32(3)
 			totalNumber := uint32(5)
-			msg := []byte("Time")
+			msg, err := utils.GenRandomBytes(32)
+			Expect(err).Should(BeNil())
 			bkSS := make([]*birkhoffinterpolation.BkParameter, totalNumber)
 			signManager := make([]*SignManager, totalNumber)
 			poly, err := polynomial.RandomPolynomial(bls12381CurveOrder, threshold-1)
@@ -57,7 +58,7 @@ var _ = Describe("bls MPC Sign", func() {
 				signMsg[i] = tempMsg
 			}
 			// Validation
-			var mpcSignature [96]byte
+			var mpcSignature []byte
 			for i := 0; i < len(signManager); i++ {
 				mpcSignature, err = signManager[i].RecoverMPCSignature(signMsg)
 				Expect(err).Should(BeNil())
@@ -68,6 +69,69 @@ var _ = Describe("bls MPC Sign", func() {
 			Expect(secretKey.PublicKey().Marshal()).Should(Equal(pubKeyByte[:]))
 			prysmSig := secretKey.Sign(msg).Marshal()
 			Expect(prysmSig).Should(Equal(mpcSignature[:]))
+		})
+	})
+
+	Context("Negative Cases", func() {
+		It("paring failure", func() {
+			var wrongG1 bls12381.G1Affine
+			var wrongG2 bls12381.G2Affine
+			wrongG1.ScalarMultiplicationBase(big.NewInt(3))
+			wrongG2.ScalarMultiplicationBase(big.NewInt(2))
+			err := verificationSignature(wrongG2, wrongG1, wrongG2)
+			Expect(err).Should(Equal(ErrFailureSign))
+		})
+
+		It("wrong public Key ", func() {
+			pubKey := make([]byte, 100)
+			_, err := NewSignManager(3, big1.Bytes(), nil, pubKey)
+			Expect(err).Should(Equal(ErrWrongLengthPubKey))
+		})
+
+		It("wrong threshold", func() {
+			pubKey := new(bls12381.G1Affine).ScalarMultiplicationBase(big1)
+			pubKeyByte := pubKey.Bytes()
+			tempManager, err := NewSignManager(3, big1.Bytes(), birkhoffinterpolation.NewBkParameter(big1, 0), pubKeyByte[:])
+			Expect(err).Should(BeNil())
+			msg1, err := tempManager.Sign([]byte(""))
+			Expect(err).Should(BeNil())
+			_, err = tempManager.RecoverMPCSignature([]*SignMessage{msg1})
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("the length of the public Key is too large", func() {
+			pubKey := new(bls12381.G1Affine).ScalarMultiplicationBase(big1)
+			pubKeyByte := pubKey.Bytes()
+			tempManager, err := NewSignManager(1, big1.Bytes(), birkhoffinterpolation.NewBkParameter(big1, 0), pubKeyByte[:])
+			Expect(err).Should(BeNil())
+			msg1, err := tempManager.Sign([]byte(""))
+			Expect(err).Should(BeNil())
+			msg1.PublicKey = make([]byte, 100)
+			_, err = tempManager.RecoverMPCSignature([]*SignMessage{msg1})
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("wrong signature", func() {
+			pubKey := new(bls12381.G1Affine).ScalarMultiplicationBase(big1)
+			pubKeyByte := pubKey.Bytes()
+			tempManager, err := NewSignManager(1, big1.Bytes(), birkhoffinterpolation.NewBkParameter(big1, 0), pubKeyByte[:])
+			Expect(err).Should(BeNil())
+			msg1, err := tempManager.Sign([]byte(""))
+			Expect(err).Should(BeNil())
+			msg1.Signature = make([]byte, 100)
+			_, err = tempManager.RecoverMPCSignature([]*SignMessage{msg1})
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("wrong verification", func() {
+			pubKey := new(bls12381.G1Affine).ScalarMultiplicationBase(big.NewInt(100))
+			pubKeyByte := pubKey.Bytes()
+			tempManager, err := NewSignManager(1, big1.Bytes(), birkhoffinterpolation.NewBkParameter(big1, 0), pubKeyByte[:])
+			Expect(err).Should(BeNil())
+			msg1, err := tempManager.Sign([]byte(""))
+			Expect(err).Should(BeNil())
+			_, err = tempManager.RecoverMPCSignature([]*SignMessage{msg1})
+			Expect(err).ShouldNot(BeNil())
 		})
 	})
 })

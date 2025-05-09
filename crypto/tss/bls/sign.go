@@ -19,6 +19,7 @@ import (
 	"errors"
 	"math/big"
 
+	"github.com/OffchainLabs/prysm/v6/crypto/bls/blst"
 	bls12381 "github.com/consensys/gnark-crypto/ecc/bls12-381"
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 )
@@ -43,6 +44,8 @@ var (
 	ErrWrongLengthPubKey = errors.New("the length of public key is wrong")
 	// ErrShareValidationFailure is returned if the validation of shares failures.
 	ErrShareValidationFailure = errors.New("the validation of shares failures")
+	// ErrPrysmVerifyFailure is returned if the verification of prysm failures.
+	ErrPrysmVerifyFailure = errors.New("the verification of prysm failures")
 )
 
 type SignManager struct {
@@ -54,6 +57,7 @@ type SignManager struct {
 	pubKey           *bls12381.G1Affine
 	partialSignature []byte
 	msgPoint         bls12381.G2Affine
+	originalMsg      []byte
 }
 
 func NewSignManager(threshold uint32, share []byte, bk *birkhoffinterpolation.BkParameter, pubKey []byte) (*SignManager, error) {
@@ -81,7 +85,7 @@ func (sM *SignManager) Sign(msg []byte) (*SignMessage, error) {
 	var signature bls12381.G2Affine
 	signature.ScalarMultiplication(&h, sM.ownShare)
 	partialPubKey := new(bls12381.G1Affine).ScalarMultiplicationBase(sM.ownShare)
-	// verification e(H(m), pubKey) = e(sign, g2)
+	// verification e(pubKey, H(m)) = e(g1, sign)
 	err = verificationSignature(h, *partialPubKey, signature)
 	if err != nil {
 		return nil, err
@@ -93,13 +97,14 @@ func (sM *SignManager) Sign(msg []byte) (*SignMessage, error) {
 		PublicKey: pubKeyByte[:],
 		Bk:        sM.ownBK.ToMessage(),
 	}
+	// Set data
 	sM.partialSignature = resultByte[:]
 	sM.msgPoint = h
+	sM.originalMsg = msg
 	return resultMsg, nil
 }
 
-func (sM *SignManager) RecoverMPCSignature(signMsg []*SignMessage) ([G2MaxByteLength]byte, error) {
-	zeroByte := [G2MaxByteLength]byte{}
+func (sM *SignManager) RecoverMPCSignature(signMsg []*SignMessage) ([]byte, error) {
 	bkss := birkhoffinterpolation.BkParameters{
 		sM.ownBK,
 	}
@@ -108,48 +113,49 @@ func (sM *SignManager) RecoverMPCSignature(signMsg []*SignMessage) ([G2MaxByteLe
 	pubKeyByte := sM.pubKey.Bytes()
 
 	// check the correctness of the partial signatures
+	// collect all data
 	for i := 0; i < len(signMsg); i++ {
 		tempSign := signMsg[i].Signature
-		// The length of a correct signature is 96
 		if len(tempSign) > G2MaxByteLength {
-			return zeroByte, ErrFailureSign
+			return nil, ErrFailureSign
 		}
 		signSlice = append(signSlice, tempSign)
 		tempBks, err := signMsg[i].Bk.ToBk(bls12381CurveOrder)
 		if err != nil {
-			return zeroByte, err
+			return nil, err
 		}
 		bkss = append(bkss, tempBks)
 		getPubKey := signMsg[i].PublicKey
 		if subtle.ConstantTimeCompare(pubKeyByte[:], getPubKey) != 1 {
-			return zeroByte, ErrPubKeyDifferent
+			return nil, ErrPubKeyDifferent
 		}
 	}
+	// Verify: sum_i a_i(parSignature)_i = Signature a_i is Birkhoff coefficients
 	bkCoefficient, err := bkss.ComputeBkCoefficient(sM.threshold, bls12381CurveOrder)
 	if err != nil {
-		return zeroByte, err
+		return nil, err
 	}
-	var result bls12381.G2Affine
-	_, err = result.SetBytes(signSlice[0])
+	var sum bls12381.G2Affine
+	_, err = sum.SetBytes(signSlice[0])
 	if err != nil {
-		return zeroByte, err
+		return nil, err
 	}
-	result.ScalarMultiplication(&result, bkCoefficient[0])
+	sum.ScalarMultiplication(&sum, bkCoefficient[0])
 	for i := 1; i < len(signSlice); i++ {
 		var temp bls12381.G2Affine
 		_, err = temp.SetBytes(signSlice[i])
 		if err != nil {
-			return zeroByte, err
+			return nil, err
 		}
 		temp.ScalarMultiplication(&temp, bkCoefficient[i])
-		result.Add(&result, &temp)
+		sum.Add(&sum, &temp)
 	}
-	// check the final signature
-	err = verificationSignature(sM.msgPoint, *sM.pubKey, result)
-	if err != nil {
-		return zeroByte, err
+	signature := sum.Bytes()
+	result := signature[:]
+	if !blst.VerifyCompressed(result, pubKeyByte[:], sM.originalMsg) {
+		return nil, ErrPrysmVerifyFailure
 	}
-	return result.Bytes(), nil
+	return result, nil
 }
 
 func verificationSignature(msgPoint bls12381.G2Affine, pubKey bls12381.G1Affine, sig bls12381.G2Affine) error {

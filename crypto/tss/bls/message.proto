@@ -30,4 +30,12 @@ message ShareValidationMessage {
   bytes partialPubKey = 1;
   bytes publicKey = 2;
   birkhoffinterpolation.BkParameterMessage bk = 3;
+  SchnorrProofG1Message proof = 4;
+}
+
+message SchnorrProofG1Message {
+  bytes salt = 1;
+  bytes V = 2;
+  bytes r = 3;
+  bytes auxMsg = 4;
 }
