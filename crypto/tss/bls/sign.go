@@ -46,6 +46,8 @@ var (
 	ErrShareValidationFailure = errors.New("the validation of shares failures")
 	// ErrPrysmVerifyFailure is returned if the verification of prysm failures.
 	ErrPrysmVerifyFailure = errors.New("the verification of prysm failures")
+	// ErrZeroPublicKey is returned if the public key is zero.
+    ErrZeroPublicKey = errors.New("the public key is zero")
 )
 
 type SignManager struct {
@@ -65,6 +67,9 @@ func NewSignManager(threshold uint32, share []byte, bk *birkhoffinterpolation.Bk
 	bshare, pubKeyG1, err := validationShareAndPubKey(share, pubKey)
 	if err != nil {
 		return nil, err
+	}
+	if pubKeyG1.IsInfinity() {
+		return nil, ErrZeroPublicKey
 	}
 	return &SignManager{
 		ownBK:     bk,

@@ -29,7 +29,6 @@ import (
 var (
 	big0 = big.NewInt(0)
 
-	
 	// ErrSchnorrFailure is returned if the verification of Schnorr's ZK failures.
 	ErrSchnorrFailure = errors.New("the verification of Schnorr's ZK failures")
 )
@@ -45,9 +44,12 @@ type ShareValidation struct {
 
 func NewShareValidationManager(threshold uint32, share []byte, bk *birkhoffinterpolation.BkParameter, pubKey []byte) (*ShareValidation, error) {
 	// check the correctness of share and pubKey
-	bshare, _, err := validationShareAndPubKey(share, pubKey)
+	bshare, pubKeyG1, err := validationShareAndPubKey(share, pubKey)
 	if err != nil {
 		return nil, err
+	}
+	if pubKeyG1.IsInfinity() {
+		return nil, ErrZeroPublicKey
 	}
 	return &ShareValidation{
 		ownBK:     bk,
@@ -226,7 +228,7 @@ func (msg *SchnorrProofG1Message) Verify(pubKey []byte) error {
 	r := new(big.Int).SetBytes(msg.GetR())
 	err = utils.InRange(r, big0, bls12381CurveOrder)
 	if err != nil {
-		return err 
+		return err
 	}
 
 	salt := msg.Salt
