@@ -101,6 +101,8 @@ Wallet: [Qubic](https://www.qubic.app/en.html)
 18. **zkrpoof**: support some zero knowledge proofs e.x. Schnorr's proof, factorization proof and so on.
 
 
+## Three Biprimality Tests :
+1. [Implementation](./biprimalitytest/README.md).
 
 ## Acknowledgments:
 Thanks to 
