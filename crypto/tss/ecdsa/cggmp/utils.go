@@ -15,6 +15,7 @@
 package cggmp
 
 import (
+	"encoding/binary"
 	"math/big"
 
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
@@ -22,15 +23,20 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-// The output is sid + ',' + id ',' + rid.
 func ComputeSSID(sid, id, rid []byte) []byte {
-	separation := []byte(",")
-	result := make([]byte, len(sid))
-	copy(result, result)
-	result = append(result, separation...)
-	result = append(result, id...)
-	result = append(result, separation...)
-	result = append(result, rid...)
+	totalLen := 4 + len(sid) + 4 + len(id) + 4 + len(rid)
+	result := make([]byte, 0, totalLen)
+	appendWithLength := func(data []byte) {
+		lengthBuf := make([]byte, 4)
+		binary.BigEndian.PutUint32(lengthBuf, uint32(len(data)))
+		result = append(result, lengthBuf...)
+		result = append(result, data...)
+	}
+
+	appendWithLength(sid)
+	appendWithLength(id)
+	appendWithLength(rid)
+
 	return result
 }
 
