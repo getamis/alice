@@ -28,7 +28,6 @@ message RingPederssenParameterMessage {
     bytes n = 3;
     bytes s = 4;
     bytes t = 5;
-    bytes salt = 6;
 }
 
 message PaillierBlumMessage {
