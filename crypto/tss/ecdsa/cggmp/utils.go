@@ -24,7 +24,7 @@ import (
 func ComputeSSID(sid, id, rid []byte) []byte {
 	separation := []byte(",")
 	result := make([]byte, len(sid))
-	copy(result, result)
+	copy(result, sid)
 	result = append(result, separation...)
 	result = append(result, id...)
 	result = append(result, separation...)
