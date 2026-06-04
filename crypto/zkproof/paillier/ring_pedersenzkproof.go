@@ -35,27 +35,39 @@ func NewRingPederssenParameterMessage(ssidInfo []byte, eulerValue *big.Int, n *b
 
 	A := make([][]byte, nubmerZkproof)
 	Z := make([][]byte, nubmerZkproof)
+	aList := make([]*big.Int, nubmerZkproof)
+
 	salt, err := utils.GenRandomBytes(128)
 	if err != nil {
 		return nil, err
 	}
 	for i := 0; i < nubmerZkproof; i++ {
-		// Sample ai in Z_{φ(N)} for i in {1,...,m}
 		ai, err := utils.RandomInt(eulerValue)
 		if err != nil {
 			return nil, err
 		}
+		aList[i] = ai
 		Ai := new(big.Int).Exp(t, ai, n)
-		// ei = {0, 1}
-		ei, err := utils.HashBytesToInt(salt, ssidInfo, n.Bytes(), s.Bytes(), t.Bytes(), Ai.Bytes())
-		if err != nil {
-			return nil, err
-		}
-		ei.Mod(ei, big2)
-		// zi = ai+ei λ mod φ(N) for i in {1,...,m}
-		zi := new(big.Int).Add(ai, new(big.Int).Mul(ei, lambda))
-		zi.Mod(zi, eulerValue)
 		A[i] = Ai.Bytes()
+	}
+
+	hashInput := make([][]byte, 0, 5+nubmerZkproof)
+	hashInput = append(hashInput, salt, ssidInfo, n.Bytes(), s.Bytes(), t.Bytes())
+	hashInput = append(hashInput, A...)
+
+	globalChallenge, err := utils.HashBytesToInt(salt, hashInput...)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < nubmerZkproof; i++ {
+		bitVal := uint64(globalChallenge.Bit(i))
+		ei := new(big.Int).SetUint64(bitVal)
+
+		// zi = ai + ei * lambda mod φ(N)
+		zi := new(big.Int).Mul(ei, lambda)
+		zi.Add(aList[i], zi)
+		zi.Mod(zi, eulerValue)
 		Z[i] = zi.Bytes()
 	}
 
@@ -82,8 +94,16 @@ func (msg *RingPederssenParameterMessage) Verify(ssidInfo []byte) error {
 	A := msg.A
 	Z := msg.Z
 
+	hashInput := make([][]byte, 0, 5+verifyTime)
+	hashInput = append(hashInput, msg.Salt, ssidInfo, msg.N, msg.S, msg.T)
+	hashInput = append(hashInput, A...)
+
+	globalChallenge, err := utils.HashBytesToInt(msg.Salt, hashInput...)
+	if err != nil {
+		return err
+	}
+
 	for i := 0; i < verifyTime; i++ {
-		// check Ai \in Z_{n}^\ast and zi in [0,N).
 		Ai := new(big.Int).SetBytes(A[i])
 		err = utils.InRange(Ai, big0, n)
 		if err != nil {
@@ -98,12 +118,9 @@ func (msg *RingPederssenParameterMessage) Verify(ssidInfo []byte) error {
 			return err
 		}
 
-		// Check t^{zi}=Ai· s^{ei} mod N , for every i ∈ {1,..,m}.
-		ei, err := utils.HashBytesToInt(msg.Salt, ssidInfo, n.Bytes(), s.Bytes(), t.Bytes(), A[i])
-		if err != nil {
-			return err
-		}
-		ei.Mod(ei, big2)
+		bitVal := uint64(globalChallenge.Bit(i))
+		ei := new(big.Int).SetUint64(bitVal)
+
 		Asei := new(big.Int).Exp(s, ei, n)
 		Asei.Mul(Asei, Ai)
 		Asei.Mod(Asei, n)
