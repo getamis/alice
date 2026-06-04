@@ -125,7 +125,7 @@ func (p *round3Handler) HandleMessage(logger log.Logger, message types.Message) 
 	}
 
 	// Generate SSID Info + sumro
-	ssidSumRho := append(cggmp.ComputeZKSsid(p.ssid, p.bks[id]), []byte("!")...)
+	ssidSumRho := append(cggmp.ComputeZKSsid(p.ssid, p.bks[id], curve.Params().N), []byte("!")...)
 	ssidSumRho = append(ssidSumRho, p.sumrho...)
 	// Verify factor proof
 	err = round3Msg.FacProof.Verify(paillierzkproof.NewS256(),

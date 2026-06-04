@@ -15,6 +15,8 @@
 package cggmp
 
 import (
+	"math/big"
+
 	"github.com/getamis/alice/crypto/birkhoffinterpolation"
 	"github.com/getamis/alice/types"
 	"google.golang.org/protobuf/proto"
@@ -24,7 +26,7 @@ import (
 func ComputeSSID(sid, id, rid []byte) []byte {
 	separation := []byte(",")
 	result := make([]byte, len(sid))
-	copy(result, sid)
+	copy(result, result)
 	result = append(result, separation...)
 	result = append(result, id...)
 	result = append(result, separation...)
@@ -32,12 +34,15 @@ func ComputeSSID(sid, id, rid []byte) []byte {
 	return result
 }
 
-func ComputeZKSsid(ssid []byte, bk *birkhoffinterpolation.BkParameter) []byte {
+func ComputeZKSsid(ssid []byte, bk *birkhoffinterpolation.BkParameter, fieldOrder *big.Int) []byte {
 	separation := []byte(",")
 	result := make([]byte, len(ssid))
-	copy(result, result)
+	copy(result, ssid)
 	result = append(result, separation...)
-	return append(bk.GetX().Bytes(), result...)
+	byteLen := (fieldOrder.BitLen() + 7) / 8
+	xBytes := make([]byte, byteLen)
+	bk.GetX().FillBytes(xBytes)
+	return append(xBytes, result...)
 }
 
 func Broadcast(pm types.PeerManager, msg proto.Message) {

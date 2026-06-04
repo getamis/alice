@@ -155,7 +155,7 @@ func (p *round4Handler) buildSigmaVerifyFailureMsg() error {
 		if err != nil {
 			return err
 		}
-		peersMsg[peer.bk.String()] = &Err2PeerMsg{
+		peersMsg[peer.bk.String(parameter.Curve.Params().N)] = &Err2PeerMsg{
 			MulStarProof: proofMulStar,
 			Count:        peer.round1Data.countSigma.Bytes(),
 		}
