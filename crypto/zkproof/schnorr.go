@@ -111,7 +111,7 @@ func NewSchnorrMessageWithGivenMN(a1 *big.Int, a2 *big.Int, m, n *big.Int, R *pt
 			Value: seedInfo[i],
 		})
 	}
-	c, salt, err := utils.HashProtosRejectSampling(fieldOrder, msgs...)
+	c, salt, err := utils.HashProtosToScalar(fieldOrder, msgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -213,7 +213,7 @@ func (s *SchnorrProofMessage) Verify(R *pt.ECPoint, seedInfo ...[]byte) error {
 			Value: seedInfo[i],
 		})
 	}
-	c, err := utils.HashProtosToInt(s.Salt, msgs...)
+	c, err := utils.HashProtosWithSaltToScalar(s.Salt, fieldOrder, msgs...)
 	if err != nil {
 		return err
 	}

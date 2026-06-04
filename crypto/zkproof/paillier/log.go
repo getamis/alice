@@ -57,7 +57,7 @@ func NewLog(ssidInfo []byte, x *big.Int, g, h, X, Y *pt.ECPoint) (*LogMessage, e
 		return nil, err
 	}
 
-	e, salt, err := utils.HashProtosRejectSampling(curveN, &any.Any{
+	e, salt, err := utils.HashProtosToScalar(curveN, &any.Any{
 		Value: ssidInfo,
 	}, msgA, msgB, msgG, msgX, msgY, msgh,
 	)
@@ -104,7 +104,7 @@ func (msg *LogMessage) Verify(ssidInfo []byte, g, h, X, Y *pt.ECPoint) error {
 		return err
 	}
 
-	e, err := utils.HashProtosToInt(msg.Salt, &any.Any{
+	e, err := utils.HashProtosWithSaltToScalar(msg.Salt, curveN, &any.Any{
 		Value: ssidInfo,
 	}, msg.A, msg.B, msgG, msgX, msgY, msgh,
 	)
