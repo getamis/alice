@@ -25,8 +25,8 @@ Now, Alice supports two parts:
 ## Audited Part :
 
 ### ECDSA :
-1. [HTSS(A variant of GG18 and CCLST)](./crypto/tss/ecdsa/README.md).
-2. [HTSS(A variant of CGGMP)](./crypto/tss/ecdsa/README.md).
+1. ~~[HTSS(A variant of GG18 and CCLST)](./crypto/tss/ecdsa/README.md)~~ **[DEPRECATED]**
+2. [HTSS(A variant of CGGMP)](./crypto/tss/ecdsa/README.md) **[RECOMMENDED]**
 
 
 ### EdDSA :
@@ -56,6 +56,9 @@ Now, Alice supports two parts:
 2. [GG18 and GG20 Paillier Key Vulnerability [CVE-2023-33241]: Technical Report](https://www.fireblocks.com/blog/gg18-and-gg20-paillier-key-vulnerability-technical-report):
     In GG18 case, we have added a check: For any Paillier public key, it must not be divisible by the first three thousand prime numbers. 
     For the CGGMP case, we have implemented a zero-knowledge proof named "Nosmallfactoezkproof" for Paillier that corresponds to this issue.
+
+3. Ring Pedersen Parameter ZK Proof Flaw (Fiat-Shamir Transform):
+    We have fixed a vulnerability in our Ring Pedersen ZK proof implementation. Previously, the hash calculation was mistakenly placed inside the loop, making each iteration's challenge independent and allowing an attacker to forge proofs. We have refactored the Fiat-Shamir transform to a secure model: all commitments are now pooled together and hashed globally outside the loop, and individual bits are extracted from this global hash to serve as challenges for each iteration.
     
 
 ## Audit Report:

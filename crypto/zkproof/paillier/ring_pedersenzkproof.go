@@ -15,6 +15,7 @@
 package paillier
 
 import (
+	"encoding/binary"
 	"errors"
 	"math/big"
 
@@ -26,46 +27,68 @@ var (
 	ErrTooFewChallenge = errors.New("the times of challenge are too few")
 	//ErrVerifyFailure is returned if the verification is failure.
 	ErrVerifyFailure = errors.New("the verification is failure")
+	// ErrExceedHashBits is returned if the requested zero-knowledge proofs exceed the available hash bits.
+	ErrExceedHashBits = errors.New("number of zero-knowledge proofs exceeds available hash bits")
 )
+
+func lengthPrefix(b []byte) []byte {
+	res := make([]byte, 4+len(b))
+	binary.BigEndian.PutUint32(res[:4], uint32(len(b)))
+	copy(res[4:], b)
+	return res
+}
 
 func NewRingPederssenParameterMessage(ssidInfo []byte, eulerValue *big.Int, n *big.Int, s *big.Int, t *big.Int, lambda *big.Int, nubmerZkproof int) (*RingPederssenParameterMessage, error) {
 	if nubmerZkproof < MINIMALCHALLENGE {
 		return nil, ErrTooFewChallenge
 	}
 
+	if nubmerZkproof > 256 {
+		return nil, ErrExceedHashBits
+	}
+
 	A := make([][]byte, nubmerZkproof)
 	Z := make([][]byte, nubmerZkproof)
-	salt, err := utils.GenRandomBytes(128)
-	if err != nil {
-		return nil, err
-	}
+	aList := make([]*big.Int, nubmerZkproof)
+
 	for i := 0; i < nubmerZkproof; i++ {
-		// Sample ai in Z_{φ(N)} for i in {1,...,m}
 		ai, err := utils.RandomInt(eulerValue)
 		if err != nil {
 			return nil, err
 		}
+		aList[i] = ai
 		Ai := new(big.Int).Exp(t, ai, n)
-		// ei = {0, 1}
-		ei, err := utils.HashBytesToInt(salt, ssidInfo, n.Bytes(), s.Bytes(), t.Bytes(), Ai.Bytes())
-		if err != nil {
-			return nil, err
-		}
-		ei.Mod(ei, big2)
-		// zi = ai+ei λ mod φ(N) for i in {1,...,m}
-		zi := new(big.Int).Add(ai, new(big.Int).Mul(ei, lambda))
-		zi.Mod(zi, eulerValue)
 		A[i] = Ai.Bytes()
+	}
+
+	hashInput := make([][]byte, 0, 4+nubmerZkproof)
+	hashInput = append(hashInput, lengthPrefix(ssidInfo), lengthPrefix(n.Bytes()), lengthPrefix(s.Bytes()), lengthPrefix(t.Bytes()))
+	for _, Ai := range A {
+		hashInput = append(hashInput, lengthPrefix(Ai))
+	}
+
+	globalChallenge, err := utils.HashBytesToInt(ssidInfo, hashInput...)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := 0; i < nubmerZkproof; i++ {
+		bitVal := uint64(globalChallenge.Bit(i))
+		ei := new(big.Int).SetUint64(bitVal)
+
+		// zi = ai + ei * lambda mod φ(N)
+		zi := new(big.Int).Mul(ei, lambda)
+		zi.Add(aList[i], zi)
+		zi.Mod(zi, eulerValue)
 		Z[i] = zi.Bytes()
 	}
 
 	result := &RingPederssenParameterMessage{
-		Z:    Z,
-		A:    A,
-		N:    n.Bytes(),
-		S:    s.Bytes(),
-		T:    t.Bytes(),
-		Salt: salt,
+		Z: Z,
+		A: A,
+		N: n.Bytes(),
+		S: s.Bytes(),
+		T: t.Bytes(),
 	}
 	return result, nil
 }
@@ -75,15 +98,39 @@ func (msg *RingPederssenParameterMessage) Verify(ssidInfo []byte) error {
 	if verifyTime < MINIMALCHALLENGE {
 		return ErrTooFewChallenge
 	}
-	var err error
+
+	if len(msg.A) != len(msg.Z) {
+		return ErrVerifyFailure
+	}
+
+	if verifyTime > 256 {
+		return ErrVerifyFailure
+	}
+
 	n := new(big.Int).SetBytes(msg.N)
 	s := new(big.Int).SetBytes(msg.S)
 	t := new(big.Int).SetBytes(msg.T)
 	A := msg.A
 	Z := msg.Z
 
+	if !utils.IsRelativePrime(t, n) || !utils.IsRelativePrime(s, n) {
+		return ErrVerifyFailure
+	}
+
+	hashInput := make([][]byte, 0, 4+verifyTime)
+
+	hashInput = append(hashInput, lengthPrefix(ssidInfo), lengthPrefix(n.Bytes()), lengthPrefix(s.Bytes()), lengthPrefix(t.Bytes()))
+	for _, AiBytes := range A {
+		AiInt := new(big.Int).SetBytes(AiBytes)
+		hashInput = append(hashInput, lengthPrefix(AiInt.Bytes()))
+	}
+
+	globalChallenge, err := utils.HashBytesToInt(ssidInfo, hashInput...)
+	if err != nil {
+		return err
+	}
+
 	for i := 0; i < verifyTime; i++ {
-		// check Ai \in Z_{n}^\ast and zi in [0,N).
 		Ai := new(big.Int).SetBytes(A[i])
 		err = utils.InRange(Ai, big0, n)
 		if err != nil {
@@ -92,22 +139,22 @@ func (msg *RingPederssenParameterMessage) Verify(ssidInfo []byte) error {
 		if !utils.IsRelativePrime(Ai, n) {
 			return ErrVerifyFailure
 		}
+
 		zi := new(big.Int).SetBytes(Z[i])
 		err = utils.InRange(zi, big0, n)
 		if err != nil {
 			return err
 		}
 
-		// Check t^{zi}=Ai· s^{ei} mod N , for every i ∈ {1,..,m}.
-		ei, err := utils.HashBytesToInt(msg.Salt, ssidInfo, n.Bytes(), s.Bytes(), t.Bytes(), A[i])
-		if err != nil {
-			return err
-		}
-		ei.Mod(ei, big2)
+		bitVal := uint64(globalChallenge.Bit(i))
+		ei := new(big.Int).SetUint64(bitVal)
+
+		// Verify t^zi == Ai * s^ei mod n
 		Asei := new(big.Int).Exp(s, ei, n)
 		Asei.Mul(Asei, Ai)
 		Asei.Mod(Asei, n)
 		tzi := new(big.Int).Exp(t, zi, n)
+
 		if tzi.Cmp(Asei) != 0 {
 			return ErrVerifyFailure
 		}
