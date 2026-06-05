@@ -260,9 +260,25 @@ var _ = Describe("Utils", func() {
 			Expect(InRange(got, big0, bigFieldOrder)).Should(BeNil())
 		})
 
-		It("Exceed maxGenNHashValue", func() {
+		It("over permitted maxRetry", func() {
 			msg := &ecpointgrouplaw.EcPointMessage{}
 			_, _, err := HashProtosRejectSampling(big0, msg)
+			Expect(err).ShouldNot(BeNil())
+		})
+	})
+
+	Context("HashProtosToScalar()", func() {
+		It("should work", func() {
+			msg := &ecpointgrouplaw.EcPointMessage{}
+			got, salt, err := HashProtosToScalar(bigFieldOrder, msg)
+			Expect(err).Should(BeNil())
+			Expect(len(salt)).Should(BeNumerically("==", SaltSize))
+			Expect(InRange(got, big0, bigFieldOrder)).Should(BeNil())
+		})
+
+		It("should return error when fieldOrder is invalid (e.g. zero)", func() {
+			msg := &ecpointgrouplaw.EcPointMessage{}
+			_, _, err := HashProtosToScalar(big0, msg)
 			Expect(err).ShouldNot(BeNil())
 		})
 	})

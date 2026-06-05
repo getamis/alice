@@ -26,13 +26,15 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
 	"golang.org/x/crypto/blake2b"
+	"golang.org/x/crypto/sha3"
 )
 
 const (
 	// SaltSize is based on blake2b256
 	SaltSize = 32
 	// maxGenHashValue defines the max retries to generate hash value by reject sampling
-	maxGenNHashValue = 100
+	maxGenNHashValue            = 100
+	StatisticalDistanceBiasBits = 80
 	// minPermittedThreshold
 	minPermittedThreshold = 2
 
@@ -234,6 +236,62 @@ func GetAnyMsg(bs ...[]byte) []proto.Message {
 
 func HashBytesToInt(salt []byte, bs ...[]byte) (*big.Int, error) {
 	return HashProtosToInt(salt, GetAnyMsg(bs...)...)
+}
+
+func HashProtosWithSaltToScalar(salt []byte, fieldOrder *big.Int, msgs ...proto.Message) (*big.Int, error) {
+	if fieldOrder == nil || fieldOrder.Sign() <= 0 {
+		return nil, errors.New("invalid fieldOrder: must be strictly positive")
+	}
+	hMsg := &Hash{
+		Msgs: make([]*any.Any, len(msgs)+1),
+	}
+	for i, m := range msgs {
+		anyMsg, err := ptypes.MarshalAny(m)
+		if err != nil {
+			return nil, err
+		}
+		hMsg.Msgs[i] = anyMsg
+	}
+	hMsg.Msgs[len(msgs)] = &any.Any{
+		Value: salt,
+	}
+
+	inputData, err := proto.Marshal(hMsg)
+	if err != nil {
+		return nil, err
+	}
+
+	shake := sha3.NewShake256()
+	if _, err := shake.Write(inputData); err != nil {
+		return nil, err
+	}
+
+	reqBits := fieldOrder.BitLen() + StatisticalDistanceBiasBits
+	reqBytes := (reqBits + 7) / 8
+	hashOut := make([]byte, reqBytes)
+
+	if _, err := shake.Read(hashOut); err != nil {
+		return nil, err
+	}
+
+	c := new(big.Int).SetBytes(hashOut)
+	c.Mod(c, fieldOrder)
+
+	return c, nil
+}
+
+func HashProtosToScalar(fieldOrder *big.Int, msgs ...proto.Message) (*big.Int, []byte, error) {
+	salt, err := GenRandomBytes(SaltSize)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	c, err := HashProtosWithSaltToScalar(salt, fieldOrder, msgs...)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return c, salt, nil
 }
 
 func HashProtosRejectSampling(fieldOrder *big.Int, msgs ...proto.Message) (*big.Int, []byte, error) {

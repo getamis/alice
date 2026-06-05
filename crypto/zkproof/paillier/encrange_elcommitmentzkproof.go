@@ -16,10 +16,13 @@ package paillier
 
 import (
 	"math/big"
+	"strconv"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
 )
+
+const EncryptRangeWithEL = "AMIS-Alice-EncryptRangeWithEL-ZK-v1.0-"
 
 func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, a, b, ciphertext, N *big.Int, A, B, X *pt.ECPoint, ped *PederssenOpenParameter) (*EncElgMessage, error) {
 	curve := A.GetCurve()
@@ -100,7 +103,7 @@ func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, 
 	}
 
 	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), ciphertext.Bytes(), S.Bytes(), T.Bytes(), D.Bytes(), N.Bytes()), msgY, msgZ, msgA, msgB, msgG, msgX)
-	e, salt, err := GetE(curveN, msgs...)
+	e, counter, err := GetE(EncryptRangeWithEL, curveN, msgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -118,16 +121,16 @@ func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, 
 	z3 := new(big.Int).Mul(e, mu)
 	z3.Add(z3, gamma)
 	return &EncElgMessage{
-		Salt: salt,
-		S:    S.Bytes(),
-		T:    T.Bytes(),
-		D:    D.Bytes(),
-		Y:    msgY,
-		Z:    msgZ,
-		Z1:   z1.String(),
-		Z2:   z2.Bytes(),
-		W:    w.Bytes(),
-		Z3:   z3.String(),
+		Counter: counter,
+		S:       S.Bytes(),
+		T:       T.Bytes(),
+		D:       D.Bytes(),
+		Y:       msgY,
+		Z:       msgZ,
+		Z1:      z1.String(),
+		Z2:      z2.Bytes(),
+		W:       w.Bytes(),
+		Z3:      z3.String(),
 	}, nil
 }
 
@@ -139,31 +142,31 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	pedN := ped.GetN()
 	peds := ped.GetS()
 	pedt := ped.GetT()
-	// check D in Z_{N0^2}^\ast, S,T in Z_{\hat{N}}^\ast, w in [0,q), e in (-q, q), and z_2 in Z_{N}^\ast.
+
 	S := new(big.Int).SetBytes(msg.S)
-	err := utils.InRange(S, big0, pedN)
-	if err != nil {
+	if err := utils.InRange(S, big0, pedN); err != nil {
 		return err
 	}
 	if !utils.IsRelativePrime(S, pedN) {
 		return ErrVerifyFailure
 	}
+
 	T := new(big.Int).SetBytes(msg.T)
-	err = utils.InRange(T, big0, pedN)
-	if err != nil {
+	if err := utils.InRange(T, big0, pedN); err != nil {
 		return err
 	}
 	if !utils.IsRelativePrime(T, pedN) {
 		return ErrVerifyFailure
 	}
+
 	D := new(big.Int).SetBytes(msg.D)
-	err = utils.InRange(D, big0, NSqaure)
-	if err != nil {
+	if err := utils.InRange(D, big0, NSqaure); err != nil {
 		return err
 	}
 	if !utils.IsRelativePrime(D, NSqaure) {
 		return ErrVerifyFailure
 	}
+
 	Y, err := msg.Y.ToPoint()
 	if err != nil {
 		return err
@@ -172,22 +175,29 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	if err != nil {
 		return err
 	}
+
 	W := new(big.Int).SetBytes(msg.W)
-	err = utils.InRange(W, big0, curveN)
-	if err != nil {
+	if err := utils.InRange(W, big0, curveN); err != nil {
 		return err
 	}
 
-	z1, _ := new(big.Int).SetString(msg.Z1, 10)
+	z1, ok := new(big.Int).SetString(msg.Z1, 10)
+	if !ok {
+		return ErrInvalidInput
+	}
+	z3, ok := new(big.Int).SetString(msg.Z3, 10)
+	if !ok {
+		return ErrInvalidInput
+	}
+
 	z2 := new(big.Int).SetBytes(msg.Z2)
-	err = utils.InRange(z2, big0, N)
-	if err != nil {
+	if err := utils.InRange(z2, big0, N); err != nil {
 		return err
 	}
 	if !utils.IsRelativePrime(z2, N) {
 		return ErrVerifyFailure
 	}
-	z3, _ := new(big.Int).SetString(msg.Z3, 10)
+
 	msgA, err := A.ToEcPointMessage()
 	if err != nil {
 		return err
@@ -206,21 +216,23 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	}
 
 	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), ciphertext.Bytes(), S.Bytes(), T.Bytes(), D.Bytes(), N.Bytes()), msg.Y, msg.Z, msgA, msgB, msgG, msgX)
-	seed, err := utils.HashProtos(msg.Salt, msgs...)
+	reconstructedSalt := append([]byte(EncryptRangeWithEL), []byte(strconv.Itoa(int(msg.Counter)))...)
+	seed, err := utils.HashProtos(reconstructedSalt, msgs...)
 	if err != nil {
 		return err
 	}
-	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveN)
-	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
-	if err != nil {
+	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, curveN)
+	if err := utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN)); err != nil {
 		return err
 	}
-	// Check z1 ∈ ±2^{l+ε}.
+
+	// Check：z1 ∈ ±2^{l+ε}
 	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
+	if absZ1.Cmp(new(big.Int).Lsh(big1, uint(config.LAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
-	// w*g = Z+e*B
+
+	// Verify w*G = Z + e*B
 	wG := G.ScalarMult(W)
 	comparePoint := B.ScalarMult(e)
 	comparePoint, err = comparePoint.Add(Z)
@@ -231,7 +243,7 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 		return ErrVerifyFailure
 	}
 
-	// w*A+z1*G = Y + e*X
+	// Verify w*A + z1*G = Y + e*X
 	awAddz1G := A.ScalarMult(W)
 	awAddz1G, err = awAddz1G.Add(G.ScalarMult(z1))
 	if err != nil {
@@ -245,7 +257,8 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	if !comparePoint.Equal(awAddz1G) {
 		return ErrVerifyFailure
 	}
-	// Check (1+N)^{z1} ·z_2^{N_0} =D·C^e mod N_0^2.
+
+	// Verify (1+N)^{z1} * z_2^N = D * C^e mod N^2
 	DCexpe := new(big.Int).Mul(D, new(big.Int).Exp(ciphertext, e, NSqaure))
 	DCexpe.Mod(DCexpe, NSqaure)
 	temp := new(big.Int).Add(big1, N)
@@ -256,7 +269,8 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	if compare.Cmp(DCexpe) != 0 {
 		return ErrVerifyFailure
 	}
-	// Check s^{z1}*t^{z3} =T·S^e mod Nˆ
+
+	// Verify s^{z1} * t^{z3} = T * S^e mod N^hat
 	TSexpe := new(big.Int).Mul(T, new(big.Int).Exp(S, e, pedN))
 	TSexpe.Mod(TSexpe, pedN)
 	compare = new(big.Int).Mul(new(big.Int).Exp(peds, z1, pedN), new(big.Int).Exp(pedt, z3, pedN))
@@ -264,5 +278,6 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	if TSexpe.Cmp(compare) != 0 {
 		return ErrVerifyFailure
 	}
+
 	return nil
 }

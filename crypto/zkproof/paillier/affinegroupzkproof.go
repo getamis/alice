@@ -16,11 +16,14 @@ package paillier
 
 import (
 	"math/big"
+	"strconv"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
 	"github.com/golang/protobuf/proto"
 )
+
+const AffRangeZKDST = "AMIS-Alice-Paillier-Affine-Group-Range-ZK-v1.0-"
 
 func NewPaillierAffAndGroupRangeMessage(config *CurveConfig, ssidInfo []byte, x *big.Int, y *big.Int, rho *big.Int, rhoy *big.Int, n0 *big.Int, n1 *big.Int, C *big.Int, D *big.Int, Y *big.Int, ped *PederssenOpenParameter, X *pt.ECPoint) (*PaillierAffAndGroupRangeMessage, error) {
 	G := pt.NewBase(X.GetCurve())
@@ -105,7 +108,7 @@ func NewPaillierAffAndGroupRangeMessage(config *CurveConfig, ssidInfo []byte, x 
 
 	// e in ±q.
 	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), n0.Bytes(), n1.Bytes(), C.Bytes(), D.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), By.Bytes(), E.Bytes(), F.Bytes()), msgG, msgX, msgBx)
-	e, salt, err := GetE(curveN, msgs...)
+	e, counter, err := GetE(AffRangeZKDST, curveN, msgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -119,20 +122,20 @@ func NewPaillierAffAndGroupRangeMessage(config *CurveConfig, ssidInfo []byte, x 
 	wy := new(big.Int).Mul(ry, new(big.Int).Exp(rhoy, e, n1))
 	wy.Mod(wy, n1)
 	return &PaillierAffAndGroupRangeMessage{
-		Salt: salt,
-		S:    S.Bytes(),
-		T:    T.Bytes(),
-		A:    A.Bytes(),
-		Bx:   msgBx,
-		By:   By.Bytes(),
-		E:    E.Bytes(),
-		F:    F.Bytes(),
-		Z1:   z1.String(),
-		Z2:   z2.String(),
-		Z3:   z3.String(),
-		Z4:   z4.String(),
-		W:    w.Bytes(),
-		Wy:   wy.Bytes(),
+		Counter: counter,
+		S:       S.Bytes(),
+		T:       T.Bytes(),
+		A:       A.Bytes(),
+		Bx:      msgBx,
+		By:      By.Bytes(),
+		E:       E.Bytes(),
+		F:       F.Bytes(),
+		Z1:      z1.String(),
+		Z2:      z2.String(),
+		Z3:      z3.String(),
+		Z4:      z4.String(),
+		W:       w.Bytes(),
+		Wy:      wy.Bytes(),
 	}, nil
 }
 
@@ -239,23 +242,26 @@ func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo
 	}
 
 	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), n0.Bytes(), n1.Bytes(), C.Bytes(), D.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), By.Bytes(), E.Bytes(), F.Bytes()), msgG, msgX, msg.Bx)
-	seed, err := utils.HashProtos(msg.Salt, msgs...)
+	baseSalt := []byte(AffRangeZKDST)
+	reconstructedSalt := append(baseSalt, []byte(strconv.Itoa(int(msg.Counter)))...)
+
+	seed, err := utils.HashProtos(reconstructedSalt, msgs...)
 	if err != nil {
 		return err
 	}
-	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveN)
+	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, curveN)
 	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
 	if err != nil {
 		return err
 	}
 	// Check z_1 in ±2^{l+ε}.
 	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
+	if absZ1.Cmp(new(big.Int).Lsh(big1, uint(config.LAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
 	// Check z_2 in ±2^{l′+ε}.
 	absZ2 := new(big.Int).Abs(z2)
-	if absZ2.Cmp(new(big.Int).Lsh(big2, uint(config.LpaiAddEpsilon))) > 0 {
+	if absZ2.Cmp(new(big.Int).Lsh(big1, uint(config.LpaiAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
 	// Check z1*G =B_x + e*X
@@ -306,24 +312,19 @@ func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo
 	return nil
 }
 
-func GetE(groupOrder *big.Int, msgs ...proto.Message) (*big.Int, []byte, error) {
-	for j := 0; j < maxRetry; j++ {
-		salt, err := utils.GenRandomBytes(128)
-		if err != nil {
-			return nil, nil, err
-		}
+func GetE(dst string, groupOrder *big.Int, msgs ...proto.Message) (*big.Int, uint32, error) {
+	baseSalt := []byte(dst)
+	for j := uint32(0); j < maxRetry; j++ {
+		salt := append(baseSalt, []byte(strconv.Itoa(int(j)))...)
 		seedMsg, err := utils.HashProtos(salt, msgs...)
 		if err != nil {
-			return nil, nil, err
+			return nil, 0, err
 		}
 
-		// Assume that the length of yi is 32 byte
-		// e should belongs in [-q, q]
 		e := utils.RandomAbsoluteRangeIntBySeed(salt, seedMsg, groupOrder)
-		absoluteE := new(big.Int).Abs(e)
-		if absoluteE.Cmp(groupOrder) <= 0 {
-			return e, salt, nil
+		if new(big.Int).Abs(e).Cmp(groupOrder) <= 0 {
+			return e, j, nil
 		}
 	}
-	return nil, nil, ErrExceedMaxRetry
+	return nil, 0, ErrExceedMaxRetry
 }

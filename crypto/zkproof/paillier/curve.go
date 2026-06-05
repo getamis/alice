@@ -48,9 +48,9 @@ func NewS256() *CurveConfig {
 	Lpai := uint(LpaiFactor * N.BitLen())
 	return &CurveConfig{
 		Curve:                curve,
-		TwoExpLAddepsilon:    new(big.Int).Lsh(big2, L+epsilon),
-		TwoExpLpaiAddepsilon: new(big.Int).Lsh(big2, Lpai+epsilon),
-		TwoExpL:              new(big.Int).Lsh(big2, L),
+		TwoExpLAddepsilon:    new(big.Int).Lsh(big1, L+epsilon),
+		TwoExpLpaiAddepsilon: new(big.Int).Lsh(big1, Lpai+epsilon),
+		TwoExpL:              new(big.Int).Lsh(big1, L),
 		LAddEpsilon:          uint64(L + epsilon),
 		LpaiAddEpsilon:       uint64(Lpai + epsilon),
 		Lpai:                 Lpai,

@@ -16,10 +16,13 @@ package paillier
 
 import (
 	"math/big"
+	"strconv"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
 )
+
+const MulStar = "AMIS-Alice-MulStar-ZK-v1.0-"
 
 func NewMulStarMessage(config *CurveConfig, ssidInfo []byte, x, rho, N0, C, D *big.Int, ped *PederssenOpenParameter, X *pt.ECPoint) (*MulStarMessage, error) {
 	pedN := ped.GetN()
@@ -72,7 +75,7 @@ func NewMulStarMessage(config *CurveConfig, ssidInfo []byte, x, rho, N0, C, D *b
 	S.Mod(S, pedN)
 
 	msgs := append(utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), N0.Bytes(), C.Bytes(), D.Bytes(), A.Bytes(), E.Bytes(), S.Bytes()), msgG, msgX, msgBx)
-	e, salt, err := GetE(G.GetCurve().Params().N, msgs...)
+	e, counter, err := GetE(MulStar, G.GetCurve().Params().N, msgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -83,14 +86,14 @@ func NewMulStarMessage(config *CurveConfig, ssidInfo []byte, x, rho, N0, C, D *b
 	w.Mod(w, N0)
 
 	return &MulStarMessage{
-		Salt: salt,
-		A:    A.Bytes(),
-		B:    msgBx,
-		Z1:   z1.String(),
-		Z2:   z2.String(),
-		E:    E.Bytes(),
-		S:    S.Bytes(),
-		W:    w.Bytes(),
+		Counter: counter,
+		A:       A.Bytes(),
+		B:       msgBx,
+		Z1:      z1.String(),
+		Z2:      z2.String(),
+		E:       E.Bytes(),
+		S:       S.Bytes(),
+		W:       w.Bytes(),
 	}, nil
 
 }
@@ -101,6 +104,8 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 	pedN := ped.GetN()
 	peds := ped.GetS()
 	pedt := ped.GetT()
+	curveOrder := X.GetCurve().Params().N
+
 	msgG, err := G.ToEcPointMessage()
 	if err != nil {
 		return err
@@ -113,58 +118,65 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 	if err != nil {
 		return err
 	}
-	curveOrder := X.GetCurve().Params().N
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), N0.Bytes(), C.Bytes(), D.Bytes(), msg.A, msg.E, msg.S), msgG, msgX, msg.B)
-	seed, err := utils.HashProtos(msg.Salt, msgs...)
-	if err != nil {
-		return err
-	}
-	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveOrder)
-	err = utils.InRange(e, new(big.Int).Neg(curveOrder), new(big.Int).Add(big1, curveOrder))
-	if err != nil {
-		return err
-	}
-	// check A in Z_{N0^2}^\ast, E,S in Z_{\hat{N}}^\ast, w in Z_{N0}^\ast, and e ∈ ±q.
-	z1, _ := new(big.Int).SetString(msg.Z1, 10)
-	z2, _ := new(big.Int).SetString(msg.Z2, 10)
 	w := new(big.Int).SetBytes(msg.W)
-	err = utils.InRange(w, big0, N0)
-	if err != nil {
+	if err := utils.InRange(w, big0, N0); err != nil {
 		return err
 	}
 	if !utils.IsRelativePrime(w, N0) {
 		return ErrVerifyFailure
 	}
+
 	A := new(big.Int).SetBytes(msg.A)
-	err = utils.InRange(A, big0, N0Square)
-	if err != nil {
+	if err := utils.InRange(A, big0, N0Square); err != nil {
 		return err
 	}
 	if !utils.IsRelativePrime(A, N0Square) {
 		return ErrVerifyFailure
 	}
+
 	S := new(big.Int).SetBytes(msg.S)
-	err = utils.InRange(S, big0, pedN)
-	if err != nil {
+	if err := utils.InRange(S, big0, pedN); err != nil {
 		return err
 	}
 	if !utils.IsRelativePrime(S, pedN) {
 		return ErrVerifyFailure
 	}
+
 	E := new(big.Int).SetBytes(msg.E)
-	err = utils.InRange(E, big0, pedN)
-	if err != nil {
+	if err := utils.InRange(E, big0, pedN); err != nil {
 		return err
 	}
 	if !utils.IsRelativePrime(E, pedN) {
 		return ErrVerifyFailure
 	}
-	// Check z_1 in ±2^{l+ε}.
+
+	z1, ok := new(big.Int).SetString(msg.Z1, 10)
+	if !ok {
+		return ErrInvalidInput
+	}
+	z2, ok := new(big.Int).SetString(msg.Z2, 10)
+	if !ok {
+		return ErrInvalidInput
+	}
+
+	msgs := append(utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), N0.Bytes(), C.Bytes(), D.Bytes(), msg.A, msg.E, msg.S), msgG, msgX, msg.B)
+	reconstructedSalt := append([]byte(MulStar), []byte(strconv.Itoa(int(msg.Counter)))...)
+
+	seed, err := utils.HashProtos(reconstructedSalt, msgs...)
+	if err != nil {
+		return err
+	}
+	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, curveOrder)
+	if err := utils.InRange(e, new(big.Int).Neg(curveOrder), new(big.Int).Add(big1, curveOrder)); err != nil {
+		return err
+	}
+
 	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
+	if absZ1.Cmp(new(big.Int).Lsh(big1, uint(config.LAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
+
 	// Check z1*G = B_x + e*X
 	BxXexpe := X.ScalarMult(e)
 	BxXexpe, err = BxXexpe.Add(Bx)
@@ -175,7 +187,8 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 	if !gz1.Equal(BxXexpe) {
 		return ErrVerifyFailure
 	}
-	// Check (C)^{z1} ·w^{N_0} =A·D^e mod N_0^2.
+
+	// Check (C)^{z1} ·w^{N_0} = A·D^e mod N_0^2.
 	ADexpe := new(big.Int).Mul(A, new(big.Int).Exp(D, e, N0Square))
 	ADexpe.Mod(ADexpe, N0Square)
 	temp := new(big.Int).Exp(C, z1, N0Square)
@@ -185,7 +198,8 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 	if compare.Cmp(ADexpe) != 0 {
 		return ErrVerifyFailure
 	}
-	// Check s^{z1}t^{z2} =E·S^e mod Nˆ
+
+	// Check s^{z1}t^{z2} = E·S^e mod Nˆ
 	sz1tz3 := new(big.Int).Mul(new(big.Int).Exp(peds, z1, pedN), new(big.Int).Exp(pedt, z2, pedN))
 	sz1tz3.Mod(sz1tz3, pedN)
 	ESexpe := new(big.Int).Mul(E, new(big.Int).Exp(S, e, pedN))
@@ -193,5 +207,6 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 	if sz1tz3.Cmp(ESexpe) != 0 {
 		return ErrVerifyFailure
 	}
+
 	return nil
 }

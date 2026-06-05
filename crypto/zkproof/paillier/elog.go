@@ -16,10 +16,13 @@ package paillier
 
 import (
 	"math/big"
+	"strconv"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
 )
+
+const ELog = "AMIS-Alice-ELOG-ZK-v1.0-"
 
 func NewELog(config *CurveConfig, ssidInfo []byte, y, lambda *big.Int, L, M, X, Y, h *pt.ECPoint) (*ELogMessage, error) {
 	curveN := L.GetCurve().Params().N
@@ -82,7 +85,7 @@ func NewELog(config *CurveConfig, ssidInfo []byte, y, lambda *big.Int, L, M, X, 
 	}
 
 	msgs := append(utils.GetAnyMsg(ssidInfo), msgA, msgB, msgL, msgM, msgX, msgY, msgh, msgN, msgG)
-	e, salt, err := GetE(curveN, msgs...)
+	e, counter, err := GetE(ELog, curveN, msgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -94,12 +97,12 @@ func NewELog(config *CurveConfig, ssidInfo []byte, y, lambda *big.Int, L, M, X, 
 	u.Mod(u, curveN)
 
 	return &ELogMessage{
-		Salt: salt,
-		A:    msgA,
-		B:    msgB,
-		N:    msgN,
-		Z:    z.Bytes(),
-		U:    u.Bytes(),
+		Counter: counter,
+		A:       msgA,
+		B:       msgB,
+		N:       msgN,
+		Z:       z.Bytes(),
+		U:       u.Bytes(),
 	}, nil
 }
 
@@ -112,6 +115,7 @@ func (msg *ELogMessage) Verify(config *CurveConfig, ssidInfo []byte, L, M, X, Y,
 	if err != nil {
 		return err
 	}
+
 	u := new(big.Int).SetBytes(msg.U)
 	err = utils.InRange(u, big0, curveN)
 	if err != nil {
@@ -156,18 +160,18 @@ func (msg *ELogMessage) Verify(config *CurveConfig, ssidInfo []byte, L, M, X, Y,
 	}
 
 	msgs := append(utils.GetAnyMsg(ssidInfo), msg.A, msg.B, msgL, msgM, msgX, msgY, msgh, msg.N, msgG)
-	seed, err := utils.HashProtos(msg.Salt, msgs...)
+	reconstructedSalt := append([]byte(ELog), []byte(strconv.Itoa(int(msg.Counter)))...)
+	seed, err := utils.HashProtos(reconstructedSalt, msgs...)
 	if err != nil {
 		return err
 	}
-
-	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveN)
+	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, curveN)
 	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
 	if err != nil {
 		return err
 	}
 
-	// Check z*G = A+ e*L.
+	// Check z*G = A + e*L
 	zG := G.ScalarMult(z)
 	AaddeL := L.ScalarMult(e)
 	AaddeL, err = AaddeL.Add(A)
@@ -193,7 +197,7 @@ func (msg *ELogMessage) Verify(config *CurveConfig, ssidInfo []byte, L, M, X, Y,
 		return ErrVerifyFailure
 	}
 
-	// u*h = B+e*Y
+	// Check u*h = B + e*Y
 	uh := h.ScalarMult(u)
 	BAddeY := Y.ScalarMult(e)
 	BAddeY, err = BAddeY.Add(B)
@@ -204,5 +208,6 @@ func (msg *ELogMessage) Verify(config *CurveConfig, ssidInfo []byte, L, M, X, Y,
 	if !uh.Equal(BAddeY) {
 		return ErrVerifyFailure
 	}
+
 	return nil
 }

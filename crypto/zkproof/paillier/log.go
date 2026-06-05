@@ -16,11 +16,15 @@ package paillier
 
 import (
 	"math/big"
+	"strconv"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
+	"github.com/golang/protobuf/proto"
 	"github.com/golang/protobuf/ptypes/any"
 )
+
+const LogZK = "AMIS-Alice-Log-ZK-v1.0-"
 
 func NewLog(ssidInfo []byte, x *big.Int, g, h, X, Y *pt.ECPoint) (*LogMessage, error) {
 	curveN := g.GetCurve().Params().N
@@ -57,7 +61,7 @@ func NewLog(ssidInfo []byte, x *big.Int, g, h, X, Y *pt.ECPoint) (*LogMessage, e
 		return nil, err
 	}
 
-	e, salt, err := utils.HashProtosRejectSampling(curveN, &any.Any{
+	e, counter, err := GetE(LogZK, curveN, &any.Any{
 		Value: ssidInfo,
 	}, msgA, msgB, msgG, msgX, msgY, msgh,
 	)
@@ -69,16 +73,21 @@ func NewLog(ssidInfo []byte, x *big.Int, g, h, X, Y *pt.ECPoint) (*LogMessage, e
 	z.Mod(z, curveN)
 
 	return &LogMessage{
-		Salt: salt,
-		A:    msgA,
-		B:    msgB,
-		Z:    z.Bytes(),
+		Counter: counter,
+		A:       msgA,
+		B:       msgB,
+		Z:       z.Bytes(),
 	}, nil
 }
 
 func (msg *LogMessage) Verify(ssidInfo []byte, g, h, X, Y *pt.ECPoint) error {
 	curveN := g.GetCurve().Params().N
+
 	z := new(big.Int).SetBytes(msg.Z)
+	if err := utils.InRange(z, big0, curveN); err != nil {
+		return err
+	}
+
 	A, err := msg.A.ToPoint()
 	if err != nil {
 		return err
@@ -104,19 +113,22 @@ func (msg *LogMessage) Verify(ssidInfo []byte, g, h, X, Y *pt.ECPoint) error {
 		return err
 	}
 
-	e, err := utils.HashProtosToInt(msg.Salt, &any.Any{
-		Value: ssidInfo,
-	}, msg.A, msg.B, msgG, msgX, msgY, msgh,
-	)
+	msgs := []proto.Message{
+		&any.Any{Value: ssidInfo},
+		msg.A, msg.B, msgG, msgX, msgY, msgh,
+	}
+
+	reconstructedSalt := append([]byte(LogZK), []byte(strconv.Itoa(int(msg.Counter)))...)
+	seed, err := utils.HashProtos(reconstructedSalt, msgs...)
 	if err != nil {
 		return err
 	}
-	err = utils.InRange(e, big0, curveN)
-	if err != nil {
+	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, curveN)
+	if err := utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN)); err != nil {
 		return err
 	}
 
-	// Check z*G = A+e*X and z*h = B+e*Y
+	// Check z*G = A + e*X
 	zG := g.ScalarMult(z)
 	compare := X.ScalarMult(e)
 	compare, err = A.Add(compare)
@@ -126,6 +138,8 @@ func (msg *LogMessage) Verify(ssidInfo []byte, g, h, X, Y *pt.ECPoint) error {
 	if !compare.Equal(zG) {
 		return ErrVerifyFailure
 	}
+
+	// Check z*h = B + e*Y
 	zh := h.ScalarMult(z)
 	compare = Y.ScalarMult(e)
 	compare, err = compare.Add(B)
