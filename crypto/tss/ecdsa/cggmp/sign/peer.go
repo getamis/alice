@@ -41,7 +41,8 @@ type peer struct {
 }
 
 func newPeer(id string, ssid []byte, bk *birkhoffinterpolation.BkParameter, bkcoefficient *big.Int, para *zkpaillier.PederssenOpenParameter, partialPubKey *pt.ECPoint) *peer {
-	ssidWithBk := cggmp.ComputeZKSsid(ssid, bk)
+	fieldOrder := partialPubKey.GetCurve().Params().N
+	ssidWithBk := cggmp.ComputeZKSsid(ssid, bk, fieldOrder)
 	return &peer{
 		Peer:          message.NewPeer(id),
 		ssidWithBk:    ssidWithBk,

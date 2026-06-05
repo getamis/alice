@@ -15,6 +15,7 @@
 package birkhoffinterpolation
 
 import (
+	"encoding/hex"
 	"errors"
 	fmt "fmt"
 	"math/big"
@@ -58,8 +59,13 @@ func (p *BkParameter) GetRank() uint32 {
 	return p.rank
 }
 
-func (p *BkParameter) String() string {
-	return fmt.Sprintf("(x, rank) = (%s, %d)", p.x, p.rank)
+// Fix the length of x
+func (p *BkParameter) String(fieldOrder *big.Int) string {
+	byteLen := (fieldOrder.BitLen() + 7) / 8
+	buf := make([]byte, byteLen)
+	p.x.FillBytes(buf)
+	xHex := hex.EncodeToString(buf)
+	return fmt.Sprintf("(x, rank) = (%s, %d)", xHex, p.rank)
 }
 
 func (p *BkParameter) GetLinearEquationCoefficient(fieldOrder *big.Int, degreePoly uint32) []*big.Int {

@@ -69,7 +69,7 @@ var _ = Describe("Birkhoff Interpolation", func() {
 		bk := NewBkParameter(x, rank)
 		Expect(bk.GetX()).Should(Equal(x))
 		Expect(bk.GetRank()).Should(Equal(rank))
-		Expect(bk.String()).Should(Equal("(x, rank) = (1, 0)"))
+		Expect(bk.String(big.NewInt(3))).Should(Equal("(x, rank) = (01, 0)"))
 	})
 
 	DescribeTable("VerifyEnoughRankCanRecoverSecret func", func(ps BkParameters) {

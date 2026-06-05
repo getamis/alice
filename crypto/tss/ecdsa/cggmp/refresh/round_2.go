@@ -126,7 +126,7 @@ func (p *round2Handler) buildRound2Data(peerId string, commitData *HashMsg) (*ro
 	}
 	// Verify pederssenPara proof
 	bk := p.bks[peerId]
-	pubKey, err := paillier.ToPaillierPubKeyWithSpecialGFromMsg(cggmp.ComputeZKSsid(p.ssid, bk), commitData.PedPar)
+	pubKey, err := paillier.ToPaillierPubKeyWithSpecialGFromMsg(cggmp.ComputeZKSsid(p.ssid, bk, curve.Params().N), commitData.PedPar)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (p *round2Handler) Finalize(logger log.Logger) (types.Handler, error) {
 	p.refreshShare = diff.Evaluate(p.ownBK.GetX())
 
 	// Generate SSID Info + sumro
-	ssidSumRho := append(cggmp.ComputeZKSsid(p.ssid, p.ownBK), []byte("!")...)
+	ssidSumRho := append(cggmp.ComputeZKSsid(p.ssid, p.ownBK, curve.Params().N), []byte("!")...)
 	ssidSumRho = append(ssidSumRho, p.sumrho...)
 	for _, peer := range p.peers {
 		temp := peer.round2.pederssenPara

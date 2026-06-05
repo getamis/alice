@@ -102,7 +102,7 @@ var Cmd = &cobra.Command{
 			return err
 		}
 
-		ssid := cggmp.ComputeSSID([]byte(cfg.SessionId), []byte(dkgResult.Bks[selfId].String()), dkgResult.Rid)
+		ssid := cggmp.ComputeSSID([]byte(cfg.SessionId), []byte(dkgResult.Bks[selfId].String(dkgResult.PublicKey.GetCurve().Params().N)), dkgResult.Rid)
 
 		// Create signer
 		signerCore, err := signer.NewSign(

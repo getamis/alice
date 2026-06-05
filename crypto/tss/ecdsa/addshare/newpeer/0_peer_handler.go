@@ -195,7 +195,7 @@ func generateNewBK(logger log.Logger, fieldOrder *big.Int, bks birkhoffinterpola
 		allBks := append(bks, selfBK)
 		err = allBks.CheckValid(threshold, fieldOrder)
 		if err != nil {
-			logger.Warn("Failed to check bks", "newBK", selfBK.String(), "retryCount", i, "err", err)
+			logger.Warn("Failed to check bks", "newBK", selfBK.String(fieldOrder), "retryCount", i, "err", err)
 			continue
 		}
 		return selfBK, nil

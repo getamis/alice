@@ -121,7 +121,7 @@ var Cmd = &cobra.Command{
 
 		l := node.NewListener()
 
-		ssid := cggmp.ComputeSSID([]byte(cfg.SessionId), []byte(dkgResult.Bks[selfId].String()), dkgResult.Rid)
+		ssid := cggmp.ComputeSSID([]byte(cfg.SessionId), []byte(dkgResult.Bks[selfId].String(dkgResult.PublicKey.GetCurve().Params().N)), dkgResult.Rid)
 
 		// Create reshare core
 		reshareCore, err := reshare.NewRefresh(dkgResult.Share, dkgResult.PublicKey, pm, cfg.Threshold, partialPublicKeys, dkgResult.Bks, 2048, ssid, l)
