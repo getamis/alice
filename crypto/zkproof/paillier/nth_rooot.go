@@ -16,9 +16,12 @@ package paillier
 
 import (
 	"math/big"
+	"strconv"
 
 	"github.com/getamis/alice/crypto/utils"
 )
+
+const NthRoot = "AMIS-Alice-NthRoot-ZK-v1.0-"
 
 func NewNthRoot(config *CurveConfig, ssidInfo []byte, rho, rhoNPower, n *big.Int) (*NthRootMessage, error) {
 	curveN := config.Curve.Params().N
@@ -31,7 +34,7 @@ func NewNthRoot(config *CurveConfig, ssidInfo []byte, rho, rhoNPower, n *big.Int
 	// A = r^{N} mod N^2
 	A := new(big.Int).Exp(r, n, nSquare)
 
-	e, salt, err := GetE(curveN, utils.GetAnyMsg(ssidInfo, n.Bytes(), rhoNPower.Bytes(), A.Bytes())...)
+	e, counter, err := GetE(NthRoot, curveN, utils.GetAnyMsg(ssidInfo, n.Bytes(), rhoNPower.Bytes(), A.Bytes())...)
 	if err != nil {
 		return nil, err
 	}
@@ -40,9 +43,9 @@ func NewNthRoot(config *CurveConfig, ssidInfo []byte, rho, rhoNPower, n *big.Int
 	z1.Mod(z1, n)
 
 	return &NthRootMessage{
-		Salt: salt,
-		A:    A.Bytes(),
-		Z1:   z1.Bytes(),
+		Counter: counter,
+		A:       A.Bytes(),
+		Z1:      z1.Bytes(),
 	}, nil
 }
 
@@ -50,36 +53,38 @@ func (msg *NthRootMessage) Verify(config *CurveConfig, ssidInfo []byte, NPower, 
 	curveN := config.Curve.Params().N
 	nSquare := new(big.Int).Exp(n, big2, nil)
 	A := new(big.Int).SetBytes(msg.A)
-	err := utils.InRange(A, big0, nSquare)
-	// check A ∈ Z^*_{n^2}, and z1 ∈ [0,n).
-	if err != nil {
+	if err := utils.InRange(A, big0, nSquare); err != nil {
 		return err
 	}
 	if !utils.IsRelativePrime(A, n) {
 		return ErrVerifyFailure
 	}
+
 	z1 := new(big.Int).SetBytes(msg.Z1)
-	err = utils.InRange(z1, big0, n)
-	if err != nil {
+	if err := utils.InRange(z1, big0, n); err != nil {
 		return err
 	}
-	seed, err := utils.HashProtos(msg.Salt, utils.GetAnyMsg(ssidInfo, n.Bytes(), NPower.Bytes(), A.Bytes())...)
+
+	reconstructedSalt := append([]byte(NthRoot), []byte(strconv.Itoa(int(msg.Counter)))...)
+	seed, err := utils.HashProtos(reconstructedSalt, utils.GetAnyMsg(ssidInfo, n.Bytes(), NPower.Bytes(), A.Bytes())...)
 	if err != nil {
 		return err
 	}
 
-	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveN)
-	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
-	if err != nil {
+	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, curveN)
+	if err := utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN)); err != nil {
 		return err
 	}
-	// Check z1^{N} = A*NPower^e mod N^2.
+
+	// 6. Check z1^n = A * NPower^e mod n^2
 	ANPowerexpe := new(big.Int).Exp(NPower, e, nSquare)
 	ANPowerexpe.Mul(ANPowerexpe, A)
 	ANPowerexpe.Mod(ANPowerexpe, nSquare)
+
 	compare := new(big.Int).Exp(z1, n, nSquare)
 	if compare.Cmp(ANPowerexpe) != 0 {
 		return ErrVerifyFailure
 	}
+
 	return nil
 }

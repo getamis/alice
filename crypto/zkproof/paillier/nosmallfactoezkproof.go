@@ -16,9 +16,12 @@ package paillier
 
 import (
 	"math/big"
+	"strconv"
 
 	"github.com/getamis/alice/crypto/utils"
 )
+
+const NoSmallFactor = "AMIS-Alice-NoSmallFactor-ZK-v1.0-"
 
 func NewNoSmallFactorMessage(config *CurveConfig, ssidInfo, rho []byte, p *big.Int, q *big.Int, n *big.Int, ped *PederssenOpenParameter) (*NoSmallFactorMessage, error) {
 	sqrtN := new(big.Int).Sqrt(n)
@@ -80,7 +83,7 @@ func NewNoSmallFactorMessage(config *CurveConfig, ssidInfo, rho []byte, p *big.I
 	// T = Q^α*t^r mod Nˆ.
 	T := new(big.Int).Mul(new(big.Int).Exp(Q, alpha, pedN), new(big.Int).Exp(pedt, r, pedN))
 	T.Mod(T, pedN)
-	e, salt, err := GetE(groupOrder, utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), sigma.Bytes())...)
+	e, counter, err := GetE(NoSmallFactor, groupOrder, utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), sigma.Bytes())...)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +95,7 @@ func NewNoSmallFactorMessage(config *CurveConfig, ssidInfo, rho []byte, p *big.I
 	vletter := new(big.Int).Add(r, new(big.Int).Mul(e, new(big.Int).Sub(sigma, new(big.Int).Mul(v, p))))
 
 	return &NoSmallFactorMessage{
-		Salt:    salt,
+		Counter: counter,
 		P:       P.Bytes(),
 		Q:       Q.Bytes(),
 		A:       A.Bytes(),
@@ -112,35 +115,92 @@ func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byt
 	pedN := ped.GetN()
 	peds := ped.GetS()
 	pedt := ped.GetT()
-	P := new(big.Int).SetBytes(msg.P)
-	Q := new(big.Int).SetBytes(msg.Q)
-	A := new(big.Int).SetBytes(msg.A)
-	B := new(big.Int).SetBytes(msg.B)
-	T := new(big.Int).SetBytes(msg.T)
-	sigma, _ := new(big.Int).SetString(msg.Sigma, 10)
-	z1, _ := new(big.Int).SetString(msg.Z1, 10)
-	z2, _ := new(big.Int).SetString(msg.Z2, 10)
-	w1, _ := new(big.Int).SetString(msg.W1, 10)
-	w2, _ := new(big.Int).SetString(msg.W2, 10)
-	v, _ := new(big.Int).SetString(msg.Vletter, 10)
 
+	P := new(big.Int).SetBytes(msg.P)
+	if err := utils.InRange(P, big0, pedN); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(P, pedN) {
+		return ErrVerifyFailure
+	}
+
+	Q := new(big.Int).SetBytes(msg.Q)
+	if err := utils.InRange(Q, big0, pedN); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(Q, pedN) {
+		return ErrVerifyFailure
+	}
+
+	A := new(big.Int).SetBytes(msg.A)
+	if err := utils.InRange(A, big0, pedN); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(A, pedN) {
+		return ErrVerifyFailure
+	}
+
+	B := new(big.Int).SetBytes(msg.B)
+	if err := utils.InRange(B, big0, pedN); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(B, pedN) {
+		return ErrVerifyFailure
+	}
+
+	T := new(big.Int).SetBytes(msg.T)
+	if err := utils.InRange(T, big0, pedN); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(T, pedN) {
+		return ErrVerifyFailure
+	}
+
+	sigma, ok := new(big.Int).SetString(msg.Sigma, 10)
+	if !ok {
+		return ErrInvalidInput
+	}
+	z1, ok := new(big.Int).SetString(msg.Z1, 10)
+	if !ok {
+		return ErrInvalidInput
+	}
+	z2, ok := new(big.Int).SetString(msg.Z2, 10)
+	if !ok {
+		return ErrInvalidInput
+	}
+	w1, ok := new(big.Int).SetString(msg.W1, 10)
+	if !ok {
+		return ErrInvalidInput
+	}
+	w2, ok := new(big.Int).SetString(msg.W2, 10)
+	if !ok {
+		return ErrInvalidInput
+	}
+	v, ok := new(big.Int).SetString(msg.Vletter, 10)
+	if !ok {
+		return ErrInvalidInput
+	}
+
+	// Compute R = s^n * t^sigma mod N_hat
 	R := new(big.Int).Mul(new(big.Int).Exp(peds, n, pedN), new(big.Int).Exp(pedt, sigma, pedN))
 	R.Mod(R, pedN)
 
-	seed, err := utils.HashProtos(msg.Salt, utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), sigma.Bytes())...)
+	reconstructedSalt := append([]byte(NoSmallFactor), []byte(strconv.Itoa(int(msg.Counter)))...)
+	seed, err := utils.HashProtos(reconstructedSalt, utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), sigma.Bytes())...)
 	if err != nil {
 		return err
 	}
 
-	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, groupOrder)
+	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, groupOrder)
 	err = utils.InRange(e, new(big.Int).Neg(groupOrder), new(big.Int).Add(big1, groupOrder))
 	if err != nil {
 		return err
 	}
-	// Check z1, z2 in ±N0^1/2*2^{l+ε}.
+
 	sqrtN := new(big.Int).Sqrt(n)
-	absZ1 := new(big.Int).Abs(z1)
 	upBd := new(big.Int).Lsh(sqrtN, uint(config.LAddEpsilon))
+
+	absZ1 := new(big.Int).Abs(z1)
 	if absZ1.Cmp(upBd) > 0 {
 		return ErrVerifyFailure
 	}
@@ -148,7 +208,8 @@ func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byt
 	if absZ2.Cmp(upBd) > 0 {
 		return ErrVerifyFailure
 	}
-	// Set R = s^{N0}*t^ρ. Check s^{z1}*t^{w1} = A·P^e mod Nˆ.
+
+	// Check s^{z1} * t^{w1} = A · P^e mod N_hat
 	ADexpe := new(big.Int).Mul(A, new(big.Int).Exp(P, e, pedN))
 	ADexpe.Mod(ADexpe, pedN)
 	compare := new(big.Int).Mul(new(big.Int).Exp(peds, z1, pedN), new(big.Int).Exp(pedt, w1, pedN))
@@ -156,7 +217,8 @@ func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byt
 	if compare.Cmp(ADexpe) != 0 {
 		return ErrVerifyFailure
 	}
-	// Check s^{z2}t^{w2} =B·Q^e mod Nˆ.
+
+	// Check s^{z2} * t^{w2} = B · Q^e mod N_hat
 	BQexpe := new(big.Int).Mul(B, new(big.Int).Exp(Q, e, pedN))
 	BQexpe.Mod(BQexpe, pedN)
 	compare = new(big.Int).Mul(new(big.Int).Exp(peds, z2, pedN), new(big.Int).Exp(pedt, w2, pedN))
@@ -164,7 +226,8 @@ func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byt
 	if compare.Cmp(BQexpe) != 0 {
 		return ErrVerifyFailure
 	}
-	// Check Q^{z1}t^v =T·R^e mod Nˆ.
+
+	// Check Q^{z1} * t^v = T · R^e mod N_hat
 	TRexpe := new(big.Int).Mul(T, new(big.Int).Exp(R, e, pedN))
 	TRexpe.Mod(TRexpe, pedN)
 	compare = new(big.Int).Mul(new(big.Int).Exp(Q, z1, pedN), new(big.Int).Exp(pedt, v, pedN))
@@ -172,5 +235,6 @@ func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byt
 	if compare.Cmp(TRexpe) != 0 {
 		return ErrVerifyFailure
 	}
+
 	return nil
 }

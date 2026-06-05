@@ -180,7 +180,7 @@ func computeYByDeterministicFiatShamir(salt []byte, w *big.Int, n *big.Int, ssid
 		yi, err := utils.HashProtosWithSaltToScalar(
 			salt,
 			n,
-			utils.GetAnyMsg(ssidInfo, w.Bytes(), indexBytes, counterBytes)...,
+			utils.GetAnyMsg(ssidInfo, n.Bytes(), w.Bytes(), indexBytes, counterBytes)...,
 		)
 		if err != nil {
 			return nil, err

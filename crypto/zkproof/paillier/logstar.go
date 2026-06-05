@@ -16,10 +16,13 @@ package paillier
 
 import (
 	"math/big"
+	"strconv"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
 )
+
+const KnowExponentAndPaillierEncryption = "AMIS-Alice-KnowExponentAndPaillierEncryption-ZK-v1.0-"
 
 func NewKnowExponentAndPaillierEncryption(config *CurveConfig, ssidInfo []byte, x, rho, C, n0 *big.Int, ped *PederssenOpenParameter, X *pt.ECPoint, G *pt.ECPoint) (*LogStarMessage, error) {
 	n0Square := new(big.Int).Exp(n0, big2, nil)
@@ -72,8 +75,8 @@ func NewKnowExponentAndPaillierEncryption(config *CurveConfig, ssidInfo []byte, 
 		return nil, err
 	}
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), n0.Bytes(), pedN.Bytes(), C.Bytes(), S.Bytes(), A.Bytes(), D.Bytes()), msgG, msgX, msgY)
-	e, salt, err := GetE(curveN, msgs...)
+	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), n0.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), C.Bytes(), S.Bytes(), A.Bytes(), D.Bytes()), msgG, msgX, msgY)
+	e, counter, err := GetE(KnowExponentAndPaillierEncryption, curveN, msgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -86,14 +89,14 @@ func NewKnowExponentAndPaillierEncryption(config *CurveConfig, ssidInfo []byte, 
 	z3 := new(big.Int).Add(gamma, new(big.Int).Mul(e, mu))
 
 	return &LogStarMessage{
-		Salt: salt,
-		S:    S.Bytes(),
-		A:    A.Bytes(),
-		Y:    msgY,
-		D:    D.Bytes(),
-		Z1:   z1.String(),
-		Z2:   z2.Bytes(),
-		Z3:   z3.String(),
+		Counter: counter,
+		S:       S.Bytes(),
+		A:       A.Bytes(),
+		Y:       msgY,
+		D:       D.Bytes(),
+		Z1:      z1.String(),
+		Z2:      z2.Bytes(),
+		Z3:      z3.String(),
 	}, nil
 }
 
@@ -103,45 +106,53 @@ func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0 *b
 	pedN := ped.GetN()
 	peds := ped.GetS()
 	pedt := ped.GetT()
-	// check A in Z_{N0^2}^\ast, S,D in Z_{\hat{N}}^\ast, and z2 in Z_{0}^\ast.
+
 	S := new(big.Int).SetBytes(msg.S)
-	err := utils.InRange(S, big0, pedN)
-	if err != nil {
+	if err := utils.InRange(S, big0, pedN); err != nil {
 		return err
 	}
 	if !utils.IsRelativePrime(S, pedN) {
 		return ErrVerifyFailure
 	}
+
 	A := new(big.Int).SetBytes(msg.A)
-	err = utils.InRange(A, big0, n0Square)
-	if err != nil {
+	if err := utils.InRange(A, big0, n0Square); err != nil {
 		return err
 	}
 	if !utils.IsRelativePrime(A, n0) {
 		return ErrVerifyFailure
 	}
+
 	D := new(big.Int).SetBytes(msg.D)
-	err = utils.InRange(D, big0, pedN)
-	if err != nil {
+	if err := utils.InRange(D, big0, pedN); err != nil {
 		return err
 	}
 	if !utils.IsRelativePrime(D, pedN) {
 		return ErrVerifyFailure
 	}
-	z1, _ := new(big.Int).SetString(msg.Z1, 10)
+
+	z1, ok := new(big.Int).SetString(msg.Z1, 10)
+	if !ok {
+		return ErrInvalidInput
+	}
+	z3, ok := new(big.Int).SetString(msg.Z3, 10)
+	if !ok {
+		return ErrInvalidInput
+	}
+
 	z2 := new(big.Int).SetBytes(msg.Z2)
-	err = utils.InRange(z2, big0, n0)
-	if err != nil {
+	if err := utils.InRange(z2, big0, n0); err != nil {
 		return err
 	}
 	if !utils.IsRelativePrime(z2, n0) {
 		return ErrVerifyFailure
 	}
-	z3, _ := new(big.Int).SetString(msg.Z3, 10)
+
 	Y, err := msg.Y.ToPoint()
 	if err != nil {
 		return err
 	}
+
 	msgG, err := G.ToEcPointMessage()
 	if err != nil {
 		return err
@@ -151,23 +162,24 @@ func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0 *b
 		return err
 	}
 
-	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), n0.Bytes(), pedN.Bytes(), C.Bytes(), S.Bytes(), A.Bytes(), D.Bytes()), msgG, msgX, msg.Y)
-	seed, err := utils.HashProtos(msg.Salt, msgs...)
+	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), n0.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), C.Bytes(), S.Bytes(), A.Bytes(), D.Bytes()), msgG, msgX, msg.Y)
+	reconstructedSalt := append([]byte(KnowExponentAndPaillierEncryption), []byte(strconv.Itoa(int(msg.Counter)))...)
+	seed, err := utils.HashProtos(reconstructedSalt, msgs...)
 	if err != nil {
 		return err
 	}
 
-	e := utils.RandomAbsoluteRangeIntBySeed(msg.Salt, seed, curveN)
-	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
-	if err != nil {
+	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, curveN)
+	if err := utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN)); err != nil {
 		return err
 	}
-	// Check z_1 in ±2^{l+ε}.
+
 	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big2, uint(config.LAddEpsilon))) > 0 {
+	if absZ1.Cmp(new(big.Int).Lsh(big1, uint(config.LAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
-	// Check z1*G =Y + e*X
+
+	// Check z1*G = Y + e*X
 	YXexpe := X.ScalarMult(e)
 	YXexpe, err = YXexpe.Add(Y)
 	if err != nil {
@@ -177,16 +189,19 @@ func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0 *b
 	if !gz1.Equal(YXexpe) {
 		return ErrVerifyFailure
 	}
+
 	// Check (1+N_0)^{z1}z2^{N_0} = A·C^e mod N_0^2.
 	AKexpe := new(big.Int).Mul(A, new(big.Int).Exp(C, e, n0Square))
 	AKexpe.Mod(AKexpe, n0Square)
+
 	compare := new(big.Int).Exp(z2, n0, n0Square)
 	compare.Mul(compare, new(big.Int).Exp(new(big.Int).Add(big1, n0), z1, n0Square))
 	compare.Mod(compare, n0Square)
 	if compare.Cmp(AKexpe) != 0 {
 		return ErrVerifyFailure
 	}
-	// Check s^{z1}t^{z3} =E·S^e mod Nˆ
+
+	// Check s^{z1}t^{z3} = D·S^e mod Nˆ
 	sz1tz3 := new(big.Int).Mul(new(big.Int).Exp(peds, z1, pedN), new(big.Int).Exp(pedt, z3, pedN))
 	sz1tz3.Mod(sz1tz3, pedN)
 	DSexpe := new(big.Int).Mul(D, new(big.Int).Exp(S, e, pedN))
@@ -194,5 +209,6 @@ func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0 *b
 	if sz1tz3.Cmp(DSexpe) != 0 {
 		return ErrVerifyFailure
 	}
+
 	return nil
 }
