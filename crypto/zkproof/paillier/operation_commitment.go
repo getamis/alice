@@ -16,7 +16,6 @@ package paillier
 
 import (
 	"math/big"
-	"strconv"
 
 	"github.com/getamis/alice/crypto/utils"
 )
@@ -233,15 +232,13 @@ func (msg *PaillierOperationAndCommitmentMessage) Verify(config *CurveConfig, ss
 		return ErrVerifyFailure
 	}
 
-	reconstructedSalt := append([]byte(PaillierOperationAndPaillierCommitment), []byte(strconv.Itoa(int(msg.Counter)))...)
-	seed, err := utils.HashProtos(reconstructedSalt,
-		utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), n0.Bytes(), n1.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), C.Bytes(), D.Bytes(), X.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), Bx.Bytes(), By.Bytes(), E.Bytes(), F.Bytes())...)
+	msgs := utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), n0.Bytes(), n1.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), C.Bytes(), D.Bytes(), X.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), Bx.Bytes(), By.Bytes(), E.Bytes(), F.Bytes())
+	e, expectedCounter, err := GetE(PaillierOperationAndPaillierCommitment, fieldOrder, msgs...)
 	if err != nil {
 		return err
 	}
-	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, fieldOrder)
-	if err := utils.InRange(e, new(big.Int).Neg(fieldOrder), new(big.Int).Add(big1, fieldOrder)); err != nil {
-		return err
+	if expectedCounter != msg.Counter {
+		return ErrVerifyFailure
 	}
 
 	// Check z1 ∈ ±2^{l+ε}

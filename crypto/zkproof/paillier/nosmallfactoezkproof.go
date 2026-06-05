@@ -16,7 +16,6 @@ package paillier
 
 import (
 	"math/big"
-	"strconv"
 
 	"github.com/getamis/alice/crypto/utils"
 )
@@ -185,16 +184,13 @@ func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byt
 	R := new(big.Int).Mul(new(big.Int).Exp(peds, n, pedN), new(big.Int).Exp(pedt, sigma, pedN))
 	R.Mod(R, pedN)
 
-	reconstructedSalt := append([]byte(NoSmallFactor), []byte(strconv.Itoa(int(msg.Counter)))...)
-	seed, err := utils.HashProtos(reconstructedSalt, utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), sigma.Bytes())...)
+	msgs := utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), sigma.Bytes())
+	e, expectedCounter, err := GetE(NoSmallFactor, groupOrder, msgs...)
 	if err != nil {
 		return err
 	}
-
-	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, groupOrder)
-	err = utils.InRange(e, new(big.Int).Neg(groupOrder), new(big.Int).Add(big1, groupOrder))
-	if err != nil {
-		return err
+	if expectedCounter != msg.Counter {
+		return ErrVerifyFailure
 	}
 
 	sqrtN := new(big.Int).Sqrt(n)

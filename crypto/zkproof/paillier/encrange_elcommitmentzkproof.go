@@ -16,7 +16,6 @@ package paillier
 
 import (
 	"math/big"
-	"strconv"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
@@ -216,14 +215,12 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	}
 
 	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), ciphertext.Bytes(), S.Bytes(), T.Bytes(), D.Bytes(), N.Bytes()), msg.Y, msg.Z, msgA, msgB, msgG, msgX)
-	reconstructedSalt := append([]byte(EncryptRangeWithEL), []byte(strconv.Itoa(int(msg.Counter)))...)
-	seed, err := utils.HashProtos(reconstructedSalt, msgs...)
+	e, expectedCounter, err := GetE(EncryptRangeWithEL, curveN, msgs...)
 	if err != nil {
 		return err
 	}
-	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, curveN)
-	if err := utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN)); err != nil {
-		return err
+	if expectedCounter != msg.Counter {
+		return ErrVerifyFailure
 	}
 
 	// Check：z1 ∈ ±2^{l+ε}

@@ -94,7 +94,9 @@ var _ = Describe("Ring pedersenzkproof test", func() {
 		})
 
 		It("verify failure", func() {
-			zkproof.Z[0] = big1.Bytes()
+			z0 := new(big.Int).SetBytes(zkproof.Z[0])
+			z0.Add(z0, big.NewInt(1))
+			zkproof.Z[0] = z0.Bytes()
 			err := zkproof.Verify(ssIDInfo)
 			Expect(err).ShouldNot(BeNil())
 		})

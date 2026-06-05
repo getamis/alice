@@ -16,7 +16,6 @@ package paillier
 
 import (
 	"math/big"
-	"strconv"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
@@ -163,15 +162,12 @@ func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0 *b
 	}
 
 	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), n0.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), C.Bytes(), S.Bytes(), A.Bytes(), D.Bytes()), msgG, msgX, msg.Y)
-	reconstructedSalt := append([]byte(KnowExponentAndPaillierEncryption), []byte(strconv.Itoa(int(msg.Counter)))...)
-	seed, err := utils.HashProtos(reconstructedSalt, msgs...)
+	e, expectedCounter, err := GetE(KnowExponentAndPaillierEncryption, curveN, msgs...)
 	if err != nil {
 		return err
 	}
-
-	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, curveN)
-	if err := utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN)); err != nil {
-		return err
+	if expectedCounter != msg.Counter {
+		return ErrVerifyFailure
 	}
 
 	absZ1 := new(big.Int).Abs(z1)

@@ -16,7 +16,6 @@ package paillier
 
 import (
 	"math/big"
-	"strconv"
 
 	"github.com/getamis/alice/crypto/utils"
 )
@@ -94,17 +93,13 @@ func (msg *DecryMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, x *
 	peds := ped.GetS()
 	pedt := ped.GetT()
 
-	baseSalt := []byte(SpecialDecryZKDST)
-	reconstructedSalt := append(baseSalt, []byte(strconv.Itoa(int(msg.Counter)))...)
-	seed, err := utils.HashProtos(reconstructedSalt, utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), msg.A, msg.Gamma, msg.S, msg.T, N0.Bytes(), C.Bytes(), x.Bytes(), fieldOrder.Bytes())...)
+	msgs := utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), msg.A, msg.Gamma, msg.S, msg.T, N0.Bytes(), C.Bytes(), x.Bytes(), fieldOrder.Bytes())
+	e, expectedCounter, err := GetE(SpecialDecryZKDST, fieldOrder, msgs...)
 	if err != nil {
 		return err
 	}
-
-	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, fieldOrder)
-	err = utils.InRange(e, new(big.Int).Neg(fieldOrder), new(big.Int).Add(big1, fieldOrder))
-	if err != nil {
-		return err
+	if expectedCounter != msg.Counter {
+		return ErrVerifyFailure
 	}
 
 	S := new(big.Int).SetBytes(msg.S)
