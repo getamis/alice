@@ -41,6 +41,24 @@ var _ = Describe("Logstar test", func() {
 			Expect(err).Should(BeNil())
 		})
 		It("not in range", func() {
+			config.TwoExpLAddepsilon = big.NewInt(-1)
+			zkproof, err := NewKnowExponentAndPaillierEncryption(config, ssIDInfo, x, rho, C, n0, ped, X, G)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+		It("not in range", func() {
+			config.TwoExpL = big.NewInt(-1)
+			zkproof, err := NewKnowExponentAndPaillierEncryption(config, ssIDInfo, x, rho, C, n0, ped, X, G)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+		It("not in range", func() {
+			config.TwoExpLAddepsilon = big.NewInt(-1)
+			zkproof, err := NewKnowExponentAndPaillierEncryption(config, ssIDInfo, x, rho, C, n0, ped, X, G)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+		It("not in range", func() {
 			zkproof, err := NewKnowExponentAndPaillierEncryption(config, ssIDInfo, x, rho, C, big.NewInt(0), ped, X, G)
 			Expect(err).ShouldNot(BeNil())
 			Expect(zkproof).Should(BeNil())

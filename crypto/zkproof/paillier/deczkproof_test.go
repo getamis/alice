@@ -40,6 +40,18 @@ var _ = Describe("Deczkproof test", func() {
 			Expect(err).Should(BeNil())
 		})
 		It("not in range", func() {
+			config.TwoExpL = big.NewInt(-1)
+			zkproof, err := NewDecryMessage(config, ssIDInfo, y, rho, n0, C, x, ped)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+		It("not in range", func() {
+			config.TwoExpLAddepsilon = big.NewInt(-1)
+			zkproof, err := NewDecryMessage(config, ssIDInfo, y, rho, n0, C, x, ped)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+		It("not in range", func() {
 			copyn := new(big.Int).Set(ped.n)
 			ped.n = big.NewInt(-1)
 			zkproof, err := NewDecryMessage(config, ssIDInfo, y, rho, n0, C, x, ped)
@@ -98,6 +110,11 @@ var _ = Describe("Deczkproof test", func() {
 		})
 		It("not coprime", func() {
 			zkproof.A = p0.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, n0, C, x, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("not in range", func() {
+			zkproof.Gamma = new(big.Int).Add(big1, config.Curve.Params().N).Bytes()
 			err := zkproof.Verify(config, ssIDInfo, n0, C, x, ped)
 			Expect(err).ShouldNot(BeNil())
 		})

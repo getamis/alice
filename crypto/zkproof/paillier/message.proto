@@ -123,7 +123,7 @@ message DecryMessage {
     bytes S = 2;
     bytes T = 3;
     bytes A = 4;
-    ecpointgrouplaw.EcPointMessage CPoint = 5;
+    bytes gamma = 5;
     string z1 = 6;
     string z2 = 7;
     bytes w = 8;

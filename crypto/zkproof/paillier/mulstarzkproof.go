@@ -27,37 +27,21 @@ func NewMulStarMessage(config *CurveConfig, ssidInfo []byte, x, rho, N0, C, D *b
 	pedN := ped.GetN()
 	peds := ped.GetS()
 	pedt := ped.GetT()
-	curveOrder := X.GetCurve().Params().N
-
-	eBits := uint(curveOrder.BitLen())
-	xBits := uint(config.L)
-
-	// α (alpha) = len(x) + len(e) + epsilon
-	safeAlphaBits := xBits + eBits + uint(config.LAddEpsilon)
-	safeAlphaBound := new(big.Int).Lsh(big1, safeAlphaBits)
-	alpha, err := utils.RandomAbsoluteRangeInt(safeAlphaBound)
+	// Sample α in ± 2^{l+ε}
+	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
 	if err != nil {
 		return nil, err
 	}
-
-	// r in Z_{N0}^ast
 	r, err := utils.RandomCoprimeInt(N0)
 	if err != nil {
 		return nil, err
 	}
-
-	// m = len(x) + L
-	safeMBits := xBits + uint(config.L)
-	safeMBound := new(big.Int).Mul(new(big.Int).Lsh(big1, safeMBits), pedN)
-	m, err := utils.RandomAbsoluteRangeInt(safeMBound)
+	// Sample γ in ± 2^{l+ε}·Nˆ.
+	gamma, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpLAddepsilon, pedN))
 	if err != nil {
 		return nil, err
 	}
-
-	// γ (gamma) = len(m) + len(e) + epsilon
-	safeGammaBits := safeMBits + eBits + uint(config.LAddEpsilon)
-	safeGammaBound := new(big.Int).Mul(new(big.Int).Lsh(big1, safeGammaBits), pedN)
-	gamma, err := utils.RandomAbsoluteRangeInt(safeGammaBound)
+	m, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpL, pedN))
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +74,7 @@ func NewMulStarMessage(config *CurveConfig, ssidInfo []byte, x, rho, N0, C, D *b
 	S.Mod(S, pedN)
 
 	msgs := append(utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), N0.Bytes(), C.Bytes(), D.Bytes(), A.Bytes(), E.Bytes(), S.Bytes()), msgG, msgX, msgBx)
-	e, counter, err := GetE(MulStar, curveOrder, msgs...)
+	e, counter, err := GetE(MulStar, G.GetCurve().Params().N, msgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +94,7 @@ func NewMulStarMessage(config *CurveConfig, ssidInfo []byte, x, rho, N0, C, D *b
 		S:       S.Bytes(),
 		W:       w.Bytes(),
 	}, nil
+
 }
 
 func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D *big.Int, ped *PederssenOpenParameter, X *pt.ECPoint) error {
@@ -183,13 +168,8 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 		return ErrVerifyFailure
 	}
 
-	eBits := uint(curveOrder.BitLen())
-	xBits := uint(config.L)
-	safeAlphaBits := xBits + eBits + uint(config.LAddEpsilon)
-
-	// Check：z1 ∈ ±2^{safeAlphaBits+1}
 	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big1, safeAlphaBits+1)) > 0 {
+	if absZ1.Cmp(new(big.Int).Lsh(big1, uint(config.LAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
 

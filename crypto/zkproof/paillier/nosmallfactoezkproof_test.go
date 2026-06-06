@@ -44,6 +44,13 @@ var _ = Describe("Nosmallfactoezkproof test", func() {
 			Expect(zkproof).Should(BeNil())
 			ped.n = copyn
 		})
+
+		It("not in range", func() {
+			config.TwoExpLAddepsilon = big.NewInt(-1)
+			zkproof, err := NewNoSmallFactorMessage(config, ssIDInfo, rho, p0, q0, n0, ped)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
 	})
 
 	Context("It is OK", func() {

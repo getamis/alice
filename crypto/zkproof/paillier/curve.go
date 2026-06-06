@@ -35,7 +35,6 @@ type CurveConfig struct {
 	LAddEpsilon          uint64
 	LpaiAddEpsilon       uint64
 	Lpai                 uint
-	L                    uint
 }
 
 func NewS256() *CurveConfig {
@@ -55,6 +54,5 @@ func NewS256() *CurveConfig {
 		LAddEpsilon:          uint64(L + epsilon),
 		LpaiAddEpsilon:       uint64(Lpai + epsilon),
 		Lpai:                 Lpai,
-		L:                    L,
 	}
 }

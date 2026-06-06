@@ -29,28 +29,16 @@ func NewPaillierOperationAndPaillierCommitment(config *CurveConfig, ssidInfo []b
 	pedN := ped.GetN()
 	peds := ped.GetS()
 	pedt := ped.GetT()
-
-	// 🔒 1. 動態計算安全盲化範圍 (修補 Slackness Bug)
-	eBits := uint(fieldOrder.BitLen())
-	xMaxBits := uint(fieldOrder.BitLen())     // x 對應 256 bits 的 nonce
-	yMaxBits := uint(fieldOrder.BitLen() * 5) // y 對應 1280 bits 的 MtA beta 掩碼
-
-	// α (盲化 x) 與 β (盲化 y) 的範圍
-	safeAlphaBits := xMaxBits + eBits + uint(config.LAddEpsilon)
-	safeAlphaBound := new(big.Int).Lsh(big1, safeAlphaBits)
-	alpha, err := utils.RandomAbsoluteRangeInt(safeAlphaBound)
+	// Sample α in ± 2^{l+ε}, β in ±2^{l'+ε}.
+	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
 	if err != nil {
 		return nil, err
 	}
-
-	safeBetaBits := yMaxBits + eBits + uint(config.LAddEpsilon)
-	safeBetaBound := new(big.Int).Lsh(big1, safeBetaBits)
-	beta, err := utils.RandomAbsoluteRangeInt(safeBetaBound)
+	beta, err := utils.RandomAbsoluteRangeInt(config.TwoExpLpaiAddepsilon)
 	if err != nil {
 		return nil, err
 	}
-
-	// 產生 Paillier 用亂數
+	// Sample r in Z_{N0}^ast, rx in Z_{N1}^ast and ry in Z_{N1}^ast
 	r, err := utils.RandomCoprimeInt(n0)
 	if err != nil {
 		return nil, err
@@ -63,37 +51,24 @@ func NewPaillierOperationAndPaillierCommitment(config *CurveConfig, ssidInfo []b
 	if err != nil {
 		return nil, err
 	}
-
-	// 🔒 2. 動態計算 Pedersen 用盲化因子的範圍
-	safeMBits := xMaxBits + uint(config.L)
-	safeMBound := new(big.Int).Mul(new(big.Int).Lsh(big1, safeMBits), pedN)
-	m, err := utils.RandomAbsoluteRangeInt(safeMBound)
+	// Sample γ in ± 2^{l+ε}·Nˆ and m in ±2^l ·Nˆ
+	gamma, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpLAddepsilon, pedN))
 	if err != nil {
 		return nil, err
 	}
-
-	safeMuBits := yMaxBits + uint(config.L)
-	safeMuBound := new(big.Int).Mul(new(big.Int).Lsh(big1, safeMuBits), pedN)
-	mu, err := utils.RandomAbsoluteRangeInt(safeMuBound)
+	m, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpL, pedN))
 	if err != nil {
 		return nil, err
 	}
-
-	safeGammaBits := safeAlphaBits
-	safeGammaBound := new(big.Int).Mul(new(big.Int).Lsh(big1, safeGammaBits), pedN)
-	gamma, err := utils.RandomAbsoluteRangeInt(safeGammaBound)
+	// δ in ± 2^{l+ε}·Nˆ and μ in ± 2^{l+ε}·Nˆ
+	delta, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpLAddepsilon, pedN))
 	if err != nil {
 		return nil, err
 	}
-
-	safeDeltaBits := safeBetaBits
-	safeDeltaBound := new(big.Int).Mul(new(big.Int).Lsh(big1, safeDeltaBits), pedN)
-	delta, err := utils.RandomAbsoluteRangeInt(safeDeltaBound)
+	mu, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpL, pedN))
 	if err != nil {
 		return nil, err
 	}
-
-	// --- 接下來是原本正確的代數計算，完全不變 ---
 	// A=C^α·((1+N_0)^β·r^N0) mod N0^2
 	A := new(big.Int).Mul(new(big.Int).Exp(C, alpha, n0Square), new(big.Int).Exp(r, n0, n0Square))
 	A.Mul(A, new(big.Int).Exp(new(big.Int).Add(big1, n0), beta, n0Square))
@@ -102,7 +77,7 @@ func NewPaillierOperationAndPaillierCommitment(config *CurveConfig, ssidInfo []b
 	Bx := new(big.Int).Exp(rx, n1, n1Square)
 	Bx.Mul(Bx, new(big.Int).Exp(new(big.Int).Add(big1, n1), alpha, n1Square))
 	Bx.Mod(Bx, n1Square)
-	// B_y = (1+N_1)^β ·ry^{N_1} mod N_1^2
+	// B_y = (1+N_1)^α ·ry^{N_1} mod N_1^2
 	By := new(big.Int).Mul(new(big.Int).Exp(new(big.Int).Add(big1, n1), beta, n1Square), new(big.Int).Exp(ry, n1, n1Square))
 	By.Mod(By, n1Square)
 	// E = s^α*t^γ mod Nˆ and S = s^x*t^m mod Nˆ
@@ -116,14 +91,12 @@ func NewPaillierOperationAndPaillierCommitment(config *CurveConfig, ssidInfo []b
 	T := new(big.Int).Mul(new(big.Int).Exp(peds, y, pedN), new(big.Int).Exp(pedt, mu, pedN))
 	T.Mod(T, pedN)
 
-	// Fiat-Shamir 挑戰值 e (你的 payload 綁定非常完美，維持原樣)
-	msgs := utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), n0.Bytes(), n1.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), C.Bytes(), D.Bytes(), X.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), Bx.Bytes(), By.Bytes(), E.Bytes(), F.Bytes())
-	e, counter, err := GetE(PaillierOperationAndPaillierCommitment, fieldOrder, msgs...)
+	e, counter, err := GetE(PaillierOperationAndPaillierCommitment, fieldOrder, // 修正後的 Payload
+		utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), n0.Bytes(), n1.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), C.Bytes(), D.Bytes(), X.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), Bx.Bytes(), By.Bytes(), E.Bytes(), F.Bytes())...)
 	if err != nil {
 		return nil, err
 	}
-
-	// 產生 ZK 回應值
+	// z1 = α + ex, z2 =β+ey, z3 = γ + em, z4 =δ+eμ, w = r · ρ^e mod N_0, wx = rx · ρx^e and wy = ry · ρy^e mod N1.
 	z1 := new(big.Int).Add(alpha, new(big.Int).Mul(e, x))
 	z2 := new(big.Int).Add(beta, new(big.Int).Mul(e, y))
 	z3 := new(big.Int).Add(gamma, new(big.Int).Mul(e, m))
@@ -259,8 +232,7 @@ func (msg *PaillierOperationAndCommitmentMessage) Verify(config *CurveConfig, ss
 		return ErrVerifyFailure
 	}
 
-	// 1. 重現 Fiat-Shamir 挑戰值 e
-	msgs := utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), n0.Bytes(), n1.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), C.Bytes(), D.Bytes(), X.Bytes(), Y.Bytes(), msg.S, msg.T, msg.A, msg.Bx, msg.By, msg.E, msg.F)
+	msgs := utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), n0.Bytes(), n1.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), C.Bytes(), D.Bytes(), X.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), Bx.Bytes(), By.Bytes(), E.Bytes(), F.Bytes())
 	e, expectedCounter, err := GetE(PaillierOperationAndPaillierCommitment, fieldOrder, msgs...)
 	if err != nil {
 		return err
@@ -269,23 +241,15 @@ func (msg *PaillierOperationAndCommitmentMessage) Verify(config *CurveConfig, ss
 		return ErrVerifyFailure
 	}
 
-	// 🔒 2. 動態安全上限檢查 (對應 Prover 的動態盲化空間)
-	eBits := uint(fieldOrder.BitLen())
-	xMaxBits := uint(fieldOrder.BitLen())
-	yMaxBits := uint(fieldOrder.BitLen() * 5)
-
-	safeAlphaBits := xMaxBits + eBits + uint(config.LAddEpsilon)
-	safeBetaBits := yMaxBits + eBits + uint(config.LAddEpsilon)
-
-	// Check z1 ∈ ±2^{safeAlphaBits+1}
+	// Check z1 ∈ ±2^{l+ε}
 	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big1, safeAlphaBits+1)) > 0 {
+	if absZ1.Cmp(new(big.Int).Lsh(big1, uint(config.LAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
 
-	// Check z2 ∈ ±2^{safeBetaBits+1}
+	// Check z2 ∈ ±2^{l′+ε}
 	absZ2 := new(big.Int).Abs(z2)
-	if absZ2.Cmp(new(big.Int).Lsh(big1, safeBetaBits+1)) > 0 {
+	if absZ2.Cmp(new(big.Int).Lsh(big1, uint(config.LpaiAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
 

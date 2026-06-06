@@ -28,40 +28,26 @@ func NewEncryptRangeMessage(config *CurveConfig, ssidInfo []byte, ciphertext *bi
 	pedN := ped.GetN()
 	peds := ped.GetS()
 	pedt := ped.GetT()
-
-	eBits := uint(groupOrder.BitLen())
-	kBits := uint(config.L)
-
-	// α (alpha) = len(k) + len(e) + epsilon
-	safeAlphaBits := kBits + eBits + uint(config.LAddEpsilon)
-	safeAlphaBound := new(big.Int).Lsh(big1, safeAlphaBits)
-	alpha, err := utils.RandomAbsoluteRangeInt(safeAlphaBound)
+	// Sample α in ± 2^{l+ε}
+	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
 	if err != nil {
 		return nil, err
 	}
-
-	// μ (mu) = len(k) + L
-	safeMuBits := kBits + uint(config.L)
-	safeMuBound := new(big.Int).Mul(new(big.Int).Lsh(big1, safeMuBits), pedN)
-	mu, err := utils.RandomAbsoluteRangeInt(safeMuBound)
+	// Sample μ in ± 2^{l+ε}·Nˆ.
+	mu, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpL, pedN))
 	if err != nil {
 		return nil, err
 	}
-
-	// r in Z_{N_0}^ast
+	// Sample r in Z_{N_0}^ast.
 	r, err := utils.RandomCoprimeInt(proverN)
 	if err != nil {
 		return nil, err
 	}
-
-	// γ (gamma) = len(μ) + len(e) + epsilon
-	safeGammaBits := safeMuBits + eBits + uint(config.LAddEpsilon)
-	safeGammaBound := new(big.Int).Mul(new(big.Int).Lsh(big1, safeGammaBits), pedN)
-	gamma, err := utils.RandomAbsoluteRangeInt(safeGammaBound)
+	// Sample γ in ± 2^{l+ε}·Nˆ.
+	gamma, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpLAddepsilon, pedN))
 	if err != nil {
 		return nil, err
 	}
-
 	// S = s^k*t^μ mod Nˆ
 	S := new(big.Int).Mul(new(big.Int).Exp(peds, k, pedN), new(big.Int).Exp(pedt, mu, pedN))
 	S.Mod(S, pedN)
@@ -83,10 +69,9 @@ func NewEncryptRangeMessage(config *CurveConfig, ssidInfo []byte, ciphertext *bi
 	// z2 = r·ρ^e mod N_0
 	z2 := new(big.Int).Mul(r, new(big.Int).Exp(rho, e, proverN))
 	z2.Mod(z2, proverN)
-	// z3 = γ+eμ
+	// z3 =γ+eμ
 	z3 := new(big.Int).Mul(e, mu)
 	z3.Add(z3, gamma)
-
 	return &EncryptRangeMessage{
 		Counter: counter,
 		S:       S.Bytes(),
@@ -145,8 +130,7 @@ func (msg *EncryptRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, cip
 	if err := utils.InRange(A, big0, proveNSqaure); err != nil {
 		return err
 	}
-
-	if !utils.IsRelativePrime(A, proveNSqaure) {
+	if !utils.IsRelativePrime(A, proveN) {
 		return ErrVerifyFailure
 	}
 
@@ -159,13 +143,8 @@ func (msg *EncryptRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, cip
 		return ErrVerifyFailure
 	}
 
-	eBits := uint(groupOrder.BitLen())
-	kBits := uint(config.L)
-	safeAlphaBits := kBits + eBits + uint(config.LAddEpsilon)
-
-	// Check：z1 ∈ ±2^{safeAlphaBits+1} (Add more 1 bit)
 	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big1, safeAlphaBits+1)) > 0 {
+	if absZ1.Cmp(new(big.Int).Lsh(big1, uint(config.LAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
 
