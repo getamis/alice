@@ -16,7 +16,6 @@ package paillier
 
 import (
 	"math/big"
-	"strconv"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
@@ -161,15 +160,12 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 	}
 
 	msgs := append(utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), N0.Bytes(), C.Bytes(), D.Bytes(), msg.A, msg.E, msg.S), msgG, msgX, msg.B)
-	reconstructedSalt := append([]byte(MulStar), []byte(strconv.Itoa(int(msg.Counter)))...)
-
-	seed, err := utils.HashProtos(reconstructedSalt, msgs...)
+	e, expectedCounter, err := GetE(MulStar, curveOrder, msgs...)
 	if err != nil {
 		return err
 	}
-	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, curveOrder)
-	if err := utils.InRange(e, new(big.Int).Neg(curveOrder), new(big.Int).Add(big1, curveOrder)); err != nil {
-		return err
+	if expectedCounter != msg.Counter {
+		return ErrVerifyFailure
 	}
 
 	absZ1 := new(big.Int).Abs(z1)

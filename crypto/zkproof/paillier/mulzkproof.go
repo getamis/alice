@@ -16,7 +16,6 @@ package paillier
 
 import (
 	"math/big"
-	"strconv"
 
 	"github.com/getamis/alice/crypto/utils"
 )
@@ -67,18 +66,15 @@ func NewMulMessage(ssidInfo []byte, x, rho, rhox, N, X, Y, C, fieldOrder *big.In
 }
 
 func (msg *MulMessage) Verify(ssidInfo []byte, N, X, Y, C, fieldOrder *big.Int) error {
-	reconstructedSalt := append([]byte(Mul), []byte(strconv.Itoa(int(msg.Counter)))...)
-	seed, err := utils.HashProtos(reconstructedSalt, utils.GetAnyMsg(ssidInfo, msg.A, msg.B, N.Bytes(), X.Bytes(), Y.Bytes(), C.Bytes())...)
+	msgs := utils.GetAnyMsg(ssidInfo, msg.A, msg.B, N.Bytes(), X.Bytes(), Y.Bytes(), C.Bytes())
+	NSquare := new(big.Int).Mul(N, N)
+
+	e, expectedCounter, err := GetE(Mul, fieldOrder, msgs...)
 	if err != nil {
 		return err
 	}
-
-	NSquare := new(big.Int).Mul(N, N)
-
-	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, fieldOrder)
-	err = utils.InRange(e, new(big.Int).Neg(fieldOrder), new(big.Int).Add(big1, fieldOrder))
-	if err != nil {
-		return err
+	if expectedCounter != msg.Counter {
+		return ErrVerifyFailure
 	}
 
 	z, ok := new(big.Int).SetString(msg.Z, 10)

@@ -16,7 +16,6 @@ package paillier
 
 import (
 	"math/big"
-	"strconv"
 
 	"github.com/getamis/alice/crypto/utils"
 )
@@ -135,18 +134,13 @@ func (msg *EncryptRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, cip
 		return ErrVerifyFailure
 	}
 
-	reconstructedSalt := append([]byte(EncryptRange), []byte(strconv.Itoa(int(msg.Counter)))...)
-	seed, err := utils.HashProtos(
-		reconstructedSalt,
-		utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), ciphertext, proveN.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), S.Bytes(), A.Bytes(), C.Bytes())...,
-	)
+	msgs := utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), ciphertext, proveN.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), S.Bytes(), A.Bytes(), C.Bytes())
+	e, expectedCounter, err := GetE(EncryptRange, groupOrder, msgs...)
 	if err != nil {
 		return err
 	}
-
-	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, groupOrder)
-	if err := utils.InRange(e, new(big.Int).Neg(groupOrder), new(big.Int).Add(big1, groupOrder)); err != nil {
-		return err
+	if expectedCounter != msg.Counter {
+		return ErrVerifyFailure
 	}
 
 	absZ1 := new(big.Int).Abs(z1)

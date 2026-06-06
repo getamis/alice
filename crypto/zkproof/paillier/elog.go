@@ -16,7 +16,6 @@ package paillier
 
 import (
 	"math/big"
-	"strconv"
 
 	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
@@ -160,15 +159,12 @@ func (msg *ELogMessage) Verify(config *CurveConfig, ssidInfo []byte, L, M, X, Y,
 	}
 
 	msgs := append(utils.GetAnyMsg(ssidInfo), msg.A, msg.B, msgL, msgM, msgX, msgY, msgh, msg.N, msgG)
-	reconstructedSalt := append([]byte(ELog), []byte(strconv.Itoa(int(msg.Counter)))...)
-	seed, err := utils.HashProtos(reconstructedSalt, msgs...)
+	e, expectedCounter, err := GetE(ELog, curveN, msgs...)
 	if err != nil {
 		return err
 	}
-	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, curveN)
-	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
-	if err != nil {
-		return err
+	if expectedCounter != msg.Counter {
+		return ErrVerifyFailure
 	}
 
 	// Check z*G = A + e*L

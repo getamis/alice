@@ -242,17 +242,13 @@ func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo
 	}
 
 	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), n0.Bytes(), n1.Bytes(), C.Bytes(), D.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), By.Bytes(), E.Bytes(), F.Bytes()), msgG, msgX, msg.Bx)
-	baseSalt := []byte(AffRangeZKDST)
-	reconstructedSalt := append(baseSalt, []byte(strconv.Itoa(int(msg.Counter)))...)
-
-	seed, err := utils.HashProtos(reconstructedSalt, msgs...)
+	e, expectedCounter, err := GetE(AffRangeZKDST, curveN, msgs...)
 	if err != nil {
 		return err
 	}
-	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, curveN)
-	err = utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN))
-	if err != nil {
-		return err
+	// Check the validation of the counter
+	if expectedCounter != msg.Counter {
+		return ErrVerifyFailure
 	}
 	// Check z_1 in ±2^{l+ε}.
 	absZ1 := new(big.Int).Abs(z1)
@@ -314,15 +310,16 @@ func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo
 
 func GetE(dst string, groupOrder *big.Int, msgs ...proto.Message) (*big.Int, uint32, error) {
 	baseSalt := []byte(dst)
+	halfQ := new(big.Int).Rsh(groupOrder, 1)
+
 	for j := uint32(0); j < maxRetry; j++ {
 		salt := append(baseSalt, []byte(strconv.Itoa(int(j)))...)
 		seedMsg, err := utils.HashProtos(salt, msgs...)
 		if err != nil {
 			return nil, 0, err
 		}
-
 		e := utils.RandomAbsoluteRangeIntBySeed(salt, seedMsg, groupOrder)
-		if new(big.Int).Abs(e).Cmp(groupOrder) <= 0 {
+		if new(big.Int).Abs(e).Cmp(halfQ) <= 0 {
 			return e, j, nil
 		}
 	}

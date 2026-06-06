@@ -16,7 +16,6 @@ package paillier
 
 import (
 	"math/big"
-	"strconv"
 
 	"github.com/getamis/alice/crypto/utils"
 )
@@ -65,15 +64,13 @@ func (msg *NthRootMessage) Verify(config *CurveConfig, ssidInfo []byte, NPower, 
 		return err
 	}
 
-	reconstructedSalt := append([]byte(NthRoot), []byte(strconv.Itoa(int(msg.Counter)))...)
-	seed, err := utils.HashProtos(reconstructedSalt, utils.GetAnyMsg(ssidInfo, n.Bytes(), NPower.Bytes(), A.Bytes())...)
+	msgs := utils.GetAnyMsg(ssidInfo, n.Bytes(), NPower.Bytes(), A.Bytes())
+	e, expectedCounter, err := GetE(NthRoot, curveN, msgs...)
 	if err != nil {
 		return err
 	}
-
-	e := utils.RandomAbsoluteRangeIntBySeed(reconstructedSalt, seed, curveN)
-	if err := utils.InRange(e, new(big.Int).Neg(curveN), new(big.Int).Add(big1, curveN)); err != nil {
-		return err
+	if expectedCounter != msg.Counter {
+		return ErrVerifyFailure
 	}
 
 	// 6. Check z1^n = A * NPower^e mod n^2
