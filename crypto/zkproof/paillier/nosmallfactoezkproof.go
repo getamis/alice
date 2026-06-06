@@ -25,50 +25,65 @@ const NoSmallFactor = "AMIS-Alice-NoSmallFactor-ZK-v1.0-"
 func NewNoSmallFactorMessage(config *CurveConfig, ssidInfo, rho []byte, p *big.Int, q *big.Int, n *big.Int, ped *PederssenOpenParameter) (*NoSmallFactorMessage, error) {
 	sqrtN := new(big.Int).Sqrt(n)
 	groupOrder := config.Curve.Params().N
-	twoellAddepsionSqrtN := new(big.Int).Lsh(sqrtN, uint(config.LAddEpsilon))
 	pedN := ped.GetN()
 	peds := ped.GetS()
 	pedt := ped.GetT()
-	// Sample α,β in ±2^{l+ε}·N0^1/2
-	alpha, err := utils.RandomAbsoluteRangeInt(twoellAddepsionSqrtN)
+
+	eBits := uint(groupOrder.BitLen())
+	lBits := uint(config.L)
+	epsilonBits := uint(config.LAddEpsilon) - lBits
+
+	// α, β (alpha, beta)  = len(sqrtN) + len(e) + epsilon
+	safeAlphaBits := uint(sqrtN.BitLen()) + eBits + epsilonBits
+	safeAlphaBound := new(big.Int).Lsh(big1, safeAlphaBits)
+	alpha, err := utils.RandomAbsoluteRangeInt(safeAlphaBound)
 	if err != nil {
 		return nil, err
 	}
-	beta, err := utils.RandomAbsoluteRangeInt(twoellAddepsionSqrtN)
+	beta, err := utils.RandomAbsoluteRangeInt(safeAlphaBound)
 	if err != nil {
 		return nil, err
 	}
-	twoellpedn := new(big.Int).Mul(config.TwoExpL, pedN)
-	// Sample μ,ν in ±2^l·N0·Nˆ
-	mu, err := utils.RandomAbsoluteRangeInt(twoellpedn)
+
+	// μ, ν (mu, v) (2^L * pedN)
+	muBound := new(big.Int).Lsh(pedN, lBits)
+	mu, err := utils.RandomAbsoluteRangeInt(muBound)
 	if err != nil {
 		return nil, err
 	}
-	v, err := utils.RandomAbsoluteRangeInt(twoellpedn)
+	v, err := utils.RandomAbsoluteRangeInt(muBound)
 	if err != nil {
 		return nil, err
 	}
-	// Sample ρ in ±2^l ·N0 ·Nˆ
-	sigma, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(twoellpedn, n))
+
+	// ρ (sigma) (2^L * pedN * n)
+	sigmaBound := new(big.Int).Mul(muBound, n)
+	sigma, err := utils.RandomAbsoluteRangeInt(sigmaBound)
 	if err != nil {
 		return nil, err
 	}
-	twoellAddepsionpedn := new(big.Int).Mul(config.TwoExpLAddepsilon, pedN)
-	// Sample r in ±2^{l+ε} ·N0 ·Nˆ
-	r, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(twoellAddepsionpedn, n))
+
+	// x, y blinds e * mu, len(muBound) + len(e) + epsilon
+	safeXBits := lBits + uint(pedN.BitLen()) + eBits + epsilonBits
+	safeXBound := new(big.Int).Lsh(big1, safeXBits)
+	x, err := utils.RandomAbsoluteRangeInt(safeXBound)
 	if err != nil {
 		return nil, err
 	}
-	// Sample x, y in ±2^{l+ε} ·N0 ·Nˆ
-	x, err := utils.RandomAbsoluteRangeInt(twoellAddepsionpedn)
+	y, err := utils.RandomAbsoluteRangeInt(safeXBound)
 	if err != nil {
 		return nil, err
 	}
-	y, err := utils.RandomAbsoluteRangeInt(twoellAddepsionpedn)
+
+	// r blinds e * sigma, len(sigmaBound) + len(e) + epsilon
+	safeRBits := lBits + uint(pedN.BitLen()) + uint(n.BitLen()) + eBits + epsilonBits
+	safeRBound := new(big.Int).Lsh(big1, safeRBits)
+	r, err := utils.RandomAbsoluteRangeInt(safeRBound)
 	if err != nil {
 		return nil, err
 	}
-	// P = s^p*t^μ,Q=s^q*t^ν mod Nˆ.
+
+	// P = s^p*t^μ, Q=s^q*t^ν mod Nˆ.
 	P := new(big.Int).Mul(new(big.Int).Exp(peds, p, pedN), new(big.Int).Exp(pedt, mu, pedN))
 	P.Mod(P, pedN)
 	Q := new(big.Int).Mul(new(big.Int).Exp(peds, q, pedN), new(big.Int).Exp(pedt, v, pedN))
@@ -196,8 +211,13 @@ func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byt
 		return ErrVerifyFailure
 	}
 
+	eBits := uint(groupOrder.BitLen())
+	lBits := uint(config.L)
+	epsilonBits := uint(config.LAddEpsilon) - lBits
+
 	sqrtN := new(big.Int).Sqrt(n)
-	upBd := new(big.Int).Lsh(sqrtN, uint(config.LAddEpsilon))
+	safeAlphaBits := uint(sqrtN.BitLen()) + eBits + epsilonBits
+	upBd := new(big.Int).Lsh(big1, safeAlphaBits+1)
 
 	absZ1 := new(big.Int).Abs(z1)
 	if absZ1.Cmp(upBd) > 0 {

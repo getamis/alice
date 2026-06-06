@@ -51,6 +51,14 @@ func NewNthRoot(config *CurveConfig, ssidInfo []byte, rho, rhoNPower, n *big.Int
 func (msg *NthRootMessage) Verify(config *CurveConfig, ssidInfo []byte, NPower, n *big.Int) error {
 	curveN := config.Curve.Params().N
 	nSquare := new(big.Int).Exp(n, big2, nil)
+
+	if err := utils.InRange(NPower, big0, nSquare); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(NPower, n) {
+		return ErrVerifyFailure
+	}
+
 	A := new(big.Int).SetBytes(msg.A)
 	if err := utils.InRange(A, big0, nSquare); err != nil {
 		return err
@@ -73,7 +81,7 @@ func (msg *NthRootMessage) Verify(config *CurveConfig, ssidInfo []byte, NPower, 
 		return ErrVerifyFailure
 	}
 
-	// 6. Check z1^n = A * NPower^e mod n^2
+	// Check z1^n = A * NPower^e mod n^2
 	ANPowerexpe := new(big.Int).Exp(NPower, e, nSquare)
 	ANPowerexpe.Mul(ANPowerexpe, A)
 	ANPowerexpe.Mod(ANPowerexpe, nSquare)
