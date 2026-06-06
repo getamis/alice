@@ -105,6 +105,12 @@ func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0 *b
 	pedN := ped.GetN()
 	peds := ped.GetS()
 	pedt := ped.GetT()
+	if err := utils.InRange(C, big0, n0Square); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(C, n0) {
+		return ErrVerifyFailure
+	}
 
 	S := new(big.Int).SetBytes(msg.S)
 	if err := utils.InRange(S, big0, pedN); err != nil {

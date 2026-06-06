@@ -15,7 +15,6 @@
 package paillier
 
 import (
-	"encoding/binary"
 	"errors"
 	"math/big"
 
@@ -31,13 +30,6 @@ var (
 	ErrExceedHashBits = errors.New("number of zero-knowledge proofs exceeds available hash bits")
 )
 
-func lengthPrefix(b []byte) []byte {
-	res := make([]byte, 4+len(b))
-	binary.BigEndian.PutUint32(res[:4], uint32(len(b)))
-	copy(res[4:], b)
-	return res
-}
-
 func NewRingPederssenParameterMessage(ssidInfo []byte, eulerValue *big.Int, n *big.Int, s *big.Int, t *big.Int, lambda *big.Int, nubmerZkproof int) (*RingPederssenParameterMessage, error) {
 	if nubmerZkproof < MINIMALCHALLENGE {
 		return nil, ErrTooFewChallenge
@@ -51,6 +43,9 @@ func NewRingPederssenParameterMessage(ssidInfo []byte, eulerValue *big.Int, n *b
 	Z := make([][]byte, nubmerZkproof)
 	aList := make([]*big.Int, nubmerZkproof)
 
+	var bs [][]byte
+	bs = append(bs, ssidInfo, n.Bytes(), s.Bytes(), t.Bytes())
+
 	for i := 0; i < nubmerZkproof; i++ {
 		ai, err := utils.RandomInt(eulerValue)
 		if err != nil {
@@ -59,18 +54,15 @@ func NewRingPederssenParameterMessage(ssidInfo []byte, eulerValue *big.Int, n *b
 		aList[i] = ai
 		Ai := new(big.Int).Exp(t, ai, n)
 		A[i] = Ai.Bytes()
+		bs = append(bs, A[i])
 	}
 
-	hashInput := make([][]byte, 0, 4+nubmerZkproof)
-	hashInput = append(hashInput, lengthPrefix(ssidInfo), lengthPrefix(n.Bytes()), lengthPrefix(s.Bytes()), lengthPrefix(t.Bytes()))
-	for _, Ai := range A {
-		hashInput = append(hashInput, lengthPrefix(Ai))
-	}
-
-	globalChallenge, err := utils.HashBytesToInt(ssidInfo, hashInput...)
+	msgs := utils.GetAnyMsg(bs...)
+	hashBytes, err := utils.HashProtos(ssidInfo, msgs...)
 	if err != nil {
 		return nil, err
 	}
+	globalChallenge := new(big.Int).SetBytes(hashBytes)
 
 	for i := 0; i < nubmerZkproof; i++ {
 		bitVal := uint64(globalChallenge.Bit(i))
@@ -98,11 +90,9 @@ func (msg *RingPederssenParameterMessage) Verify(ssidInfo []byte) error {
 	if verifyTime < MINIMALCHALLENGE {
 		return ErrTooFewChallenge
 	}
-
 	if len(msg.A) != len(msg.Z) {
 		return ErrVerifyFailure
 	}
-
 	if verifyTime > 256 {
 		return ErrVerifyFailure
 	}
@@ -113,24 +103,38 @@ func (msg *RingPederssenParameterMessage) Verify(ssidInfo []byte) error {
 	A := msg.A
 	Z := msg.Z
 
+	if n.Cmp(big0) <= 0 || n.Bit(0) == 0 {
+		return ErrVerifyFailure
+	}
+	if err := utils.InRange(s, big2, n); err != nil {
+		return ErrVerifyFailure
+	}
+	if err := utils.InRange(t, big2, n); err != nil {
+		return ErrVerifyFailure
+	}
+
 	if !utils.IsRelativePrime(t, n) || !utils.IsRelativePrime(s, n) {
 		return ErrVerifyFailure
 	}
 
-	hashInput := make([][]byte, 0, 4+verifyTime)
+	var bs [][]byte
+	bs = append(bs, ssidInfo, n.Bytes(), s.Bytes(), t.Bytes())
+	bs = append(bs, A...)
 
-	hashInput = append(hashInput, lengthPrefix(ssidInfo), lengthPrefix(n.Bytes()), lengthPrefix(s.Bytes()), lengthPrefix(t.Bytes()))
-	for _, AiBytes := range A {
-		AiInt := new(big.Int).SetBytes(AiBytes)
-		hashInput = append(hashInput, lengthPrefix(AiInt.Bytes()))
-	}
-
-	globalChallenge, err := utils.HashBytesToInt(ssidInfo, hashInput...)
+	msgs := utils.GetAnyMsg(bs...)
+	hashBytes, err := utils.HashProtos(ssidInfo, msgs...)
 	if err != nil {
 		return err
 	}
+	globalChallenge := new(big.Int).SetBytes(hashBytes)
+
+	maxElementByteLen := len(n.Bytes()) + 2
 
 	for i := 0; i < verifyTime; i++ {
+		if len(A[i]) > maxElementByteLen || len(Z[i]) > maxElementByteLen {
+			return ErrVerifyFailure
+		}
+
 		Ai := new(big.Int).SetBytes(A[i])
 		err = utils.InRange(Ai, big0, n)
 		if err != nil {

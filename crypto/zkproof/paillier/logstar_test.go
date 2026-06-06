@@ -143,5 +143,17 @@ var _ = Describe("Logstar test", func() {
 			err := zkproof.Verify(config, ssIDInfo, C, n0, ped, X, G)
 			Expect(err).ShouldNot(BeNil())
 		})
+		It("ciphertext C not in range", func() {
+			n0Square := new(big.Int).Mul(n0, n0)
+			invalidC := new(big.Int).Add(n0Square, big1)
+
+			err := zkproof.Verify(config, ssIDInfo, invalidC, n0, ped, X, G)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("ciphertext C not coprime", func() {
+			err := zkproof.Verify(config, ssIDInfo, n0, n0, ped, X, G)
+			Expect(err).ShouldNot(BeNil())
+		})
 	})
 })

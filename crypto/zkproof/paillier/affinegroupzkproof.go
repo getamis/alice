@@ -212,6 +212,12 @@ func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo
 	if !ok {
 		return ErrInvalidInput
 	}
+	// Defensive anti-DoS check: Restrict z3 and z4 bit lengths to prevent CPU exhaustion via giant exponents.
+	maxZ3BitLen := uint(config.LAddEpsilon) + uint(pedN.BitLen()) + 2
+	maxZ4BitLen := uint(config.LpaiAddEpsilon) + uint(pedN.BitLen()) + 2
+	if uint(z3.BitLen()) > maxZ3BitLen || uint(z4.BitLen()) > maxZ4BitLen {
+		return ErrVerifyFailure
+	}
 	W := new(big.Int).SetBytes(msg.W)
 	err = utils.InRange(W, big0, n0)
 	if err != nil {
@@ -239,6 +245,26 @@ func (msg *PaillierAffAndGroupRangeMessage) Verify(config *CurveConfig, ssidInfo
 	msgX, err := X.ToEcPointMessage()
 	if err != nil {
 		return err
+	}
+	if err := utils.InRange(C, big0, n0Square); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(C, n0) {
+		return ErrVerifyFailure
+	}
+
+	if err := utils.InRange(D, big0, n0Square); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(D, n0) {
+		return ErrVerifyFailure
+	}
+
+	if err := utils.InRange(Y, big0, n1Square); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(Y, n1) {
+		return ErrVerifyFailure
 	}
 
 	msgs := append(utils.GetAnyMsg(ssidInfo, new(big.Int).SetUint64(config.LAddEpsilon).Bytes(), new(big.Int).SetUint64(config.LpaiAddEpsilon).Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), n0.Bytes(), n1.Bytes(), C.Bytes(), D.Bytes(), Y.Bytes(), S.Bytes(), T.Bytes(), A.Bytes(), By.Bytes(), E.Bytes(), F.Bytes()), msgG, msgX, msg.Bx)

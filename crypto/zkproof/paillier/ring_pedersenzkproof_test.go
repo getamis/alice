@@ -100,6 +100,48 @@ var _ = Describe("Ring pedersenzkproof test", func() {
 			err := zkproof.Verify(ssIDInfo)
 			Expect(err).ShouldNot(BeNil())
 		})
+		It("statement N is an invalid even number", func() {
+			originalN := new(big.Int).SetBytes(zkproof.N)
+			evenN := new(big.Int).Mul(originalN, big2)
+
+			zkproof.N = evenN.Bytes()
+			err := zkproof.Verify(ssIDInfo)
+			Expect(err).Should(Equal(ErrVerifyFailure))
+		})
+
+		It("statement S is out of range", func() {
+			currentN := new(big.Int).SetBytes(zkproof.N)
+			invalidS := new(big.Int).Add(currentN, big1)
+
+			zkproof.S = invalidS.Bytes()
+			err := zkproof.Verify(ssIDInfo)
+			Expect(err).Should(Equal(ErrVerifyFailure))
+		})
+
+		It("statement T is out of range", func() {
+			currentN := new(big.Int).SetBytes(zkproof.N)
+			invalidT := new(big.Int).Add(currentN, big1)
+
+			zkproof.T = invalidT.Bytes()
+			err := zkproof.Verify(ssIDInfo)
+			Expect(err).Should(Equal(ErrVerifyFailure))
+		})
+
+		It("msg.A element byte length too large (OOM protection)", func() {
+			maxElementByteLen := len(n.Bytes()) + 2
+			zkproof.A[0] = make([]byte, maxElementByteLen+10)
+
+			err := zkproof.Verify(ssIDInfo)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("msg.Z element byte length too large (OOM protection)", func() {
+			maxElementByteLen := len(n.Bytes()) + 2
+			zkproof.Z[0] = make([]byte, maxElementByteLen+10)
+
+			err := zkproof.Verify(ssIDInfo)
+			Expect(err).ShouldNot(BeNil())
+		})
 	})
 
 })

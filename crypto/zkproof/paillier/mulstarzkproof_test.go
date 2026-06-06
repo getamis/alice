@@ -141,5 +141,27 @@ var _ = Describe("Mulstarzkproof test", func() {
 			err := zkproof.Verify(config, ssIDInfo, n0, C, D, ped, X)
 			Expect(err).ShouldNot(BeNil())
 		})
+		It("ciphertext C not in range", func() {
+			n0Square := new(big.Int).Mul(n0, n0)
+			invalidC := new(big.Int).Add(n0Square, big1)
+
+			err := zkproof.Verify(config, ssIDInfo, n0, invalidC, D, ped, X)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("ciphertext C not coprime", func() {
+			err := zkproof.Verify(config, ssIDInfo, n0, n0, D, ped, X)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("ciphertext D not in range", func() {
+			n0Square := new(big.Int).Mul(n0, n0)
+			invalidD := new(big.Int).Add(n0Square, big1)
+
+			err := zkproof.Verify(config, ssIDInfo, n0, C, invalidD, ped, X)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("ciphertext D not coprime", func() {
+			err := zkproof.Verify(config, ssIDInfo, n0, C, n0, ped, X)
+			Expect(err).ShouldNot(BeNil())
+		})
 	})
 })

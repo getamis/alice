@@ -97,5 +97,50 @@ var _ = Describe("Nosmallfactoezkproof test", func() {
 			err := zkproof.Verify(config, ssIDInfo, rho, n0, ped)
 			Expect(err).ShouldNot(BeNil())
 		})
+
+		It("invalid even modulus n", func() {
+			evenN := new(big.Int).Mul(n1, big2)
+			err := zkproof.Verify(config, ssIDInfo, rho, evenN, ped)
+			Expect(err).Should(Equal(ErrInvalidInput))
+		})
+
+		It("too short modulus n", func() {
+			shortN := big.NewInt(1023)
+			err := zkproof.Verify(config, ssIDInfo, rho, shortN, ped)
+			Expect(err).Should(Equal(ErrInvalidInput))
+		})
+
+		It("w1 bit length too large (DoS protection)", func() {
+			pedN := ped.GetN()
+			maxWBitLen := uint(config.LAddEpsilon) + uint(pedN.BitLen()) + 2
+			hugeInt := new(big.Int).Lsh(big.NewInt(1), maxWBitLen+10)
+			zkproof.W1 = hugeInt.String()
+
+			err := zkproof.Verify(config, ssIDInfo, rho, n1, ped)
+			Expect(err).Should(Equal(ErrVerifyFailure))
+		})
+
+		It("w2 bit length too large (DoS protection)", func() {
+			pedN := ped.GetN()
+			maxWBitLen := uint(config.LAddEpsilon) + uint(pedN.BitLen()) + 2
+
+			hugeInt := new(big.Int).Lsh(big.NewInt(1), maxWBitLen+10)
+			zkproof.W2 = hugeInt.String()
+
+			err := zkproof.Verify(config, ssIDInfo, rho, n1, ped)
+			Expect(err).Should(Equal(ErrVerifyFailure))
+		})
+
+		It("vletter bit length too large (DoS protection)", func() {
+			pedN := ped.GetN()
+			maxWBitLen := uint(config.LAddEpsilon) + uint(pedN.BitLen()) + 2
+			maxVBitLen := maxWBitLen + uint(n1.BitLen())
+
+			hugeInt := new(big.Int).Lsh(big.NewInt(1), maxVBitLen+10)
+			zkproof.Vletter = hugeInt.String()
+
+			err := zkproof.Verify(config, ssIDInfo, rho, n1, ped)
+			Expect(err).Should(Equal(ErrVerifyFailure))
+		})
 	})
 })

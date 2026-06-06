@@ -121,5 +121,35 @@ var _ = Describe("Mulzkproof test", func() {
 			err := zkproof.Verify(ssIDInfo, n0, X, Y, C, fieldOrder)
 			Expect(err).ShouldNot(BeNil())
 		})
+
+		It("ciphertext X invalid", func() {
+			n0Square := new(big.Int).Mul(n0, n0)
+			invalidX := new(big.Int).Add(n0Square, big1)
+			err := zkproof.Verify(ssIDInfo, n0, invalidX, Y, C, fieldOrder)
+			Expect(err).ShouldNot(BeNil())
+
+			err = zkproof.Verify(ssIDInfo, n0, n0, Y, C, fieldOrder)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("ciphertext Y invalid", func() {
+			n0Square := new(big.Int).Mul(n0, n0)
+			invalidY := new(big.Int).Add(n0Square, big1)
+			err := zkproof.Verify(ssIDInfo, n0, X, invalidY, C, fieldOrder)
+			Expect(err).ShouldNot(BeNil())
+
+			err = zkproof.Verify(ssIDInfo, n0, X, n0, C, fieldOrder)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("ciphertext C invalid", func() {
+			n0Square := new(big.Int).Mul(n0, n0)
+			invalidC := new(big.Int).Add(n0Square, big1)
+			err := zkproof.Verify(ssIDInfo, n0, X, Y, invalidC, fieldOrder)
+			Expect(err).ShouldNot(BeNil())
+
+			err = zkproof.Verify(ssIDInfo, n0, X, Y, n0, fieldOrder)
+			Expect(err).ShouldNot(BeNil())
+		})
 	})
 })

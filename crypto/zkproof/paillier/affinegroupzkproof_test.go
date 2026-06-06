@@ -214,5 +214,31 @@ var _ = Describe("Affinegroupzkproof test", func() {
 			err := zkproof.Verify(config, ssIDInfo, n0, n1, C, D, Y, ped, X)
 			Expect(err).ShouldNot(BeNil())
 		})
+		It("ciphertext C out of range should fail", func() {
+			n0Square := new(big.Int).Mul(n0, n0)
+			invalidC := new(big.Int).Add(n0Square, big1)
+			err := zkproof.Verify(config, ssIDInfo, n0, n1, invalidC, D, Y, ped, X)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("msg.Z3 string bit length too large (CPU exhaustion protection)", func() {
+			pedN := ped.GetN()
+			maxZ3BitLen := uint(config.LAddEpsilon) + uint(pedN.BitLen()) + 2
+			hugeInt := new(big.Int).Lsh(big.NewInt(1), maxZ3BitLen+10)
+			zkproof.Z3 = hugeInt.String()
+
+			err := zkproof.Verify(config, ssIDInfo, n0, n1, C, D, Y, ped, X)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("msg.Z4 string bit length too large (CPU exhaustion protection)", func() {
+			pedN := ped.GetN()
+			maxZ4BitLen := uint(config.LpaiAddEpsilon) + uint(pedN.BitLen()) + 2
+			hugeInt := new(big.Int).Lsh(big.NewInt(1), maxZ4BitLen+10)
+			zkproof.Z4 = hugeInt.String()
+
+			err := zkproof.Verify(config, ssIDInfo, n0, n1, C, D, Y, ped, X)
+			Expect(err).ShouldNot(BeNil())
+		})
 	})
 })

@@ -130,10 +130,50 @@ func NewPaillierOperationAndPaillierCommitment(config *CurveConfig, ssidInfo []b
 func (msg *PaillierOperationAndCommitmentMessage) Verify(config *CurveConfig, ssidInfo []byte, n0, n1, C, D, X, Y *big.Int, ped *PederssenOpenParameter) error {
 	n0Square := new(big.Int).Exp(n0, big2, nil)
 	n1Square := new(big.Int).Exp(n1, big2, nil)
+	if err := utils.InRange(C, big0, n0Square); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(C, n0) {
+		return ErrVerifyFailure
+	}
+	if err := utils.InRange(D, big0, n0Square); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(D, n0) {
+		return ErrVerifyFailure
+	}
+
+	if err := utils.InRange(X, big0, n1Square); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(X, n1) {
+		return ErrVerifyFailure
+	}
+	if err := utils.InRange(Y, big0, n1Square); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(Y, n1) {
+		return ErrVerifyFailure
+	}
 	fieldOrder := config.Curve.Params().N
 	pedN := ped.GetN()
 	peds := ped.GetS()
 	pedt := ped.GetT()
+
+	// Defensive anti-DoS check: Limit byte lengths before SetBytes to prevent OOM attacks.
+	maxLenPed := len(pedN.Bytes()) + 2
+	maxLenN0Sq := len(n0.Bytes())*2 + 2
+	maxLenN1Sq := len(n1.Bytes())*2 + 2
+
+	if len(msg.S) > maxLenPed || len(msg.T) > maxLenPed || len(msg.E) > maxLenPed || len(msg.F) > maxLenPed ||
+		len(msg.A) > maxLenN0Sq || len(msg.W) > maxLenN0Sq ||
+		len(msg.Bx) > maxLenN1Sq || len(msg.By) > maxLenN1Sq || len(msg.Wx) > maxLenN1Sq || len(msg.Wy) > maxLenN1Sq {
+		return ErrVerifyFailure
+	}
+
+	if err := utils.InRange(C, big0, n0Square); err != nil {
+		return err
+	}
 
 	S := new(big.Int).SetBytes(msg.S)
 	if err := utils.InRange(S, big0, pedN); err != nil {
@@ -198,6 +238,13 @@ func (msg *PaillierOperationAndCommitmentMessage) Verify(config *CurveConfig, ss
 	z4, ok := new(big.Int).SetString(msg.Z4, 10)
 	if !ok {
 		return ErrInvalidInput
+	}
+
+	// Defensive anti-DoS check: Restrict z3 and z4 bit lengths to prevent CPU exhaustion via giant exponents.
+	maxZ3BitLen := uint(config.LAddEpsilon) + uint(pedN.BitLen()) + 2
+	maxZ4BitLen := uint(config.LpaiAddEpsilon) + uint(pedN.BitLen()) + 2
+	if uint(z3.BitLen()) > maxZ3BitLen || uint(z4.BitLen()) > maxZ4BitLen {
+		return ErrVerifyFailure
 	}
 
 	W := new(big.Int).SetBytes(msg.W)

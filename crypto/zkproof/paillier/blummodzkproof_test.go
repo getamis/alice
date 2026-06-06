@@ -62,6 +62,29 @@ var _ = Describe("Blummodzkproof test", func() {
 			Expect(err).ShouldNot(BeNil())
 		})
 
+		It("should fail if the number of challenges is less than MINIMALCHALLENGE", func() {
+			tamperedProof := &PaillierBlumMessage{
+				A: make([][]byte, MINIMALCHALLENGE-1),
+				B: zkproof.B,
+				W: zkproof.W,
+				X: zkproof.X,
+				Z: zkproof.Z,
+			}
+			err := tamperedProof.Verify(ssIDInfo, n1)
+			Expect(err).Should(Equal(ErrInvalidInput))
+		})
+
+		It("should fail if the lengths of slices are mismatched", func() {
+			tamperedProof := &PaillierBlumMessage{
+				A: zkproof.A,
+				B: make([][]byte, 0),
+				W: zkproof.W,
+				X: zkproof.X,
+				Z: zkproof.Z,
+			}
+			err := tamperedProof.Verify(ssIDInfo, n1)
+			Expect(err).Should(Equal(ErrInvalidInput))
+		})
 	})
 
 })

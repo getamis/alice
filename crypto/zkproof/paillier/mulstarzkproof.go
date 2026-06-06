@@ -104,6 +104,18 @@ func (msg *MulStarMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, D
 	peds := ped.GetS()
 	pedt := ped.GetT()
 	curveOrder := X.GetCurve().Params().N
+	if err := utils.InRange(C, big0, N0Square); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(C, N0) {
+		return ErrVerifyFailure
+	}
+	if err := utils.InRange(D, big0, N0Square); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(D, N0) {
+		return ErrVerifyFailure
+	}
 
 	msgG, err := G.ToEcPointMessage()
 	if err != nil {
