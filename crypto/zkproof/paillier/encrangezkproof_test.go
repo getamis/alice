@@ -39,6 +39,18 @@ var _ = Describe("Encrangezkproof test", func() {
 			Expect(err).Should(BeNil())
 		})
 		It("not in range", func() {
+			config.TwoExpLAddepsilon = big.NewInt(-1)
+			zkproof, err := NewEncryptRangeMessage(config, ssIDInfo, ciphertext, n0, k, rho, ped)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+		It("not in range", func() {
+			config.TwoExpL = big.NewInt(-1)
+			zkproof, err := NewEncryptRangeMessage(config, ssIDInfo, ciphertext, n0, k, rho, ped)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
+		It("not in range", func() {
 			zkproof, err := NewEncryptRangeMessage(config, ssIDInfo, ciphertext, big0, k, rho, ped)
 			Expect(err).ShouldNot(BeNil())
 			Expect(zkproof).Should(BeNil())

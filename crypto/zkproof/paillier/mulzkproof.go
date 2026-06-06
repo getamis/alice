@@ -49,13 +49,11 @@ func NewMulMessage(ssidInfo []byte, x, rho, rhox, N, X, Y, C, fieldOrder *big.In
 		return nil, err
 	}
 
-	// z = α + e * x
 	z := new(big.Int).Add(alpha, new(big.Int).Mul(e, x))
 	u := new(big.Int).Mul(r, new(big.Int).Exp(rho, e, N))
 	u.Mod(u, N)
 	v := new(big.Int).Mul(s, new(big.Int).Exp(rhox, e, N))
 	v.Mod(v, N)
-
 	return &MulMessage{
 		Counter: counter,
 		A:       A.Bytes(),
@@ -64,6 +62,7 @@ func NewMulMessage(ssidInfo []byte, x, rho, rhox, N, X, Y, C, fieldOrder *big.In
 		U:       u.Bytes(),
 		V:       v.Bytes(),
 	}, nil
+
 }
 
 func (msg *MulMessage) Verify(ssidInfo []byte, N, X, Y, C, fieldOrder *big.Int) error {
@@ -81,12 +80,6 @@ func (msg *MulMessage) Verify(ssidInfo []byte, N, X, Y, C, fieldOrder *big.Int) 
 	z, ok := new(big.Int).SetString(msg.Z, 10)
 	if !ok {
 		return ErrInvalidInput
-	}
-
-	maxZ := new(big.Int).Add(N, new(big.Int).Mul(fieldOrder, fieldOrder))
-	err = utils.InRange(z, big0, maxZ)
-	if err != nil {
-		return err
 	}
 
 	u := new(big.Int).SetBytes(msg.U)

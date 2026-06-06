@@ -42,6 +42,13 @@ var _ = Describe("Mulstarzkproof test", func() {
 			err = zkproof.Verify(config, ssIDInfo, n0, C, D, ped, X)
 			Expect(err).Should(BeNil())
 		})
+
+		It("not in range", func() {
+			config.TwoExpLAddepsilon = big.NewInt(-10)
+			zkproof, err := NewMulStarMessage(config, ssIDInfo, x, rho, n0, C, D, ped, X)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
+		})
 		It("not in range", func() {
 			copyn := new(big.Int).Set(ped.n)
 			ped.n = big.NewInt(-1)
@@ -49,6 +56,12 @@ var _ = Describe("Mulstarzkproof test", func() {
 			Expect(err).ShouldNot(BeNil())
 			Expect(zkproof).Should(BeNil())
 			ped.n = copyn
+		})
+		It("not in range", func() {
+			config.TwoExpL = big.NewInt(-10)
+			zkproof, err := NewMulStarMessage(config, ssIDInfo, x, rho, n0, C, D, ped, X)
+			Expect(err).ShouldNot(BeNil())
+			Expect(zkproof).Should(BeNil())
 		})
 		It("not in range", func() {
 			zkproof, err := NewMulStarMessage(config, ssIDInfo, x, rho, big0, C, D, ped, X)

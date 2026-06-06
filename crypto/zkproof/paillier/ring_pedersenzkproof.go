@@ -108,27 +108,17 @@ func (msg *RingPederssenParameterMessage) Verify(ssidInfo []byte) error {
 	}
 
 	n := new(big.Int).SetBytes(msg.N)
-	if n.BitLen() < SAFESECURITYLEVEL || n.Cmp(big0) <= 0 {
-		return ErrInvalidInput
-	}
-
 	s := new(big.Int).SetBytes(msg.S)
 	t := new(big.Int).SetBytes(msg.T)
 	A := msg.A
 	Z := msg.Z
-
-	if err := utils.InRange(s, big2, n); err != nil {
-		return err
-	}
-	if err := utils.InRange(t, big2, n); err != nil {
-		return err
-	}
 
 	if !utils.IsRelativePrime(t, n) || !utils.IsRelativePrime(s, n) {
 		return ErrVerifyFailure
 	}
 
 	hashInput := make([][]byte, 0, 4+verifyTime)
+
 	hashInput = append(hashInput, lengthPrefix(ssidInfo), lengthPrefix(n.Bytes()), lengthPrefix(s.Bytes()), lengthPrefix(t.Bytes()))
 	for _, AiBytes := range A {
 		AiInt := new(big.Int).SetBytes(AiBytes)
