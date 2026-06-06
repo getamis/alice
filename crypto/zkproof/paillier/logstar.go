@@ -29,26 +29,40 @@ func NewKnowExponentAndPaillierEncryption(config *CurveConfig, ssidInfo []byte, 
 	pedN := ped.GetN()
 	peds := ped.GetS()
 	pedt := ped.GetT()
-	// Sample α in ± 2^{l+ε}, β in ±2^{l'+ε}.
-	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
+
+	eBits := uint(curveN.BitLen()) 
+	xBits := uint(config.L)       
+
+	// α (alpha) = len(x) + len(e) + epsilon
+	safeAlphaBits := xBits + eBits + uint(config.LAddEpsilon)
+	safeAlphaBound := new(big.Int).Lsh(big1, safeAlphaBits)
+	alpha, err := utils.RandomAbsoluteRangeInt(safeAlphaBound)
 	if err != nil {
 		return nil, err
 	}
-	// Sample μ in ± 2^{l+ε}·Nˆ.
-	mu, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpL, pedN))
+
+	// μ (mu) = len(x) + L
+	safeMuBits := xBits + uint(config.L)
+	safeMuBound := new(big.Int).Mul(new(big.Int).Lsh(big1, safeMuBits), pedN)
+	mu, err := utils.RandomAbsoluteRangeInt(safeMuBound)
 	if err != nil {
 		return nil, err
 	}
-	// Sample r in Z_{N0}^ast
+
+	// r in Z_{N0}^ast (維持原樣)
 	r, err := utils.RandomCoprimeInt(n0)
 	if err != nil {
 		return nil, err
 	}
-	// Sample γ in ± 2^{l+ε}·Nˆ
-	gamma, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpLAddepsilon, pedN))
+
+	// γ (gamma) = len(μ) + len(e) + epsilon
+	safeGammaBits := safeMuBits + eBits + uint(config.LAddEpsilon)
+	safeGammaBound := new(big.Int).Mul(new(big.Int).Lsh(big1, safeGammaBits), pedN)
+	gamma, err := utils.RandomAbsoluteRangeInt(safeGammaBound)
 	if err != nil {
 		return nil, err
 	}
+
 	// S = s^x*t^μ mod Nˆ
 	S := new(big.Int).Mul(new(big.Int).Exp(peds, x, pedN), new(big.Int).Exp(pedt, mu, pedN))
 	S.Mod(S, pedN)
@@ -79,6 +93,7 @@ func NewKnowExponentAndPaillierEncryption(config *CurveConfig, ssidInfo []byte, 
 	if err != nil {
 		return nil, err
 	}
+
 	// z1 = α+ex
 	z1 := new(big.Int).Add(alpha, new(big.Int).Mul(e, x))
 	// z2 = r·ρ^e mod N_0
@@ -118,7 +133,8 @@ func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0 *b
 	if err := utils.InRange(A, big0, n0Square); err != nil {
 		return err
 	}
-	if !utils.IsRelativePrime(A, n0) {
+
+	if !utils.IsRelativePrime(A, n0Square) {
 		return ErrVerifyFailure
 	}
 
@@ -170,8 +186,13 @@ func (msg *LogStarMessage) Verify(config *CurveConfig, ssidInfo []byte, C, n0 *b
 		return ErrVerifyFailure
 	}
 
+	eBits := uint(curveN.BitLen())
+	xBits := uint(config.L)
+	safeAlphaBits := xBits + eBits + uint(config.LAddEpsilon)
+
+	// Check：z1 ∈ ±2^{safeAlphaBits+1} (add more 1 bit)
 	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big1, uint(config.LAddEpsilon))) > 0 {
+	if absZ1.Cmp(new(big.Int).Lsh(big1, safeAlphaBits+1)) > 0 {
 		return ErrVerifyFailure
 	}
 

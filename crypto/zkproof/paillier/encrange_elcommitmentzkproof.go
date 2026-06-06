@@ -31,28 +31,41 @@ func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, 
 	peds := ped.GetS()
 	pedt := ped.GetT()
 
-	// Sample α in ± 2^{l+ε}
-	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
+	eBits := uint(curveN.BitLen())
+	xBits := uint(config.L)
+
+	// len(x) + len(e) + epsilon
+	safeAlphaBits := xBits + eBits + uint(config.LAddEpsilon)
+	safeAlphaBound := new(big.Int).Lsh(big1, safeAlphaBits)
+	alpha, err := utils.RandomAbsoluteRangeInt(safeAlphaBound)
 	if err != nil {
 		return nil, err
 	}
-	// Sample μ in ± 2^{l+ε}·Nˆ.
-	mu, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpL, pedN))
+
+	// μ (mu) = len(x) + L
+	safeMuBits := xBits + uint(config.L)
+	safeMuBound := new(big.Int).Mul(new(big.Int).Lsh(big1, safeMuBits), pedN)
+	mu, err := utils.RandomAbsoluteRangeInt(safeMuBound)
 	if err != nil {
 		return nil, err
 	}
-	// Sample r in Z_{N}^ast.
+
+	// r in Z_{N}^ast
 	r, err := utils.RandomCoprimeInt(N)
 	if err != nil {
 		return nil, err
 	}
-	// Sample beta in F_q
+
+	// β (beta) in F_q
 	beta, err := utils.RandomInt(curveN)
 	if err != nil {
 		return nil, err
 	}
-	// Sample γ in ± 2^{l+ε}·Nˆ.
-	gamma, err := utils.RandomAbsoluteRangeInt(new(big.Int).Mul(config.TwoExpLAddepsilon, pedN))
+
+	// γ (gamma)  = len(μ) + len(e) + epsilon
+	safeGammaBits := safeMuBits + eBits + uint(config.LAddEpsilon)
+	safeGammaBound := new(big.Int).Mul(new(big.Int).Lsh(big1, safeGammaBits), pedN)
+	gamma, err := utils.RandomAbsoluteRangeInt(safeGammaBound)
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +77,7 @@ func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, 
 	// D = (1+N_0)^α·r^{N_0} mod N_0^2
 	D := new(big.Int).Mul(new(big.Int).Exp(new(big.Int).Add(big1, N), alpha, NSquare), new(big.Int).Exp(r, N, NSquare))
 	D.Mod(D, NSquare)
-	// Y=beta*A+alpha*G,Z=beta*G
+	// Y=beta*A+alpha*G, Z=beta*G
 	Y := A.ScalarMult(beta)
 	Y, err = Y.Add(G.ScalarMult(alpha))
 	if err != nil {
@@ -106,6 +119,7 @@ func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, 
 	if err != nil {
 		return nil, err
 	}
+
 	// z1 = α+ek
 	z1 := new(big.Int).Mul(e, x)
 	z1.Add(z1, alpha)
@@ -116,9 +130,10 @@ func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, 
 	// z2 = r·ρ^e mod N
 	z2 := new(big.Int).Mul(r, new(big.Int).Exp(rho, e, N))
 	z2.Mod(z2, N)
-	// z3 =γ+eμ
+	// z3 = γ+eμ
 	z3 := new(big.Int).Mul(e, mu)
 	z3.Add(z3, gamma)
+
 	return &EncElgMessage{
 		Counter: counter,
 		S:       S.Bytes(),
@@ -223,9 +238,13 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 		return ErrVerifyFailure
 	}
 
-	// Check：z1 ∈ ±2^{l+ε}
+	eBits := uint(curveN.BitLen())
+	xBits := uint(config.L)
+	safeAlphaBits := xBits + eBits + uint(config.LAddEpsilon)
+
+	// Check：z1 ∈ ±2^{safeAlphaBits+1} (Add more 1 bit)
 	absZ1 := new(big.Int).Abs(z1)
-	if absZ1.Cmp(new(big.Int).Lsh(big1, uint(config.LAddEpsilon))) > 0 {
+	if absZ1.Cmp(new(big.Int).Lsh(big1, safeAlphaBits+1)) > 0 {
 		return ErrVerifyFailure
 	}
 

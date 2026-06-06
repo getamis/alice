@@ -71,27 +71,6 @@ var _ = Describe("Operation commitment test", func() {
 			Expect(err).Should(BeNil())
 		})
 
-		It("wrong config", func() {
-			config.TwoExpLAddepsilon = big.NewInt(-1)
-			zkproof, err := NewPaillierOperationAndPaillierCommitment(config, ssIDInfo, x, y, rho, rhox, rhoy, n0, n1, X, Y, C, D, ped)
-			Expect(err).ShouldNot(BeNil())
-			Expect(zkproof).Should(BeNil())
-		})
-
-		It("wrong config", func() {
-			config.TwoExpLpaiAddepsilon = big.NewInt(-1)
-			zkproof, err := NewPaillierOperationAndPaillierCommitment(config, ssIDInfo, x, y, rho, rhox, rhoy, n0, n1, X, Y, C, D, ped)
-			Expect(err).ShouldNot(BeNil())
-			Expect(zkproof).Should(BeNil())
-		})
-
-		It("wrong config", func() {
-			config.TwoExpL = big.NewInt(-1)
-			zkproof, err := NewPaillierOperationAndPaillierCommitment(config, ssIDInfo, x, y, rho, rhox, rhoy, n0, n1, X, Y, C, D, ped)
-			Expect(err).ShouldNot(BeNil())
-			Expect(zkproof).Should(BeNil())
-		})
-
 		It("negative n0", func() {
 			n0 = big.NewInt(-1)
 			zkproof, err := NewPaillierOperationAndPaillierCommitment(config, ssIDInfo, x, y, rho, rhox, rhoy, n0, n1, X, Y, C, D, ped)

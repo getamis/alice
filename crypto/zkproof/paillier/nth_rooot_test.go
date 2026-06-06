@@ -80,5 +80,22 @@ var _ = Describe("Nth Root test", func() {
 			err := zkproof.Verify(config, ssIDInfo, NPower, n0)
 			Expect(err).ShouldNot(BeNil())
 		})
+
+		It("NPower not in range (negative value)", func() {
+			invalidNPower := big.NewInt(-1)
+			err := zkproof.Verify(config, ssIDInfo, invalidNPower, n0)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("NPower not in range (too large, equal to nSquare)", func() {
+            invalidNPower := new(big.Int).Set(n0Square) 
+            err := zkproof.Verify(config, ssIDInfo, invalidNPower, n0)
+            Expect(err).ShouldNot(BeNil())
+        })
+
+        It("NPower not coprime to n", func() {
+            err := zkproof.Verify(config, ssIDInfo, p0, n0)
+            Expect(err).ShouldNot(BeNil())
+        })
 	})
 })

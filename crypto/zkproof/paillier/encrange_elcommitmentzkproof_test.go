@@ -46,18 +46,6 @@ var _ = Describe("Encrange elcommitmentzkproof test", func() {
 			Expect(err).Should(BeNil())
 		})
 		It("not in range", func() {
-			config.TwoExpLAddepsilon = big.NewInt(-1)
-			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, n0, A, B, X, ped)
-			Expect(err).ShouldNot(BeNil())
-			Expect(zkproof).Should(BeNil())
-		})
-		It("not in range", func() {
-			config.TwoExpL = big.NewInt(-1)
-			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, n0, A, B, X, ped)
-			Expect(err).ShouldNot(BeNil())
-			Expect(zkproof).Should(BeNil())
-		})
-		It("not in range", func() {
 			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, big.NewInt(-1), A, B, X, ped)
 			Expect(err).ShouldNot(BeNil())
 			Expect(zkproof).Should(BeNil())

@@ -104,6 +104,14 @@ func (msg *PaillierBlumMessage) Verify(ssidInfo []byte, n *big.Int) error {
 	x := msg.X
 	z := msg.Z
 
+	if len(a) < MINIMALCHALLENGE {
+		return ErrInvalidInput 
+	}
+
+	if len(a) != len(b) || len(a) != len(x) || len(a) != len(z) {
+		return ErrInvalidInput
+	}
+
 	if n.BitLen() < SAFESECURITYLEVEL || n.Cmp(big0) < 0 {
 		return ErrInvalidInput
 	}
