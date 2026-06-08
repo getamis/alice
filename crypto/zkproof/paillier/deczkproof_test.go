@@ -113,11 +113,24 @@ var _ = Describe("Deczkproof test", func() {
 			err := zkproof.Verify(config, ssIDInfo, n0, C, x, ped)
 			Expect(err).ShouldNot(BeNil())
 		})
-		It("not in range", func() {
-			zkproof.Gamma = new(big.Int).Add(big1, config.Curve.Params().N).Bytes()
-			err := zkproof.Verify(config, ssIDInfo, n0, C, x, ped)
-			Expect(err).ShouldNot(BeNil())
-		})
+		It("tampered CPoint (invalid point or broken equation)", func() {
+            originalX := zkproof.CPoint.X
+            zkproof.CPoint.X = []byte{0x00, 0x01, 0x02}
+            err := zkproof.Verify(config, ssIDInfo, n0, C, x, ped)
+            Expect(err).ShouldNot(BeNil())
+        
+            zkproof.CPoint.X = originalX
+        })
+
+        It("ciphertext C not in range or not coprime", func() {
+            n0Square := new(big.Int).Mul(n0, n0)
+            invalidC := new(big.Int).Add(n0Square, big1)
+            
+            err := zkproof.Verify(config, ssIDInfo, n0, invalidC, x, ped)
+            Expect(err).ShouldNot(BeNil())
+            err = zkproof.Verify(config, ssIDInfo, n0, n0, x, ped)
+            Expect(err).ShouldNot(BeNil())
+        })
 		It("wrong fieldOrder", func() {
 			config.Curve.Params().N = big1
 			err := zkproof.Verify(config, ssIDInfo, n0, C, x, ped)

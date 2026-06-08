@@ -120,5 +120,16 @@ var _ = Describe("Encrangezkproof test", func() {
 			err := zkproof.Verify(config, ssIDInfo, ciphertext.Bytes(), n0, ped)
 			Expect(err).ShouldNot(BeNil())
 		})
+		It("ciphertext not in range", func() {
+			n0Square := new(big.Int).Mul(n0, n0)
+			invalidCiphertext := new(big.Int).Add(n0Square, big1)
+
+			err := zkproof.Verify(config, ssIDInfo, invalidCiphertext.Bytes(), n0, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("ciphertext not coprime", func() {
+			err := zkproof.Verify(config, ssIDInfo, n0.Bytes(), n0, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
 	})
 })

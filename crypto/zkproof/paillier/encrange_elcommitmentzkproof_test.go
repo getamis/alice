@@ -40,25 +40,25 @@ var _ = Describe("Encrange elcommitmentzkproof test", func() {
 			config = NewS256()
 		})
 		It("over Range, should be ok", func() {
-			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, n0, A, B, X, ped)
+			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, b, ciphertext, n0, A, B, X, ped)
 			Expect(err).Should(BeNil())
 			err = zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
 			Expect(err).Should(BeNil())
 		})
 		It("not in range", func() {
 			config.TwoExpLAddepsilon = big.NewInt(-1)
-			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, n0, A, B, X, ped)
+			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, b, ciphertext, n0, A, B, X, ped)
 			Expect(err).ShouldNot(BeNil())
 			Expect(zkproof).Should(BeNil())
 		})
 		It("not in range", func() {
 			config.TwoExpL = big.NewInt(-1)
-			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, n0, A, B, X, ped)
+			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, b, ciphertext, n0, A, B, X, ped)
 			Expect(err).ShouldNot(BeNil())
 			Expect(zkproof).Should(BeNil())
 		})
 		It("not in range", func() {
-			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, big.NewInt(-1), A, B, X, ped)
+			zkproof, err := NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, b, ciphertext, big.NewInt(-1), A, B, X, ped)
 			Expect(err).ShouldNot(BeNil())
 			Expect(zkproof).Should(BeNil())
 		})
@@ -68,7 +68,7 @@ var _ = Describe("Encrange elcommitmentzkproof test", func() {
 		var zkproof *EncElgMessage
 		BeforeEach(func() {
 			var err error
-			zkproof, err = NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, a, b, ciphertext, n0, A, B, X, ped)
+			zkproof, err = NewEncryptRangeWithELMessage(config, ssIDInfo, x, rho, b, ciphertext, n0, A, B, X, ped)
 			Expect(err).Should(BeNil())
 		})
 		It("not in range", func() {
@@ -79,6 +79,17 @@ var _ = Describe("Encrange elcommitmentzkproof test", func() {
 		It("not coprime", func() {
 			zkproof.S = pedp.Bytes()
 			err := zkproof.Verify(config, ssIDInfo, ciphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("ciphertext not in range", func() {
+			n0Square := new(big.Int).Mul(n0, n0)
+			invalidCiphertext := new(big.Int).Add(n0Square, big1)
+
+			err := zkproof.Verify(config, ssIDInfo, invalidCiphertext, n0, A, B, X, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+		It("ciphertext not coprime", func() {
+			err := zkproof.Verify(config, ssIDInfo, n0, n0, A, B, X, ped)
 			Expect(err).ShouldNot(BeNil())
 		})
 		It("not in range", func() {

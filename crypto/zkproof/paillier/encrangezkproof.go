@@ -125,6 +125,12 @@ func (msg *EncryptRangeMessage) Verify(config *CurveConfig, ssidInfo []byte, cip
 
 	K := new(big.Int).SetBytes(ciphertext)
 	proveNSqaure := new(big.Int).Exp(proveN, big2, nil)
+	if err := utils.InRange(K, big0, proveNSqaure); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(K, proveN) {
+		return ErrVerifyFailure
+	}
 
 	A := new(big.Int).SetBytes(msg.A)
 	if err := utils.InRange(A, big0, proveNSqaure); err != nil {

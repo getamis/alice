@@ -43,25 +43,34 @@ var (
 
 var _ = Describe("Operation commitment test", func() {
 	var x, y, rhox, rhoy, rho, C, X, Y, D *big.Int
-	x = big.NewInt(3)
-	y = big.NewInt(5)
-	rhox = big.NewInt(555)
-	rhoy = big.NewInt(101)
-	rho = big.NewInt(103)
-	C = big.NewInt(108)
-	X = new(big.Int).Mul(new(big.Int).Exp(new(big.Int).Add(big1, n1), x, n1Square), new(big.Int).Exp(rhox, n1, n1Square))
-	Y = new(big.Int).Mul(new(big.Int).Exp(new(big.Int).Add(big1, n1), y, n1Square), new(big.Int).Exp(rhoy, n1, n1Square))
-	Y.Mod(Y, n1Square)
-	D = new(big.Int).Exp(C, x, n0Square)
-	D.Mul(D, new(big.Int).Exp(new(big.Int).Add(big1, n0), y, n0Square))
-	D.Mul(D, new(big.Int).Exp(rho, n0, n0Square))
-	D.Mod(D, n0Square)
-	n0 = new(big.Int).Mul(p0, q0)
-	n1 = new(big.Int).Mul(p1, q1)
-	pedN = new(big.Int).Mul(pedp, pedq)
+	var n0Square, n1Square *big.Int
 	Context("NewPaillierOperationAndPaillierCommitment tests", func() {
 		BeforeEach(func() {
 			config = NewS256()
+
+			n0 = new(big.Int).Mul(p0, q0)
+			n1 = new(big.Int).Mul(p1, q1)
+			n0Square = new(big.Int).Mul(n0, n0)
+			n1Square = new(big.Int).Mul(n1, n1)
+			pedN = new(big.Int).Mul(pedp, pedq)
+
+			x = big.NewInt(3)
+			y = big.NewInt(5)
+			rhox = big.NewInt(555)
+			rhoy = big.NewInt(101)
+			rho = big.NewInt(103)
+			C = big.NewInt(108)
+
+			X = new(big.Int).Mul(new(big.Int).Exp(new(big.Int).Add(big1, n1), x, n1Square), new(big.Int).Exp(rhox, n1, n1Square))
+			X.Mod(X, n1Square)
+
+			Y = new(big.Int).Mul(new(big.Int).Exp(new(big.Int).Add(big1, n1), y, n1Square), new(big.Int).Exp(rhoy, n1, n1Square))
+			Y.Mod(Y, n1Square)
+
+			D = new(big.Int).Exp(C, x, n0Square)
+			D.Mul(D, new(big.Int).Exp(new(big.Int).Add(big1, n0), y, n0Square))
+			D.Mul(D, new(big.Int).Exp(rho, n0, n0Square))
+			D.Mod(D, n0Square)
 		})
 
 		It("over Range, should be ok", func() {
@@ -299,6 +308,82 @@ var _ = Describe("Operation commitment test", func() {
 
 		It("verify failure", func() {
 			zkproof.F = big1.Bytes()
+			err := zkproof.Verify(config, ssIDInfo, n0, n1, C, D, X, Y, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("ciphertext C invalid", func() {
+			n0Square := new(big.Int).Mul(n0, n0)
+			invalidC := new(big.Int).Add(n0Square, big1)
+			err := zkproof.Verify(config, ssIDInfo, n0, n1, invalidC, D, X, Y, ped)
+			Expect(err).ShouldNot(BeNil())
+
+			err = zkproof.Verify(config, ssIDInfo, n0, n1, n0, D, X, Y, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("ciphertext D invalid", func() {
+			n0Square := new(big.Int).Mul(n0, n0)
+			invalidD := new(big.Int).Add(n0Square, big1)
+			err := zkproof.Verify(config, ssIDInfo, n0, n1, C, invalidD, X, Y, ped)
+			Expect(err).ShouldNot(BeNil())
+
+			err = zkproof.Verify(config, ssIDInfo, n0, n1, C, n0, X, Y, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("ciphertext X invalid", func() {
+			n1Square := new(big.Int).Mul(n1, n1)
+			invalidX := new(big.Int).Add(n1Square, big1)
+			err := zkproof.Verify(config, ssIDInfo, n0, n1, C, D, invalidX, Y, ped)
+			Expect(err).ShouldNot(BeNil())
+
+			err = zkproof.Verify(config, ssIDInfo, n0, n1, C, D, n1, Y, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("ciphertext Y invalid", func() {
+			n1Square := new(big.Int).Mul(n1, n1)
+			invalidY := new(big.Int).Add(n1Square, big1)
+			err := zkproof.Verify(config, ssIDInfo, n0, n1, C, D, X, invalidY, ped)
+			Expect(err).ShouldNot(BeNil())
+
+			err = zkproof.Verify(config, ssIDInfo, n0, n1, C, D, X, n1, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("msg.A byte length too large (OOM protection)", func() {
+			maxLenN0Sq := len(n0.Bytes())*2 + 2
+			zkproof.A = make([]byte, maxLenN0Sq+10)
+
+			err := zkproof.Verify(config, ssIDInfo, n0, n1, C, D, X, Y, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("msg.Bx byte length too large (OOM protection)", func() {
+			maxLenN1Sq := len(n1.Bytes())*2 + 2
+			zkproof.Bx = make([]byte, maxLenN1Sq+10)
+
+			err := zkproof.Verify(config, ssIDInfo, n0, n1, C, D, X, Y, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("msg.Z3 string bit length too large (CPU exhaustion protection)", func() {
+			pedN := ped.GetN()
+			maxZ3BitLen := uint(config.LAddEpsilon) + uint(pedN.BitLen()) + 2
+			hugeInt := new(big.Int).Lsh(big.NewInt(1), maxZ3BitLen+10)
+			zkproof.Z3 = hugeInt.String()
+
+			err := zkproof.Verify(config, ssIDInfo, n0, n1, C, D, X, Y, ped)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("msg.Z4 string bit length too large (CPU exhaustion protection)", func() {
+			pedN := ped.GetN()
+			maxZ4BitLen := uint(config.LpaiAddEpsilon) + uint(pedN.BitLen()) + 2
+			hugeInt := new(big.Int).Lsh(big.NewInt(1), maxZ4BitLen+10)
+			zkproof.Z4 = hugeInt.String()
+
 			err := zkproof.Verify(config, ssIDInfo, n0, n1, C, D, X, Y, ped)
 			Expect(err).ShouldNot(BeNil())
 		})

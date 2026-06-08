@@ -68,6 +68,24 @@ func NewMulMessage(ssidInfo []byte, x, rho, rhox, N, X, Y, C, fieldOrder *big.In
 func (msg *MulMessage) Verify(ssidInfo []byte, N, X, Y, C, fieldOrder *big.Int) error {
 	msgs := utils.GetAnyMsg(ssidInfo, msg.A, msg.B, N.Bytes(), X.Bytes(), Y.Bytes(), C.Bytes())
 	NSquare := new(big.Int).Mul(N, N)
+	if err := utils.InRange(X, big0, NSquare); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(X, N) {
+		return ErrVerifyFailure
+	}
+	if err := utils.InRange(Y, big0, NSquare); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(Y, N) {
+		return ErrVerifyFailure
+	}
+	if err := utils.InRange(C, big0, NSquare); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(C, N) {
+		return ErrVerifyFailure
+	}
 
 	e, expectedCounter, err := GetE(Mul, fieldOrder, msgs...)
 	if err != nil {

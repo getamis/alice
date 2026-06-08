@@ -23,7 +23,7 @@ import (
 
 const EncryptRangeWithEL = "AMIS-Alice-EncryptRangeWithEL-ZK-v1.0-"
 
-func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, a, b, ciphertext, N *big.Int, A, B, X *pt.ECPoint, ped *PederssenOpenParameter) (*EncElgMessage, error) {
+func NewEncryptRangeWithELMessage(config *CurveConfig, ssidInfo []byte, x, rho, b, ciphertext, N *big.Int, A, B, X *pt.ECPoint, ped *PederssenOpenParameter) (*EncElgMessage, error) {
 	curve := A.GetCurve()
 	curveN := curve.Params().N
 	G := pt.NewBase(curve)
@@ -142,6 +142,12 @@ func (msg *EncElgMessage) Verify(config *CurveConfig, ssidInfo []byte, ciphertex
 	peds := ped.GetS()
 	pedt := ped.GetT()
 
+	if err := utils.InRange(ciphertext, big0, NSqaure); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(ciphertext, N) {
+		return ErrVerifyFailure
+	}
 	S := new(big.Int).SetBytes(msg.S)
 	if err := utils.InRange(S, big0, pedN); err != nil {
 		return err

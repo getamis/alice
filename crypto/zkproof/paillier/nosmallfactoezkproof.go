@@ -82,7 +82,7 @@ func NewNoSmallFactorMessage(config *CurveConfig, ssidInfo, rho []byte, p *big.I
 	// T = Q^α*t^r mod Nˆ.
 	T := new(big.Int).Mul(new(big.Int).Exp(Q, alpha, pedN), new(big.Int).Exp(pedt, r, pedN))
 	T.Mod(T, pedN)
-	e, counter, err := GetE(NoSmallFactor, groupOrder, utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), sigma.Bytes())...)
+	e, counter, err := GetE(NoSmallFactor, groupOrder, utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), []byte(sigma.String()))...)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +110,13 @@ func NewNoSmallFactorMessage(config *CurveConfig, ssidInfo, rho []byte, p *big.I
 }
 
 func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byte, n *big.Int, ped *PederssenOpenParameter) error {
+	if n.Cmp(big0) <= 0 || n.Bit(0) == 0 {
+		return ErrInvalidInput
+	}
+	if n.BitLen() < SAFESECURITYLEVEL {
+		return ErrInvalidInput
+	}
+
 	groupOrder := config.Curve.Params().N
 	pedN := ped.GetN()
 	peds := ped.GetS()
@@ -180,11 +187,24 @@ func (msg *NoSmallFactorMessage) Verify(config *CurveConfig, ssidInfo, rho []byt
 		return ErrInvalidInput
 	}
 
+	// Defensive anti-DoS check: Restrict w1, w2, and v to prevent CPU exhaustion via giant exponents.
+	// Max theoretical bits for w1, w2 is roughly (l + epsilon + pedN.BitLen + 2) bits.
+	maxWBitLen := uint(config.LAddEpsilon) + uint(pedN.BitLen()) + 2
+	if uint(w1.BitLen()) > maxWBitLen || uint(w2.BitLen()) > maxWBitLen {
+		return ErrVerifyFailure
+	}
+
+	// Max theoretical bits for vletter is roughly (l + epsilon + pedN.BitLen + n.BitLen + 2) bits.
+	maxVBitLen := maxWBitLen + uint(n.BitLen())
+	if uint(v.BitLen()) > maxVBitLen {
+		return ErrVerifyFailure
+	}
+
 	// Compute R = s^n * t^sigma mod N_hat
 	R := new(big.Int).Mul(new(big.Int).Exp(peds, n, pedN), new(big.Int).Exp(pedt, sigma, pedN))
 	R.Mod(R, pedN)
 
-	msgs := utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), sigma.Bytes())
+	msgs := utils.GetAnyMsg(ssidInfo, rho, n.Bytes(), pedN.Bytes(), peds.Bytes(), pedt.Bytes(), P.Bytes(), Q.Bytes(), A.Bytes(), B.Bytes(), T.Bytes(), []byte(sigma.String()))
 	e, expectedCounter, err := GetE(NoSmallFactor, groupOrder, msgs...)
 	if err != nil {
 		return err

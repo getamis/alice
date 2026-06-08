@@ -17,6 +17,7 @@ package paillier
 import (
 	"math/big"
 
+	pt "github.com/getamis/alice/crypto/ecpointgrouplaw"
 	"github.com/getamis/alice/crypto/utils"
 )
 
@@ -25,9 +26,12 @@ const (
 )
 
 func NewDecryMessage(config *CurveConfig, ssidInfo []byte, y, rho, N0, C, x *big.Int, ped *PederssenOpenParameter) (*DecryMessage, error) {
+	G := pt.NewBase(config.Curve)
+	curveN := config.Curve.Params().N
 	pedN := ped.GetN()
 	peds := ped.GetS()
 	pedt := ped.GetT()
+
 	// Sample α in ± 2^{l+ε}.
 	alpha, err := utils.RandomAbsoluteRangeInt(config.TwoExpLAddepsilon)
 	if err != nil {
@@ -59,10 +63,15 @@ func NewDecryMessage(config *CurveConfig, ssidInfo []byte, y, rho, N0, C, x *big
 	// A = (1+N_0)^α ·r^{N_0} mod N_0^2
 	A := new(big.Int).Mul(new(big.Int).Exp(new(big.Int).Add(big1, N0), alpha, N0Square), new(big.Int).Exp(r, N0, N0Square))
 	A.Mod(A, N0Square)
-	gamma := new(big.Int).Set(alpha)
-	gamma.Mod(gamma, config.Curve.Params().N)
 
-	e, counter, err := GetE(SpecialDecryZKDST, config.Curve.Params().N, utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), A.Bytes(), gamma.Bytes(), S.Bytes(), T.Bytes(), N0.Bytes(), C.Bytes(), x.Bytes(), config.Curve.Params().N.Bytes())...)
+	C_point := G.ScalarMult(alpha)
+	msgCPoint, err := C_point.ToEcPointMessage()
+	if err != nil {
+		return nil, err
+	}
+
+	msgs := append(utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), A.Bytes(), S.Bytes(), T.Bytes(), N0.Bytes(), C.Bytes(), x.Bytes(), curveN.Bytes()), msgCPoint)
+	e, counter, err := GetE(SpecialDecryZKDST, curveN, msgs...)
 	if err != nil {
 		return nil, err
 	}
@@ -78,22 +87,30 @@ func NewDecryMessage(config *CurveConfig, ssidInfo []byte, y, rho, N0, C, x *big
 		S:       S.Bytes(),
 		T:       T.Bytes(),
 		A:       A.Bytes(),
-		Gamma:   gamma.Bytes(),
+		CPoint:  msgCPoint,
 		Z1:      z1.String(),
 		Z2:      z2.String(),
 		W:       W.Bytes(),
 	}, nil
-
 }
 
+// Figure 30: old version
 func (msg *DecryMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, x *big.Int, ped *PederssenOpenParameter) error {
+	G := pt.NewBase(config.Curve)
 	fieldOrder := config.Curve.Params().N
 	N0Square := new(big.Int).Mul(N0, N0)
 	pedN := ped.GetN()
 	peds := ped.GetS()
 	pedt := ped.GetT()
 
-	msgs := utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), msg.A, msg.Gamma, msg.S, msg.T, N0.Bytes(), C.Bytes(), x.Bytes(), fieldOrder.Bytes())
+	if err := utils.InRange(C, big0, N0Square); err != nil {
+		return err
+	}
+	if !utils.IsRelativePrime(C, N0) {
+		return ErrVerifyFailure
+	}
+
+	msgs := append(utils.GetAnyMsg(ssidInfo, pedN.Bytes(), peds.Bytes(), pedt.Bytes(), msg.A, msg.S, msg.T, N0.Bytes(), C.Bytes(), x.Bytes(), fieldOrder.Bytes()), msg.CPoint)
 	e, expectedCounter, err := GetE(SpecialDecryZKDST, fieldOrder, msgs...)
 	if err != nil {
 		return err
@@ -129,12 +146,6 @@ func (msg *DecryMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, x *
 		return ErrVerifyFailure
 	}
 
-	gamma := new(big.Int).SetBytes(msg.Gamma)
-	err = utils.InRange(gamma, big0, fieldOrder)
-	if err != nil {
-		return err
-	}
-
 	z1, ok := new(big.Int).SetString(msg.Z1, 10)
 	if !ok {
 		return ErrInvalidInput
@@ -153,22 +164,33 @@ func (msg *DecryMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, x *
 		return ErrVerifyFailure
 	}
 
+	// Can remove it
 	absZ1 := new(big.Int).Abs(z1)
 	if absZ1.Cmp(new(big.Int).Lsh(big1, uint(config.LAddEpsilon))) > 0 {
 		return ErrVerifyFailure
 	}
-
-	twoLAddEpsilonMulPedN := new(big.Int).Mul(new(big.Int).Lsh(big1, uint(config.LAddEpsilon)), pedN)
+	// Can remove it
+	upperBdZ2 := new(big.Int).Mul(new(big.Int).Lsh(big1, uint(config.LAddEpsilon)), pedN)
 	absZ2 := new(big.Int).Abs(z2)
-	if absZ2.Cmp(twoLAddEpsilonMulPedN) > 0 {
+	if absZ2.Cmp(upperBdZ2) > 0 {
 		return ErrVerifyFailure
 	}
 
-	// Check gamma + e*x == z1 mod CurveOrder
-	compare := new(big.Int).Add(gamma, new(big.Int).Mul(e, x))
-	compare.Mod(compare, fieldOrder)
-	z1ModCurveOrder := new(big.Int).Mod(z1, fieldOrder)
-	if compare.Cmp(z1ModCurveOrder) != 0 {
+	// Check z1 * G == C_point + e * X
+	C_point, err := msg.CPoint.ToPoint()
+	if err != nil {
+		return err
+	}
+	X_point := G.ScalarMult(x)
+	eX := X_point.ScalarMult(e)
+
+	comparePoint, err := C_point.Add(eX)
+	if err != nil {
+		return err
+	}
+
+	z1G := G.ScalarMult(z1)
+	if !z1G.Equal(comparePoint) {
 		return ErrVerifyFailure
 	}
 
@@ -177,7 +199,7 @@ func (msg *DecryMessage) Verify(config *CurveConfig, ssidInfo []byte, N0, C, x *
 	ACexpe.Mod(ACexpe, N0Square)
 	temp := new(big.Int).Add(big1, N0)
 	temp.Exp(temp, z1, N0Square)
-	compare = new(big.Int).Exp(W, N0, N0Square)
+	compare := new(big.Int).Exp(W, N0, N0Square)
 	compare.Mul(compare, temp)
 	compare.Mod(compare, N0Square)
 	if compare.Cmp(ACexpe) != 0 {

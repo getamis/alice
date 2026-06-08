@@ -15,6 +15,7 @@
 package paillier
 
 import (
+	"encoding/binary"
 	"errors"
 	"math/big"
 
@@ -23,7 +24,7 @@ import (
 
 const (
 	// maxRetry defines the max retries
-	maxRetry = 100
+	maxRetry = 200
 	// SAFESECURITYLEVEL define the minimal security level
 	SAFESECURITYLEVEL = 2047
 )
@@ -71,6 +72,10 @@ func NewPaillierBlumMessage(ssidInfo []byte, p *big.Int, q *big.Int, n *big.Int,
 			return nil, err
 		}
 	}
+	if big.Jacobi(w, n) != -1 {
+		return nil, ErrExceedMaxRetry
+	}
+
 	nInverEuler := new(big.Int).ModInverse(n, eulerValue)
 	deterministicSalt := []byte("Paillier-Blum-Modulus-ZK-Deterministic-Salt")
 	for i := 0; i < numberzkProof; i++ {
@@ -103,6 +108,14 @@ func (msg *PaillierBlumMessage) Verify(ssidInfo []byte, n *big.Int) error {
 	w := new(big.Int).SetBytes(msg.W)
 	x := msg.X
 	z := msg.Z
+
+	if len(a) < MINIMALCHALLENGE {
+		return ErrInvalidInput
+	}
+
+	if len(a) != len(b) || len(a) != len(x) || len(a) != len(z) {
+		return ErrInvalidInput
+	}
 
 	if n.BitLen() < SAFESECURITYLEVEL || n.Cmp(big0) < 0 {
 		return ErrInvalidInput
@@ -173,10 +186,13 @@ func (msg *PaillierBlumMessage) Verify(ssidInfo []byte, n *big.Int) error {
 }
 
 func computeYByDeterministicFiatShamir(salt []byte, w *big.Int, n *big.Int, ssidInfo []byte, index int) (*big.Int, error) {
-	indexBytes := big.NewInt(int64(index)).Bytes()
+	indexBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(indexBytes, uint32(index))
 
 	for counter := 0; counter < maxRetry; counter++ {
-		counterBytes := big.NewInt(int64(counter)).Bytes()
+		counterBytes := make([]byte, 4)
+		binary.BigEndian.PutUint32(counterBytes, uint32(counter))
+
 		yi, err := utils.HashProtosWithSaltToScalar(
 			salt,
 			n,
@@ -242,6 +258,8 @@ func get4thRootWithabValue(y *big.Int, w *big.Int, p *big.Int, q *big.Int, n *bi
 		resultModp.Mul(resultModp, wModp)
 		resultModq.Mul(resultModq, wModq)
 	}
+	resultModp.Mod(resultModp, p)
+	resultModq.Mod(resultModq, q)
 
 	resultModp.ModSqrt(resultModp, p)
 	resultModp.ModSqrt(resultModp, p)

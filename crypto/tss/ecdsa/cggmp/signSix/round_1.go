@@ -327,7 +327,7 @@ func (p *round1Handler) sendRound1Messages() error {
 	}
 	for _, peer := range p.peers {
 		// Compute proof psi_{j,i}^0
-		psi, err := paillierzkproof.NewEncryptRangeWithELMessage(parameter, p.own.ssidWithBk, p.k, p.rho, p.ySecret, p.b, p.kCiphertext, n, p.own.allY, p.Z1, p.Z2, peer.para)
+		psi, err := paillierzkproof.NewEncryptRangeWithELMessage(parameter, p.own.ssidWithBk, p.k, p.rho, p.b, p.kCiphertext, n, p.own.allY, p.Z1, p.Z2, peer.para)
 		if err != nil {
 			return err
 		}

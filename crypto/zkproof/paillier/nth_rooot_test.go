@@ -80,5 +80,37 @@ var _ = Describe("Nth Root test", func() {
 			err := zkproof.Verify(config, ssIDInfo, NPower, n0)
 			Expect(err).ShouldNot(BeNil())
 		})
+
+		It("NPower not in range", func() {
+			n0Square := new(big.Int).Mul(n0, n0)
+			invalidNPower := new(big.Int).Add(n0Square, big1)
+
+			err := zkproof.Verify(config, ssIDInfo, invalidNPower, n0)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("NPower not coprime", func() {
+			err := zkproof.Verify(config, ssIDInfo, n0, n0)
+			Expect(err).ShouldNot(BeNil())
+		})
+
+		It("msg.A byte length too large (OOM protection)", func() {
+			maxLen := len(n0.Bytes())
+			invalidA := make([]byte, maxLen*2+10)
+			zkproof.A = invalidA
+
+			err := zkproof.Verify(config, ssIDInfo, NPower, n0)
+			Expect(err).Should(Equal(ErrVerifyFailure))
+		})
+
+		It("msg.Z1 byte length too large (OOM protection)", func() {
+			maxLen := len(n0.Bytes())
+
+			invalidZ1 := make([]byte, maxLen+10)
+			zkproof.Z1 = invalidZ1
+
+			err := zkproof.Verify(config, ssIDInfo, NPower, n0)
+			Expect(err).Should(Equal(ErrVerifyFailure))
+		})
 	})
 })
