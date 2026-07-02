@@ -47,6 +47,26 @@ var (
 	ErrDifferentPoint = errors.New("the two points are different")
 )
 
+func (r *Result) GetRefreshShare() *big.Int {
+	return r.refreshShare
+}
+
+func (r *Result) GetRefreshPaillierKey() *paillier.Paillier {
+	return r.refreshPaillierKey
+}
+
+func (r *Result) GetRefreshPartialPubKey() map[string]*pt.ECPoint {
+	return r.refreshPartialPubKey
+}
+
+func (r *Result) GetY() map[string]*pt.ECPoint {
+	return r.y
+}
+
+func (r *Result) GetPedParameter() map[string]*paillierzkproof.PederssenOpenParameter {
+	return r.pedParameter
+}
+
 func newRound3Handler(r *round2Handler) *round3Handler {
 	return &round3Handler{
 		round2Handler: r,
