@@ -36,20 +36,47 @@ func (m *Message) GetMessageType() types.MessageType {
 	return types.MessageType(m.Type)
 }
 
+func (m *Message) IsEchoRelay() bool {
+	return m.GetEcho()
+}
+
 func (m *Message) GetEchoMessage() types.Message {
-	mm := &Message{
-		Type: m.Type,
-		Id:   m.Id,
-	}
 	switch m.Type {
 	case Type_Peer:
-		mm.Body = &Message_Peer{
-			Peer: &BodyPeer{
-				Bk:         m.GetPeer().GetBk(),
-				Commitment: m.GetPeer().GetCommitment(),
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Echo: true,
+			Body: &Message_Peer{
+				Peer: &BodyPeer{
+					Bk:         m.GetPeer().GetBk(),
+					Commitment: m.GetPeer().GetCommitment(),
+				},
 			},
 		}
-		return mm
+	case Type_Decommit:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Echo: true,
+			Body: &Message_Decommit{
+				Decommit: &BodyDecommit{
+					HashDecommitment: m.GetDecommit().GetHashDecommitment(),
+					PointCommitment:  m.GetDecommit().GetPointCommitment(),
+				},
+			},
+		}
+	case Type_Result:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Echo: true,
+			Body: &Message_Result{
+				Result: &BodyResult{
+					SiGProofMsg: m.GetResult().GetSiGProofMsg(),
+				},
+			},
+		}
 	}
 	return nil
 }

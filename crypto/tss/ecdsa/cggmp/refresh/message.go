@@ -36,6 +36,10 @@ func (m *Message) GetMessageType() types.MessageType {
 	return types.MessageType(m.Type)
 }
 
+func (m *Message) IsEchoRelay() bool {
+	return m.GetEcho()
+}
+
 func (m *Message) EchoHash() ([]byte, error) {
 	echoMsg := m.GetEchoMessage()
 	if echoMsg == nil {
@@ -53,15 +57,39 @@ func (m *Message) EchoHash() ([]byte, error) {
 }
 
 func (m *Message) GetEchoMessage() types.Message {
-	mm := &Message{
-		Type: m.Type,
-		Id:   m.Id,
-	}
 	switch m.Type {
 	case Type_Round1:
-		mm.Body = &Message_Round1{
-			Round1: &Round1Msg{
-				Commitment: m.GetRound1().GetCommitment(),
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Echo: true,
+			Body: &Message_Round1{
+				Round1: &Round1Msg{
+					Commitment: m.GetRound1().GetCommitment(),
+				},
+			},
+		}
+	case Type_Round2:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Echo: true,
+			Body: &Message_Round2{
+				Round2: &Round2Msg{
+					Decommitment: m.GetRound2().GetDecommitment(),
+				},
+			},
+		}
+	case Type_Round3:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Echo: true,
+			Body: &Message_Round3{
+				Round3: &Round3Msg{
+					ModProof:      m.GetRound3().GetModProof(),
+					YschnorrProof: m.GetRound3().GetYschnorrProof(),
+				},
 			},
 		}
 	}

@@ -33,6 +33,7 @@ enum Type {
 message Message {
     Type type = 1;
     string id = 2;
+    bool echo = 7;
     oneof body {
         Round1Msg round1 = 4;
         Round2Msg round2 = 5;

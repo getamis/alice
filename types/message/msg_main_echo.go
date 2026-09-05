@@ -35,6 +35,10 @@ type EchoMessage interface {
 	GetEchoMessage() types.Message
 }
 
+type EchoRelayMessage interface {
+	IsEchoRelay() bool
+}
+
 var (
 	ErrNotEchoMsg    = errors.New("not a echo message")
 	ErrDifferentHash = errors.New("different hash")
@@ -57,6 +61,7 @@ type echoMessage struct {
 	hash        []byte
 	count       int
 	originalMsg types.Message
+	relayed     bool
 }
 
 func NewEchoMsgMain(next types.MessageMain, pm types.PeerManager) *EchoMsgMain {
@@ -88,7 +93,6 @@ func (t *EchoMsgMain) AddMessage(senderId string, msg types.Message) error {
 		return t.MessageMain.AddMessage(senderId, msg)
 	}
 
-	// Init echo messages
 	msgType := msg.GetMessageType()
 	echoMsg, ok := t.echoMsgs[msgType]
 	if !ok {
@@ -96,30 +100,43 @@ func (t *EchoMsgMain) AddMessage(senderId string, msg types.Message) error {
 		t.echoMsgs[msgType] = echoMsg
 	}
 	msgId := msg.GetId()
-	// Broadcast to other peers for the first message
 	m, ok := echoMsg[msgId]
 	if !ok {
+		echoMsg[msgId] = &echoMessage{
+			hash: hash,
+		}
+		m = echoMsg[msgId]
+	} else if !bytes.Equal(m.hash, hash) {
+		return ErrDifferentHash
+	}
+
+	if relay, ok := eMsg.(EchoRelayMessage); ok && relay.IsEchoRelay() && senderId != msgId {
+		m.count++
+		return t.deliverEchoMessage(msgType, msgId, m)
+	}
+	if senderId != msgId {
+		return ErrBadMsg
+	}
+
+	m.originalMsg = msg
+	if !m.relayed {
 		for _, id := range t.pm.PeerIDs() {
 			if msgId != id {
 				go t.pm.MustSend(id, eMsg.GetEchoMessage())
 			}
 		}
-		echoMsg[msgId] = &echoMessage{
-			hash: hash,
-		}
-		m = echoMsg[msgId]
-		m.originalMsg = msg
-	} else if !bytes.Equal(m.hash, hash) {
-		return ErrDifferentHash
+		m.relayed = true
 	}
-
 	m.count++
-	if m.count == int(t.pm.NumPeers()) {
-		delete(t.echoMsgs[msgType], msgId)
-		return t.MessageMain.AddMessage(m.originalMsg.GetId(), m.originalMsg)
-	}
+	return t.deliverEchoMessage(msgType, msgId, m)
+}
 
-	return nil
+func (t *EchoMsgMain) deliverEchoMessage(msgType types.MessageType, msgId string, m *echoMessage) error {
+	if m.originalMsg == nil || m.count != int(t.pm.NumPeers()) {
+		return nil
+	}
+	delete(t.echoMsgs[msgType], msgId)
+	return t.MessageMain.AddMessage(m.originalMsg.GetId(), m.originalMsg)
 }
 
 func (t *EchoMsgMain) echoHash(m EchoMessage) ([]byte, error) {
