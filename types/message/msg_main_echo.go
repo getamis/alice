@@ -42,7 +42,10 @@ type EchoRelayMessage interface {
 var (
 	ErrNotEchoMsg    = errors.New("not a echo message")
 	ErrDifferentHash = errors.New("different hash")
+	ErrInvalidRelay  = errors.New("invalid echo relay")
 )
+
+const completedEchoLimit = 1024
 
 type EchoMsgMain struct {
 	types.MessageMain
@@ -52,30 +55,37 @@ type EchoMsgMain struct {
 	mu     sync.Mutex
 	// keep echo msgs
 	// map[message type][the message id]
-	echoMsgs map[types.MessageType]map[string]*echoMessage
+	echoMsgs           map[types.MessageType]map[string]*echoMessage
+	completedEchoMsgs  map[types.MessageType]map[string][]byte
+	completedEchoOrder []echoMessageKey
 
 	marshalFunc func(m proto.Message) ([]byte, error)
 }
 
 type echoMessage struct {
 	hash        []byte
-	count       int
+	votes       map[string]struct{}
 	originalMsg types.Message
 	relayed     bool
+}
+
+type echoMessageKey struct {
+	msgType types.MessageType
+	msgID   string
 }
 
 func NewEchoMsgMain(next types.MessageMain, pm types.PeerManager) *EchoMsgMain {
 	msgs := make(map[types.MessageType]map[string]*echoMessage)
 	return &EchoMsgMain{
-		MessageMain: next,
-		logger:      log.New(),
-		pm:          pm,
-		echoMsgs:    msgs,
-		marshalFunc: proto.Marshal,
+		MessageMain:       next,
+		logger:            log.New(),
+		pm:                pm,
+		echoMsgs:          msgs,
+		completedEchoMsgs: make(map[types.MessageType]map[string][]byte),
+		marshalFunc:       proto.MarshalOptions{Deterministic: true}.Marshal,
 	}
 }
 
-// NOTE: Avoid duplicate messages from the same peer should be handled in the caller
 func (t *EchoMsgMain) AddMessage(senderId string, msg types.Message) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -84,59 +94,114 @@ func (t *EchoMsgMain) AddMessage(senderId string, msg types.Message) error {
 	if !ok {
 		return ErrNotEchoMsg
 	}
+	if !t.isParticipant(senderId) || !t.isParticipant(msg.GetId()) {
+		return ErrInvalidRelay
+	}
+
+	if relay, ok := eMsg.(EchoRelayMessage); ok && relay.IsEchoRelay() {
+		canonical := eMsg.GetEchoMessage()
+		if canonical == nil || !proto.Equal(eMsg, canonical.(proto.Message)) {
+			return ErrInvalidRelay
+		}
+	} else if senderId != msg.GetId() {
+		return ErrBadMsg
+	}
 
 	hash, err := t.echoHash(eMsg)
 	if err != nil {
 		return err
 	}
 	if hash == nil {
+		if relay, ok := eMsg.(EchoRelayMessage); ok && relay.IsEchoRelay() {
+			return ErrInvalidRelay
+		}
 		return t.MessageMain.AddMessage(senderId, msg)
 	}
 
 	msgType := msg.GetMessageType()
+	msgId := msg.GetId()
+	if completedHash, ok := t.completedHash(msgType, msgId); ok {
+		if !bytes.Equal(completedHash, hash) {
+			return ErrDifferentHash
+		}
+		return nil
+	}
 	echoMsg, ok := t.echoMsgs[msgType]
 	if !ok {
 		echoMsg = make(map[string]*echoMessage)
 		t.echoMsgs[msgType] = echoMsg
 	}
-	msgId := msg.GetId()
 	m, ok := echoMsg[msgId]
 	if !ok {
 		echoMsg[msgId] = &echoMessage{
-			hash: hash,
+			hash:  hash,
+			votes: make(map[string]struct{}),
 		}
 		m = echoMsg[msgId]
 	} else if !bytes.Equal(m.hash, hash) {
 		return ErrDifferentHash
 	}
 
-	if relay, ok := eMsg.(EchoRelayMessage); ok && relay.IsEchoRelay() && senderId != msgId {
-		m.count++
+	if relay, ok := eMsg.(EchoRelayMessage); ok && relay.IsEchoRelay() {
+		m.votes[senderId] = struct{}{}
 		return t.deliverEchoMessage(msgType, msgId, m)
-	}
-	if senderId != msgId {
-		return ErrBadMsg
 	}
 
 	m.originalMsg = msg
+	m.votes[senderId] = struct{}{}
+	m.votes[t.pm.SelfID()] = struct{}{}
 	if !m.relayed {
 		for _, id := range t.pm.PeerIDs() {
-			if msgId != id {
-				go t.pm.MustSend(id, eMsg.GetEchoMessage())
-			}
+			go t.pm.MustSend(id, eMsg.GetEchoMessage())
 		}
 		m.relayed = true
 	}
-	m.count++
 	return t.deliverEchoMessage(msgType, msgId, m)
 }
 
 func (t *EchoMsgMain) deliverEchoMessage(msgType types.MessageType, msgId string, m *echoMessage) error {
-	if m.originalMsg == nil || m.count != int(t.pm.NumPeers()) {
+	if m.originalMsg == nil || len(m.votes) != len(t.pm.PeerIDs())+1 {
 		return nil
 	}
 	delete(t.echoMsgs[msgType], msgId)
+	t.addCompletedHash(msgType, msgId, m.hash)
 	return t.MessageMain.AddMessage(m.originalMsg.GetId(), m.originalMsg)
+}
+
+func (t *EchoMsgMain) isParticipant(id string) bool {
+	if id == t.pm.SelfID() {
+		return true
+	}
+	for _, peerID := range t.pm.PeerIDs() {
+		if id == peerID {
+			return true
+		}
+	}
+	return false
+}
+
+func (t *EchoMsgMain) completedHash(msgType types.MessageType, msgID string) ([]byte, bool) {
+	byID, ok := t.completedEchoMsgs[msgType]
+	if !ok {
+		return nil, false
+	}
+	hash, ok := byID[msgID]
+	return hash, ok
+}
+
+func (t *EchoMsgMain) addCompletedHash(msgType types.MessageType, msgID string, hash []byte) {
+	if len(t.completedEchoOrder) == completedEchoLimit {
+		oldest := t.completedEchoOrder[0]
+		delete(t.completedEchoMsgs[oldest.msgType], oldest.msgID)
+		t.completedEchoOrder = t.completedEchoOrder[1:]
+	}
+	byID, ok := t.completedEchoMsgs[msgType]
+	if !ok {
+		byID = make(map[string][]byte)
+		t.completedEchoMsgs[msgType] = byID
+	}
+	byID[msgID] = append([]byte(nil), hash...)
+	t.completedEchoOrder = append(t.completedEchoOrder, echoMessageKey{msgType: msgType, msgID: msgID})
 }
 
 func (t *EchoMsgMain) echoHash(m EchoMessage) ([]byte, error) {

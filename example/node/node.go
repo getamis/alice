@@ -31,6 +31,10 @@ type node[M Message, R any] struct {
 	pm       types.PeerManager
 }
 
+type transportPeerMapper interface {
+	SessionIDForTransportPeer(string) (string, bool)
+}
+
 func New[M Message, R any](backend Backend[M, R], l Listener, pm types.PeerManager) *node[M, R] {
 	return &node[M, R]{
 		backend:  backend,
@@ -58,8 +62,17 @@ func (n *node[M, R]) Handle(s network.Stream) {
 		return
 	}
 
-	// log.Info("Received request", "from", s.Conn().RemotePeer())
-	err = n.backend.AddMessage(data.GetId(), data)
+	mapper, ok := n.pm.(transportPeerMapper)
+	if !ok {
+		log.Warn("Peer manager cannot map authenticated transport peers")
+		return
+	}
+	senderID, ok := mapper.SessionIDForTransportPeer(s.Conn().RemotePeer().String())
+	if !ok {
+		log.Warn("Received message from unknown transport peer", "peer", s.Conn().RemotePeer())
+		return
+	}
+	err = n.backend.AddMessage(senderID, data)
 	if err != nil {
 		log.Warn("Cannot add message to DKG", "err", err)
 		return

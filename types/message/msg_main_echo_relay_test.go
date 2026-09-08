@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/getamis/alice/crypto/tss/ecdsa/cggmp/refresh"
+	"github.com/getamis/alice/crypto/zkproof/paillier"
 	"github.com/getamis/alice/types"
 	"github.com/getamis/alice/types/message"
 )
@@ -84,5 +85,87 @@ func TestEchoRelayDoesNotReplaceOriginalMessage(t *testing.T) {
 	}
 	if got := next.received[0].(*refresh.Message).GetRound3().GetEncshare(); string(got) != "recipient-specific ciphertext" {
 		t.Fatalf("delivered ciphertext = %q, want original recipient-specific ciphertext", got)
+	}
+}
+
+func TestEchoRelayRequiresDistinctCanonicalVotes(t *testing.T) {
+	original := &refresh.Message{
+		Type: refresh.Type_Round3,
+		Id:   "origin",
+		Body: &refresh.Message_Round3{Round3: &refresh.Round3Msg{ModProof: &paillier.PaillierBlumMessage{W: []byte("proof")}}},
+	}
+	relay := original.GetEchoMessage().(*refresh.Message)
+	next := &relayTestMessageMain{}
+	peerManager := &relayTestPeerManager{peerIDs: []string{"origin", "relay-one", "relay-two"}}
+	echoMain := message.NewEchoMsgMain(next, peerManager)
+
+	if err := echoMain.AddMessage("relay-one", relay); err != nil {
+		t.Fatalf("AddMessage(first relay) error = %v", err)
+	}
+	if err := echoMain.AddMessage("relay-one", relay); err != nil {
+		t.Fatalf("AddMessage(duplicate relay) error = %v", err)
+	}
+	if err := echoMain.AddMessage("origin", original); err != nil {
+		t.Fatalf("AddMessage(original) error = %v", err)
+	}
+	if len(next.received) != 0 {
+		t.Fatalf("duplicate relay advanced quorum: %#v", next.received)
+	}
+	if err := echoMain.AddMessage("relay-two", relay); err != nil {
+		t.Fatalf("AddMessage(second relay) error = %v", err)
+	}
+	if len(next.received) != 1 || next.received[0] != original {
+		t.Fatalf("delivered messages = %#v, want original after all participant votes", next.received)
+	}
+}
+
+func TestEchoRejectsNonCanonicalRelay(t *testing.T) {
+	original := &refresh.Message{
+		Type: refresh.Type_Round3,
+		Id:   "origin",
+		Body: &refresh.Message_Round3{Round3: &refresh.Round3Msg{ModProof: &paillier.PaillierBlumMessage{W: []byte("proof")}}},
+	}
+	relay := original.GetEchoMessage().(*refresh.Message)
+	relay.GetRound3().Encshare = []byte("receiver-specific")
+	next := &relayTestMessageMain{}
+	peerManager := &relayTestPeerManager{peerIDs: []string{"origin", "relay"}}
+	echoMain := message.NewEchoMsgMain(next, peerManager)
+
+	if err := echoMain.AddMessage("relay", relay); err != message.ErrInvalidRelay {
+		t.Fatalf("AddMessage(non-canonical relay) error = %v, want %v", err, message.ErrInvalidRelay)
+	}
+}
+
+func TestEchoCompletedInstanceRejectsConflictingLateMessage(t *testing.T) {
+	original := &refresh.Message{
+		Type: refresh.Type_Round3,
+		Id:   "origin",
+		Body: &refresh.Message_Round3{Round3: &refresh.Round3Msg{ModProof: &paillier.PaillierBlumMessage{W: []byte("proof")}}},
+	}
+	relay := original.GetEchoMessage().(*refresh.Message)
+	next := &relayTestMessageMain{}
+	peerManager := &relayTestPeerManager{peerIDs: []string{"origin", "relay"}}
+	echoMain := message.NewEchoMsgMain(next, peerManager)
+
+	if err := echoMain.AddMessage("relay", relay); err != nil {
+		t.Fatalf("AddMessage(relay) error = %v", err)
+	}
+	if err := echoMain.AddMessage("origin", original); err != nil {
+		t.Fatalf("AddMessage(original) error = %v", err)
+	}
+	if err := echoMain.AddMessage("origin", original); err != nil {
+		t.Fatalf("AddMessage(late matching original) error = %v", err)
+	}
+	if len(next.received) != 1 {
+		t.Fatalf("late matching original was delivered again: %#v", next.received)
+	}
+
+	conflicting := &refresh.Message{
+		Type: refresh.Type_Round3,
+		Id:   "origin",
+		Body: &refresh.Message_Round3{Round3: &refresh.Round3Msg{ModProof: &paillier.PaillierBlumMessage{W: []byte("different-proof")}}},
+	}
+	if err := echoMain.AddMessage("origin", conflicting); err != message.ErrDifferentHash {
+		t.Fatalf("AddMessage(late conflicting original) error = %v, want %v", err, message.ErrDifferentHash)
 	}
 }

@@ -65,6 +65,20 @@ func (p *peerManager) PeerIDs() []string {
 	return ids
 }
 
+func (p *peerManager) SessionIDForTransportPeer(transportID string) (string, bool) {
+	for sessionID, address := range p.peers {
+		maddr, err := multiaddr.NewMultiaddr(address)
+		if err != nil {
+			continue
+		}
+		info, err := peer.AddrInfoFromP2pAddr(maddr)
+		if err == nil && info.ID.String() == transportID {
+			return sessionID, true
+		}
+	}
+	return "", false
+}
+
 func (p *peerManager) MustSend(peerId string, message interface{}) {
 	msg, ok := message.(proto.Message)
 	if !ok {

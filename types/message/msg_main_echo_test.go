@@ -35,6 +35,8 @@ var _ = Describe("EchoMsgMain", func() {
 		mockMessageMain = new(mocks.MessageMain)
 		mockPeerManager = new(mocks.PeerManager)
 		msgMain = NewEchoMsgMain(mockMessageMain, mockPeerManager)
+		mockMsg.On("GetId").Return("id").Maybe()
+		mockPeerManager.On("SelfID").Return("id").Maybe()
 		msgMain.marshalFunc = func(m proto.Message) ([]byte, error) {
 			return nil, nil
 		}
@@ -59,25 +61,23 @@ var _ = Describe("EchoMsgMain", func() {
 		Context("echo messages", func() {
 			msgId := "id"
 			otherPeerId := "other-id"
-			It("should be ok for the first message", func() {
+			It("should wait for a remote echo vote", func() {
 				mockMsg.On("GetMessageType").Return(echoMsgType).Once()
 				mockMsg.On("GetEchoMessage").Return(mockMsg).Twice()
-				mockMsg.On("GetId").Return(msgId).Twice()
-				mockPeerManager.On("PeerIDs").Return([]string{msgId, otherPeerId}).Once()
+				mockPeerManager.On("SelfID").Return(msgId).Maybe()
+				mockPeerManager.On("PeerIDs").Return([]string{otherPeerId}).Maybe()
 				mockPeerManager.On("MustSend", otherPeerId, mockMsg).Maybe()
-				mockPeerManager.On("NumPeers").Return(uint32(1)).Once()
-				mockMessageMain.On("AddMessage", msgId, mockMsg).Return(nil).Once()
 				err := msgMain.AddMessage(msgId, mockMsg)
 				Expect(err).Should(BeNil())
 			})
 
 			It("should be ok for the first message but not handle", func() {
 				mockMsg.On("GetMessageType").Return(echoMsgType).Once()
-				mockMsg.On("GetEchoMessage").Return(mockMsg).Twice()
-				mockMsg.On("GetId").Return(msgId).Once()
-				mockPeerManager.On("PeerIDs").Return([]string{msgId, otherPeerId}).Once()
+				mockMsg.On("GetEchoMessage").Return(mockMsg).Times(3)
+				mockPeerManager.On("SelfID").Return(msgId).Maybe()
+				mockPeerManager.On("PeerIDs").Return([]string{otherPeerId, "third-id"}).Maybe()
 				mockPeerManager.On("MustSend", otherPeerId, mockMsg).Maybe()
-				mockPeerManager.On("NumPeers").Return(uint32(2)).Once()
+				mockPeerManager.On("MustSend", "third-id", mockMsg).Maybe()
 				err := msgMain.AddMessage(msgId, mockMsg)
 				Expect(err).Should(BeNil())
 			})
