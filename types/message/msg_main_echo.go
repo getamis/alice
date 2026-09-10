@@ -39,6 +39,10 @@ type EchoRelayMessage interface {
 	IsEchoRelay() bool
 }
 
+type EchoHashMessage interface {
+	GetEchoHash() []byte
+}
+
 var (
 	ErrNotEchoMsg    = errors.New("not a echo message")
 	ErrDifferentHash = errors.New("different hash")
@@ -208,6 +212,9 @@ func (t *EchoMsgMain) echoHash(m EchoMessage) ([]byte, error) {
 	echoMsg := m.GetEchoMessage()
 	if echoMsg == nil {
 		return nil, nil
+	}
+	if hashMsg, ok := echoMsg.(EchoHashMessage); ok {
+		return hashMsg.GetEchoHash(), nil
 	}
 	// NOTE: there's an issue if there's a map field in the message
 	// https://developers.google.com/protocol-buffers/docs/encoding#implications
