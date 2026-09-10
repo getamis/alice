@@ -37,19 +37,39 @@ func (m *Message) GetMessageType() types.MessageType {
 }
 
 func (m *Message) GetEchoMessage() types.Message {
-	mm := &Message{
-		Type: m.Type,
-		Id:   m.Id,
-	}
 	switch m.Type {
 	case Type_Peer:
-		mm.Body = &Message_Peer{
-			Peer: &BodyPeer{
-				Bk:         m.GetPeer().GetBk(),
-				Commitment: m.GetPeer().GetCommitment(),
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Body: &Message_Peer{
+				Peer: &BodyPeer{
+					Bk:         m.GetPeer().GetBk(),
+					Commitment: m.GetPeer().GetCommitment(),
+				},
 			},
 		}
-		return mm
+	case Type_Decommit:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Body: &Message_Decommit{
+				Decommit: &BodyDecommit{
+					HashDecommitment: m.GetDecommit().GetHashDecommitment(),
+					PointCommitment:  m.GetDecommit().GetPointCommitment(),
+				},
+			},
+		}
+	case Type_Result:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Body: &Message_Result{
+				Result: &BodyResult{
+					SiGProofMsg: m.GetResult().GetSiGProofMsg(),
+				},
+			},
+		}
 	}
 	return nil
 }

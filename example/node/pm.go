@@ -187,3 +187,23 @@ func (p *peerManager) EnsureAllConnected() {
 func (p *peerManager) AddPeer(peerId string, peerAddr string) {
 	p.peers[peerId] = peerAddr
 }
+
+// SessionIDForTransportPeer resolves the libp2p-authenticated transport peer
+// ID of an inbound stream back to the logical session ID used across the TSS
+// protocol, so callers don't have to trust a self-declared sender ID.
+func (p *peerManager) SessionIDForTransportPeer(transportID string) (string, bool) {
+	for sessionID, addr := range p.peers {
+		maddr, err := multiaddr.NewMultiaddr(addr)
+		if err != nil {
+			continue
+		}
+		info, err := peer.AddrInfoFromP2pAddr(maddr)
+		if err != nil {
+			continue
+		}
+		if info.ID.String() == transportID {
+			return sessionID, true
+		}
+	}
+	return "", false
+}

@@ -31,6 +31,12 @@ type node[M Message, R any] struct {
 	pm       types.PeerManager
 }
 
+// transportPeerMapper resolves an authenticated transport-layer peer ID to
+// the logical session ID it belongs to.
+type transportPeerMapper interface {
+	SessionIDForTransportPeer(transportID string) (string, bool)
+}
+
 func New[M Message, R any](backend Backend[M, R], l Listener, pm types.PeerManager) *node[M, R] {
 	return &node[M, R]{
 		backend:  backend,
@@ -58,8 +64,21 @@ func (n *node[M, R]) Handle(s network.Stream) {
 		return
 	}
 
+	// Resolve the sender from the authenticated transport connection instead
+	// of trusting the self-declared Id inside the message payload.
+	mapper, ok := n.pm.(transportPeerMapper)
+	if !ok {
+		log.Warn("Peer manager does not support sender authentication")
+		return
+	}
+	senderId, ok := mapper.SessionIDForTransportPeer(s.Conn().RemotePeer().String())
+	if !ok {
+		log.Warn("Cannot resolve sender for transport peer", "peer", s.Conn().RemotePeer())
+		return
+	}
+
 	// log.Info("Received request", "from", s.Conn().RemotePeer())
-	err = n.backend.AddMessage(data.GetId(), data)
+	err = n.backend.AddMessage(senderId, data)
 	if err != nil {
 		log.Warn("Cannot add message to DKG", "err", err)
 		return
