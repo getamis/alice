@@ -1,6 +1,9 @@
 package sign
 
-import "testing"
+import (
+	"bytes"
+	"testing"
+)
 
 func TestGetEchoMessage(t *testing.T) {
 	tests := []struct {
@@ -26,9 +29,30 @@ func TestGetEchoMessage(t *testing.T) {
 				return
 			}
 			echo, ok := got.(*Message)
-			if !ok || !echo.IsValid() || echo.GetId() != "peer" {
-				t.Fatalf("GetEchoMessage() = %#v, want valid message for peer", got)
+			if !ok || !echo.IsValid() || echo.GetId() != "peer" || len(echo.GetEchoHash()) != 32 || echo.GetBody() != nil {
+				t.Fatalf("GetEchoMessage() = %#v, want valid hash relay for peer", got)
 			}
 		})
+	}
+}
+
+func TestCalculateEchoHashBindsRound1Ciphertext(t *testing.T) {
+	message := &Message{
+		Type: Type_Round1,
+		Id:   "peer",
+		Body: &Message_Round1{Round1: &Round1Msg{KCiphertext: []byte("first")}},
+	}
+	firstHash, err := message.CalculateEchoHash()
+	if err != nil {
+		t.Fatalf("CalculateEchoHash() error = %v", err)
+	}
+
+	message.GetRound1().KCiphertext = []byte("second")
+	secondHash, err := message.CalculateEchoHash()
+	if err != nil {
+		t.Fatalf("CalculateEchoHash() error = %v", err)
+	}
+	if bytes.Equal(firstHash, secondHash) {
+		t.Fatal("CalculateEchoHash() did not bind the round 1 ciphertext")
 	}
 }

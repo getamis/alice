@@ -1,6 +1,11 @@
 package dkg
 
-import "testing"
+import (
+	"bytes"
+	"testing"
+
+	"github.com/getamis/alice/crypto/birkhoffinterpolation"
+)
 
 func TestGetEchoMessage(t *testing.T) {
 	tests := []struct {
@@ -24,9 +29,30 @@ func TestGetEchoMessage(t *testing.T) {
 				return
 			}
 			echo, ok := got.(*Message)
-			if !ok || !echo.IsValid() || echo.GetId() != "peer" {
-				t.Fatalf("GetEchoMessage() = %#v, want valid message for peer", got)
+			if !ok || !echo.IsValid() || echo.GetId() != "peer" || len(echo.GetEchoHash()) != 32 || echo.GetBody() != nil {
+				t.Fatalf("GetEchoMessage() = %#v, want valid hash relay for peer", got)
 			}
 		})
+	}
+}
+
+func TestCalculateEchoHashBindsPeerBk(t *testing.T) {
+	message := &Message{
+		Type: Type_Peer,
+		Id:   "peer",
+		Body: &Message_Peer{Peer: &BodyPeer{Bk: &birkhoffinterpolation.BkParameterMessage{X: []byte("first")}}},
+	}
+	firstHash, err := message.CalculateEchoHash()
+	if err != nil {
+		t.Fatalf("CalculateEchoHash() error = %v", err)
+	}
+
+	message.GetPeer().Bk.X = []byte("second")
+	secondHash, err := message.CalculateEchoHash()
+	if err != nil {
+		t.Fatalf("CalculateEchoHash() error = %v", err)
+	}
+	if bytes.Equal(firstHash, secondHash) {
+		t.Fatal("CalculateEchoHash() did not bind the peer Bk")
 	}
 }

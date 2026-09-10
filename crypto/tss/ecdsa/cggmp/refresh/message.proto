@@ -34,6 +34,7 @@ message Message {
     Type type = 1;
     string id = 2;
     bool echo = 7;
+    bytes echo_hash = 8;
     oneof body {
         Round1Msg round1 = 4;
         Round2Msg round2 = 5;

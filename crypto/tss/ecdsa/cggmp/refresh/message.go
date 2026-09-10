@@ -20,7 +20,13 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+const echoHashSize = 32
+
 func (m *Message) IsValid() bool {
+	if m.GetEcho() {
+		return len(m.GetEchoHash()) == echoHashSize && m.GetBody() == nil
+	}
+
 	switch m.Type {
 	case Type_Round1:
 		return m.GetRound1() != nil
@@ -40,15 +46,12 @@ func (m *Message) IsEchoRelay() bool {
 	return m.GetEcho()
 }
 
-func (m *Message) EchoHash() ([]byte, error) {
-	echoMsg := m.GetEchoMessage()
-	if echoMsg == nil {
+func (m *Message) CalculateEchoHash() ([]byte, error) {
+	echoPayload := m.getEchoPayload()
+	if echoPayload == nil {
 		return nil, nil
 	}
-	// NOTE: there's an issue if there's a map field in the message
-	// https://developers.google.com/protocol-buffers/docs/encoding#implications
-	// Deterministic serialization only guarantees the same byte output for a particular binary.
-	bs, err := proto.Marshal(echoMsg.(*Message))
+	bs, err := proto.MarshalOptions{Deterministic: true}.Marshal(echoPayload)
 	if err != nil {
 		return nil, err
 	}
@@ -57,6 +60,26 @@ func (m *Message) EchoHash() ([]byte, error) {
 }
 
 func (m *Message) GetEchoMessage() types.Message {
+	if m.GetEcho() {
+		if !m.IsValid() {
+			return nil
+		}
+		return m
+	}
+
+	hash, err := m.CalculateEchoHash()
+	if err != nil || hash == nil {
+		return nil
+	}
+	return &Message{
+		Type:     m.Type,
+		Id:       m.Id,
+		Echo:     true,
+		EchoHash: hash,
+	}
+}
+
+func (m *Message) getEchoPayload() *Message {
 	switch m.Type {
 	case Type_Round1:
 		return &Message{

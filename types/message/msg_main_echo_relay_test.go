@@ -119,20 +119,23 @@ func TestEchoRelayRequiresDistinctCanonicalVotes(t *testing.T) {
 	}
 }
 
-func TestEchoRejectsNonCanonicalRelay(t *testing.T) {
+func TestEchoRejectsConflictingRelayHash(t *testing.T) {
 	original := &refresh.Message{
 		Type: refresh.Type_Round3,
 		Id:   "origin",
 		Body: &refresh.Message_Round3{Round3: &refresh.Round3Msg{ModProof: &paillier.PaillierBlumMessage{W: []byte("proof")}}},
 	}
 	relay := original.GetEchoMessage().(*refresh.Message)
-	relay.GetRound3().Encshare = []byte("receiver-specific")
+	relay.EchoHash[0] ^= 0xff
 	next := &relayTestMessageMain{}
 	peerManager := &relayTestPeerManager{peerIDs: []string{"origin", "relay"}}
 	echoMain := message.NewEchoMsgMain(next, peerManager)
 
-	if err := echoMain.AddMessage("relay", relay); err != message.ErrInvalidRelay {
-		t.Fatalf("AddMessage(non-canonical relay) error = %v, want %v", err, message.ErrInvalidRelay)
+	if err := echoMain.AddMessage("origin", original); err != nil {
+		t.Fatalf("AddMessage(original) error = %v", err)
+	}
+	if err := echoMain.AddMessage("relay", relay); err != message.ErrDifferentHash {
+		t.Fatalf("AddMessage(conflicting relay) error = %v, want %v", err, message.ErrDifferentHash)
 	}
 }
 

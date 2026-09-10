@@ -16,9 +16,17 @@ package dkg
 
 import (
 	"github.com/getamis/alice/types"
+	"github.com/minio/blake2b-simd"
+	"google.golang.org/protobuf/proto"
 )
 
+const echoHashSize = 32
+
 func (m *Message) IsValid() bool {
+	if m.GetEcho() {
+		return len(m.GetEchoHash()) == echoHashSize && m.GetBody() == nil
+	}
+
 	switch m.Type {
 	case Type_Peer:
 		return m.GetPeer() != nil
@@ -41,6 +49,34 @@ func (m *Message) IsEchoRelay() bool {
 }
 
 func (m *Message) GetEchoMessage() types.Message {
+	if m.GetEcho() {
+		if !m.IsValid() {
+			return nil
+		}
+		return m
+	}
+
+	hash, err := m.CalculateEchoHash()
+	if err != nil || hash == nil {
+		return nil
+	}
+	return &Message{Type: m.Type, Id: m.Id, Echo: true, EchoHash: hash}
+}
+
+func (m *Message) CalculateEchoHash() ([]byte, error) {
+	echoPayload := m.getEchoPayload()
+	if echoPayload == nil {
+		return nil, nil
+	}
+	bs, err := proto.MarshalOptions{Deterministic: true}.Marshal(echoPayload)
+	if err != nil {
+		return nil, err
+	}
+	got := blake2b.Sum256(bs)
+	return got[:], nil
+}
+
+func (m *Message) getEchoPayload() *Message {
 	switch m.Type {
 	case Type_Peer:
 		return &Message{
