@@ -47,20 +47,72 @@ func (m *Message) GetMessageType() types.MessageType {
 }
 
 func (m *Message) GetEchoMessage() types.Message {
-	mm := &Message{
-		Type: m.Type,
-		Id:   m.Id,
-	}
 	switch m.Type {
 	case Type_Round1:
-		mm.Body = &Message_Round1{
-			Round1: &Round1Msg{
-				KCiphertext:     m.GetRound1().GetKCiphertext(),
-				GammaCiphertext: m.GetRound1().GetGammaCiphertext(),
-				Z1:              m.GetRound1().GetZ1(),
-				Z2:              m.GetRound1().GetZ2(),
-				// Not broadcast to all in echo protocol
-				// Psi:             m.GetRound1().GetPsi(),
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Body: &Message_Round1{
+				Round1: &Round1Msg{
+					KCiphertext:     m.GetRound1().GetKCiphertext(),
+					GammaCiphertext: m.GetRound1().GetGammaCiphertext(),
+					Z1:              m.GetRound1().GetZ1(),
+					Z2:              m.GetRound1().GetZ2(),
+					// Not broadcast to all in echo protocol
+					// Psi:             m.GetRound1().GetPsi(),
+				},
+			},
+		}
+	case Type_Round3:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Body: &Message_Round3{
+				Round3: &Round3Msg{
+					Delta: m.GetRound3().GetDelta(),
+					Z1Hat: m.GetRound3().GetZ1Hat(),
+					Z2Hat: m.GetRound3().GetZ2Hat(),
+				},
+			},
+		}
+	case Type_Round4:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Body: &Message_Round4{
+				Round4: &Round4Msg{
+					Gamma: m.GetRound4().GetGamma(),
+				},
+			},
+		}
+	case Type_Round5:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Body: &Message_Round5{
+				Round5: &Round5Msg{
+					Delta: m.GetRound5().GetDelta(),
+				},
+			},
+		}
+	case Type_Round6:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Body: &Message_Round6{
+				Round6: &Round6Msg{
+					S: m.GetRound6().GetS(),
+				},
+			},
+		}
+	case Type_Round7:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Body: &Message_Round7{
+				Round7: &Round7Msg{
+					Sigma: m.GetRound7().GetSigma(),
+				},
 			},
 		}
 	}

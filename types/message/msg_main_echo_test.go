@@ -18,6 +18,7 @@ import (
 	"github.com/getamis/alice/types/mocks"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/mock"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -29,6 +30,9 @@ var _ = Describe("EchoMsgMain", func() {
 		mockMsg         *mMocks.EchoMessage
 
 		echoMsgType = types.MessageType(10)
+		selfID      = "self"
+		originID    = "origin"
+		peerID      = "peer"
 	)
 	BeforeEach(func() {
 		mockMsg = new(mMocks.EchoMessage)
@@ -47,39 +51,109 @@ var _ = Describe("EchoMsgMain", func() {
 	})
 
 	Context("AddMessage", func() {
-		msgId := "id"
-		It("should be ok for not echo message", func() {
-			var nilMsg types.Message
-			mockMsg.On("GetEchoMessage").Return(nilMsg).Once()
-			mockMessageMain.On("AddMessage", msgId, mockMsg).Return(nil).Once()
-			err := msgMain.AddMessage(msgId, mockMsg)
-			Expect(err).Should(BeNil())
+		It("rejects a message from a sender that is not a participant", func() {
+			mockMsg.On("GetId").Return(originID)
+			mockPeerManager.On("SelfID").Return(selfID)
+			mockPeerManager.On("PeerIDs").Return([]string{originID, peerID})
+			err := msgMain.AddMessage("stranger", mockMsg)
+			Expect(err).Should(Equal(ErrInvalidRelay))
 		})
 
-		Context("echo messages", func() {
-			msgId := "id"
-			otherPeerId := "other-id"
-			It("should be ok for the first message", func() {
-				mockMsg.On("GetMessageType").Return(echoMsgType).Once()
-				mockMsg.On("GetEchoMessage").Return(mockMsg).Twice()
-				mockMsg.On("GetId").Return(msgId).Twice()
-				mockPeerManager.On("PeerIDs").Return([]string{msgId, otherPeerId}).Once()
-				mockPeerManager.On("MustSend", otherPeerId, mockMsg).Maybe()
-				mockPeerManager.On("NumPeers").Return(uint32(1)).Once()
-				mockMessageMain.On("AddMessage", msgId, mockMsg).Return(nil).Once()
-				err := msgMain.AddMessage(msgId, mockMsg)
+		Context("not an echo-tracked message", func() {
+			var nilMsg types.Message
+
+			It("passes it straight through when sent by its own origin", func() {
+				mockMsg.On("GetId").Return(selfID)
+				mockMsg.On("GetEchoMessage").Return(nilMsg)
+				mockPeerManager.On("SelfID").Return(selfID)
+				mockMessageMain.On("AddMessage", selfID, mockMsg).Return(nil)
+				err := msgMain.AddMessage(selfID, mockMsg)
 				Expect(err).Should(BeNil())
 			})
 
-			It("should be ok for the first message but not handle", func() {
-				mockMsg.On("GetMessageType").Return(echoMsgType).Once()
-				mockMsg.On("GetEchoMessage").Return(mockMsg).Twice()
-				mockMsg.On("GetId").Return(msgId).Once()
-				mockPeerManager.On("PeerIDs").Return([]string{msgId, otherPeerId}).Once()
-				mockPeerManager.On("MustSend", otherPeerId, mockMsg).Maybe()
-				mockPeerManager.On("NumPeers").Return(uint32(2)).Once()
-				err := msgMain.AddMessage(msgId, mockMsg)
+			It("rejects it when the sender differs from its id", func() {
+				mockMsg.On("GetId").Return(originID)
+				mockMsg.On("GetEchoMessage").Return(nilMsg)
+				mockPeerManager.On("SelfID").Return(selfID)
+				mockPeerManager.On("PeerIDs").Return([]string{originID, peerID})
+				err := msgMain.AddMessage(peerID, mockMsg)
+				Expect(err).Should(Equal(ErrInvalidRelay))
+			})
+		})
+
+		Context("echo-tracked messages", func() {
+			It("delivers immediately when there are no other peers to wait for", func() {
+				mockMsg.On("GetMessageType").Return(echoMsgType)
+				mockMsg.On("GetId").Return(selfID)
+				mockMsg.On("GetEchoMessage").Return(mockMsg)
+				mockPeerManager.On("SelfID").Return(selfID)
+				mockPeerManager.On("PeerIDs").Return([]string{})
+				mockMessageMain.On("AddMessage", selfID, mockMsg).Return(nil).Once()
+				err := msgMain.AddMessage(selfID, mockMsg)
 				Expect(err).Should(BeNil())
+			})
+
+			It("waits until every peer has echoed before delivering", func() {
+				peers := []string{originID, peerID}
+				mockMsg.On("GetMessageType").Return(echoMsgType)
+				mockMsg.On("GetId").Return(originID)
+				mockMsg.On("GetEchoMessage").Return(mockMsg)
+				mockPeerManager.On("SelfID").Return(selfID)
+				mockPeerManager.On("PeerIDs").Return(peers)
+				mockPeerManager.On("MustSend", peerID, mockMsg).Maybe()
+
+				// Arrives directly from the authenticated origin: 2 of the 3
+				// required votes (origin + self), not enough to deliver yet.
+				err := msgMain.AddMessage(originID, mockMsg)
+				Expect(err).Should(BeNil())
+				mockMessageMain.AssertNotCalled(GinkgoT(), "AddMessage", mock.Anything, mock.Anything)
+
+				// The last peer echoes the relayed message, completing the quorum.
+				mockMessageMain.On("AddMessage", originID, mockMsg).Return(nil).Once()
+				err = msgMain.AddMessage(peerID, mockMsg)
+				Expect(err).Should(BeNil())
+			})
+
+			It("lets the authenticated origin correct an unconfirmed relay hash, then rejects further mismatches", func() {
+				peers := []string{originID, peerID}
+				mockMsg2 := new(mMocks.EchoMessage)
+				mockMsg3 := new(mMocks.EchoMessage)
+				for _, m := range []*mMocks.EchoMessage{mockMsg, mockMsg2, mockMsg3} {
+					m.On("GetId").Return(originID)
+					m.On("GetMessageType").Return(echoMsgType)
+				}
+				mockMsg.On("GetEchoMessage").Return(mockMsg)
+				mockMsg2.On("GetEchoMessage").Return(mockMsg2)
+				mockMsg3.On("GetEchoMessage").Return(mockMsg3)
+				msgMain.marshalFunc = func(m proto.Message) ([]byte, error) {
+					switch m {
+					case proto.Message(mockMsg):
+						return []byte("A"), nil
+					case proto.Message(mockMsg2):
+						return []byte("B"), nil
+					case proto.Message(mockMsg3):
+						return []byte("C"), nil
+					}
+					return nil, nil
+				}
+				mockPeerManager.On("SelfID").Return(selfID)
+				mockPeerManager.On("PeerIDs").Return(peers)
+				mockPeerManager.On("MustSend", mock.Anything, mock.Anything).Maybe()
+
+				// An unconfirmed relay arrives first, carrying the wrong content.
+				err := msgMain.AddMessage(peerID, mockMsg2)
+				Expect(err).Should(BeNil())
+
+				// The authenticated origin corrects the hash.
+				err = msgMain.AddMessage(originID, mockMsg)
+				Expect(err).Should(BeNil())
+
+				// A later conflicting relay is rejected once the origin's hash is confirmed.
+				err = msgMain.AddMessage(peerID, mockMsg3)
+				Expect(err).Should(Equal(ErrDifferentHash))
+
+				mockMsg2.AssertExpectations(GinkgoT())
+				mockMsg3.AssertExpectations(GinkgoT())
 			})
 		})
 	})

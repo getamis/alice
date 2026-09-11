@@ -41,18 +41,49 @@ func (m *Message) GetMessageType() types.MessageType {
 }
 
 func (m *Message) GetEchoMessage() types.Message {
-	mm := &Message{
-		Type: m.Type,
-		Id:   m.Id,
-	}
 	switch m.Type {
 	case Type_Round1:
-		mm.Body = &Message_Round1{
-			Round1: &Round1Msg{
-				KCiphertext:     m.GetRound1().GetKCiphertext(),
-				GammaCiphertext: m.GetRound1().GetGammaCiphertext(),
-				// Not broadcast to all in echo protocol
-				// Psi:             m.GetRound1().GetPsi(),
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Body: &Message_Round1{
+				Round1: &Round1Msg{
+					KCiphertext:     m.GetRound1().GetKCiphertext(),
+					GammaCiphertext: m.GetRound1().GetGammaCiphertext(),
+					// Not broadcast to all in echo protocol
+					// Psi:             m.GetRound1().GetPsi(),
+				},
+			},
+		}
+	case Type_Round2:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Body: &Message_Round2{
+				Round2: &Round2Msg{
+					Gamma: m.GetRound2().GetGamma(),
+				},
+			},
+		}
+	case Type_Round3:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Body: &Message_Round3{
+				Round3: &Round3Msg{
+					Delta:    m.GetRound3().GetDelta(),
+					BigDelta: m.GetRound3().GetBigDelta(),
+				},
+			},
+		}
+	case Type_Round4:
+		return &Message{
+			Type: m.Type,
+			Id:   m.Id,
+			Body: &Message_Round4{
+				Round4: &Round4Msg{
+					Sigmai: m.GetRound4().GetSigmai(),
+				},
 			},
 		}
 	}
