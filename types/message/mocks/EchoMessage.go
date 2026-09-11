@@ -13,6 +13,26 @@ type EchoMessage struct {
 	mock.Mock
 }
 
+// GetEchoHashRelay provides a mock function with given fields:
+func (_m *EchoMessage) GetEchoHashRelay() []byte {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetEchoHashRelay")
+	}
+
+	var r0 []byte
+	if rf, ok := ret.Get(0).(func() []byte); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]byte)
+		}
+	}
+
+	return r0
+}
+
 // GetEchoMessage provides a mock function with given fields:
 func (_m *EchoMessage) GetEchoMessage() types.Message {
 	ret := _m.Called()
@@ -101,6 +121,26 @@ func (_m *EchoMessage) ProtoReflect() protoreflect.Message {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(protoreflect.Message)
+		}
+	}
+
+	return r0
+}
+
+// NewEchoHashRelay provides a mock function with given fields: hash
+func (_m *EchoMessage) NewEchoHashRelay(hash []byte) types.Message {
+	ret := _m.Called(hash)
+
+	if len(ret) == 0 {
+		panic("no return value specified for NewEchoHashRelay")
+	}
+
+	var r0 types.Message
+	if rf, ok := ret.Get(0).(func([]byte) types.Message); ok {
+		r0 = rf(hash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(types.Message)
 		}
 	}
 
