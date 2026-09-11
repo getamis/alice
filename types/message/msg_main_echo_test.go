@@ -64,6 +64,7 @@ var _ = Describe("EchoMsgMain", func() {
 
 			It("passes it straight through when sent by its own origin", func() {
 				mockMsg.On("GetId").Return(selfID)
+				mockMsg.On("GetEchoHashRelay").Return(nil)
 				mockMsg.On("GetEchoMessage").Return(nilMsg)
 				mockPeerManager.On("SelfID").Return(selfID)
 				mockMessageMain.On("AddMessage", selfID, mockMsg).Return(nil)
@@ -73,6 +74,7 @@ var _ = Describe("EchoMsgMain", func() {
 
 			It("rejects it when the sender differs from its id", func() {
 				mockMsg.On("GetId").Return(originID)
+				mockMsg.On("GetEchoHashRelay").Return(nil)
 				mockMsg.On("GetEchoMessage").Return(nilMsg)
 				mockPeerManager.On("SelfID").Return(selfID)
 				mockPeerManager.On("PeerIDs").Return([]string{originID, peerID})
@@ -85,6 +87,7 @@ var _ = Describe("EchoMsgMain", func() {
 			It("delivers immediately when there are no other peers to wait for", func() {
 				mockMsg.On("GetMessageType").Return(echoMsgType)
 				mockMsg.On("GetId").Return(selfID)
+				mockMsg.On("GetEchoHashRelay").Return(nil)
 				mockMsg.On("GetEchoMessage").Return(mockMsg)
 				mockPeerManager.On("SelfID").Return(selfID)
 				mockPeerManager.On("PeerIDs").Return([]string{})
@@ -95,22 +98,32 @@ var _ = Describe("EchoMsgMain", func() {
 
 			It("waits until every peer has echoed before delivering", func() {
 				peers := []string{originID, peerID}
+				mockRelay := new(mMocks.EchoMessage)
 				mockMsg.On("GetMessageType").Return(echoMsgType)
 				mockMsg.On("GetId").Return(originID)
+				mockMsg.On("GetEchoHashRelay").Return(nil)
 				mockMsg.On("GetEchoMessage").Return(mockMsg)
+				mockMsg.On("NewEchoHashRelay", mock.Anything).Return(mockRelay)
+				mockRelay.On("GetId").Return(originID).Maybe()
+				mockRelay.On("GetMessageType").Return(echoMsgType).Maybe()
+				// The hash must match what the origin's message hashes to, so
+				// this relay is treated as consistent, not conflicting.
+				hash, err := msgMain.echoHash(mockMsg)
+				Expect(err).Should(BeNil())
+				mockRelay.On("GetEchoHashRelay").Return(hash).Maybe()
 				mockPeerManager.On("SelfID").Return(selfID)
 				mockPeerManager.On("PeerIDs").Return(peers)
-				mockPeerManager.On("MustSend", peerID, mockMsg).Maybe()
+				mockPeerManager.On("MustSend", peerID, mockRelay).Maybe()
 
 				// Arrives directly from the authenticated origin: 2 of the 3
 				// required votes (origin + self), not enough to deliver yet.
-				err := msgMain.AddMessage(originID, mockMsg)
+				err = msgMain.AddMessage(originID, mockMsg)
 				Expect(err).Should(BeNil())
 				mockMessageMain.AssertNotCalled(GinkgoT(), "AddMessage", mock.Anything, mock.Anything)
 
 				// The last peer echoes the relayed message, completing the quorum.
 				mockMessageMain.On("AddMessage", originID, mockMsg).Return(nil).Once()
-				err = msgMain.AddMessage(peerID, mockMsg)
+				err = msgMain.AddMessage(peerID, mockRelay)
 				Expect(err).Should(BeNil())
 			})
 
@@ -122,17 +135,16 @@ var _ = Describe("EchoMsgMain", func() {
 					m.On("GetId").Return(originID)
 					m.On("GetMessageType").Return(echoMsgType)
 				}
+				// mockMsg2 and mockMsg3 are hash-only relays carrying
+				// conflicting hashes; mockMsg is the origin's full message.
+				mockMsg2.On("GetEchoHashRelay").Return([]byte("B"))
+				mockMsg3.On("GetEchoHashRelay").Return([]byte("C"))
+				mockMsg.On("GetEchoHashRelay").Return(nil)
 				mockMsg.On("GetEchoMessage").Return(mockMsg)
-				mockMsg2.On("GetEchoMessage").Return(mockMsg2)
-				mockMsg3.On("GetEchoMessage").Return(mockMsg3)
+				mockMsg.On("NewEchoHashRelay", mock.Anything).Return(mockMsg2)
 				msgMain.marshalFunc = func(m proto.Message) ([]byte, error) {
-					switch m {
-					case proto.Message(mockMsg):
+					if m == proto.Message(mockMsg) {
 						return []byte("A"), nil
-					case proto.Message(mockMsg2):
-						return []byte("B"), nil
-					case proto.Message(mockMsg3):
-						return []byte("C"), nil
 					}
 					return nil, nil
 				}

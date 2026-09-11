@@ -1,5 +1,9 @@
 HOST_OS := $(shell uname -s)
-protoc_version = 3.6.1
+# Pinned to match the protoc-gen-go version required by go.mod
+# (google.golang.org/protobuf v1.36.5). Note: `protoc --version` for this
+# release prints "libprotoc 29.3", but the version header protoc-gen-go
+# writes into generated .pb.go files reads "protoc v5.29.3".
+protoc_version = 29.3
 ifeq ($(HOST_OS), Darwin)
 protoc_suffix = osx
 else

@@ -36,6 +36,12 @@ type EchoMessage interface {
 	// cross-check consistency via the echo protocol, or nil if this message
 	// type isn't echo-tracked.
 	GetEchoMessage() types.Message
+	// GetEchoHashRelay returns the hash carried by a message built via
+	// NewEchoHashRelay, or nil if this message isn't a hash-only relay.
+	GetEchoHashRelay() []byte
+	// NewEchoHashRelay builds a minimal message carrying only the echo hash
+	// of this message, so relays don't need to re-transmit the full payload.
+	NewEchoHashRelay(hash []byte) types.Message
 }
 
 var (
@@ -97,21 +103,32 @@ func (t *EchoMsgMain) AddMessage(senderId string, msg types.Message) error {
 	// sending on msgId's behalf is necessarily relaying.
 	isOriginal := senderId == msgId
 
-	canonical := eMsg.GetEchoMessage()
-	if canonical == nil {
-		if !isOriginal {
+	var hash []byte
+	if relayHash := eMsg.GetEchoHashRelay(); relayHash != nil {
+		// The origin always sends its full message directly; only a relay
+		// carries a hash-only echo.
+		if isOriginal {
 			return ErrInvalidRelay
 		}
-		return t.MessageMain.AddMessage(senderId, msg)
-	}
-	if !isOriginal && !proto.Equal(eMsg, canonical.(proto.Message)) {
-		// a relay must only ever carry the reduced, public-only content
-		return ErrInvalidRelay
-	}
+		hash = relayHash
+	} else {
+		canonical := eMsg.GetEchoMessage()
+		if canonical == nil {
+			if !isOriginal {
+				return ErrInvalidRelay
+			}
+			return t.MessageMain.AddMessage(senderId, msg)
+		}
+		if !isOriginal && !proto.Equal(eMsg, canonical.(proto.Message)) {
+			// a relay must only ever carry the reduced, public-only content
+			return ErrInvalidRelay
+		}
 
-	hash, err := t.echoHash(canonical)
-	if err != nil {
-		return err
+		var err error
+		hash, err = t.echoHash(canonical)
+		if err != nil {
+			return err
+		}
 	}
 
 	msgType := msg.GetMessageType()
@@ -141,11 +158,18 @@ func (t *EchoMsgMain) AddMessage(senderId string, msg types.Message) error {
 		m.originalMsg = msg
 		m.votes[t.pm.SelfID()] = struct{}{}
 		if !m.relayed {
-			for _, id := range t.pm.PeerIDs() {
-				if id == msgId {
-					continue
+			// Relay only the hash: peers already receive the full message
+			// directly from the origin, so the relay only needs to let them
+			// cross-check consistency, not carry the payload again.
+			peers := t.pm.PeerIDs()
+			if len(peers) > 0 {
+				relay := eMsg.NewEchoHashRelay(hash)
+				for _, id := range peers {
+					if id == msgId {
+						continue
+					}
+					go t.pm.MustSend(id, relay)
 				}
-				go t.pm.MustSend(id, canonical)
 			}
 			m.relayed = true
 		}

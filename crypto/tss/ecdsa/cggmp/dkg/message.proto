@@ -37,6 +37,9 @@ message Message {
         BodyDecommit decommit = 4;
         BodyVerify verify = 5;
         BodyResult result = 6;
+        // echoHashRelay, when set, means this message only relays the echo
+        // hash of another peer's message instead of its full body.
+        bytes echoHashRelay = 7;
     }
 }
 

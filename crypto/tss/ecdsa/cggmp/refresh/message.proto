@@ -37,6 +37,9 @@ message Message {
         Round1Msg round1 = 4;
         Round2Msg round2 = 5;
         Round3Msg round3 = 6;
+        // echoHashRelay, when set, means this message only relays the echo
+        // hash of another peer's message instead of its full body.
+        bytes echoHashRelay = 7;
     }
 }
 

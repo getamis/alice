@@ -42,7 +42,11 @@ message Message {
 
         // Error message
         Err1Msg err1 = 8;
-        Err2Msg err2 = 9;        
+        Err2Msg err2 = 9;
+
+        // echoHashRelay, when set, means this message only relays the echo
+        // hash of another peer's message instead of its full body.
+        bytes echoHashRelay = 10;
     }
 }
 

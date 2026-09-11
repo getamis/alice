@@ -36,6 +36,14 @@ func (m *Message) GetMessageType() types.MessageType {
 	return types.MessageType(m.Type)
 }
 
+func (m *Message) NewEchoHashRelay(hash []byte) types.Message {
+	return &Message{
+		Type: m.Type,
+		Id:   m.Id,
+		Body: &Message_EchoHashRelay{EchoHashRelay: hash},
+	}
+}
+
 func (m *Message) EchoHash() ([]byte, error) {
 	echoMsg := m.GetEchoMessage()
 	if echoMsg == nil {
