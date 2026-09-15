@@ -76,6 +76,27 @@ var _ = Describe("peer handler, negative cases", func() {
 		})
 	})
 
+	It("rejects below-threshold recovery before broadcasting a decommit", func() {
+		fieldOrder := elliptic.Secp256k1().Params().N
+		bk := func(x int64, rank uint32) *birkhoffinterpolation.BkParameter {
+			return birkhoffinterpolation.NewBkParameter(big.NewInt(x), rank)
+		}
+		// No peer manager or committer is needed: rejection must precede their use.
+		ph = &peerHandler{
+			threshold:  3,
+			fieldOrder: fieldOrder,
+			peerNum:    2,
+			bk:         bk(3, 0),
+			peers: map[string]*peer{
+				"value":      {peer: &peerData{bk: bk(2, 0)}},
+				"derivative": {peer: &peerData{bk: bk(1, 1)}},
+			},
+		}
+		got, err := ph.Finalize(log.Discard())
+		Expect(got).Should(BeNil())
+		Expect(err).Should(Equal(birkhoffinterpolation.ErrBelowThresholdRecovery))
+	})
+
 	Context("Finalize", func() {
 		var (
 			sid       = make([]byte, 1)
