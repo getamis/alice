@@ -37,6 +37,8 @@ var (
 	//ErrNoExistBk is returned if there does not exist bk
 	ErrNoExistBk          = errors.New("no exist bk")
 	ErrInconsistentPubKey = errors.New("inconsistent public key")
+	// ErrBelowThresholdRecovery is returned if fewer than threshold bks already determine the secret
+	ErrBelowThresholdRecovery = errors.New("fewer than threshold bks recover the secret")
 )
 
 type BkParameter struct {
@@ -171,6 +173,72 @@ func (bks BkParameters) CheckValid(threshold uint32, fieldOrder *big.Int) error 
 		}
 	}
 	return ErrNoValidBks
+}
+
+// CheckThresholdSecrecy returns ErrBelowThresholdRecovery if some threshold-1 of the bks
+// determine the constant term of a degree threshold-1 polynomial, i.e. if the shares of
+// fewer than threshold participants already recover the secret. CheckValid asks whether
+// some threshold bks can recover it; this asks whether fewer can, which is the property a
+// threshold scheme promises and which self-declared (x, rank) pairs can break: for
+// threshold 3, (2u, 0) and (u, 1) give f(2u) - 2u*f'(u) = f(0).
+//
+// Subsets of size threshold-1 cover every smaller one, since a row span only grows with
+// rows. The cost is C(n, threshold-1) rank computations.
+func (bks BkParameters) CheckThresholdSecrecy(threshold uint32, fieldOrder *big.Int) error {
+	if err := bks.ensureRankAndOrder(threshold, fieldOrder); err != nil {
+		return err
+	}
+	// A 1-of-n sharing is the secret itself: nothing below the threshold to protect.
+	if threshold < 2 {
+		return nil
+	}
+	degree := threshold - 1
+	// e0 selects the constant term: the secret is in a coalition's reach iff e0 lies in
+	// the row span of its Birkhoff rows.
+	e0 := make([]*big.Int, threshold)
+	e0[0] = big.NewInt(1)
+	for i := 1; i < len(e0); i++ {
+		e0[i] = big.NewInt(0)
+	}
+	rows := make([][]*big.Int, bks.Len())
+	for i := 0; i < bks.Len(); i++ {
+		rows[i] = bks[i].GetLinearEquationCoefficient(fieldOrder, degree)
+		for j := range rows[i] {
+			rows[i][j] = new(big.Int).Mod(rows[i][j], fieldOrder)
+		}
+	}
+	combination := combin.Combinations(bks.Len(), int(threshold-1))
+	for _, subset := range combination {
+		coalition := make([][]*big.Int, 0, threshold)
+		for _, idx := range subset {
+			coalition = append(coalition, rows[idx])
+		}
+		augmented, err := matrix.NewMatrix(fieldOrder, append(coalition, e0))
+		if err != nil {
+			return err
+		}
+		augmentedRank, err := augmented.GetMatrixRank(fieldOrder)
+		if err != nil {
+			return err
+		}
+		// threshold-1 rows span at most threshold-1 dimensions, so a full-rank augmented
+		// matrix means e0 is independent of the coalition.
+		if augmentedRank == uint64(threshold) {
+			continue
+		}
+		coalitionMatrix, err := matrix.NewMatrix(fieldOrder, coalition)
+		if err != nil {
+			return err
+		}
+		coalitionRank, err := coalitionMatrix.GetMatrixRank(fieldOrder)
+		if err != nil {
+			return err
+		}
+		if coalitionRank == augmentedRank {
+			return ErrBelowThresholdRecovery
+		}
+	}
+	return nil
 }
 
 // ComputeBkCoefficient returns the bk coefficients from parameters
