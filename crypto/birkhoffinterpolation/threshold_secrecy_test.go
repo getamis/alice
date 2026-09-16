@@ -30,11 +30,23 @@ var _ = Describe("CheckThresholdSecrecy()", func() {
 		return NewBkParameter(big.NewInt(x), rank)
 	}
 
-	It("rejects the threshold-3 pair (2u, 0), (u, 1) that CheckValid accepts", func() {
+	Describe("ValidateThresholdScheme()", func() {
+		It("rejects recoverable shares that disclose the secret below threshold", func() {
+			ps := BkParameters{bk(2, 0), bk(1, 1), bk(3, 0)}
+			Expect(ps.ValidateThresholdScheme(3, bigPrime)).Should(Equal(ErrBelowThresholdRecovery))
+		})
+
+		It("accepts a recoverable threshold-secure sharing", func() {
+			ps := BkParameters{bk(1, 0), bk(2, 0), bk(3, 0), bk(4, 0), bk(5, 0)}
+			Expect(ps.ValidateThresholdScheme(3, bigPrime)).Should(BeNil())
+		})
+	})
+
+	It("rejects the threshold-3 pair (2u, 0), (u, 1) that checkRecoverable accepts", func() {
 		// f(2u) - 2u*f'(u) = a0 for every quadratic f, so these two shares are the
-		// secret; the third bk only supplies the full-rank triple CheckValid asks for.
+		// secret; the third bk only supplies the full-rank triple checkRecoverable asks for.
 		ps := BkParameters{bk(2, 0), bk(1, 1), bk(3, 0)}
-		Expect(ps.CheckValid(3, bigPrime)).Should(BeNil())
+		Expect(ps.checkRecoverable(3, bigPrime)).Should(BeNil())
 		Expect(ps.CheckThresholdSecrecy(3, bigPrime)).Should(Equal(ErrBelowThresholdRecovery))
 	})
 
@@ -55,7 +67,7 @@ var _ = Describe("CheckThresholdSecrecy()", func() {
 			bk(5, 0),
 			bk(7, 0),
 		}
-		Expect(ps.CheckValid(4, bigPrime)).Should(BeNil())
+		Expect(ps.checkRecoverable(4, bigPrime)).Should(BeNil())
 		Expect(ps.CheckThresholdSecrecy(4, bigPrime)).Should(Equal(ErrBelowThresholdRecovery))
 	})
 
@@ -66,19 +78,19 @@ var _ = Describe("CheckThresholdSecrecy()", func() {
 
 	It("accepts a veto layout of ranks 0 and 2 at distinct coordinates", func() {
 		ps := BkParameters{bk(1, 0), bk(2, 0), bk(3, 0), bk(4, 2), bk(5, 2), bk(6, 2)}
-		Expect(ps.CheckValid(4, bigPrime)).Should(BeNil())
+		Expect(ps.checkRecoverable(4, bigPrime)).Should(BeNil())
 		Expect(ps.CheckThresholdSecrecy(4, bigPrime)).Should(BeNil())
 	})
 
 	It("accepts mixed ranks at unrelated coordinates", func() {
 		ps := BkParameters{bk(1, 0), bk(3, 0), bk(5, 1), bk(7, 1), bk(11, 1)}
-		Expect(ps.CheckValid(3, bigPrime)).Should(BeNil())
+		Expect(ps.checkRecoverable(3, bigPrime)).Should(BeNil())
 		Expect(ps.CheckThresholdSecrecy(3, bigPrime)).Should(BeNil())
 	})
 
 	It("rejects recovery by fewer than threshold minus one shares", func() {
 		ps := BkParameters{bk(2, 0), bk(1, 1), bk(3, 0), bk(4, 0)}
-		Expect(ps.CheckValid(4, bigPrime)).Should(BeNil())
+		Expect(ps.checkRecoverable(4, bigPrime)).Should(BeNil())
 		// A share at zero directly reveals the constant term.
 		ps[0] = bk(0, 0)
 		Expect(ps.CheckThresholdSecrecy(4, bigPrime)).Should(Equal(ErrBelowThresholdRecovery))
@@ -93,7 +105,7 @@ var _ = Describe("CheckThresholdSecrecy()", func() {
 	It("accepts a rank-deficient coalition whose span excludes the secret", func() {
 		// Both derivatives are the same linear functional; neither reveals a0.
 		ps := BkParameters{bk(1, 2), bk(2, 2), bk(3, 0), bk(4, 0)}
-		Expect(ps.CheckValid(3, bigPrime)).Should(BeNil())
+		Expect(ps.checkRecoverable(3, bigPrime)).Should(BeNil())
 		Expect(ps.CheckThresholdSecrecy(3, bigPrime)).Should(BeNil())
 	})
 

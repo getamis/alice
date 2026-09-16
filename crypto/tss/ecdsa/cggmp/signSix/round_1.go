@@ -111,7 +111,7 @@ func newRound1Handler(threshold uint32, ssid []byte, share *big.Int, ySecret *bi
 		bkss = append(bkss, bk)
 		ids = append(ids, id)
 	}
-	err := bkss.CheckValid(threshold, curveN)
+	err := bkss.ValidateThresholdScheme(threshold, curveN)
 	if err != nil {
 		return nil, err
 	}

@@ -129,8 +129,8 @@ func (bks BkParameters) Swap(i, j int) {
 	bks[i], bks[j] = bks[j], bks[i]
 }
 
-// If there exists one bks such that we can recover the secret key, then this check will pass.
-func (bks BkParameters) CheckValid(threshold uint32, fieldOrder *big.Int) error {
+// checkRecoverable returns nil if some threshold bks can recover the secret key.
+func (bks BkParameters) checkRecoverable(threshold uint32, fieldOrder *big.Int) error {
 	if err := bks.ensureRankAndOrder(threshold, fieldOrder); err != nil {
 		return err
 	}
@@ -175,9 +175,18 @@ func (bks BkParameters) CheckValid(threshold uint32, fieldOrder *big.Int) error 
 	return ErrNoValidBks
 }
 
+// ValidateThresholdScheme returns nil if threshold bks can recover the secret and
+// fewer than threshold bks cannot recover it.
+func (bks BkParameters) ValidateThresholdScheme(threshold uint32, fieldOrder *big.Int) error {
+	if err := bks.checkRecoverable(threshold, fieldOrder); err != nil {
+		return err
+	}
+	return bks.CheckThresholdSecrecy(threshold, fieldOrder)
+}
+
 // CheckThresholdSecrecy returns ErrBelowThresholdRecovery if some threshold-1 of the bks
 // determine the constant term of a degree threshold-1 polynomial, i.e. if the shares of
-// fewer than threshold participants already recover the secret. CheckValid asks whether
+// fewer than threshold participants already recover the secret. checkRecoverable asks whether
 // some threshold bks can recover it; this asks whether fewer can, which is the property a
 // threshold scheme promises and which self-declared (x, rank) pairs can break: for
 // threshold 3, (2u, 0) and (u, 1) give f(2u) - 2u*f'(u) = f(0).

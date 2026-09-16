@@ -204,7 +204,7 @@ func (s *initial) HandleMessage(logger log.Logger, message types.Message) error 
 		s.bk,
 		bk,
 	}
-	err = s.bks.CheckValid(Threshold, secp256k1N)
+	err = s.bks.ValidateThresholdScheme(Threshold, secp256k1N)
 	if err != nil {
 		logger.Warn("Invalid bks", "err", err)
 		return err

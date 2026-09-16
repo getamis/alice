@@ -161,17 +161,11 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 		bks[i] = peer.peer.bk
 		i++
 	}
-	err := bks.CheckValid(p.threshold, p.fieldOrder)
+	err := bks.ValidateThresholdScheme(p.threshold, p.fieldOrder)
 	if err != nil {
 		logger.Warn("Failed to check bks", "err", err)
 		return nil, err
 	}
-	err = bks.CheckThresholdSecrecy(p.threshold, p.fieldOrder)
-	if err != nil {
-		logger.Warn("Failed to check bks secrecy", "err", err)
-		return nil, err
-	}
-
 	// Send out Feldman commit message and decommit message to all peers
 	msg := p.getDecommitMessage()
 	p.broadcast(msg)

@@ -46,7 +46,7 @@ func RecoverPrivateKey(curve elliptic.Curve, threshold uint32, pubKey *ecpointgr
 	fieldOrder := curve.Params().N
 	bksInterface := birkhoffinterpolation.BkParameters(bks)
 
-	if err := bksInterface.CheckValid(threshold, fieldOrder); err != nil {
+	if err := bksInterface.ValidateThresholdScheme(threshold, fieldOrder); err != nil {
 		return nil, fmt.Errorf("BKS are incorrect: %w", err)
 	}
 	coefs, err := bksInterface.ComputeBkCoefficient(threshold, fieldOrder)
