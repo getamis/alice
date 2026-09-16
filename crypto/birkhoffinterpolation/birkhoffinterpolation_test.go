@@ -73,7 +73,7 @@ var _ = Describe("Birkhoff Interpolation", func() {
 	})
 
 	DescribeTable("VerifyEnoughRankCanRecoverSecret func", func(ps BkParameters) {
-		err := ps.CheckValid(uint32(3), bigPrime)
+		err := ps.checkRecoverable(uint32(3), bigPrime)
 		Expect(err).Should(BeNil())
 	},
 		Entry("BK:(x,rank):(1,0),(2,0),(3,0),(5,0),(4,0)",
@@ -109,7 +109,7 @@ var _ = Describe("Birkhoff Interpolation", func() {
 		ps[2] = NewBkParameter(big.NewInt(3), 2)
 		ps[3] = NewBkParameter(big.NewInt(1), 0)
 		ps[4] = NewBkParameter(big.NewInt(5), 4)
-		err := ps.CheckValid(uint32(3), bigPrime)
+		err := ps.checkRecoverable(uint32(3), bigPrime)
 		Expect(err).Should(Equal(ErrInvalidBks))
 	})
 
@@ -121,7 +121,7 @@ var _ = Describe("Birkhoff Interpolation", func() {
 		ps[0] = NewBkParameter(big.NewInt(1), 2)
 		ps[1] = NewBkParameter(big.NewInt(2), 2)
 		ps[2] = NewBkParameter(big.NewInt(3), 2)
-		err := ps.CheckValid(uint32(3), bigPrime)
+		err := ps.checkRecoverable(uint32(3), bigPrime)
 		Expect(err).Should(Equal(ErrNoValidBks))
 	})
 
@@ -131,7 +131,7 @@ var _ = Describe("Birkhoff Interpolation", func() {
 		ps[0] = NewBkParameter(big.NewInt(1), 0)
 		ps[1] = NewBkParameter(big.NewInt(2), 1)
 		ps[2] = NewBkParameter(big.NewInt(3), 0)
-		err := ps.CheckValid(uint32(3), bigPrime)
+		err := ps.checkRecoverable(uint32(3), bigPrime)
 		Expect(err).Should(Equal(ErrNoValidBks))
 	})
 
