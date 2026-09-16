@@ -185,6 +185,13 @@ func (p *peerHandler) Finalize(logger log.Logger) (types.Handler, error) {
 		logger.Warn("Failed to check bks", "err", err)
 		return nil, err
 	}
+	// The shares dealt next are computed at these bks; a set that fewer than threshold
+	// participants can already invert must not receive them.
+	err = bks.CheckThresholdSecrecy(p.threshold, p.fieldOrder)
+	if err != nil {
+		logger.Warn("Failed to check bks secrecy", "err", err)
+		return nil, err
+	}
 
 	// Send out Feldman commit message and decommit message to all peers
 	msg := p.getDecommitMessage()
